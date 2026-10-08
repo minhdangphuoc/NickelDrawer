@@ -1,0 +1,1 @@
+{"schema":1,"id":"bad-label-colon","name":"Demo","version":"1.0.0","actions":[{"id":"go","label":"A: B","run":"bin/run.sh","output":"show"}]}

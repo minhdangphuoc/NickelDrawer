@@ -1,0 +1,154 @@
+package send
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/logging"
+	"github.com/bethropolis/localgo/pkg/model"
+)
+
+// memReadSeekCloser wraps a *bytes.Reader to implement io.ReadSeekCloser.
+type memReadSeekCloser struct {
+	*bytes.Reader
+}
+
+func (m *memReadSeekCloser) Close() error { return nil }
+
+// fileReader is satisfied by both *os.File and *memReadSeekCloser.
+type fileReader interface {
+	io.ReadSeeker
+	io.Closer
+}
+
+func uploadFile(ctx context.Context, client *http.Client, device *model.Device, filePath, fileID, sessionID, token, scheme, pin string, trackProgress func(int64), logger *logging.Logger) error {
+	if logger == nil {
+		logger = logging.NewQuiet()
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file stats: %w", err)
+	}
+
+	return uploadStream(ctx, client, device, file, stat.Size(), fileID, sessionID, token, scheme, pin, trackProgress, logger)
+}
+
+func uploadStream(ctx context.Context, client *http.Client, device *model.Device, r fileReader, size int64, fileID, sessionID, token, scheme, pin string, trackProgress func(int64), logger *logging.Logger) error {
+	if logger == nil {
+		logger = logging.NewQuiet()
+	}
+
+	url := fmt.Sprintf("%s://%s/api/localsend/v2/upload?sessionId=%s&fileId=%s&token=%s", scheme, net.JoinHostPort(device.IP, strconv.Itoa(device.Port)), sessionID, fileID, token)
+	if pin != "" {
+		url += "&pin=" + pin
+	}
+
+	var body io.ReadCloser = io.NopCloser(r)
+	if trackProgress != nil {
+		bar := &progressBar{current: 0, track: trackProgress}
+		body = &progressTracker{Reader: r, Closer: r, bar: bar}
+	}
+
+	// Wrap with idle timeout: cancel request if no data flows for 15s
+	uploadCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	body = NewIdleTimeoutReader(body, 15*time.Second, cancel)
+	defer body.Close()
+
+	req, err := http.NewRequestWithContext(uploadCtx, http.MethodPost, url, body)
+	if err != nil {
+		cancel()
+		return fmt.Errorf("failed to create upload request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.ContentLength = size
+
+	resp, err := client.Do(req)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return fmt.Errorf("upload stalled: no data transmitted for 15s")
+		}
+		return fmt.Errorf("failed to send upload request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusUnprocessableEntity {
+			return fmt.Errorf("upload rejected: receiver failed integrity verification (422 Unprocessable Entity)")
+		}
+		return fmt.Errorf("upload request failed with status: %s", resp.Status)
+	}
+
+	return nil
+}
+
+// IdleTimeoutReader wraps an io.ReadCloser and cancels the context if no data
+// is read within the configured idle duration.
+type IdleTimeoutReader struct {
+	r           io.ReadCloser
+	idleTimeout time.Duration
+	timer       *time.Timer
+	cancel      func()
+}
+
+// NewIdleTimeoutReader creates an IdleTimeoutReader.
+func NewIdleTimeoutReader(r io.ReadCloser, timeout time.Duration, cancel func()) *IdleTimeoutReader {
+	tr := &IdleTimeoutReader{
+		r:           r,
+		idleTimeout: timeout,
+		cancel:      cancel,
+	}
+	tr.timer = time.AfterFunc(timeout, func() {
+		tr.cancel()
+	})
+	return tr
+}
+
+func (tr *IdleTimeoutReader) Read(p []byte) (int, error) {
+	tr.timer.Reset(tr.idleTimeout)
+	n, err := tr.r.Read(p)
+	if err != nil {
+		tr.timer.Stop()
+	}
+	return n, err
+}
+
+func (tr *IdleTimeoutReader) Close() error {
+	tr.timer.Stop()
+	return tr.r.Close()
+}
+
+type progressBar struct {
+	current int64
+	track   func(int64)
+}
+
+type progressTracker struct {
+	io.Reader
+	io.Closer
+	bar *progressBar
+}
+
+func (pt *progressTracker) Read(p []byte) (int, error) {
+	n, err := pt.Reader.Read(p)
+	if n > 0 && pt.bar != nil {
+		pt.bar.current += int64(n)
+		pt.bar.track(pt.bar.current)
+	}
+	return n, err
+}

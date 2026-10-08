@@ -1,0 +1,732 @@
+package handlers_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/clipboard"
+	"github.com/bethropolis/localgo/pkg/config"
+	"github.com/bethropolis/localgo/pkg/logging"
+	"github.com/bethropolis/localgo/pkg/model"
+	"github.com/bethropolis/localgo/pkg/server/handlers"
+	"github.com/bethropolis/localgo/pkg/server/services"
+)
+
+var testLogger = logging.NewQuiet()
+
+func setupReceiveHandler(t *testing.T, cfg *config.Config) (*handlers.ReceiveHandler, *services.ReceiveService, string) {
+	tempDir := t.TempDir()
+	if cfg == nil {
+		cfg = &config.Config{
+			DownloadDir: tempDir,
+			AutoAccept:  true,
+		}
+	} else if cfg.DownloadDir == "" {
+		cfg.DownloadDir = tempDir
+	}
+
+	receiveService := services.NewReceiveService()
+	handler := handlers.NewReceiveHandler(cfg, receiveService, nil, context.Background(), testLogger)
+	return handler, receiveService, tempDir
+}
+
+func TestPrepareUploadHandlerV2_Success(t *testing.T) {
+	handler, _, _ := setupReceiveHandler(t, nil)
+
+	deviceModel := "PC"
+	reqDto := model.PrepareUploadRequestDto{
+		Info: model.InfoDto{Alias: "TestSender", DeviceModel: &deviceModel},
+		Files: map[string]model.FileDto{
+			"file1": {ID: "file1", FileName: "test.txt", Size: 10},
+		},
+	}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	handler.PrepareUploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	var respDto model.PrepareUploadResponseDto
+	if err := json.NewDecoder(rr.Body).Decode(&respDto); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if respDto.SessionID == "" {
+		t.Errorf("expected session ID to be set")
+	}
+	if len(respDto.Files) != 1 {
+		t.Errorf("expected 1 file in response, got %d", len(respDto.Files))
+	}
+	if token, ok := respDto.Files["file1"]; !ok || token == "" {
+		t.Errorf("expected token for file1")
+	}
+}
+
+// TestPrepareUpload_PromptlessReceiver_RejectsFast verifies that a receiver
+// without auto-accept and without an interactive terminal rejects promptly
+// instead of waiting out the 30s prompt timeout invisible while the sender
+// hangs (seen on Termux, where the huh prompt never visibly renders).
+func TestPrepareUpload_PromptlessReceiver_RejectsFast(t *testing.T) {
+	// AutoAccept off + untrusted sender to reach the prompt path.
+	cfg := &config.Config{
+		AutoAccept: false,
+	}
+	handler, _, _ := setupReceiveHandler(t, cfg)
+
+	reqDto := model.PrepareUploadRequestDto{
+		Info: model.InfoDto{Alias: "TestSender"},
+		Files: map[string]model.FileDto{
+			"file1": {ID: "file1", FileName: "test.txt", Size: 10},
+		},
+	}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	start := time.Now()
+	handler.PrepareUploadHandlerV2(rr, req)
+	elapsed := time.Since(start)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusForbidden)
+	}
+	if elapsed >= 20*time.Second {
+		t.Errorf("promptless receiver took %v to reject; must fail fast, not wait out the prompt timeout", elapsed)
+	}
+}
+
+// TestPrepareUpload_ClipboardPromptlessReceiver_RejectsFast is the clipboard-
+// message counterpart: a Preview-embedded message to a promptless receiver
+// must also reject fast instead of hanging the sender.
+func TestPrepareUpload_ClipboardPromptlessReceiver_RejectsFast(t *testing.T) {
+	cfg := &config.Config{
+		AutoAccept: false,
+	}
+	handler, _, _ := setupReceiveHandler(t, cfg)
+
+	preview := "hello"
+	reqDto := model.PrepareUploadRequestDto{
+		Info: model.InfoDto{Alias: "TestSender"},
+		Files: map[string]model.FileDto{
+			"clip1": {ID: "clip1", FileName: "message.txt", Size: int64(len(preview)), FileType: "text/plain", Preview: &preview},
+		},
+	}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	start := time.Now()
+	handler.PrepareUploadHandlerV2(rr, req)
+	elapsed := time.Since(start)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusForbidden)
+	}
+	if elapsed >= 20*time.Second {
+		t.Errorf("promptless receiver took %v to reject; must fail fast, not wait out the prompt timeout", elapsed)
+	}
+}
+
+func TestPrepareUploadHandlerV2_PINValidation(t *testing.T) {
+	cfg := &config.Config{
+		PIN:        "1234",
+		AutoAccept: true,
+	}
+	handler, _, _ := setupReceiveHandler(t, cfg)
+
+	reqDto := model.PrepareUploadRequestDto{
+		Files: map[string]model.FileDto{"file1": {ID: "file1", FileName: "test.txt", Size: 10}},
+	}
+	body, _ := json.Marshal(reqDto)
+
+	tests := []struct {
+		name       string
+		pin        string
+		wantStatus int
+	}{
+		{"Valid PIN", "1234", http.StatusOK},
+		{"Invalid PIN", "9999", http.StatusUnauthorized},
+		{"Missing PIN", "", http.StatusUnauthorized},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Recreate receive service to avoid session conflict
+			handler, _, _ = setupReceiveHandler(t, cfg)
+
+			req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload?pin="+tt.pin, bytes.NewReader(body))
+			req.RemoteAddr = "192.168.1.100:12345"
+			rr := httptest.NewRecorder()
+
+			handler.PrepareUploadHandlerV2(rr, req)
+
+			if status := rr.Code; status != tt.wantStatus {
+				t.Errorf("handler returned wrong status code: got %v want %v", status, tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestPrepareUploadHandlerV2_RejectsConcurrentSessions(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	// Create an active session
+	receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, map[string]model.FileDto{"f": {ID: "f"}})
+
+	reqDto := model.PrepareUploadRequestDto{
+		Files: map[string]model.FileDto{"file1": {ID: "file1", FileName: "test.txt", Size: 10}},
+	}
+	body, _ := json.Marshal(reqDto)
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.101:12345"
+	rr := httptest.NewRecorder()
+
+	handler.PrepareUploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusConflict {
+		t.Errorf("handler returned wrong status code for concurrent session: got %v want %v", status, http.StatusConflict)
+	}
+}
+
+func TestUploadHandlerV2_PathTraversalRejection(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	// Create an active session with a malicious file name
+	files := map[string]model.FileDto{
+		"malicious": {ID: "malicious", FileName: "../../../../etc/passwd", Size: 10},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, files)
+
+	// We need the generated token for the request
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/upload?sessionId="+session.SessionID+"&fileId=malicious&token="+token, strings.NewReader("bad data"))
+	req.RemoteAddr = "192.168.1.100:12345" // IP must match
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("expected path traversal attempt to be rejected with 400 Bad Request, got %v", status)
+	}
+}
+
+func TestUploadHandlerV2_IPMismatch(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	files := map[string]model.FileDto{
+		"file1": {ID: "file1", FileName: "test.txt", Size: 10},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/upload?sessionId="+session.SessionID+"&fileId=file1&token="+token, strings.NewReader("some data"))
+	req.RemoteAddr = "192.168.1.101:54321" // IP mismatch
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusForbidden {
+		t.Errorf("expected IP mismatch to be rejected with 403 Forbidden, got %v", status)
+	}
+}
+
+func TestUploadHandlerV2_Success(t *testing.T) {
+	handler, receiveService, tempDir := setupReceiveHandler(t, nil)
+
+	files := map[string]model.FileDto{
+		"file1": {ID: "file1", FileName: "success.txt", Size: 9},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	fileContent := "test data"
+	req, _ := http.NewRequest(http.MethodPost, "/v2/upload?sessionId="+session.SessionID+"&fileId=file1&token="+token, strings.NewReader(fileContent))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	// Verify file was written
+	writtenContent, err := os.ReadFile(filepath.Join(tempDir, "success.txt"))
+	if err != nil {
+		t.Fatalf("failed to read written file: %v", err)
+	}
+	if string(writtenContent) != fileContent {
+		t.Errorf("file content mismatch: got %s, want %s", string(writtenContent), fileContent)
+	}
+}
+
+func TestCancelHandler(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, map[string]model.FileDto{"f": {ID: "f"}})
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/cancel?sessionId="+session.SessionID, nil)
+	rr := httptest.NewRecorder()
+
+	handler.CancelHandler(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	}
+
+	if receiveService.GetSession() != nil {
+		t.Errorf("expected session to be cancelled/nil")
+	}
+}
+
+// TestCancelHandler_AfterSuccessfulUpload verifies that the LocalSend protocol's
+// post-transfer /cancel cleanup call returns 200 OK even though the session was
+// already removed when the last file was successfully uploaded.
+func TestCancelHandler_AfterSuccessfulUpload(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	// Create a session with one file.
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: "hello.txt", Size: 5},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "192.168.1.100"}, files)
+
+	// Simulate the session being fully consumed (last file removed → session nil).
+	receiveService.RemoveFileFromSession(session.SessionID, "f1")
+	if receiveService.GetSession() != nil {
+		t.Fatal("expected session to be nil after last file removed")
+	}
+
+	// /cancel with the old sessionId must return 200, not 404.
+	req, _ := http.NewRequest(http.MethodPost, "/v2/cancel?sessionId="+session.SessionID, nil)
+	rr := httptest.NewRecorder()
+
+	handler.CancelHandler(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("expected 200 OK for post-upload /cancel, got %v (body: %s)", status, rr.Body.String())
+	}
+}
+
+// TestUploadHandlerV2_TextPlain_ClipboardFallback verifies that a text/plain
+// transfer is saved to a file when the clipboard is unavailable (NoClipboard=true
+// simulates the headless/fallback case without requiring a real display server).
+func TestUploadHandlerV2_TextPlain_NoClipboard(t *testing.T) {
+	cfg := &config.Config{
+		AutoAccept:  true,
+		NoClipboard: true,
+	}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	files := map[string]model.FileDto{
+		"clip1": {ID: "clip1", FileName: "snippet.txt", Size: 12, FileType: "text/plain"},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	body := "hello, world"
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=clip1&token="+token,
+		strings.NewReader(body),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	// File must have been written to disk.
+	written, err := os.ReadFile(filepath.Join(tempDir, "snippet.txt"))
+	if err != nil {
+		t.Fatalf("expected file to be saved to disk: %v", err)
+	}
+	if string(written) != body {
+		t.Errorf("file content mismatch: got %q, want %q", string(written), body)
+	}
+}
+
+// testClipboardSuccessStub returns a clipboard write command that always
+// succeeds, so tests can prove the handler does (or does not) invoke it.
+func testClipboardSuccessStub() string {
+	if runtime.GOOS == "windows" {
+		return "cmd /c exit 0"
+	}
+	return "true"
+}
+
+// TestUploadHandlerV2_TextPlain_RealFile_SavedToDisk verifies that a genuine
+// text FILE (no Preview) is saved to disk even when a working clipboard tool
+// is available. Regression test: the handler used to route every text/plain
+// upload to the clipboard, so both sides reported success while no file
+// appeared in the download directory (seen on Termux with termux-api).
+func TestUploadHandlerV2_TextPlain_RealFile_SavedToDisk(t *testing.T) {
+	clipboard.OverrideProvider(testClipboardSuccessStub(), "")
+	cfg := &config.Config{
+		AutoAccept: true,
+	}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: "notes.txt", Size: 11, FileType: "text/plain"},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	body := "hello world"
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=f1&token="+token,
+		strings.NewReader(body),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	written, err := os.ReadFile(filepath.Join(tempDir, "notes.txt"))
+	if err != nil {
+		t.Fatalf("expected real text file to be saved to disk, not consumed by clipboard: %v", err)
+	}
+	if string(written) != body {
+		t.Errorf("file content mismatch: got %q, want %q", string(written), body)
+	}
+}
+
+// TestUploadHandlerV2_TextPlain_ClipboardMessage_Copied verifies that a genuine
+// clipboard message (full content embedded in Preview, as sent by
+// `send --clipboard`/`--stdin` and official clients) still goes to the
+// clipboard instead of being saved as a file.
+func TestUploadHandlerV2_TextPlain_ClipboardMessage_Copied(t *testing.T) {
+	clipboard.OverrideProvider(testClipboardSuccessStub(), "")
+	cfg := &config.Config{
+		AutoAccept: true,
+	}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	preview := "hello world"
+	files := map[string]model.FileDto{
+		"c1": {ID: "c1", FileName: "message.txt", Size: 11, FileType: "text/plain", Preview: &preview},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=c1&token="+token,
+		strings.NewReader(preview),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	// Clipboard messages must not land on disk.
+	if _, err := os.Stat(filepath.Join(tempDir, "message.txt")); !os.IsNotExist(err) {
+		t.Errorf("expected clipboard message to be copied, not saved as a file")
+	}
+}
+
+// TestUploadHandlerV2_TextPlain_ClipboardMessage_ClipboardFailure_SavesFile
+// verifies that a clipboard message still reaches the user as a file when the
+// clipboard tool itself fails.
+func TestUploadHandlerV2_TextPlain_ClipboardMessage_ClipboardFailure_SavesFile(t *testing.T) {
+	clipboard.OverrideProvider("localgo-test-nonexistent-tool", "")
+	cfg := &config.Config{
+		AutoAccept: true,
+	}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	preview := "hello world"
+	files := map[string]model.FileDto{
+		"c1": {ID: "c1", FileName: "message.txt", Size: 11, FileType: "text/plain", Preview: &preview},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=c1&token="+token,
+		strings.NewReader(preview),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	written, err := os.ReadFile(filepath.Join(tempDir, "message.txt"))
+	if err != nil {
+		t.Fatalf("expected clipboard fallback file to be saved to disk: %v", err)
+	}
+	if string(written) != preview {
+		t.Errorf("file content mismatch: got %q, want %q", string(written), preview)
+	}
+}
+
+func TestUploadHandlerV2_TextPlain_PathTraversal_Returns400(t *testing.T) {
+	cfg := &config.Config{
+		AutoAccept:  true,
+		NoClipboard: true,
+	}
+	handler, receiveService, _ := setupReceiveHandler(t, cfg)
+
+	files := map[string]model.FileDto{
+		"evil": {ID: "evil", FileName: "../../../etc/passwd", Size: 5, FileType: "text/plain"},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=evil&token="+token,
+		strings.NewReader("hello"),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for path traversal, got %v (body: %s)", status, rr.Body.String())
+	}
+}
+
+func TestUploadHandlerV2_TextPlain_SaveFailure_Returns500(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("os.Chmod permission bits are not supported on Windows")
+	}
+	cfg := &config.Config{
+		AutoAccept:  true,
+		NoClipboard: true,
+	}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	// Make the download directory read-only so SaveStreamToFileWithMetadata fails.
+	if err := os.Chmod(tempDir, 0500); err != nil {
+		t.Fatalf("failed to chmod temp dir: %v", err)
+	}
+	t.Cleanup(func() { os.Chmod(tempDir, 0700) })
+
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: "write_fail.txt", Size: 5, FileType: "text/plain"},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=f1&token="+token,
+		strings.NewReader("hello"),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusInternalServerError {
+		t.Errorf("expected 500 Internal Server Error for save failure, got %v (body: %s)", status, rr.Body.String())
+	}
+}
+
+func TestPrepareUpload_SanitizesControlChars(t *testing.T) {
+	handler, receiveService, _ := setupReceiveHandler(t, nil)
+
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: string([]byte{0x00, 'b', 0x01, 'a', 0x1F, 'd', '.', 't', 'x', 't'}), Size: 1},
+	}
+	reqDto := model.PrepareUploadRequestDto{Files: files}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	handler.PrepareUploadHandlerV2(rr, req)
+
+	// Must succeed (sanitized filename is valid)
+	if status := rr.Code; status != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	var respDto model.PrepareUploadResponseDto
+	json.NewDecoder(rr.Body).Decode(&respDto)
+	if respDto.SessionID == "" {
+		t.Fatal("expected session ID")
+	}
+
+	// Verify the stored filename was sanitized
+	session := receiveService.GetSession()
+	if session == nil {
+		t.Fatal("expected session to exist")
+	}
+	af, ok := session.Files["f1"]
+	if !ok {
+		t.Fatal("expected file f1 in session")
+	}
+	want := "bad.txt"
+	if af.Dto.FileName != want {
+		t.Errorf("stored FileName: got %q, want %q", af.Dto.FileName, want)
+	}
+}
+
+func TestPrepareUpload_EmptyNameAfterSanitize_Returns400(t *testing.T) {
+	handler, _, _ := setupReceiveHandler(t, nil)
+
+	// All-control filename becomes empty after sanitize
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: string([]byte{0x00, 0x01, 0x02, 0x1F}), Size: 1},
+	}
+	reqDto := model.PrepareUploadRequestDto{Files: files}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	handler.PrepareUploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for all-control filename, got %v (body: %s)", status, rr.Body.String())
+	}
+}
+
+func TestPrepareUploadHandlerV2_NegativeFileSize_Returns400(t *testing.T) {
+	handler, _, _ := setupReceiveHandler(t, nil)
+
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: "neg.txt", Size: -10},
+	}
+	reqDto := model.PrepareUploadRequestDto{Files: files}
+	body, _ := json.Marshal(reqDto)
+
+	req, _ := http.NewRequest(http.MethodPost, "/v2/prepare-upload", bytes.NewReader(body))
+	req.RemoteAddr = "192.168.1.100:12345"
+	rr := httptest.NewRecorder()
+
+	handler.PrepareUploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for negative file size, got %v (body: %s)", status, rr.Body.String())
+	}
+}
+
+// TestUploadHandlerV2_ChecksumMismatch_Returns422 verifies a SHA-256 digest
+// mismatch is reported as 422 Unprocessable Entity (LocalSend v2.2 §4.2),
+// not a generic 500, and that the bad file is not left behind.
+func TestUploadHandlerV2_ChecksumMismatch_Returns422(t *testing.T) {
+	clipboard.OverrideProvider(testClipboardSuccessStub(), "")
+	cfg := &config.Config{AutoAccept: true, NoClipboard: true}
+	handler, receiveService, tempDir := setupReceiveHandler(t, cfg)
+
+	wrongHash := "0000000000000000000000000000000000000000000000000000000000000000"
+	files := map[string]model.FileDto{
+		"f1": {ID: "f1", FileName: "corrupt.bin", Size: 11, FileType: "application/octet-stream", SHA256: &wrongHash},
+	}
+	session, _ := receiveService.CreateSession(model.DeviceInfo{IP: "127.0.0.1"}, files)
+
+	var token string
+	for _, f := range session.Files {
+		token = f.Token
+		break
+	}
+
+	req, _ := http.NewRequest(http.MethodPost,
+		"/v2/upload?sessionId="+session.SessionID+"&fileId=f1&token="+token,
+		strings.NewReader("hello world"),
+	)
+	req.RemoteAddr = "127.0.0.1:9999"
+	rr := httptest.NewRecorder()
+
+	handler.UploadHandlerV2(rr, req)
+
+	if status := rr.Code; status != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422 Unprocessable Entity on checksum mismatch, got %v (body: %s)", status, rr.Body.String())
+	}
+
+	// The unverified payload must not be promoted into the download dir.
+	if _, err := os.Stat(filepath.Join(tempDir, "corrupt.bin")); !os.IsNotExist(err) {
+		t.Error("file with bad checksum must not be kept in the download directory")
+	}
+	entries, err := os.ReadDir(tempDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if filepath.Ext(e.Name()) == ".tmp" {
+			t.Errorf("temporary file left behind: %s", e.Name())
+		}
+	}
+}

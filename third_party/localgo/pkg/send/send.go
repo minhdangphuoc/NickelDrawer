@@ -1,0 +1,691 @@
+package send
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"crypto/tls"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/cli"
+	"github.com/bethropolis/localgo/pkg/config"
+	"github.com/bethropolis/localgo/pkg/discovery"
+	"github.com/bethropolis/localgo/pkg/logging"
+	"github.com/bethropolis/localgo/pkg/metadata"
+	"github.com/bethropolis/localgo/pkg/model"
+	"github.com/bethropolis/localgo/pkg/network"
+	"github.com/google/uuid"
+)
+
+// SendOption configures the send pipeline.
+type SendOption func(*sendConfig)
+
+type sendConfig struct {
+	memFiles []memFile
+	// remoteNames overrides the filename the receiver sees for a local
+	// path (e.g. temp directory zips sent under a clean "<dir>.zip" name).
+	remoteNames map[string]string
+}
+
+type memFile struct {
+	name    string
+	content []byte
+}
+
+// WithInMemoryFile adds an in-memory file (no disk I/O) to the send.
+func WithInMemoryFile(name string, content []byte) SendOption {
+	return func(c *sendConfig) {
+		c.memFiles = append(c.memFiles, memFile{name: name, content: content})
+	}
+}
+
+// WithRemoteName overrides the filename the receiver sees for a local path.
+// Useful when sending temp files (e.g. directory zips) under a clean name.
+func WithRemoteName(localPath, remoteName string) SendOption {
+	return func(c *sendConfig) {
+		if c.remoteNames == nil {
+			c.remoteNames = make(map[string]string)
+		}
+		c.remoteNames[localPath] = remoteName
+	}
+}
+
+// applyRemoteNameOverrides rewrites fileMap destinations for explicitly
+// overridden local paths. Unknown paths are ignored.
+func applyRemoteNameOverrides(fileMap map[string]string, overrides map[string]string) {
+	for localPath, remoteName := range overrides {
+		if _, ok := fileMap[localPath]; ok {
+			fileMap[localPath] = remoteName
+		}
+	}
+}
+
+// SendFiles sends files or directories to a recipient.
+func SendFiles(ctx context.Context, cfg *config.Config, filePaths []string, recipientAlias string, recipientPort int, logger *logging.Logger, opts ...SendOption) error {
+	if logger == nil {
+		logger = logging.NewQuiet()
+	}
+
+	logger.Infof("Searching for recipient '%s'...", recipientAlias)
+
+	if recipientPort == 0 {
+		recipientPort = config.DefaultPort
+	}
+
+	var targetDevice *model.Device
+
+	discoverySvcConfig := discovery.DefaultServiceConfig()
+	discoverySvcConfig.MulticastConfig.Port = cfg.Port
+	discoverySvcConfig.MulticastConfig.MulticastAddr = fmt.Sprintf("%s:%d", cfg.MulticastGroup, cfg.Port)
+	discoverySvcConfig.MulticastConfig.InterfaceName = cfg.MulticastInterface
+	multicastDto := cfg.ToMulticastDto(false)
+
+	peerCache := discovery.NewPeerCache(logger)
+
+	// --- Tier 1: Cache Probe (400ms) ---
+	logger.Info("Probing cached peers...")
+	cacheCtx, cancelCache := context.WithTimeout(ctx, 400*time.Millisecond)
+	discovery.ProbeCached(cacheCtx, peerCache, func(device *model.Device) {
+		if device.Alias == recipientAlias && targetDevice == nil {
+			targetDevice = device
+		}
+	}, logger)
+	cancelCache()
+
+	// --- Tier 1b: Static Peers Probe (400ms per peer) ---
+	if targetDevice == nil && len(cfg.StaticPeers) > 0 {
+		logger.Infof("Probing %d static peer(s)...", len(cfg.StaticPeers))
+		registerDto := cfg.ToRegisterDto()
+		httpDisc := discovery.NewHTTPDiscovery(nil, registerDto, nil, logger)
+		for _, staticPeer := range cfg.StaticPeers {
+			host, portStr, err := net.SplitHostPort(staticPeer)
+			if err != nil {
+				host = staticPeer
+				portStr = strconv.Itoa(recipientPort)
+			}
+			port, _ := strconv.Atoi(portStr)
+			ip := net.ParseIP(host)
+			if ip == nil {
+				ips, lookupErr := net.LookupIP(host)
+				if lookupErr != nil || len(ips) == 0 {
+					logger.Warnf("Static peer %s: hostname lookup failed: %v", staticPeer, lookupErr)
+					continue
+				}
+				ip = ips[0]
+			}
+
+			peerCtx, cancelPeer := context.WithTimeout(ctx, 400*time.Millisecond)
+			dev, fetchErr := httpDisc.FetchDeviceInfo(peerCtx, ip, port)
+			cancelPeer()
+
+			if fetchErr == nil && dev != nil && dev.Alias == recipientAlias {
+				logger.Infof("Discovered recipient via static peer: %s (%s)", dev.Alias, staticPeer)
+				targetDevice = dev
+				break
+			}
+		}
+	}
+
+	if targetDevice != nil {
+		logger.Infof("Discovered recipient via cache: %s (%s)", targetDevice.Alias, targetDevice.IP)
+		if err := VerifyDeviceFingerprint(peerCache, targetDevice); err != nil {
+			return err
+		}
+		return SendToDevice(ctx, cfg, targetDevice, filePaths, logger, opts...)
+	}
+
+	// --- Tier 2: Multicast Discovery ---
+	logger.Info("Sending multicast announcement...")
+
+	multicast := discovery.NewMulticastDiscovery(discoverySvcConfig.MulticastConfig, multicastDto, logger)
+	httpDiscoverer := discovery.NewHTTPDiscovery(nil, cfg.ToRegisterDto(), nil, logger)
+	multicast.SetHTTPDiscoverer(httpDiscoverer)
+	multicast.SetPeerCache(peerCache)
+
+	discoverySvc := discovery.NewService(discoverySvcConfig, multicast, logger)
+	discoverySvc.SetPeerCache(peerCache)
+
+	foundChan := make(chan *model.Device, 1)
+	discoverySvc.AddDeviceHandler(func(device *model.Device) {
+		if device.Alias == recipientAlias {
+			select {
+			case foundChan <- device:
+			default:
+			}
+		}
+	})
+
+	multicastCtx, cancelMulticast := context.WithTimeout(ctx, 1200*time.Millisecond)
+
+	err := discoverySvc.Start(multicastCtx, cfg.ToMulticastDto(false))
+	if err != nil {
+		logger.Warnf("Multicast start failed: %v", err)
+	}
+
+	select {
+	case device := <-foundChan:
+		logger.Infof("Discovered recipient via multicast: %s (%s)", device.Alias, device.IP)
+		targetDevice = device
+		discoverySvc.Stop()
+	case <-multicastCtx.Done():
+		logger.Info("Multicast discovery timed out")
+	}
+	cancelMulticast()
+	discoverySvc.Stop()
+
+	if targetDevice != nil {
+		if err := VerifyDeviceFingerprint(peerCache, targetDevice); err != nil {
+			return err
+		}
+		return SendToDevice(ctx, cfg, targetDevice, filePaths, logger, opts...)
+	}
+
+	// Skip Tier 3 (subnet scan) in fast mode
+	if cfg.DiscoveryStrategy == "fast" {
+		return fmt.Errorf("recipient '%s' not found on network (cache + multicast missed, scan skipped via fast strategy)", recipientAlias)
+	}
+
+	// --- Tier 3: Subnet Scan ---
+	logger.Info("Scanning local subnets...")
+
+	registerDto := cfg.ToRegisterDto()
+	httpFallback := discovery.NewHTTPDiscovery(nil, registerDto, nil, logger)
+
+	localIPs, err := network.GetLocalIPAddresses()
+	if err != nil {
+		return fmt.Errorf("failed to get local IPs: %w", err)
+	}
+
+	var ips []net.IP
+	for _, ip := range localIPs {
+		subnetIPs, err := network.GetUsableSubnetIPsFromIP(ip)
+		if err == nil {
+			ips = append(ips, subnetIPs...)
+		}
+	}
+	ips = append(ips, net.ParseIP("127.0.0.1"))
+
+	scanCtx, cancelScan := context.WithTimeout(ctx, 15*time.Second)
+	defer cancelScan()
+
+	foundDevices, err := httpFallback.ScanNetwork(scanCtx, ips, recipientPort)
+	if err != nil {
+		return fmt.Errorf("HTTP discovery failed: %w", err)
+	}
+
+	for _, device := range foundDevices {
+		if device.Alias == recipientAlias {
+			targetDevice = device
+			break
+		}
+	}
+
+	if targetDevice == nil {
+		return fmt.Errorf("recipient '%s' not found on network after all discovery tiers", recipientAlias)
+	}
+
+	logger.Infof("Discovered recipient via subnet scan: %s (%s)", targetDevice.Alias, targetDevice.IP)
+
+	if err := VerifyDeviceFingerprint(peerCache, targetDevice); err != nil {
+		return err
+	}
+
+	return SendToDevice(ctx, cfg, targetDevice, filePaths, logger, opts...)
+}
+
+func SendToDevice(ctx context.Context, cfg *config.Config, device *model.Device, filePaths []string, logger *logging.Logger, opts ...SendOption) error {
+	if logger == nil {
+		logger = logging.NewQuiet()
+	}
+
+	client := &http.Client{}
+	scheme := "http"
+
+	if device.Protocol == "" {
+		addr := net.JoinHostPort(device.IP, strconv.Itoa(device.Port))
+		dialer := &net.Dialer{Timeout: 2 * time.Second}
+		conn, err := tls.DialWithDialer(dialer, "tcp", addr, &tls.Config{InsecureSkipVerify: true})
+		if err == nil {
+			conn.Close()
+			device.Protocol = model.ProtocolTypeHTTPS
+		}
+	}
+
+	// When auto-detected HTTPS with no known fingerprint (e.g. send --ip),
+	// fetch it via /info so VerifyConnection can pin the TLS certificate.
+	if device.Protocol == model.ProtocolTypeHTTPS && device.Fingerprint == "" {
+		infoAddr := net.JoinHostPort(device.IP, strconv.Itoa(device.Port))
+		infoURL := fmt.Sprintf("https://%s/api/localsend/v2/info", infoAddr)
+		infoClient := &http.Client{
+			Timeout: 5 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		defer infoClient.CloseIdleConnections()
+		if resp, err := infoClient.Get(infoURL); err == nil {
+			var info model.InfoDto
+			if json.NewDecoder(resp.Body).Decode(&info) == nil {
+				device.Fingerprint = info.Fingerprint
+			}
+			resp.Body.Close()
+		}
+	}
+
+	if device.Protocol == model.ProtocolTypeHTTPS {
+		scheme = "https"
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		if device.Fingerprint != "" {
+			expectedFingerprint := device.Fingerprint
+			tlsConfig.VerifyConnection = func(state tls.ConnectionState) error {
+				if len(state.PeerCertificates) == 0 {
+					return fmt.Errorf("no peer certificates presented")
+				}
+				cert := state.PeerCertificates[0]
+				hash := sha256.Sum256(cert.Raw)
+				actual := hex.EncodeToString(hash[:])
+				if !strings.EqualFold(actual, expectedFingerprint) {
+					return fmt.Errorf("TLS certificate fingerprint mismatch: expected %s, got %s", expectedFingerprint, actual)
+				}
+				return nil
+			}
+		}
+		tr := &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+		client.Transport = tr
+		defer tr.CloseIdleConnections()
+	}
+
+	var sc sendConfig
+	for _, opt := range opts {
+		opt(&sc)
+	}
+
+	fileMap, err := getFilesWithRelativePaths(filePaths)
+	if err != nil {
+		return fmt.Errorf("failed to process file paths: %w", err)
+	}
+	applyRemoteNameOverrides(fileMap, sc.remoteNames)
+
+	// Strip EXIF/metadata from image files in private mode.
+	// StripTo writes a stripped copy to a temp file; the original is never modified.
+	type strippedFile struct{ tempPath string }
+	var stripped []strippedFile
+	defer func() {
+		for _, s := range stripped {
+			os.Remove(s.tempPath)
+		}
+	}()
+
+	if cfg.Private {
+		for filePath, remoteName := range fileMap {
+			isImg, _ := metadata.IsImageFile(filePath)
+			if !isImg {
+				continue
+			}
+			tmp, err := os.CreateTemp("", "localgo-private-*")
+			if err != nil {
+				return fmt.Errorf("private mode: create temp for %s: %w", filePath, err)
+			}
+			tmpPath := tmp.Name()
+			tmp.Close()
+			os.Remove(tmpPath)
+
+			if err := metadata.StripTo(filePath, tmpPath); err != nil {
+				os.Remove(tmpPath)
+				return fmt.Errorf("private mode: strip metadata for %s: %w", filePath, err)
+			}
+
+			stripped = append(stripped, strippedFile{tempPath: tmpPath})
+			fileMap[tmpPath] = remoteName
+			delete(fileMap, filePath)
+		}
+	}
+
+	filesDtoMap := make(map[string]model.FileDto)
+	filePathMap := make(map[string]string)
+	memReaders := make(map[string]*memReadSeekCloser)
+
+	for filePath, remoteName := range fileMap {
+		fileInfo, err := os.Stat(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to get file info for %s: %w", filePath, err)
+		}
+
+		file, err := os.Open(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to open file for detection %s: %w", filePath, err)
+		}
+
+		buffer := make([]byte, 512)
+		n, _ := file.Read(buffer)
+		file.Close()
+		contentType := http.DetectContentType(buffer[:n])
+
+		if cfg.Private {
+			remoteName = anonymizeFileName(contentType)
+		}
+
+		modTime := fileInfo.ModTime().Format(time.RFC3339)
+
+		var metadataPtr *model.FileMetadata
+		if !cfg.Private {
+			metadataPtr = &model.FileMetadata{Modified: &modTime}
+		}
+
+		fileDto := model.FileDto{
+			ID:       uuid.NewString(),
+			FileName: remoteName,
+			Size:     fileInfo.Size(),
+			FileType: contentType,
+			Metadata: metadataPtr,
+		}
+
+		filesDtoMap[fileDto.ID] = fileDto
+		filePathMap[fileDto.ID] = filePath
+	}
+
+	for _, mf := range sc.memFiles {
+		id := uuid.NewString()
+		remoteName := mf.name
+		contentType := "text/plain"
+
+		if cfg.Private {
+			remoteName = anonymizeFileName(contentType)
+		}
+
+		preview := string(mf.content)
+		fileDto := model.FileDto{
+			ID:       id,
+			FileName: remoteName,
+			Size:     int64(len(mf.content)),
+			FileType: contentType,
+			Preview:  &preview,
+		}
+
+		filesDtoMap[id] = fileDto
+		memReaders[id] = &memReadSeekCloser{bytes.NewReader(mf.content)}
+	}
+
+	infoAlias := cfg.Alias
+	infoDeviceModel := cfg.DeviceModel
+	infoDeviceType := cfg.DeviceType
+	if cfg.Private {
+		infoAlias = "Anonymous"
+		infoDeviceModel = nil
+		infoDeviceType = model.DeviceTypeHeadless
+	}
+
+	fingerprint := cfg.RandomFingerprint
+	if cfg.HttpsEnabled {
+		fingerprint = cfg.SecurityContext.CertificateHash
+	}
+
+	prepareDto := model.PrepareUploadRequestDto{
+		Info: model.InfoDto{
+			Alias:       infoAlias,
+			Version:     config.ProtocolVersion,
+			DeviceModel: infoDeviceModel,
+			DeviceType:  infoDeviceType,
+			Fingerprint: fingerprint,
+			Port:        device.Port,
+			Protocol:    model.ProtocolType(scheme),
+			Download:    true,
+		},
+		Files: filesDtoMap,
+	}
+
+	jsonData, err := json.Marshal(prepareDto)
+	if err != nil {
+		return fmt.Errorf("failed to marshal prepare dto: %w", err)
+	}
+
+	prepareResponse, err := doPrepare(ctx, client, device, scheme, cfg, jsonData, logger)
+	if err != nil {
+		if errors.Is(err, errClipboardAccepted) {
+			logger.Info("Clipboard message accepted by receiver, no upload needed")
+			cli.EmitEvent(cli.IPCEvent{Type: cli.EventSuccess, Data: "clipboard message accepted, no upload needed"})
+			return nil
+		}
+		cli.EmitEvent(cli.IPCEvent{Type: cli.EventError, Error: err.Error()})
+		return err
+	}
+
+	// Release the receiver's session as soon as the transfer ends abnormally
+	// (Ctrl+C, --timeout, upload error) instead of leaving it blocked until
+	// its own timeout expires. Uses a detached context because the caller's
+	// context is already cancelled at that point.
+	var transferOK atomic.Bool
+	defer func() {
+		if !transferOK.Load() && prepareResponse.SessionID != "" {
+			releaseReceiverSession(client, device, scheme, prepareResponse.SessionID, logger)
+		}
+	}()
+
+	// Progress bars render on stderr; in JSON mode stdout must stay pure
+	// NDJSON, so skip the TUI and emit track events instead.
+	var mp *cli.MultiProgress
+	if !cli.JSONMode() {
+		mp = cli.NewMultiProgress(int64(len(prepareResponse.Files)))
+	}
+
+	var wg sync.WaitGroup
+	errCh := make(chan error, len(prepareResponse.Files))
+
+	concurrency := cfg.Concurrency
+	if concurrency <= 0 {
+		concurrency = 4
+	}
+	sem := make(chan struct{}, concurrency)
+
+	for fileID, token := range prepareResponse.Files {
+		if reader, ok := memReaders[fileID]; ok {
+			displayName := filesDtoMap[fileID].FileName
+			fileSize := filesDtoMap[fileID].Size
+			var trackProgress func(int64)
+			if mp != nil {
+				trackProgress = mp.AddBar(displayName, fileSize)
+			}
+			if cli.JSONMode() {
+				trackProgress = cli.EmitProgressTracker(displayName, fileSize, trackProgress)
+				cli.EmitEvent(cli.IPCEvent{Type: cli.EventTransferStart, File: displayName, Total: fileSize})
+			}
+
+			wg.Add(1)
+			go func(fID, tkn string, rdr *memReadSeekCloser, sz int64, name string, track func(int64)) {
+				defer wg.Done()
+
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				logger.Infof("Uploading in-memory file: %s", name)
+				err := uploadStream(ctx, client, device, rdr, sz, fID, prepareResponse.SessionID, tkn, scheme, cfg.PIN, track, logger)
+				if err != nil {
+					logger.Errorf("Failed to upload %s: %v", name, err)
+					cli.EmitEvent(cli.IPCEvent{Type: cli.EventError, File: name, Error: err.Error()})
+					errCh <- fmt.Errorf("failed to upload %s: %w", name, err)
+					return
+				}
+				cli.EmitEvent(cli.IPCEvent{Type: cli.EventFileComplete, File: name, Bytes: sz, Total: sz, Percent: 100})
+			}(fileID, token, reader, fileSize, displayName, trackProgress)
+		} else if filePath, exists := filePathMap[fileID]; exists {
+			var fileSize int64
+			if fi, err := os.Stat(filePath); err == nil {
+				fileSize = fi.Size()
+			}
+			displayName := filepath.Base(filePath)
+			if remoteName, ok := fileMap[filePath]; ok && remoteName != "" {
+				displayName = remoteName
+			}
+			var trackProgress func(int64)
+			if mp != nil {
+				trackProgress = mp.AddBar(displayName, fileSize)
+			}
+			if cli.JSONMode() {
+				trackProgress = cli.EmitProgressTracker(displayName, fileSize, trackProgress)
+				cli.EmitEvent(cli.IPCEvent{Type: cli.EventTransferStart, File: displayName, Total: fileSize})
+			}
+
+			wg.Add(1)
+			go func(fID, tkn, fPath string, track func(int64), name string, sz int64) {
+				defer wg.Done()
+
+				sem <- struct{}{}
+				defer func() { <-sem }()
+
+				logger.Infof("Uploading file: %s", filepath.Base(fPath))
+				err := uploadFile(ctx, client, device, fPath, fID, prepareResponse.SessionID, tkn, scheme, cfg.PIN, track, logger)
+				if err != nil {
+					logger.Errorf("Failed to upload file %s: %v", filepath.Base(fPath), err)
+					cli.EmitEvent(cli.IPCEvent{Type: cli.EventError, File: name, Error: err.Error()})
+					errCh <- fmt.Errorf("failed to upload %s: %w", filepath.Base(fPath), err)
+					return
+				}
+				cli.EmitEvent(cli.IPCEvent{Type: cli.EventFileComplete, File: name, Bytes: sz, Total: sz, Percent: 100})
+			}(fileID, token, filePath, trackProgress, displayName, fileSize)
+		} else {
+			logger.Warnf("Server responded with unknown file ID: %s", fileID)
+			continue
+		}
+	}
+
+	wg.Wait()
+	close(errCh)
+
+	var uploadErrors []error
+	for err := range errCh {
+		uploadErrors = append(uploadErrors, err)
+	}
+
+	if mp != nil {
+		if len(uploadErrors) > 0 {
+			// Bars never reach their total on a failed/cancelled upload, so
+			// abort them or Wait would block forever.
+			mp.Abort()
+		} else {
+			mp.ForceComplete()
+		}
+		mp.Wait()
+	}
+
+	if len(uploadErrors) > 0 {
+		return fmt.Errorf("encountered %d upload errors, first error: %w", len(uploadErrors), uploadErrors[0])
+	}
+
+	if mp != nil {
+		fmt.Fprintf(os.Stderr, "%s Files transferred successfully\n", cli.IconCheck)
+	}
+	logger.Info("All files uploaded successfully!")
+	transferOK.Store(true)
+	cli.EmitEvent(cli.IPCEvent{Type: cli.EventSuccess})
+	return nil
+}
+
+// errClipboardAccepted signals the receiver consumed a clipboard message
+// (HTTP 204), so no file upload is needed.
+var errClipboardAccepted = errors.New("clipboard message accepted by receiver")
+
+// postPrepare performs one /prepare-upload request and returns its status
+// code plus body. The body is always drained and closed so a retry is safe.
+func postPrepare(ctx context.Context, client *http.Client, device *model.Device, scheme, pin string, jsonData []byte) (int, []byte, error) {
+	endpoint := fmt.Sprintf("%s://%s/api/localsend/v2/prepare-upload", scheme, net.JoinHostPort(device.IP, strconv.Itoa(device.Port)))
+	if pin != "" {
+		endpoint += "?pin=" + url.QueryEscape(pin)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return 0, nil, fmt.Errorf("failed to create prepare request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		if ctx.Err() != nil {
+			return 0, nil, fmt.Errorf("prepare request cancelled: %w", ctx.Err())
+		}
+		return 0, nil, fmt.Errorf("failed to send prepare request: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024))
+	if err != nil {
+		return resp.StatusCode, nil, fmt.Errorf("failed to read prepare response: %w", err)
+	}
+	return resp.StatusCode, body, nil
+}
+
+// doPrepare runs /prepare-upload, handling the receiver's PIN challenge: on
+// 401 it asks for a PIN once (interactive TTY only) and retries a single time.
+func doPrepare(ctx context.Context, client *http.Client, device *model.Device, scheme string, cfg *config.Config, jsonData []byte, logger *logging.Logger) (*model.PrepareUploadResponseDto, error) {
+	status, body, err := postPrepare(ctx, client, device, scheme, cfg.PIN, jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	if status == http.StatusUnauthorized {
+		pin, ok := promptForPIN(fmt.Sprintf("%s requires a PIN", device.Alias))
+		if !ok {
+			return nil, fmt.Errorf("prepare request failed with status: %s (PIN required)", http.StatusText(status))
+		}
+		logger.Infof("Retrying prepare-upload with receiver-provided PIN")
+		if status, body, err = postPrepare(ctx, client, device, scheme, pin, jsonData); err != nil {
+			return nil, err
+		}
+	}
+
+	switch status {
+	case http.StatusNoContent:
+		return nil, errClipboardAccepted
+	case http.StatusOK:
+		// fall through to decode
+	default:
+		return nil, fmt.Errorf("prepare request failed with status: %d %s", status, http.StatusText(status))
+	}
+
+	var prepareResponse model.PrepareUploadResponseDto
+	if err := json.Unmarshal(body, &prepareResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode prepare response: %w", err)
+	}
+	return &prepareResponse, nil
+}
+
+// releaseReceiverSession posts /cancel on a detached 1.5s context so an
+// interrupted or failed transfer frees the receiver's session immediately
+// (the caller's own context is already cancelled at this point).
+func releaseReceiverSession(client *http.Client, device *model.Device, scheme, sessionID string, logger *logging.Logger) {
+	cancelCtx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+
+	endpoint := fmt.Sprintf("%s://%s/api/localsend/v2/cancel?sessionId=%s", scheme, net.JoinHostPort(device.IP, strconv.Itoa(device.Port)), url.QueryEscape(sessionID))
+	req, err := http.NewRequestWithContext(cancelCtx, http.MethodPost, endpoint, nil)
+	if err != nil {
+		logger.Warnf("Failed to build receiver cancel request: %v", err)
+		return
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Warnf("Failed to cancel session %s on receiver: %v", sessionID, err)
+		return
+	}
+	defer resp.Body.Close()
+	logger.Infof("Cancelled session %s on receiver (%s)", sessionID, resp.Status)
+	cli.EmitEvent(cli.IPCEvent{Type: cli.EventTransferCancelled, Data: map[string]string{"sessionId": sessionID}})
+}
+
+

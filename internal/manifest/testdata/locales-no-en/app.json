@@ -1,0 +1,2 @@
+{"schema":1,"id":"locales-no-en","name":"Demo","version":"1.0.0","description":"Demo app",
+ "actions":[{"id":"go","label":"Go","run":"bin/run.sh","output":"show"}]}

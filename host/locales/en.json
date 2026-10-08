@@ -1,0 +1,11 @@
+{
+  "menu.refresh": "Apps · Refresh list",
+  "menu.errors": "Apps · Errors ({count})",
+  "refresh.summary": "Refreshed: {apps} apps, {items} items",
+  "refresh.failures": "{count} apps have errors. Open 'Apps · Errors'.",
+  "refresh.failed": "Could not refresh the list.",
+  "errors.none": "No errors.",
+  "errors.unreadable": "Could not read the error list.",
+  "errors.more": "... and {count} more errors",
+  "genmenu.summary": "Wrote {file}: {apps} apps, {items} items, {invalid} invalid"
+}

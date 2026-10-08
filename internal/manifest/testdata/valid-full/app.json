@@ -1,0 +1,1 @@
+{"schema":1,"id":"valid-full","name":"LocalSend","version":"1.0.0","description":"Nhận sách","menu":true,"actions":[{"id":"start","label":"Bắt đầu nhận","run":"bin/run.sh","output":"show","timeout_ms":9500,"wifi":true,"rescan":"none"},{"id":"stop","label":"Dừng nhận","run":"bin/run.sh","output":"none","rescan":"quick"}]}

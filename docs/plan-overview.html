@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kobo App Drawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column (~68ch) that widens for the wireframe gallery; device screens drawn in CSS as e-ink paper in both themes. */
+:root {
+  --bg: #f4f5f2;
+  --surface: #ffffff;
+  --ink: #17191b;
+  --muted: #5a6066;
+  --line: #d6d9d4;
+  --accent: #1f4f8f;
+  --accent-soft: #e3eaf4;
+  --ok: #2f6b3a;
+  --warn: #8a5a00;
+  /* e-ink device screens stay paper-coloured in both themes on purpose */
+  --paper: #e8eae4;
+  --paper-ink: #1b1c1c;
+  --paper-mute: #66696a;
+  --paper-line: #b9bcb6;
+  --bezel: #2a2c2e;
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7;
+    --line: #2d3237; --accent: #8fb5ea; --accent-soft: #1d2a3b;
+    --ok: #8cc79a; --warn: #e2b55c; --bezel: #0a0b0c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7;
+  --line: #2d3237; --accent: #8fb5ea; --accent-soft: #1d2a3b;
+  --ok: #8cc79a; --warn: #e2b55c; --bezel: #0a0b0c;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 80px; }
+.col { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; font-weight: 600; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+code, pre { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--accent-soft); padding: 0.1em 0.35em; border-radius: 4px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.eyebrow { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+header.top { display: grid; gap: 16px; padding-bottom: 32px; border-bottom: 1px solid var(--line); }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 0.85rem; color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 600; }
+
+section { display: grid; gap: 20px; padding-block: 48px 8px; }
+.stack { display: grid; gap: 14px; }
+
+/* principles */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.principle { background: var(--surface); padding: 20px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.principle h3 { font-size: 1.05rem; }
+.principle p { color: var(--muted); font-size: 0.95rem; }
+
+/* diagram */
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; overflow-x: auto; }
+.diagram svg { display: block; min-width: 760px; width: 100%; height: auto; }
+.diagram text { font-family: var(--font-body); }
+
+/* wireframe gallery */
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px 24px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; min-width: 0; }
+figcaption { display: grid; gap: 4px; }
+figcaption .tag { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+figcaption p { color: var(--muted); font-size: 0.92rem; }
+
+.device { background: var(--bezel); border-radius: 22px; padding: 14px 12px 26px; max-width: 290px; width: 100%; margin-inline: auto; box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 10px 30px -18px rgba(0,0,0,.5); }
+.screen {
+  aspect-ratio: 1264 / 1680; max-width: 100%;
+  background: var(--paper); color: var(--paper-ink);
+  font-family: var(--font-body); font-size: 9.5px; line-height: 1.35;
+  position: relative; overflow: hidden; border-radius: 3px;
+  display: flex; flex-direction: column;
+}
+.sbar { display: flex; justify-content: space-between; padding: 5px 9px; font-size: 8px; color: var(--paper-mute); border-bottom: 1px solid var(--paper-line); }
+.s-body { flex: 1; padding: 9px; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.s-title { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.s-sub { color: var(--paper-mute); font-size: 8.5px; }
+.ph { background: repeating-linear-gradient(135deg, var(--paper-line) 0 1px, transparent 1px 6px); border: 1px solid var(--paper-line); }
+
+/* nickel home + tabbar */
+.book { display: flex; gap: 8px; align-items: flex-start; }
+.book .cover { width: 46px; aspect-ratio: 2/3; flex: none; }
+.bar { height: 4px; background: var(--paper-line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--paper-ink); }
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--paper-ink); font-size: 8px; text-align: center; }
+.tabbar div { padding: 7px 2px 8px; color: var(--paper-mute); }
+.tabbar .on { color: var(--paper-ink); font-weight: 700; box-shadow: inset 0 2px 0 var(--paper-ink); }
+.popup { position: absolute; right: 6px; bottom: 34px; width: 66%; background: var(--paper); border: 1.5px solid var(--paper-ink); box-shadow: 3px 3px 0 var(--paper-ink); font-size: 9px; }
+.popup div { padding: 6px 8px; border-bottom: 1px solid var(--paper-line); }
+.popup div:last-child { border-bottom: 0; }
+.popup .grp { font-size: 7px; letter-spacing: .1em; text-transform: uppercase; color: var(--paper-mute); padding-block: 4px 3px; background: transparent; }
+.popup .hl { font-weight: 700; }
+
+/* drawer */
+.modal-top { display: flex; justify-content: space-between; align-items: center; padding: 5px 9px; border-bottom: 1.5px solid var(--paper-ink); font-size: 8.5px; font-weight: 600; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tile { border: 1.5px solid var(--paper-ink); padding: 8px 7px; display: grid; gap: 3px; align-content: start; min-height: 64px; }
+.tile svg { width: 18px; height: 18px; }
+.tile b { font-size: 9.5px; }
+.tile span { font-size: 7.5px; color: var(--paper-mute); }
+.tile.add { border-style: dashed; border-color: var(--paper-mute); color: var(--paper-mute); }
+.pill { display: inline-block; font-size: 7px; font-weight: 700; padding: 1px 5px; border: 1px solid var(--paper-ink); border-radius: 8px; justify-self: start; }
+.pill.solid { background: var(--paper-ink); color: var(--paper); }
+
+/* app pages */
+.back { font-size: 8.5px; color: var(--paper-mute); }
+.pin { font-family: var(--font-mono); font-size: 30px; font-weight: 500; letter-spacing: .18em; text-align: center; border: 1.5px solid var(--paper-ink); padding: 4px 0; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 8.5px; }
+.kv dt { color: var(--paper-mute); }
+.kv dd { margin: 0; font-weight: 600; }
+.list { border-top: 1px solid var(--paper-line); }
+.list div { display: flex; justify-content: space-between; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--paper-line); font-size: 8.5px; }
+.list div span:last-child { color: var(--paper-mute); flex: none; }
+.btn { border: 1.5px solid var(--paper-ink); text-align: center; padding: 7px; font-weight: 700; font-size: 9.5px; }
+.btn.primary { background: var(--paper-ink); color: var(--paper); }
+.spacer { flex: 1; }
+.small { font-size: 7.5px; color: var(--paper-mute); }
+
+/* spec blocks */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.two > * { min-width: 0; }
+pre.code { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; line-height: 1.55; font-size: 0.82rem; }
+.c { color: var(--muted); }
+.k { color: var(--accent); }
+
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+
+/* roadmap */
+.roadmap { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 8px; }
+.phase { position: relative; padding: 0 0 28px 26px; display: grid; gap: 8px; }
+.phase::before { content: ""; position: absolute; left: -8px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--muted); }
+.phase.done::before { background: var(--ok); border-color: var(--ok); }
+.phase.next::before { border-color: var(--accent); background: var(--accent); }
+.phase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.est { font-size: 0.8rem; font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--line); border-radius: 20px; padding: 1px 10px; }
+.status { font-size: 0.72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.status.done { color: var(--ok); }
+.status.next { color: var(--accent); }
+.phase ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
+.phase li b { color: var(--ink); font-weight: 600; }
+
+.risks { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.risk { display: grid; grid-template-columns: 4px 1fr; gap: 0 14px; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); }
+.risk:last-child { border-bottom: 0; }
+.risk .sev { border-radius: 0 3px 3px 0; background: var(--muted); }
+.risk .sev.hi { background: var(--warn); }
+.risk p { color: var(--muted); font-size: 0.93rem; }
+.risk h3 { font-family: var(--font-body); font-size: 0.98rem; }
+
+.decide { display: grid; gap: 10px; counter-reset: q; }
+.decide li { list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.decide ul { padding: 0; margin: 0; display: grid; gap: 10px; }
+.decide p { color: var(--muted); font-size: 0.93rem; }
+
+@media (max-width: 520px) {
+  .wrap { padding-inline: 16px; padding-block: 28px 60px; }
+  section { padding-block: 36px 4px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<style>
+/* native Nickel chrome + UI kit pieces */
+.nhead { display: flex; align-items: center; gap: 6px; padding: 7px 9px 6px; border-bottom: 1px solid var(--paper-ink); }
+.nhead b { font-size: 11px; }
+.nhead .chev { font-size: 13px; line-height: 1; }
+.nhead .act { margin-left: auto; font-size: 8px; color: var(--paper-mute); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--paper-line); font-size: 9px; }
+.row span:last-child { color: var(--paper-mute); }
+.tog { width: 26px; height: 13px; border: 1.5px solid var(--paper-ink); border-radius: 8px; position: relative; flex: none; }
+.tog::after { content: ""; position: absolute; top: 1.5px; left: 1.5px; width: 7px; height: 7px; border-radius: 50%; background: var(--paper-ink); }
+.tog.on { background: var(--paper-ink); }
+.tog.on::after { left: auto; right: 1.5px; background: var(--paper); }
+.field { border: 1px solid var(--paper-ink); padding: 5px 6px; font-size: 9px; color: var(--paper-mute); }
+.kit-label { font-size: 6.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--paper-mute); font-family: var(--font-mono); }
+.kit { display: grid; gap: 7px; }
+.btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.toast { align-self: center; background: var(--paper-ink); color: var(--paper); padding: 4px 10px; border-radius: 10px; font-size: 8.5px; }
+.refs td:first-child { white-space: nowrap; }
+.flow { counter-reset: s; display: grid; gap: 10px; margin: 0; padding: 0; }
+.flow li { list-style: none; display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
+.flow li::before { counter-increment: s; content: counter(s); font-family: var(--font-mono); font-size: .8rem; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent); display: grid; place-items: center; }
+.flow li div { display: grid; gap: 2px; min-width: 0; }
+.flow li p { color: var(--muted); font-size: .93rem; }
+.note { background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; font-size: .93rem; }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Kobo Libra 2 · firmware 4.38.23828 · native Nickel mod</span>
+  <h1>Ngăn Ứng Dụng</h1>
+  <p class="lede">A native app drawer built into the Kobo's own interface. Tools open as real Kobo screens with the same header, fonts, toggles and keyboard as Settings. A shared UI kit lets anyone build a new tool by describing its screen in a small JSON file, without writing C++.</p>
+  <div class="meta">
+    <span><b>Status:</b> plan v2, native route chosen</span>
+    <span><b>Effort:</b> about 5–7 weeks in phases</span>
+    <span><b>Already on device:</b> Vietnamese UI mod, En–Vi dictionary, LocalSend receiver</span>
+  </div>
+</header>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Vision</span>
+    <h2>Tools that feel like Kobo made them</h2>
+    <p>The Libra 2 is a small, slow e-ink screen, so a browser page will always feel foreign there. The drawer will draw with the same Qt widgets and stylesheet Nickel (Kobo's reading app) already uses. Your eye can't tell a tool from a Kobo settings page, and dark mode and font size follow the system.</p>
+  </div>
+  <div class="principles">
+    <div class="principle"><h3>Native, not lookalike</h3><p>The drawer runs inside Nickel and uses its widgets, stylesheet and on-screen keyboard. Screens get e-ink refresh handling for free.</p></div>
+    <div class="principle"><h3>UI kit, not C++ per app</h3><p>One native mod renders every tool. A tool ships a <code>ui.json</code> screen plus any script or binary. Developers never touch libnickel.</p></div>
+    <div class="principle"><h3>Fails soft</h3><p>If a firmware update changes Kobo internals, the drawer turns itself off and every tool stays reachable from the plain NickelMenu list.</p></div>
+    <div class="principle"><h3>One folder = one app</h3><p>Copy a folder into <code>.adds/apps/</code> to install, delete it to uninstall. The same folder works in the drawer and in the menu fallback.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">How it fits together</span>
+    <h2>One native host, many small tools</h2>
+    <p>A single mod, <b>libkoboapps.so</b>, loads into Nickel at startup using NickelHook, the same framework NickelMenu and NickelClock use. It adds the drawer and renders each tool's screen with the UI kit. Tools do their work in a separate process and talk to the host with one JSON message per line. A crashing tool therefore can't take Nickel down.</p>
+  </div>
+  <div class="diagram" role="img" aria-label="Architecture. Inside the Nickel process: libkoboapps.so containing the drawer and the UI kit renderer, built on NickelHook. It reads app folders in .adds/apps. Each app's backend runs as its own process and exchanges JSON lines with the host. NickelMenu provides a fallback menu list from the same folders.">
+    <svg viewBox="0 0 860 330" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/>
+        </marker>
+      </defs>
+      <rect x="10" y="14" width="430" height="300" rx="10" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+      <text x="26" y="38" font-size="12" font-weight="600" fill="var(--muted)" letter-spacing="1.5">NICKEL PROCESS (KOBO'S READING APP)</text>
+      <g font-size="13" fill="var(--ink)">
+        <rect x="30" y="56" width="170" height="54" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+        <text x="115" y="80" text-anchor="middle" font-weight="600">Stock UI</text>
+        <text x="115" y="98" text-anchor="middle" font-size="11" fill="var(--muted)">home · library · reader</text>
+
+        <rect x="30" y="140" width="390" height="150" rx="8" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="50" y="164" font-weight="700">libkoboapps.so</text>
+        <text x="185" y="164" font-size="11" fill="var(--muted)">built with NickelHook + NickelTC</text>
+        <rect x="50" y="178" width="160" height="94" rx="6" fill="var(--surface)" stroke="var(--ink)"/>
+        <text x="130" y="202" text-anchor="middle" font-weight="600">Drawer</text>
+        <text x="130" y="222" text-anchor="middle" font-size="11" fill="var(--muted)">"Ứng dụng" tab</text>
+        <text x="130" y="238" text-anchor="middle" font-size="11" fill="var(--muted)">app grid · status</text>
+        <rect x="240" y="178" width="160" height="94" rx="6" fill="var(--surface)" stroke="var(--ink)"/>
+        <text x="320" y="202" text-anchor="middle" font-weight="600">UI kit renderer</text>
+        <text x="320" y="222" text-anchor="middle" font-size="11" fill="var(--muted)">ui.json → Qt widgets</text>
+        <text x="320" y="238" text-anchor="middle" font-size="11" fill="var(--muted)">Nickel style · keyboard</text>
+
+        <rect x="240" y="56" width="180" height="54" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="330" y="80" text-anchor="middle" font-weight="600">NickelMenu</text>
+        <text x="330" y="98" text-anchor="middle" font-size="11" fill="var(--muted)">fallback list</text>
+
+        <rect x="520" y="40" width="320" height="106" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="540" y="64" font-weight="600" font-family="var(--font-mono)" font-size="12">.adds/apps/&lt;id&gt;/</text>
+        <text x="540" y="88" font-size="12" font-family="var(--font-mono)" fill="var(--muted)">app.json   · name, actions</text>
+        <text x="540" y="108" font-size="12" font-family="var(--font-mono)" fill="var(--muted)">ui.json    · screens</text>
+        <text x="540" y="128" font-size="12" font-family="var(--font-mono)" fill="var(--muted)">bin/       · backend</text>
+
+        <rect x="520" y="196" width="320" height="94" rx="6" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+        <text x="680" y="222" text-anchor="middle" font-weight="600">App backend (own process)</text>
+        <text x="680" y="244" text-anchor="middle" font-size="11" fill="var(--muted)">shell script · Go binary · anything</text>
+        <text x="680" y="264" text-anchor="middle" font-size="11" fill="var(--muted)">localsend, github-sync, …</text>
+      </g>
+      <g stroke="var(--muted)" stroke-width="1.5" fill="none">
+        <path d="M115 110 V172" marker-end="url(#ar)"/>
+        <path d="M420 80 C470 80 470 92 516 92" marker-end="url(#ar)"/>
+        <path d="M400 196 C460 196 460 120 516 120" marker-end="url(#ar)"/>
+        <path d="M400 236 H516" marker-end="url(#ar)" marker-start="url(#ar)"/>
+      </g>
+      <g font-size="11" fill="var(--muted)">
+        <text x="122" y="140">tab tap</text>
+        <text x="440" y="226">JSON lines</text>
+        <text x="448" y="150">reads</text>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Wireframes</span>
+    <h2>What you will see on the Kobo</h2>
+    <p>Drawn at the Libra 2's 1264 × 1680 proportions with example data. Every screen uses Nickel's own header with a back chevron, its list rows and its toggles. Nothing opens in a browser.</p>
+  </div>
+  <div class="gallery">
+
+    <figure>
+      <div class="device"><div class="screen" aria-label="Native drawer opened from the Ứng dụng tab">
+        <div class="sbar"><span>20:41</span><span>Wi-Fi · 82%</span></div>
+        <div class="nhead"><b>Ứng dụng</b><span class="act">3 ứng dụng</span></div>
+        <div class="s-body">
+          <div class="tiles">
+            <div class="tile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg>
+              <b>LocalSend</b><span class="pill solid">Đang nhận</span>
+            </div>
+            <div class="tile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="9" r="2.2"/><path d="M6 8.2v7.6M18 11.2c0 3-4 3.5-10.5 5.6"/></svg>
+              <b>GitHub</b><span>Lần cuối: 08/10 20:15</span>
+            </div>
+            <div class="tile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 4h4v16H5zM10 4h4v16h-4zM15.5 5l3.6-.9 3.4 15.6-3.6.8z"/></svg>
+              <b>Thư viện</b><span>Dọn trùng · sửa tiếng Việt</span>
+            </div>
+            <div class="tile add">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+              <b>Thêm ứng dụng</b><span>Chép thư mục vào .adds/apps</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+        </div>
+        <div class="tabbar"><div>Trang chủ</div><div>Sách</div><div>Thống kê</div><div class="on">Ứng dụng</div></div>
+      </div></div>
+      <figcaption>
+        <span class="tag">Drawer</span>
+        <h3>A real tab next to Books and Stats</h3>
+        <p>Tapping "Ứng dụng" (Apps) opens a native view instead of a pop-up menu. The bottom tab bar stays, just like the Home and Books tabs. Tiles show live status from each tool.</p>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="device"><div class="screen" aria-label="LocalSend tool screen built from UI kit components">
+        <div class="sbar"><span>20:42</span><span>Wi-Fi · 82%</span></div>
+        <div class="nhead"><span class="chev">‹</span><b>LocalSend</b><span class="act"><span class="pill solid">Đang nhận</span></span></div>
+        <div class="s-body">
+          <div class="s-sub">Mở LocalSend trên điện thoại, chọn máy này, nhập PIN.</div>
+          <div class="pin">4821</div>
+          <div class="list">
+            <div><span>Tên máy</span><span>Kobo Libra 2</span></div>
+            <div><span>IP</span><span>192.168.1.23</span></div>
+            <div style="align-items:center"><span>Tự cập nhật thư viện</span><span class="tog on" aria-label="on"></span></div>
+          </div>
+          <div class="small" style="font-weight:600;color:var(--paper-ink)">Đã nhận (ví dụ)</div>
+          <div class="list">
+            <div><span>Nhà Giả Kim.epub</span><span>1,2 MB</span></div>
+            <div><span>Đắc Nhân Tâm.epub</span><span>860 KB</span></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="btn primary">Dừng nhận</div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="tag">Tool screen</span>
+        <h3>LocalSend built from kit parts</h3>
+        <p>Header, BigCode (the PIN), KeyValue rows, a Toggle, a List and a Button. The backend pushes updates, like a new file arriving, and only the changed rows redraw. That avoids full-screen e-ink flashes.</p>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="device"><div class="screen" aria-label="GitHub sync settings screen with native keyboard field">
+        <div class="sbar"><span>20:44</span><span>Wi-Fi · 81%</span></div>
+        <div class="nhead"><span class="chev">‹</span><b>Đồng bộ GitHub</b></div>
+        <div class="s-body">
+          <div class="kit">
+            <span class="kit-label">Kho sách</span>
+            <div class="field">owner/repo</div>
+            <span class="kit-label">Thư mục</span>
+            <div class="field">books/</div>
+          </div>
+          <div class="list">
+            <div style="align-items:center"><span>Tự đồng bộ khi bật Wi-Fi</span><span class="tog" aria-label="off"></span></div>
+            <div><span>Lần cuối</span><span>08/10 20:15 · 0 mới</span></div>
+          </div>
+          <div class="small" style="font-weight:600;color:var(--paper-ink)">Đang tải 2 / 3 (ví dụ)</div>
+          <div class="bar" style="height:6px"><i style="width:66%"></i></div>
+          <div class="spacer"></div>
+          <div class="btn primary">Đồng bộ ngay</div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="tag">Tool screen</span>
+        <h3>GitHub sync with native input</h3>
+        <p>Text fields open Kobo's own keyboard, including the Vietnamese layout from the mod. The token is entered once and stored only in the app's folder. Sync only adds books and never deletes.</p>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="device"><div class="screen" aria-label="UI kit component sheet">
+        <div class="sbar"><span>UI kit v1</span><span>component sheet</span></div>
+        <div class="nhead"><span class="chev">‹</span><b>Header</b><span class="act">action</span></div>
+        <div class="s-body" style="gap:7px">
+          <div class="kit"><span class="kit-label">Text · Caption</span><div style="font-size:9.5px">Nội dung chính</div></div>
+          <div class="kit"><span class="kit-label">KeyValue · Toggle</span>
+            <div class="list" style="border-top:0">
+              <div><span>Khoá</span><span>Giá trị</span></div>
+              <div style="align-items:center"><span>Bật tắt</span><span class="tog on" aria-label="on"></span></div>
+            </div>
+          </div>
+          <div class="kit"><span class="kit-label">TextField</span><div class="field">Nhập…</div></div>
+          <div class="kit"><span class="kit-label">BigCode · Progress</span>
+            <div class="pin" style="font-size:18px;padding:2px 0">4821</div>
+            <div class="bar"><i style="width:40%"></i></div>
+          </div>
+          <div class="kit"><span class="kit-label">Button · primary / secondary</span>
+            <div class="btnrow"><div class="btn primary">Chạy</div><div class="btn">Huỷ</div></div>
+          </div>
+          <div class="kit"><span class="kit-label">Toast</span><div class="toast">Đã đồng bộ 3 sách</div></div>
+        </div>
+      </div></div>
+      <figcaption>
+        <span class="tag">UI kit</span>
+        <h3>Ten components, all native</h3>
+        <p>Header, Text, KeyValue, Toggle, TextField, BigCode, Progress, List, Button and Toast, plus a native confirm dialog. Each wraps Nickel's own widget where one exists, so any tool picks up dark mode and Kobo's styling.</p>
+      </figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">For developers</span>
+    <h2>A tool is two JSON files and a program</h2>
+    <p>The screen is declared in <code>ui.json</code>. The backend is any program that reads and writes one JSON object per line on stdin/stdout. It can be a shell script, Go or Python if the developer ships it. The host only runs actions listed in <code>app.json</code>.</p>
+  </div>
+  <div class="two">
+    <pre class="code"><span class="c">// ui.json: LocalSend main screen</span>
+{
+  <span class="k">"title"</span>: "LocalSend",
+  <span class="k">"badge"</span>: "$status",
+  <span class="k">"body"</span>: [
+    { <span class="k">"text"</span>: "Mở LocalSend trên điện thoại…" },
+    { <span class="k">"bigcode"</span>: "$pin" },
+    { <span class="k">"kv"</span>: [["Tên máy", "$alias"],
+              ["IP", "$ip"]] },
+    { <span class="k">"toggle"</span>: "Tự cập nhật thư viện",
+      <span class="k">"bind"</span>: "auto_rescan" },
+    { <span class="k">"list"</span>: "$received", <span class="k">"title"</span>: "Đã nhận" },
+    { <span class="k">"button"</span>: "Dừng nhận", <span class="k">"action"</span>: "stop",
+      <span class="k">"style"</span>: "primary" }
+  ]
+}</pre>
+    <pre class="code"><span class="c"># backend ⇄ host, one JSON object per line</span>
+
+<span class="c"># host → backend</span>
+{"event":"action","name":"start"}
+{"event":"toggle","bind":"auto_rescan","value":true}
+
+<span class="c"># backend → host</span>
+{"set":{"status":"Đang nhận","pin":"4821",
+        "ip":"192.168.1.23"}}
+{"append":{"received":["Nhà Giả Kim.epub","1,2 MB"]}}
+{"toast":"Đã nhận 1 sách"}
+{"request":"rescan_library"}
+{"request":"wifi_on"}</pre>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Request</th><th>What the host does</th><th>Fallback when the drawer is off</th></tr></thead>
+      <tbody>
+        <tr><td><code>wifi_on</code></td><td>Connects with Nickel's own Wi-Fi flow</td><td>NickelMenu <code>nickel_wifi:autoconnect</code></td></tr>
+        <tr><td><code>rescan_library</code></td><td>Asks Nickel to import new books</td><td>NickelMenu <code>nickel_misc:rescan_books</code></td></tr>
+        <tr><td><code>toast</code></td><td>Shows a native toast</td><td>Text shown in the menu's output box</td></tr>
+        <tr><td><code>confirm</code></td><td>Native Yes/No dialog, answer sent back</td><td>Action runs without asking</td></tr>
+        <tr><td><code>set</code> / <code>append</code></td><td>Updates bound values; only changed widgets redraw</td><td>Ignored; last output line shown</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Reverse engineering</span>
+    <h2>Mapping libnickel with Ghidra and Ghidra</h2>
+    <p>Nickel is closed source, but <code>libnickel.so</code> exports readable C++ and Qt symbols. Ghidra connects Ghidra to me through MCP. I can then list classes, read decompiled functions and trace how Kobo builds a settings screen, instead of you copying output by hand.</p>
+  </div>
+  <ol class="flow col">
+    <li><div><h3>Get libnickel for 4.38.23828</h3><p>Extract it from the official firmware package on the Mac, matching the version on your Kobo. The Kobo binary never goes into our repo or any shared file.</p></div></li>
+    <li><div><h3>Load it into Ghidra with Ghidra</h3><p>Install Ghidra, the Ghidra plugin and its Python bridge, then add it as an MCP server in the maintainer. One-time setup on your Mac.</p></div></li>
+    <li><div><h3>Find the pieces the kit needs</h3><p>How a view is pushed with the tab bar kept, the list-row and toggle widgets, the keyboard, toast and confirm dialog, and the library rescan call. NickelMenu, NickelDBus and NickelHardcover show where to start.</p></div></li>
+    <li><div><h3>Write a symbol table per firmware</h3><p>Every Kobo function the mod uses goes into <code>symbols-4.38.23828.md</code> with its signature. At startup the mod checks they all exist. If any is missing, the drawer disables itself and the menu fallback takes over.</p></div></li>
+    <li><div><h3>Re-check on each firmware update</h3><p>Diff the new libnickel against the table in Ghidra and update only what moved.</p></div></li>
+  </ol>
+  <div class="note">Reverse engineering here is for interoperability on a device you own, which is how NickelMenu and every other mod in the table below was made. Kobo's code stays on your Mac; we publish only our own code and the list of symbol names.</div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Open-source building blocks</span>
+    <h2>Projects we build on or learn from</h2>
+    <p>All of these were checked on GitHub today. The native mods are listed in NickelHook's own catalogue.</p>
+  </div>
+  <div class="tbl refs">
+    <table>
+      <thead><tr><th>Project</th><th>Role for us</th><th>Last update</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://github.com/pgaskin/NickelHook">pgaskin/NickelHook</a></td><td><b>Foundation.</b> Loads our mod into Nickel. Provides a failsafe that removes a mod which breaks startup, uninstall-by-file, and symbol lookup with error checks.</td><td>Jul 2026</td></tr>
+        <tr><td><a href="https://github.com/pgaskin/NickelTC">pgaskin/NickelTC</a></td><td><b>Toolchain.</b> Docker image with the Kobo compiler and Qt sysroot. NickelHook requires it. Old but stable.</td><td>Apr 2021</td></tr>
+        <tr><td><a href="https://github.com/LaurieWired/Ghidra">LaurieWired/Ghidra</a></td><td><b>RE bridge.</b> Lets me query Ghidra's analysis of libnickel directly.</td><td>Jun 2025</td></tr>
+        <tr><td><a href="https://github.com/pgaskin/NickelMenu">pgaskin/NickelMenu</a></td><td><b>Reference + fallback.</b> Shows how to add a bottom tab and call Nickel actions. Stays installed as the safety net.</td><td>Jun 2026</td></tr>
+        <tr><td><a href="https://github.com/shermp/NickelDBus">shermp/NickelDBus</a></td><td><b>Reference.</b> Native toasts, dialogs, Wi-Fi and library rescan, already mapped.</td><td>Apr 2024</td></tr>
+        <tr><td><a href="https://github.com/RedHatter/NickelHardcover">RedHatter/NickelHardcover</a></td><td><b>Reference.</b> A recent mod that adds its own native screens, the closest example to our drawer.</td><td>listed stable</td></tr>
+        <tr><td><a href="https://github.com/nicoverbruggen/NickelHome">nicoverbruggen/NickelHome</a></td><td><b>Reference.</b> Home screen changes, useful for the tab and tiles.</td><td>listed stable</td></tr>
+        <tr><td><a href="https://github.com/shermp/Kobo-UNCaGED">shermp/Kobo-UNCaGED</a></td><td><b>Reference.</b> A complete tool on stock UI (Calibre wireless) that drives Nickel through NickelDBus.</td><td>Jul 2024</td></tr>
+        <tr><td><a href="https://github.com/redphx/nickel-screensaver">redphx/nickel-screensaver</a></td><td><b>Reference.</b> By the author of the Vietnamese mod you installed. A small, clean NickelHook mod.</td><td>listed stable</td></tr>
+        <tr><td><a href="https://github.com/pgaskin/kobopatch-patches">pgaskin/kobopatch-patches</a></td><td><b>Knowledge base.</b> Years of notes on what libnickel functions do, per firmware.</td><td>Jan 2026</td></tr>
+        <tr><td><a href="https://github.com/NiLuJe/FBInk">NiLuJe/FBInk</a></td><td><b>Emergency output.</b> Draws text straight to the screen if Nickel UI is unavailable.</td><td>Aug 2026</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Build plan</span>
+    <h2>Seven phases, each leaves a working Kobo</h2>
+    <p>Estimates are my working time, not counting your testing on the device. Phase 1 ships tools right away and stays forever as the fallback.</p>
+  </div>
+  <div class="roadmap">
+    <div class="phase done">
+      <div class="phase-head"><span class="status done">Done today</span><h3>Phase 0 · clean base</h3></div>
+      <ul>
+        <li><b>KOReader removed</b>, backed up to <code>~/kobo-backup-20261008</code></li>
+        <li><b>Vietnamese UI mod</b> and <b>En–Vi dictionary</b> staged; install on eject</li>
+        <li><b>LocalSend receiver</b> in the menu; first test pending on device</li>
+      </ul>
+    </div>
+    <div class="phase next">
+      <div class="phase-head"><span class="status next">Next</span><h3>Phase 1 · app folders + menu fallback</h3><span class="est">≈ 1 day</span></div>
+      <ul>
+        <li>Define <code>app.json</code>; generate NickelMenu items from every app folder</li>
+        <li>Move LocalSend into <code>.adds/apps/</code>; build <b>GitHub sync</b> as app two</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><h3>Phase 2 · toolchain + RE setup</h3><span class="est">≈ 2–3 days</span></div>
+      <ul>
+        <li>NickelTC in Docker on your Mac; Ghidra + Ghidra connected to the maintainer</li>
+        <li>Load libnickel 4.38.23828; confirm Qt version and the key classes</li>
+        <li><b>Hello-world mod</b> that shows one native toast. Test the failsafe and the uninstall file on the device before anything bigger</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><h3>Phase 3 · drawer host</h3><span class="est">≈ 1 week</span></div>
+      <ul>
+        <li>"Ứng dụng" tab opens a native view with the app grid, keeping the tab bar</li>
+        <li>Starts and stops app backends, handles JSON lines, and checks symbols at startup</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><h3>Phase 4 · UI kit v1</h3><span class="est">≈ 1–2 weeks</span></div>
+      <ul>
+        <li>The ten components, built on Nickel's widgets wherever a match exists</li>
+        <li>Native keyboard, toasts and confirm dialogs; partial e-ink refresh; dark mode</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><h3>Phase 5 · port the tools</h3><span class="est">≈ 3–4 days</span></div>
+      <ul>
+        <li>LocalSend and GitHub sync get <code>ui.json</code> screens; a Library tool to remove duplicates and fix language tags</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div class="phase-head"><h3>Phase 6 · developer kit</h3><span class="est">≈ 1 week</span></div>
+      <ul>
+        <li><code>APPS.md</code> spec, a template app, and a validator for <code>app.json</code> / <code>ui.json</code></li>
+        <li><b>Mac preview</b>: renders <code>ui.json</code> at Kobo size in greyscale so developers iterate without the device</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Risks</span>
+    <h2>What could go wrong, and the guard for each</h2>
+  </div>
+  <div class="risks">
+    <div class="risk"><div class="sev hi"></div><div class="stack" style="gap:4px"><h3>Boot loop from a bad mod</h3><p>NickelHook's failsafe uninstalls a mod that crashes Nickel during startup. The mod's init stays tiny, and every new build is tested on your device in Phase 2 before features are added. Last resort: Kobo's own factory reset. Your books on USB storage are unaffected.</p></div></div>
+    <div class="risk"><div class="sev hi"></div><div class="stack" style="gap:4px"><h3>Firmware update changes libnickel</h3><p>The startup symbol check catches it and the drawer turns off cleanly. Tools keep working through the NickelMenu fallback until I update the symbol table, usually a few hours of Ghidra diffing. Turning off Kobo auto-update avoids surprises.</p></div></div>
+    <div class="risk"><div class="sev"></div><div class="stack" style="gap:4px"><h3>Old Qt and an ancient compiler</h3><p>Nickel runs an old Qt 5 and NickelTC uses an old GCC. NickelHook advises against the C++ standard library, so the kit uses plain Qt only.</p></div></div>
+    <div class="risk"><div class="sev"></div><div class="stack" style="gap:4px"><h3>Battery and storage safety</h3><p>The mod lives inside Nickel all the time, even during USB sessions. It sleeps until opened, never holds files open on <code>/mnt/onboard</code>, and runs backends only while their screen is open or a sync is running.</p></div></div>
+    <div class="risk"><div class="sev"></div><div class="stack" style="gap:4px"><h3>Apps run with full device access</h3><p>Backends run as root. Install only apps you or I wrote, or ones whose code you have read. A shared catalog waits until there is a way to trust apps.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="col stack">
+    <span class="eyebrow">Needed from you</span>
+    <h2>Four answers to start</h2>
+  </div>
+  <div class="decide col">
+    <ul>
+      <li><h3>Okay to install Ghidra + Ghidra on your Mac</h3><p>Needs Java 21, Ghidra, the Ghidra plugin, and an MCP entry in the maintainer's config. I'll show each step before running it.</p></li>
+      <li><h3>Okay to run a test mod on the Kobo</h3><p>Phase 2 loads a hello-world mod into Nickel. If it fails, the failsafe removes it. This is the first step with any boot-loop risk.</p></li>
+      <li><h3>GitHub repo and folder</h3><p>Repo as <code>owner/repo</code> and the books folder. You'll paste the read-only token into a file on the Kobo yourself.</p></li>
+      <li><h3>Turn off Kobo auto-update?</h3><p>Recommended while the drawer is young, so a firmware update never arrives before the symbol table is ready.</p></li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+</html>

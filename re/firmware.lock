@@ -1,0 +1,9 @@
+# Libra 2 (kobo9) firmware packages used for static symbol checks. Kobo binaries are NOT in the repo;
+# fetch with re/scripts/fetch-fw.sh <version> <cdn-month>. Columns are tab-separated.
+# verified = upgrade/ contains only mx6sll-ntx/*E70K10* boot files (Freescale i.MX6SLL, Libra 2), no mt8113.
+version	cdn_month	url	zip_size	zip_sha256	libnickel_sha256	libnickel_build_id	verified
+4.38.23828	Sep2026	https://ereaderfiles.kobo.com/firmwares/kobo9/Sep2026/kobo-update-4.38.23828.zip	121126185	cd256d96f33546c45379c9fcbc2b4cea78469afcfbac0b2efbee4bac87fd48b9	6bfde638eb7f188855701b1a5815322a6f9dadd775bf52e9c8b7752280ac66c1	83e34c5ae83879a99149102605914cabe2ca710d	mx6sll-E70K10
+4.38.23697	May2026	https://ereaderfiles.kobo.com/firmwares/kobo9/May2026/kobo-update-4.38.23697.zip	120808533	52c4474ccadf3bc2f88bfb37e1e12babb10130b19d136d88de5cddf811d94fa4	577235f308b4dea1c150caf87a376ecf34c8ecab04aacee0806feddd9e268744	38e89c617f414b62c6e06156bcf3645778041717	mx6sll-E70K10
+4.38.23684	Apr2026	https://ereaderfiles.kobo.com/firmwares/kobo9/Apr2026/kobo-update-4.38.23684.zip	120807586	fee83335275cca775be6db56a182359b21485130d7e9fd0e85cda91ffc5cf5f1	aef7faba853aad360038c8b03fcfeed37549b94412aec41274dc1d8589ef0945	a87790af73a8ec0f640e64411b7adce13ec87e80	mx6sll-E70K10
+4.38.23648	Mar2026	https://ereaderfiles.kobo.com/firmwares/kobo9/Mar2026/kobo-update-4.38.23648.zip	120798875	65137937297944ab9bce446783c8224f26658c4b8ffbdd74374b595dcd80eb1d	7b35c5b08628c56a0f46721f40889e4a1487642b95bef9f2ea9c16d6b43b4fff	70479607a2de037bdc7e8f149efb4316ef9fc427	mx6sll-E70K10
+4.38.23552	Nov2025	https://ereaderfiles.kobo.com/firmwares/kobo9/Nov2025/kobo-update-4.38.23552.zip	120793039	f88d2a8a01f140ff039acce721825b33dabe119d9f87f21f7a2f7da09b2be00f	42aefcd31d9c9915d892f1483638981e3b0ec0e695c4bdc00dfaeaa51c4d26a0	2e644e98cd245097776e552b3070be0b2e250a58	mx6sll-E70K10

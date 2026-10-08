@@ -1,0 +1,6 @@
+{
+  "msg.wifi_missing": "Wi-Fi is not connected.\nWait for Wi-Fi, then tap again.",
+  "msg.start_failed": "Could not start:",
+  "msg.started": "LocalSend is receiving books\n\nDevice name: {device}\nIP: {ip}\nPIN: {pin}\n\nKeep the device awake while sending.\nWhen done, tap 'Stop receiving'.",
+  "msg.stopped": "LocalSend stopped.\nThe LocalSend folder has {count} files.\nUpdating the library..."
+}

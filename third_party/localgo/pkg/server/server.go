@@ -1,0 +1,304 @@
+// Package server provides HTTP server functionality for LocalGo
+package server
+
+import (
+	"context"
+	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"net"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/cli"
+	"github.com/bethropolis/localgo/pkg/config"
+	"github.com/bethropolis/localgo/pkg/events"
+	"github.com/bethropolis/localgo/pkg/history"
+	"github.com/bethropolis/localgo/pkg/httputil"
+	"github.com/bethropolis/localgo/pkg/logging"
+	"github.com/bethropolis/localgo/pkg/server/handlers"
+	"github.com/bethropolis/localgo/pkg/server/services"
+)
+
+// Server manages the HTTP/S server lifecycle.
+type Server struct {
+	config          *config.Config
+	httpServer      *http.Server
+	router          *http.ServeMux
+	receiveService  *services.ReceiveService
+	sendService     *services.SendService
+	registryService *services.RegistryService
+	logger          *logging.Logger
+	historyLog      *history.Logger // closed in Shutdown()
+	shutdownCtx     context.Context
+	shutdownCancel  context.CancelFunc
+	// transferHook, when set before Start, routes transfer accept/reject
+	// decisions to an external controller (pkg/ipc) instead of the
+	// interactive terminal prompt.
+	transferHook    bool
+	pendingRegistry *handlers.PendingRegistry
+	// eventBroker, when set, receives transfer activity for IPC/SSE streaming.
+	eventBroker *events.Broker
+}
+
+// SetEventBroker enables streaming of transfer activity to IPC/SSE consumers.
+func (s *Server) SetEventBroker(broker *events.Broker) {
+	s.eventBroker = broker
+}
+
+// SetTransferHookEnabled routes transfer decisions to an external
+// controller instead of the interactive prompt. Must be called before Start.
+// The registry is available via PendingRegistry once the server is ready.
+func (s *Server) SetTransferHookEnabled(enabled bool) {
+	s.transferHook = enabled
+}
+
+// PendingRegistry returns the transfer-decision registry, or nil unless the
+// transfer hook was enabled before Start.
+func (s *Server) PendingRegistry() *handlers.PendingRegistry {
+	return s.pendingRegistry
+}
+
+// NewServer creates a new Server instance.
+func NewServer(cfg *config.Config, logger *logging.Logger) *Server {
+	httputil.SetLogger(logger)
+	router := http.NewServeMux()
+	receiveService := services.NewReceiveService()
+	sendService := services.NewSendService()
+	registryService := services.NewRegistryService()
+	shutdownCtx, shutdownCancel := context.WithCancel(context.Background())
+	return &Server{
+		config:          cfg,
+		router:          router,
+		receiveService:  receiveService,
+		sendService:     sendService,
+		registryService: registryService,
+		logger:          logger,
+		shutdownCtx:     shutdownCtx,
+		shutdownCancel:  shutdownCancel,
+	}
+}
+
+// securityMiddleware adds security headers and validates CORS origins.
+func securityMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+
+		// Block cross-origin requests from external websites.
+		// Native LocalSend clients never send an Origin header.
+		if origin := r.Header.Get("Origin"); origin != "" {
+			host := r.Host
+			if !strings.HasPrefix(origin, "http://"+host) && !strings.HasPrefix(origin, "https://"+host) &&
+				!strings.HasPrefix(origin, "http://localhost") && !strings.HasPrefix(origin, "https://localhost") &&
+				!strings.HasPrefix(origin, "http://127.0.0.1") && !strings.HasPrefix(origin, "https://127.0.0.1") &&
+				!strings.HasPrefix(origin, "http://[::1]") && !strings.HasPrefix(origin, "https://[::1]") {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// configureRoutes sets up the API routes.
+func (s *Server) configureRoutes() {
+	// Discovery Handlers (Phase 1)
+	discoveryHandler := handlers.NewDiscoveryHandler(s.config, s.registryService, s.sendService, s.logger)
+	s.router.HandleFunc("GET /api/localsend/v1/info", discoveryHandler.InfoHandler)
+	s.router.HandleFunc("GET /api/localsend/v2/info", discoveryHandler.InfoHandler)
+	s.router.HandleFunc("POST /api/localsend/v1/register", discoveryHandler.RegisterHandler)
+	s.router.HandleFunc("POST /api/localsend/v2/register", discoveryHandler.RegisterHandler)
+
+	// Receive Handlers (Phase 2)
+	path := s.config.HistoryFile
+	if path == "" {
+		path = history.DefaultPath()
+	}
+	if path != history.DisabledSentinel {
+		hl, err := history.NewLogger(path)
+		if err != nil {
+			s.logger.Warnf("Failed to initialize history logger at %s: %v", path, err)
+		} else {
+			s.historyLog = hl
+			s.logger.Infof("Transfer history will be written to %s", path)
+		}
+	}
+
+	receiveHandler := handlers.NewReceiveHandler(s.config, s.receiveService, s.historyLog, s.shutdownCtx, s.logger)
+	receiveHandler.SetEventBroker(s.eventBroker)
+	if s.transferHook {
+		s.pendingRegistry = receiveHandler.EnableTransferHook()
+	}
+	s.router.HandleFunc("POST /api/localsend/v1/prepare-upload", receiveHandler.PrepareUploadHandlerV1)
+	s.router.HandleFunc("POST /api/localsend/v2/prepare-upload", receiveHandler.PrepareUploadHandlerV2)
+	s.router.HandleFunc("POST /api/localsend/v2/upload", receiveHandler.UploadHandlerV2)
+	s.router.HandleFunc("POST /api/localsend/v2/cancel", receiveHandler.CancelHandler)
+
+	// Download Handlers
+	downloadHandler := handlers.NewDownloadHandler(s.config, s.sendService, s.logger)
+	downloadHandler.SetShutdownFn(func() {
+		go func() {
+			time.Sleep(200 * time.Millisecond)
+			if s.httpServer != nil {
+				s.httpServer.Close()
+			}
+		}()
+	})
+	s.router.HandleFunc("POST /api/localsend/v2/prepare-download", downloadHandler.PrepareDownloadHandler)
+	s.router.HandleFunc("GET /api/localsend/v2/download", downloadHandler.DownloadHandler)
+
+	// Root web landing page for browser access (fixes 404 on http://IP:PORT)
+	s.router.HandleFunc("GET /", downloadHandler.WebShareHandler)
+
+	s.logger.Info("Configured API routes.")
+}
+
+// Start runs the HTTP/S server.
+func (s *Server) Start(ctx context.Context, readyChan chan<- struct{}) error {
+	s.configureRoutes()
+
+	bindHost := "0.0.0.0"
+	if s.config.BindAddress != "" {
+		bindHost = s.config.BindAddress
+	}
+
+	addr := fmt.Sprintf("%s:%d", bindHost, s.config.Port)
+	s.httpServer = &http.Server{
+		Addr:              addr,
+		Handler:           securityMiddleware(s.router),
+		ReadTimeout:       0, // body timeout handled by MaxBytesReader / LimitReader
+		WriteTimeout:      300 * time.Second,
+		ReadHeaderTimeout: 30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		BaseContext:       func(net.Listener) context.Context { return s.shutdownCtx },
+	}
+
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		// Port occupied – retry with port 0 (OS assigns free port)
+		s.logger.Warnf("Port %d is busy, binding to a free port", s.config.Port)
+		cli.Notify("LocalGo: Port Changed",
+			fmt.Sprintf("Port %d was busy. Now running on a different port.", s.config.Port))
+
+		addr = fmt.Sprintf("%s:0", bindHost)
+		ln, err = net.Listen("tcp", addr)
+		if err != nil {
+			return fmt.Errorf("failed to bind port: %w", err)
+		}
+
+		actualPort := ln.Addr().(*net.TCPAddr).Port
+		s.config.Port = actualPort
+		addr = fmt.Sprintf("%s:%d", bindHost, actualPort)
+		s.httpServer.Addr = addr
+		s.logger.Infof("Server bound to port %d", actualPort)
+	}
+
+	serverErrChan := make(chan error, 1)
+
+	if s.config.HttpsEnabled {
+		s.logger.Infof("Starting HTTPS server on %s with alias %s", addr, s.config.Alias)
+		var cert tls.Certificate
+		var err error
+		if s.config.CustomTLSCertPath != "" && s.config.CustomTLSKeyPath != "" {
+			cert, err = tls.LoadX509KeyPair(s.config.CustomTLSCertPath, s.config.CustomTLSKeyPath)
+			if err == nil && len(cert.Certificate) > 0 {
+				if leaf, parseErr := x509.ParseCertificate(cert.Certificate[0]); parseErr == nil {
+					hash := sha256.Sum256(leaf.Raw)
+					s.config.SetCustomFingerprint(hex.EncodeToString(hash[:]))
+					s.logger.Infof("Using custom TLS certificate, fingerprint: %.16s...", hex.EncodeToString(hash[:]))
+				}
+			}
+		} else {
+			cert, err = tls.X509KeyPair([]byte(s.config.SecurityContext.Certificate), []byte(s.config.SecurityContext.PrivateKey))
+		}
+		if err != nil {
+			return fmt.Errorf("failed to load TLS key pair: %w", err)
+		}
+		s.httpServer.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			MinVersion:   tls.VersionTLS12,
+		}
+
+		tlsListener := tls.NewListener(ln, s.httpServer.TLSConfig)
+
+		go func() {
+			if err := s.httpServer.Serve(tlsListener); err != nil && err != http.ErrServerClosed {
+				serverErrChan <- err
+			}
+		}()
+	} else {
+		s.logger.Infof("Starting HTTP server on %s with alias %s", addr, s.config.Alias)
+		go func() {
+			if err := s.httpServer.Serve(ln); err != nil && err != http.ErrServerClosed {
+				serverErrChan <- err
+			}
+		}()
+	}
+
+	// Signal that the port is successfully bound
+	if readyChan != nil {
+		readyChan <- struct{}{}
+	}
+
+	// Wait for context cancellation or server error
+	select {
+	case err := <-serverErrChan:
+		return fmt.Errorf("server failed to start: %w", err)
+	case <-ctx.Done():
+		s.logger.Info("Server shutting down...")
+		return s.Shutdown(context.Background())
+	}
+}
+
+// Shutdown gracefully shuts down the server.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.httpServer == nil {
+		return nil
+	}
+
+	// Cancel the shutdown context so in-flight handlers can abort early
+	if s.shutdownCancel != nil {
+		s.shutdownCancel()
+	}
+
+	// Close all active receive sessions to stop progress bars and clean up
+	if s.receiveService != nil {
+		s.receiveService.CloseAllSessions()
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			s.logger.Warn("Server shutdown timed out — some in-flight requests interrupted")
+		} else {
+			return fmt.Errorf("server shutdown failed: %w", err)
+		}
+	}
+	s.logger.Info("Server stopped.")
+	s.httpServer = nil
+	if s.receiveService != nil {
+		s.receiveService.Close()
+	}
+	if s.historyLog != nil {
+		if err := s.historyLog.Close(); err != nil {
+			s.logger.Warnf("Failed to close history log: %v", err)
+		}
+		s.historyLog = nil
+	}
+	return nil
+}
+
+// GetSendService returns the SendService instance.
+func (s *Server) GetSendService() *services.SendService {
+	return s.sendService
+}

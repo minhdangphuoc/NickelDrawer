@@ -1,0 +1,1 @@
+{"schema":1,"id":"bad-rescan","name":"Demo","version":"1.0.0","actions":[{"id":"go","label":"Chạy","run":"bin/run.sh","output":"show","rescan":"slow"}]}

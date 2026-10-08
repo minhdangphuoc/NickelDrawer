@@ -1,0 +1,49 @@
+
+experimental :menu_main_15505_0_enabled: 1
+experimental :menu_main_15505_1_label: Sách
+experimental :menu_main_15505_2_enabled: 1
+experimental :menu_main_15505_2_label: Thống kê
+experimental :menu_main_15505_3_enabled: 0
+experimental :menu_main_15505_3_label: Notes
+experimental :menu_main_15505_4_enabled: 0
+experimental :menu_main_15505_5_enabled: 1
+experimental :menu_main_15505_default: 1
+experimental :menu_main_15505_enabled: 1
+
+experimental :menu_main_15505_label :Ứng dụng
+experimental :menu_main_15505_icon :/mnt/onboard/.adds/nm/.cog.png
+
+menu_item :main :Screensaver :cmd_output :500 :quiet :test -e /mnt/onboard/.disabled/screensaver
+      chain_failure : skip : 3
+      chain_success : cmd_spawn : quiet: mkdir -p /mnt/onboard/.disabled && mv /mnt/onboard/.disabled/screensaver /mnt/onboard/.kobo/screensaver
+      chain_success : dbg_toast : Screensaver is now ON.
+      chain_always : skip : -1
+      chain_failure : cmd_spawn : quiet: mkdir -p /mnt/onboard/.disabled && mv /mnt/onboard/.kobo/screensaver /mnt/onboard/.disabled/screensaver
+      chain_success : dbg_toast : Screensaver is now OFF.
+
+menu_item :main :Screenshots        :nickel_setting     :toggle :screenshots
+menu_item :main :Auto USB           :nickel_setting     :toggle :auto_usb_gadget
+
+menu_item :main :Legibility Status    :cmd_output :500 :/mnt/onboard/.adds/scripts/legibility_status.sh
+
+menu_item :main :Legibility Toggle    :cmd_output :5000 :/mnt/onboard/.adds/scripts/toggle_wk_rendering.sh
+
+menu_item :main    :IP Address      :cmd_output         :500:/sbin/ifconfig | /usr/bin/awk '/inet addr/{print substr($2,6)}'
+
+menu_item :main :Invert & Reboot    :nickel_setting :toggle: invert
+    chain_success :power :reboot
+menu_item :main :Sleep              :power              :sleep
+menu_item :main :Reboot             :power              :reboot
+
+menu_item :reader :Dark Mode        :nickel_setting     :toggle :dark_mode
+
+experimental:hide_home_row1col2_enabled:1
+
+experimental:hide_home_row3_enabled:1
+
+menu_item :main :Nhận sách LocalSend :nickel_wifi :autoconnect
+  chain_success :cmd_output :9500 :/mnt/onboard/.adds/localsend/start.sh
+menu_item :main :Dừng LocalSend :cmd_output :3000 :/mnt/onboard/.adds/localsend/stop.sh
+  chain_success :nickel_misc :rescan_books
+
+menu_item :main :Library Reload :nickel_misc :rescan_books_full

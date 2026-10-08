@@ -1,0 +1,11 @@
+{
+  "menu.refresh": "Ứng dụng · Làm mới danh sách",
+  "menu.errors": "Ứng dụng · Lỗi ({count})",
+  "refresh.summary": "Đã làm mới: {apps} ứng dụng, {items} mục",
+  "refresh.failures": "Lỗi: {count} ứng dụng — chọn 'Ứng dụng · Lỗi'",
+  "refresh.failed": "Không làm mới được.",
+  "errors.none": "Không có lỗi.",
+  "errors.unreadable": "Không đọc được danh sách lỗi.",
+  "errors.more": "... và {count} lỗi nữa",
+  "genmenu.summary": "Đã ghi {file}: {apps} ứng dụng, {items} mục, {invalid} lỗi"
+}

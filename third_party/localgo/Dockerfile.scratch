@@ -1,0 +1,46 @@
+# Harvest certificates from alpine
+FROM alpine:3.21 AS certs
+
+# Runtime Stage — scratch (no OS, no shell)
+FROM scratch
+
+# CA certificates for HTTPS
+COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=certs /etc/ssl/certs/ /etc/ssl/certs/
+
+WORKDIR /app
+
+# Copy binary for the correct platform compiled by GoReleaser
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/localgo /localgo
+
+# Expose ports (TCP and UDP for discovery)
+EXPOSE 53317/tcp
+EXPOSE 53317/udp
+
+# Point config and downloads to mounted volumes
+ENV LOCALSEND_DOWNLOAD_DIR="/app/downloads" \
+    LOCALSEND_SECURITY_DIR="/app/config" \
+    LOCALSEND_AUTO_ACCEPT="true" \
+    XDG_CACHE_HOME="/app/config/cache"
+
+# OCI labels
+LABEL org.opencontainers.image.title="LocalGo"
+LABEL org.opencontainers.image.description="LocalSend v2.1 Protocol Implementation in Go"
+LABEL org.opencontainers.image.url="https://github.com/bethropolis/localgo"
+LABEL org.opencontainers.image.source="https://github.com/bethropolis/localgo"
+LABEL org.opencontainers.image.license="MIT"
+LABEL org.opencontainers.image.vendor="Bethropolis"
+LABEL org.opencontainers.image.ref.name="localgo"
+LABEL com.centurylinklabs.watchtower.enable="true"
+
+# Graceful shutdown
+STOPSIGNAL SIGTERM
+
+# Health check using native LocalGo CLI utility
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/localgo", "health"]
+
+# Uses Go-native permission fix + privilege drop; no shell
+ENTRYPOINT ["/localgo", "docker-start"]
+CMD ["localgo", "serve"]

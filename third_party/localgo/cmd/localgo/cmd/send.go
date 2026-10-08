@@ -1,0 +1,410 @@
+package cmd
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/cli"
+	"github.com/bethropolis/localgo/pkg/clipboard"
+	"github.com/bethropolis/localgo/pkg/discovery"
+	"github.com/bethropolis/localgo/pkg/help"
+	"github.com/bethropolis/localgo/pkg/model"
+	"github.com/bethropolis/localgo/pkg/network"
+	"github.com/bethropolis/localgo/pkg/send"
+	"github.com/charmbracelet/huh/spinner"
+	"github.com/spf13/cobra"
+	"github.com/bethropolis/localgo/pkg/logging"
+)
+
+var (
+	sendfiles          []string
+	sendip             string
+	sendto             string
+	sendport           int
+	sendtimeout        int
+	sendalias          string
+	sendconcurrency    int
+	sendmulticastiface string
+	sendclipboard      bool
+	sendstdin          bool
+	sendquick          bool
+	sendpin            string
+	sendzip            bool
+	sendjson           bool
+)
+
+var sendCmd = &cobra.Command{
+	Use:          "send [FILES...]",
+	Short:        "Send a file to another LocalGo device",
+	SilenceUsage: true,
+	Args:         cobra.ArbitraryArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Positional paths merge with --file (neither form wins).
+		files := append([]string{}, sendfiles...)
+		files = append(files, args...)
+		var sendOpts []send.SendOption
+
+		if sendjson {
+			cli.SetJSONMode(true)
+		}
+		sendLogger := logging.Global()
+		if cli.JSONMode() {
+			// Keep stdout pure NDJSON: library logs would corrupt the event stream.
+			sendLogger = logging.NewQuiet()
+		}
+
+		if sendclipboard && sendstdin {
+			return fmt.Errorf("cannot use both --clipboard and --stdin")
+		}
+
+		if sendstdin {
+			textBytes, err := io.ReadAll(cmd.InOrStdin())
+			if err != nil {
+				return fmt.Errorf("failed to read from standard input: %w", err)
+			}
+			if len(textBytes) == 0 {
+				return fmt.Errorf("standard input is empty")
+			}
+			sendOpts = append(sendOpts, send.WithInMemoryFile("stdin.txt", textBytes))
+		}
+
+		if sendclipboard {
+			text, err := clipboard.Read()
+			if err != nil {
+				return fmt.Errorf("failed to read from clipboard: %w", err)
+			}
+			if strings.TrimSpace(text) == "" {
+				return fmt.Errorf("clipboard is empty or does not contain text")
+			}
+			sendOpts = append(sendOpts, send.WithInMemoryFile("clipboard.txt", []byte(text)))
+		}
+
+		if len(files) == 0 && len(sendOpts) == 0 {
+			if cli.JSONMode() {
+				return fmt.Errorf("no file specified: pass files as arguments or use --file/--clipboard/--stdin with --json (no interactive picker)")
+			}
+			selected, err := cli.LaunchFilePicker()
+			if err == nil && selected != "" {
+				files = []string{selected}
+			}
+		}
+
+		if len(files) == 0 && len(sendOpts) == 0 {
+			return fmt.Errorf("no file specified: pass files as arguments, or use --file, --clipboard, or select from the file browser")
+		}
+
+		for _, file := range files {
+			if _, err := os.Stat(file); os.IsNotExist(err) && len(sendOpts) == 0 {
+				return fmt.Errorf("file not found: %s", file)
+			}
+		}
+
+		// Handle directories: compress to a temp zip when --zip is set,
+		// otherwise fail with a hint (raw directory trees are never sent
+		// implicitly). Applies to both the --ip and discovery send paths.
+		var tempZips []string
+		defer func() {
+			for _, tz := range tempZips {
+				_ = os.Remove(tz)
+			}
+		}()
+
+		processedFiles := make([]string, 0, len(files))
+		for _, file := range files {
+			info, err := os.Stat(file)
+			if err != nil || !info.IsDir() {
+				processedFiles = append(processedFiles, file)
+				continue
+			}
+			if !sendzip {
+				return fmt.Errorf("'%s' is a directory; use --zip to compress and send it as an archive", file)
+			}
+			if !Cfg.Quiet {
+				cli.PrintInfo("Compressing directory '%s'...", filepath.Base(file))
+			}
+			zipPath, err := zipDirToTemp(file)
+			if err != nil {
+				return fmt.Errorf("failed to compress directory %s: %w", file, err)
+			}
+			tempZips = append(tempZips, zipPath)
+			processedFiles = append(processedFiles, zipPath)
+			sendOpts = append(sendOpts, send.WithRemoteName(zipPath, zipArchiveName(file)))
+		}
+		files = processedFiles
+
+		// Direct send via --ip: skip discovery entirely
+		if sendip != "" {
+			host, portStr, err := net.SplitHostPort(sendip)
+			if err != nil {
+				// No port specified; treat whole string as host
+				host = sendip
+				portStr = ""
+			}
+			parsedIP := net.ParseIP(host)
+			if parsedIP == nil {
+				// Not a raw IP — try hostname resolution (mDNS, DNS, etc.)
+				ips, err := net.LookupIP(host)
+				if err != nil || len(ips) == 0 {
+					return fmt.Errorf("invalid IP address or unresolvable hostname: %s", host)
+				}
+				parsedIP = ips[0].To4()
+				if parsedIP == nil {
+					// Use first result even if it's IPv6; the caller handles it
+					parsedIP = ips[0]
+				}
+			}
+
+			port := sendport
+			if portStr != "" {
+				p, err := strconv.Atoi(portStr)
+				if err != nil {
+					return fmt.Errorf("invalid port in --ip: %w", err)
+				}
+				port = p
+			}
+			if port == 0 {
+				port = Cfg.Port
+			}
+
+			device := &model.Device{
+				Alias: host,
+				IP:    parsedIP.String(),
+				Port:  port,
+			}
+
+			if sendalias != "" {
+				Cfg.Alias = sendalias
+			}
+			if sendconcurrency > 0 {
+				Cfg.Concurrency = sendconcurrency
+			}
+
+			totalFiles := len(files) + len(sendOpts)
+			cli.PrintHeader(fmt.Sprintf("Sending %d file(s)", totalFiles))
+			for _, file := range files {
+				fileInfo, err := os.Stat(file)
+				if err == nil {
+					cli.PrintInfo("- %s (%s)", filepath.Base(file), cli.FormatBytes(fileInfo.Size()))
+				}
+			}
+			if sendclipboard {
+				cli.PrintInfo("- clipboard (in-memory)")
+			}
+			if sendstdin {
+				cli.PrintInfo("- stdin (in-memory)")
+			}
+			cli.PrintInfo("To: %s:%d", host, port)
+			fromAlias := Cfg.Alias
+			if Cfg.Private {
+				fromAlias = "Anonymous"
+			}
+			cli.PrintInfo("From: %s", fromAlias)
+
+			// Ctrl+C/SIGTERM cancels the transfer; the send pipeline then
+		// releases the receiver's session via /cancel.
+		ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stopSignals()
+		ctx, cancel := context.WithTimeout(ctx, time.Duration(sendtimeout)*time.Second)
+			defer cancel()
+
+			// TOFU check: verify cached fingerprint matches before connecting
+		if device.Fingerprint != "" {
+			pc := discovery.NewPeerCache(sendLogger)
+			if err := send.VerifyDeviceFingerprint(pc, device); err != nil {
+				return err
+			}
+		}
+
+		if err := send.SendToDevice(ctx, Cfg, device, files, sendLogger, sendOpts...); err != nil {
+				return fmt.Errorf("failed to send files: %w", err)
+		}
+
+		// Save fingerprint for TOFU on subsequent connections
+		if device.Fingerprint != "" {
+			pc := discovery.NewPeerCache(sendLogger)
+			pc.Save(device)
+		}
+
+			cli.PrintSuccess("Files sent successfully!")
+			return nil
+		}
+
+		target := sendto
+		var selectedDevice *model.Device
+
+		if target == "" {
+			sendConfig := discovery.DefaultServiceConfig()
+			sendConfig.MulticastConfig.InterfaceName = Cfg.MulticastInterface
+
+			var devices []*model.Device
+			var discErr error
+
+			_ = spinner.New().
+				Title("Looking for devices on your network (multicast)...").
+				Action(func() {
+					devices, discErr = discovery.DiscoverDevices(
+						context.Background(),
+						sendConfig,
+						Cfg,
+						Cfg.HttpsEnabled,
+					)
+				}).
+				Run()
+
+			if discErr != nil {
+				return fmt.Errorf("discovery failed: %w", discErr)
+			}
+
+			// Unicast fallback: if multicast finds nothing, automatically scan subnets
+			if len(devices) == 0 {
+				localIPs, ipErr := network.GetLocalIPAddresses()
+				if ipErr == nil && len(localIPs) > 0 {
+					// Prioritize the subnet connected to the default gateway
+					if gwIP, err := network.PrimaryLANIP(); err == nil {
+						for i, ip := range localIPs {
+							if ip.Equal(gwIP) && i > 0 {
+								localIPs[0], localIPs[i] = localIPs[i], localIPs[0]
+								break
+							}
+						}
+					}
+
+					_ = spinner.New().
+						Title("No devices via multicast. Scanning local subnets...").
+						Action(func() {
+							registerDto := Cfg.ToRegisterDto()
+							httpFallback := discovery.NewHTTPDiscovery(nil, registerDto, nil, nil)
+
+							var ips []net.IP
+							for _, ip := range localIPs {
+								subnetIPs, err := network.GetUsableSubnetIPsFromIP(ip)
+								if err == nil {
+									ips = append(ips, subnetIPs...)
+								}
+							}
+							ips = append(ips, net.ParseIP("127.0.0.1"))
+
+							scanCtx, cancelScan := context.WithTimeout(context.Background(), 10*time.Second)
+							defer cancelScan()
+
+							devices, _ = httpFallback.ScanNetwork(scanCtx, ips, Cfg.Port)
+						}).
+						Run()
+				}
+			}
+
+			if len(devices) == 0 {
+				return fmt.Errorf("no devices found on the network via multicast or subnet scan")
+			}
+
+			selected := cli.PickDevice(devices, Cfg.Private)
+			if selected == nil {
+				return fmt.Errorf("no device selected")
+			}
+			target = selected.Alias
+			sendport = selected.Port
+			selectedDevice = selected
+		}
+
+		if sendalias != "" {
+			Cfg.Alias = sendalias
+		}
+		if sendconcurrency > 0 {
+			Cfg.Concurrency = sendconcurrency
+		}
+		if sendmulticastiface != "" {
+			Cfg.MulticastInterface = sendmulticastiface
+		}
+		if sendquick {
+			Cfg.DiscoveryStrategy = "fast"
+		}
+		if sendpin != "" {
+			Cfg.PIN = sendpin
+		}
+
+		cli.PrintHeader(fmt.Sprintf("Sending %d files", len(files)))
+		for _, file := range files {
+			fileInfo, err := os.Stat(file)
+			if err == nil {
+				cli.PrintInfo("- %s (%s)", filepath.Base(file), cli.FormatBytes(fileInfo.Size()))
+			}
+		}
+		fromAlias := Cfg.Alias
+		if Cfg.Private {
+			fromAlias = "Anonymous"
+		}
+
+		// Ctrl+C/SIGTERM cancels the transfer; the send pipeline then
+		// releases the receiver's session via /cancel.
+		ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stopSignals()
+		ctx, cancel := context.WithTimeout(ctx, time.Duration(sendtimeout)*time.Second)
+		defer cancel()
+
+		var err error
+		if selectedDevice != nil {
+			cli.PrintInfo("To: %s (%s:%d)", selectedDevice.Alias, selectedDevice.IP, selectedDevice.Port)
+			cli.PrintInfo("From: %s", fromAlias)
+			err = send.SendToDevice(ctx, Cfg, selectedDevice, files, sendLogger, sendOpts...)
+		} else {
+			cli.PrintInfo("To: %s", target)
+			cli.PrintInfo("From: %s", fromAlias)
+			err = send.SendFiles(ctx, Cfg, files, target, sendport, sendLogger, sendOpts...)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to send files: %w", err)
+		}
+
+		cli.PrintSuccess("Files sent successfully!")
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(sendCmd)
+	sendCmd.Flags().StringSliceVar(&sendfiles, "file", []string{}, "File or directory to send")
+	sendCmd.Flags().StringVar(&sendip, "ip", "", "Target device IP (with optional :port, skips discovery)")
+	sendCmd.Flags().StringVar(&sendto, "to", "", "Target device alias (omit to pick interactively)")
+	sendCmd.Flags().IntVar(&sendport, "port", 0, "Target device port")
+	sendCmd.Flags().IntVar(&sendtimeout, "timeout", 30, "Send timeout in seconds")
+	sendCmd.Flags().StringVar(&sendalias, "alias", "", "Sender alias")
+	sendCmd.Flags().IntVar(&sendconcurrency, "concurrency", 0, "Max parallel uploads (0 = use default)")
+	sendCmd.Flags().StringVar(&sendmulticastiface, "iface", "", "Multicast network interface name")
+	sendCmd.Flags().BoolVarP(&sendclipboard, "clipboard", "c", false, "Send current system clipboard text directly")
+	sendCmd.Flags().BoolVar(&sendstdin, "stdin", false, "Send text read from standard input (stdin)")
+	sendCmd.Flags().BoolVarP(&sendquick, "quick", "q", false, "Skip subnet scan; use cache + multicast only")
+	sendCmd.Flags().StringVar(&sendpin, "pin", "", "PIN for receiver authentication")
+	sendCmd.Flags().BoolVarP(&sendzip, "zip", "z", false, "Zip directories before sending")
+	sendCmd.Flags().BoolVar(&sendjson, "json", false, "Machine-readable NDJSON progress events on stdout")
+
+	sendCmd.RegisterFlagCompletionFunc("to", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		cache := discovery.NewPeerCache(nil)
+		peers := cache.GetPeers()
+		var suggestions []string
+		for _, peer := range peers {
+			alias := peer.Alias
+			if Cfg != nil && Cfg.Private {
+				alias = cli.AnonymizedAlias(peer)
+			}
+			if strings.HasPrefix(strings.ToLower(alias), strings.ToLower(toComplete)) {
+				suggestions = append(suggestions, alias)
+			}
+		}
+		return suggestions, cobra.ShellCompDirectiveNoFileComp
+	})
+
+	sendCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if h := help.GetCommandHelp("send"); h != nil {
+			help.ShowCommandHelp(*h)
+		}
+	})
+}

@@ -1,0 +1,313 @@
+// Package network provides network-related utilities for LocalGo
+package network
+
+import (
+	"errors"
+	"fmt"
+	"net"
+	"strings"
+
+	"github.com/jackpal/gateway"
+)
+
+// systemInterface is a network interface paired with its IPv4 addresses.
+// It exists so interface enumeration can be performed without netlink, which
+// the Android/Termux sandbox blocks (net.Interfaces() returns EPERM there).
+type systemInterface struct {
+	net.Interface
+	addrs []*net.IPNet
+}
+
+// systemInterfaces returns all system interfaces with their IPv4 addresses.
+// It uses netlink-based enumeration (net.Interfaces); on android it
+// transparently falls back to ioctl-based enumeration when netlink is
+// unavailable (see platformInterfaceFallback).
+func systemInterfaces() ([]systemInterface, error) {
+	ifs, err := net.Interfaces()
+	if err != nil {
+		return platformInterfaceFallback(err)
+	}
+
+	out := make([]systemInterface, 0, len(ifs))
+	for _, i := range ifs {
+		addrs, err := i.Addrs()
+		if err != nil {
+			continue
+		}
+		si := systemInterface{Interface: i}
+		for _, a := range addrs {
+			if ipn, ok := a.(*net.IPNet); ok && ipn.IP.To4() != nil {
+				si.addrs = append(si.addrs, ipn)
+			}
+		}
+		out = append(out, si)
+	}
+	return out, nil
+}
+
+// systemInterfaceByName returns the interface with the given name, or an error.
+func systemInterfaceByName(name string) (*systemInterface, error) {
+	ifs, err := systemInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	for i := range ifs {
+		if ifs[i].Name == name {
+			return &ifs[i], nil
+		}
+	}
+	return nil, fmt.Errorf("interface %q not found", name)
+}
+
+// EnumerateInterfaces returns all system interfaces. Unlike net.Interfaces,
+// this works even where netlink is blocked (e.g. Android/Termux).
+func EnumerateInterfaces() ([]net.Interface, error) {
+	ifs, err := systemInterfaces()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]net.Interface, 0, len(ifs))
+	for _, i := range ifs {
+		out = append(out, i.Interface)
+	}
+	return out, nil
+}
+
+// InterfaceByName returns the named system interface. Unlike net.InterfaceByName,
+// this works even where netlink is blocked (e.g. Android/Termux).
+func InterfaceByName(name string) (*net.Interface, error) {
+	si, err := systemInterfaceByName(name)
+	if err != nil {
+		return nil, err
+	}
+	iface := si.Interface
+	return &iface, nil
+}
+
+// GetLocalIP returns the primary non-loopback IP address of the machine
+func GetLocalIP() (string, error) {
+	ifs, err := systemInterfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, i := range ifs {
+		if (i.Flags&net.FlagUp) == 0 || (i.Flags&net.FlagLoopback) != 0 {
+			continue
+		}
+		for _, ipn := range i.addrs {
+			if !ipn.IP.IsLoopback() {
+				return ipn.IP.String(), nil
+			}
+		}
+	}
+
+	return "", errors.New("no suitable local IP address found")
+}
+
+// GetLocalIPAddresses returns a list of local IP addresses for all non-loopback interfaces
+func GetLocalIPAddresses() ([]net.IP, error) {
+	var ips []net.IP
+	ifs, err := systemInterfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, i := range ifs {
+		// Skip down and loopback interfaces
+		if (i.Flags&net.FlagUp) == 0 || (i.Flags&net.FlagLoopback) != 0 {
+			continue
+		}
+		for _, ipn := range i.addrs {
+			ips = append(ips, ipn.IP)
+		}
+	}
+	return ips, nil
+}
+
+// GetInterfaceIPs returns all IP addresses for a specific network interface
+func GetInterfaceIPs(interfaceName string) ([]string, error) {
+	iface, err := systemInterfaceByName(interfaceName)
+	if err != nil {
+		return nil, err
+	}
+
+	var ips []string
+	for _, ipn := range iface.addrs {
+		ips = append(ips, ipn.IP.String())
+	}
+	return ips, nil
+}
+
+// FormatAddress formats an IP address and port into a URL
+func FormatAddress(ip net.IP, port int, https bool) string {
+	protocol := "http"
+	if https {
+		protocol = "https"
+	}
+
+	ipStr := ip.String()
+
+	// Check if it's an IPv6 address
+	if strings.Contains(ipStr, ":") {
+		return fmt.Sprintf("%s://[%s]:%d", protocol, ipStr, port)
+	}
+
+	return fmt.Sprintf("%s://%s:%d", protocol, ipStr, port)
+}
+
+// GetPreferredOutboundIP gets the preferred IP address for outbound connections
+func GetPreferredOutboundIP() (net.IP, error) {
+	// Connect to a public IP (no actual connection is made)
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine preferred outbound IP: %w", err)
+	}
+	defer conn.Close()
+
+	// Get the local address
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP, nil
+}
+
+// ParseCIDRRange parses a CIDR notation (e.g. "192.168.1.0/24") and returns
+// all usable host IPs in that range (network and broadcast addresses excluded).
+func ParseCIDRRange(cidr string) ([]net.IP, error) {
+	_, ipnet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CIDR %q: %w", cidr, err)
+	}
+
+	ip4 := ipnet.IP.To4()
+	if ip4 == nil {
+		return nil, fmt.Errorf("CIDR %q is not an IPv4 range", cidr)
+	}
+
+	ones, bits := ipnet.Mask.Size()
+	hostBits := bits - ones
+	if hostBits < 2 || hostBits > 30 {
+		return nil, fmt.Errorf("CIDR %q prefix length must be /8–/30", cidr)
+	}
+
+	base := uint32(ip4[0])<<24 | uint32(ip4[1])<<16 | uint32(ip4[2])<<8 | uint32(ip4[3])
+	totalHosts := (1 << hostBits) - 2
+	var ips []net.IP
+	for i := 1; i <= totalHosts; i++ {
+		addr := base + uint32(i)
+		ips = append(ips, net.IPv4(byte(addr>>24), byte(addr>>16), byte(addr>>8), byte(addr)))
+	}
+	return ips, nil
+}
+
+// GetSubnetIPs returns all IP addresses in the same /24 subnet as the given IP
+func GetSubnetIPs(ip net.IP) []net.IP {
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return nil
+	}
+
+	var ips []net.IP
+	// Assume /24 subnet for local discovery (most common)
+	// Iterate 1-254
+	for i := 1; i <= 254; i++ {
+		// Create a copy of the base IP
+		newIP := make(net.IP, len(ip4))
+		copy(newIP, ip4)
+		newIP[3] = byte(i)
+
+		// Skip if it matches the original IP (optional, but scan logic might want to include self for testing)
+		// Keeping self allows "finding" the local node which confirms scan is running.
+		ips = append(ips, newIP)
+	}
+	return ips
+}
+
+// GetInterfaceIPNet returns the IPv4 network (IP + subnet mask) for the named interface.
+// Returns nil if the interface has no IPv4 address.
+func GetInterfaceIPNet(ifaceName string) (*net.IPNet, error) {
+	iface, err := systemInterfaceByName(ifaceName)
+	if err != nil {
+		return nil, fmt.Errorf("interface %q: %w", ifaceName, err)
+	}
+	if len(iface.addrs) > 0 {
+		return iface.addrs[0], nil
+	}
+	return nil, fmt.Errorf("interface %q has no IPv4 address", ifaceName)
+}
+
+// GetUsableSubnetIPsFromIP returns all usable host IPs in the subnet of the
+// interface that owns the given IP, respecting its actual netmask. Falls back
+// to a flat /24 scan if the interface cannot be determined.
+func GetUsableSubnetIPsFromIP(ip net.IP) ([]net.IP, error) {
+	ipStr := ip.String()
+	ifs, err := systemInterfaces()
+	if err != nil {
+		return GetSubnetIPs(ip), nil
+	}
+	for _, i := range ifs {
+		if (i.Flags&net.FlagUp) == 0 || (i.Flags&net.FlagLoopback) != 0 {
+			continue
+		}
+		for _, ipn := range i.addrs {
+			if ipn.IP.String() == ipStr {
+				return GetUsableSubnetIPs(i.Name)
+			}
+		}
+	}
+	return GetSubnetIPs(ip), nil
+}
+
+// GetUsableSubnetIPs returns all usable host IPs in the subnet of the named
+// interface, respecting its actual netmask. Subnets with more than 1022 hosts
+// (larger than /22) are capped at /22 to keep scanning practical. Network and
+// broadcast addresses are excluded.
+func GetUsableSubnetIPs(ifaceName string) ([]net.IP, error) {
+	ipnet, err := GetInterfaceIPNet(ifaceName)
+	if err != nil {
+		return nil, err
+	}
+
+	ip4 := ipnet.IP.To4()
+	if ip4 == nil {
+		return nil, fmt.Errorf("interface %q has no IPv4 address", ifaceName)
+	}
+
+	ones, bits := ipnet.Mask.Size()
+	hostBits := bits - ones
+
+	// Cap at /22 for practical scanning (max 1022 usable hosts)
+	effectiveMask := ipnet.Mask
+	if hostBits > 10 {
+		effectiveMask = net.CIDRMask(22, bits)
+		hostBits = bits - 22
+	}
+
+	if hostBits < 2 {
+		return nil, fmt.Errorf("interface %q subnet prefix /%d is too small for scanning", ifaceName, bits-hostBits)
+	}
+
+	maskBits := []byte{effectiveMask[0], effectiveMask[1], effectiveMask[2], effectiveMask[3]}
+	base := uint32(ip4[0])<<24 | uint32(ip4[1])<<16 | uint32(ip4[2])<<8 | uint32(ip4[3])
+	base &= uint32(maskBits[0])<<24 | uint32(maskBits[1])<<16 | uint32(maskBits[2])<<8 | uint32(maskBits[3])
+
+	totalHosts := (1 << hostBits) - 2
+	var ips []net.IP
+	for i := 1; i <= totalHosts; i++ {
+		addr := base + uint32(i)
+		ips = append(ips, net.IPv4(byte(addr>>24), byte(addr>>16), byte(addr>>8), byte(addr)))
+	}
+	return ips, nil
+}
+
+// DefaultGatewayIP returns the IP address of the default network gateway.
+func DefaultGatewayIP() (net.IP, error) {
+	return gateway.DiscoverGateway()
+}
+
+// PrimaryLANIP returns the local IP address on the interface that owns
+// the default gateway. This is useful for prioritizing the real LAN
+// subnet when scanning, rather than scanning Docker/VPN subnets.
+func PrimaryLANIP() (net.IP, error) {
+	return gateway.DiscoverInterface()
+}

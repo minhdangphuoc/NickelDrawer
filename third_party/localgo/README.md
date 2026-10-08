@@ -1,0 +1,236 @@
+# LocalGo
+
+[![Go Version](https://img.shields.io/badge/Go-1.26%2B-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://golang.org)
+[![Protocol](https://img.shields.io/badge/LocalSend-v2.1-4CAF50?style=for-the-badge&logo=protocol.ai&logoColor=white)](https://github.com/localsend/protocol)
+[![License](https://img.shields.io/badge/License-MIT-F7DF1E?style=for-the-badge&logoColor=black)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/bethropolis/localgo?style=for-the-badge&logo=github&color=181717&logoColor=white)](https://github.com/bethropolis/localgo/releases/latest)
+[![Build](https://img.shields.io/github/actions/workflow/status/bethropolis/localgo/ci.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=build)](https://github.com/bethropolis/localgo/actions/workflows/ci.yml)
+[![GHCR](https://img.shields.io/badge/container-ghcr.io-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://github.com/bethropolis/localgo/pkgs/container/localgo)
+[![Platforms](https://img.shields.io/badge/Platforms-Linux%20%7C%20macOS%20%7C%20Windows-6e40c9?style=for-the-badge&logoColor=white)](https://github.com/bethropolis/localgo)
+
+A Go implementation of the LocalSend v2.1 protocol for secure, cross-platform file sharing.
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Commands](#commands)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [For Developers](#for-developers)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- **Complete LocalSend v2.1 Protocol** - Works with LocalSend apps (v3 planned)
+- **Secure** - HTTPS with auto-generated certificates, PIN-protected transfers, fingerprint TOFU verification
+- **Fast Discovery** - Multicast UDP + HTTP fallback + CIDR range scanning
+- **Multi-file Transfers** - Send multiple files concurrently with progress bars
+- **Web Share** - Share files via browser download link with QR code and one-shot mode
+- **Clipboard Integration** - Incoming text/plain transfers copied to clipboard instantly; send clipboard text directly
+- **Privacy Mode** - Anonymize device identity during discovery and transfer (`--private`)
+- **Metadata Preserved** - File timestamps preserved on transfer; EXIF/metadata stripping in private mode
+- **Cross-Platform** - Linux, macOS, Windows, and Android (Termux)
+
+## Quick Start
+
+### Installation
+
+#### Quick install (macOS, Linux)
+```bash
+curl -fsSL https://bethropolis.github.io/localgo/install.sh | bash
+```
+
+####  User installation
+```bash
+# clone repo
+git clone https://github.com/bethropolis/localgo.git
+cd localgo
+
+# installs a user systemd service and completions
+./scripts/install.sh
+```
+
+#### using aur (Arch Linux)
+```bash
+yay -S localgo-bin
+```
+
+#### using homebrew (macOS/Linux)
+```bash
+brew tap bethropolis/tap
+brew install localgo
+```
+
+#### using scoop (Windows)
+```powershell
+scoop bucket add bethropolis https://github.com/bethropolis/scoop-bucket
+scoop install localgo
+```
+
+#### using docker / podman
+```bash
+mkdir -p localgo/downloads localgo/config
+docker pull ghcr.io/bethropolis/localgo:latest
+docker run -d \
+  -p 53317:53317 \
+  -v ./localgo/config:/app/config \
+  -v ./localgo/downloads:/app/downloads \
+  ghcr.io/bethropolis/localgo:latest
+```
+
+> [!NOTE]
+> more install options in [installation documentation](docs/GETTING_STARTED.md)
+
+### Usage
+
+```bash
+# Start server to receive files
+localgo serve
+
+# Discover devices
+localgo discover
+
+# Send a file
+localgo send --file document.pdf --to "My Phone"
+
+# Send clipboard contents directly
+localgo send --clipboard --to "My Phone"
+
+# Send with PIN authentication
+localgo send --file secret.pdf --to "My Phone" --pin 1234
+
+# Fast discovery (skip cache probe)
+localgo send --file large.zip --quick
+
+# Send directly to an IP (skips discovery)
+localgo send --ip 192.168.1.42:53317 --file photo.jpg
+
+# Scan a specific CIDR range
+localgo scan --range 192.168.1.0/24
+
+# Inspect transfer history logs
+localgo history
+
+# Share files for web download (single-use)
+localgo share --file document.pdf --once
+
+# Share files for web download
+localgo share --file document.pdf
+```
+
+> [!TIP]
+> To get the best visual experience with localgo's modern terminal interface, using a [Nerd Font](https://www.nerdfonts.com/) (e.g. JetBrainsMono, FiraCode) is highly recommended.
+
+### Docker and Podman
+
+For full details on deployment, macvlan networking, read-only root filesystem, watchtower, and more, see the [container documentation](docs/CONTAINER.md).
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOCALSEND_ALIAS` | hostname | Device name |
+| `LOCALSEND_PORT` | 53317 | Server port |
+| `LOCALSEND_DOWNLOAD_DIR` | ./downloads | Download directory |
+| `LOCALSEND_PIN` | — | Optional PIN protection |
+| `LOCALSEND_FORCE_HTTP` | false | Use HTTP instead of HTTPS |
+| `LOCALSEND_DEVICE_TYPE` | desktop | Device type (mobile/desktop/laptop/tablet/server/headless/web/other) |
+| `LOCALSEND_DEVICE_MODEL` | LocalGo | Device model string |
+| `LOCALSEND_AUTO_ACCEPT` | false | Auto-accept incoming files without prompting |
+| `LOCALSEND_NO_CLIPBOARD` | false | Save incoming text as a file instead of clipboard |
+| `LOCALSEND_LOG_LEVEL` | info | Log verbosity (debug/info/warn/error) |
+| `LOCALSEND_HISTORY` | (auto) | Path to transfer history file |
+| `LOCALSEND_EXEC` | — | Shell command to run after each received file |
+| `LOCALSEND_QUIET` | false | Minimal output mode |
+| `LOCALSEND_CONCURRENCY` | 4 | Max parallel upload workers |
+| `LOCALSEND_MULTICAST_INTERFACE` | (all) | Network interface for multicast |
+| `LOCALSEND_MULTICAST_GROUP` | 224.0.0.167 | Multicast group address |
+| `LOCALSEND_DISCOVERY_STRATEGY` | full | Discovery strategy (full/fast) |
+| `LOCALSEND_SHELL` | (auto) | Shell prefix for exec hooks |
+| `LOCALSEND_CLIPBOARD_WRITE_CMD` | (auto) | Custom clipboard write command |
+| `LOCALSEND_CLIPBOARD_READ_CMD` | (auto) | Custom clipboard read command |
+| `LOCALSEND_TLS_CERT` | — | Custom TLS certificate path |
+| `LOCALSEND_TLS_KEY` | — | Custom TLS private key path |
+| `LOCALSEND_NOTIFICATION_CMD` | (auto) | Custom notification command |
+| `LOCALSEND_MAX_BODY_SIZE` | 0 | Max request body size (0 = unlimited) |
+| `LOCALSEND_SECURITY_DIR` | (auto) | Security context directory |
+| `LOCALSEND_FILE_CONFLICT_RESOLUTION` | rename | File conflict mode (rename/overwrite/skip) |
+| `LOCALSEND_BIND_ADDRESS` | (all) | Bind to specific IP address |
+| `LOCALSEND_STATIC_PEERS` | — | Comma-separated list of static peer IP:port |
+| `LOCALSEND_TRUSTED_FINGERPRINTS` | — | Comma-separated list of trusted device fingerprints |
+
+### Example
+
+```bash
+export LOCALSEND_ALIAS="File Server"
+export LOCALSEND_DOWNLOAD_DIR="/srv/files"
+export LOCALSEND_PIN="123456"
+localgo serve
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `serve` | Start server to receive files |
+| `share` | Share files via web download |
+| `discover` | Find devices via multicast |
+| `scan` | Find devices via HTTP scan |
+| `send` | Send files to a device |
+| `info` | Show device information |
+| `devices` | List discovered devices |
+| `history` | Show transfer history log |
+| `stop` | Stop a running daemon |
+| `config` | Manage configuration (get/set/add/remove/open/unset/list/path) |
+| `version` | Show version information |
+
+Run `localgo help` for more options.
+
+## Documentation
+
+Detailed guides available in [docs/](docs/):
+
+- [Configuration](docs/CONFIGURATION.md) - All settings
+- [Container](docs/CONTAINER.md) - Container deployment
+- [CLI Reference](docs/CLI_REFERENCE.md) - Command details
+- [Deployment](docs/DEPLOYMENT.md) - Production setup
+
+## Troubleshooting
+
+**Discovery not working:**
+```bash
+# Use HTTP scan instead
+localgo scan --timeout 15
+```
+
+**Port in use:**
+```bash
+# Use different port
+localgo serve --port 8080
+```
+
+**Permission denied:**
+```bash
+# Fix download directory
+chmod 755 ~/Downloads/LocalGo
+```
+
+## For Developers
+
+Want to build on top of LocalGo or contribute?
+
+- **[Library Guide](docs/LIBRARY_GUIDE.md)**: How to use LocalGo as a Go library.
+- **[Code Walkthrough](docs/CODE_WALKTHROUGH.md)**: Understand the internal architecture.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request or report an issue.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file.

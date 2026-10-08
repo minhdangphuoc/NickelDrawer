@@ -1,0 +1,1 @@
+{"schema":1,"id":"bad-run-dotdot","name":"Demo","version":"1.0.0","actions":[{"id":"go","label":"Chạy","run":"..\/x.sh","output":"show"}]}

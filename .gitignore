@@ -1,0 +1,8 @@
+build/
+downloads/
+backups/
+.DS_Store
+__pycache__/
+dist/
+local/
+re/symbols/*/exports.txt

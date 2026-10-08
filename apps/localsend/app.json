@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "localsend",
+  "name": "LocalSend",
+  "version": "1.0.0",
+  "description": "Receive books from your phone with LocalSend",
+  "actions": [
+    {
+      "id": "start",
+      "label": "Start receiving",
+      "run": "bin/start.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "wifi": true,
+      "rescan": "none"
+    },
+    {
+      "id": "stop",
+      "label": "Stop receiving",
+      "run": "bin/stop.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "quick"
+    }
+  ]
+}

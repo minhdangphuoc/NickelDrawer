@@ -1,0 +1,2638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ngăn Ứng Dụng Build Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#1-goals-non-goals-success-criteria">1. Goals, non-goals, success criteria</a><a href="#2-architecture-recap-and-fixed-decisions">2. Architecture recap and fixed decisions</a><a href="#3-firmware-support-matrix">3. Firmware support matrix</a><a href="#4-phase-by-phase-breakdown">4. Phase-by-phase breakdown</a><a href="#5-calendar-timeline-milestones-and-gates">5. Calendar timeline, milestones and gates</a><a href="#6-reverse-engineering-workplan">6. Reverse-engineering workplan</a><a href="#7-ui-kit-spec-v1-and-protocol-spec">7. UI kit spec v1 and protocol spec</a><a href="#8-safety-and-testing-strategy">8. Safety and testing strategy</a><a href="#9-validation">9. Validation</a><a href="#10-blocker-reports">10. Blocker reports</a><a href="#11-repo-structure-build-ci-versioning-and-packaging">11. Repo structure, build, CI, versioning and packaging</a><a href="#12-risk-register">12. Risk register</a><a href="#13-open-questions-and-decisions-for-the-user">13. Open questions and decisions for the user</a><a href="#14-summary-gantt-table">14. Summary Gantt table</a><a href="#15-appendix-reference-facts-collected-during-planning-8-oct-2026">15. Appendix: reference facts collected during planning (8 Oct 2026)</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">Kobo Libra 2 · native app drawer · detailed plan v3</span>
+      <h1>Ngăn Ứng Dụng build plan</h1>
+      <p class="lede">The full task-by-task plan, timeline, validation and blocker process behind the <a href="plan-overview.html">overview with wireframes</a>. Firmware download links were checked against Kobo's servers on 8 Oct 2026. Items marked <mark>verify</mark> must be confirmed before the task that depends on them.</p>
+      <div class="facts">
+        <div><b>11 weeks</b><span>12 Oct → 23 Dec 2026</span></div>
+        <div><b>≈265 h</b><span>agent work</span></div>
+        <div><b>9 sessions</b><span>on-device tests, ~5.5 h total</span></div>
+        <div><b>7 gates</b><span>M1 + G1–G6</span></div>
+        <div><b>5 firmware</b><span>4.38.23552 → 23828</span></div>
+      </div>
+    </header>
+    
+<p>Native "app drawer" mod for the Kobo Libra 2 (Mark 9 / "Io", 1264×1680, 300 dpi), stock Nickel UI, firmware 4.38.23828.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plan version</td>
+<td>v3-detailed, 8 Oct 2026 (expands <code>body.html</code> plan v2)</td>
+</tr>
+<tr>
+<td>Developer</td>
+<td>the maintainer, ~5 focused hours/day</td>
+</tr>
+<tr>
+<td>Tester / owner</td>
+<td>the user, batched on-device test sessions (the device stays in daily use)</td>
+</tr>
+<tr>
+<td>Start</td>
+<td>Mon 12 Oct 2026</td>
+</tr>
+<tr>
+<td>Planned end (v1.0 release)</td>
+<td>Wed 23 Dec 2026 (11 weeks incl. 1 buffer week and the firmware-matrix work)</td>
+</tr>
+<tr>
+<td>Source of truth for design</td>
+<td><code>scratchpad/body.html</code> (architecture, wireframes, kit component list, protocol sketch)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Anything marked <mark>verify</mark> was not confirmed first-hand during planning and must be checked before the task that depends on it.</p>
+<hr />
+<h2 id="1-goals-non-goals-success-criteria">1. Goals, non-goals, success criteria</h2>
+<h3 id="11-goals">1.1 Goals</h3>
+<ol>
+<li>An <strong>"Ứng dụng" (Apps) tab</strong> in Nickel's bottom navigation bar that opens a native drawer view listing installed apps, drawn with Nickel's own widgets and stylesheet so it is indistinguishable from a Kobo screen.</li>
+<li>A <strong>UI kit renderer</strong> inside the same mod that turns each app's <code>ui.json</code> into native Qt widgets (header with back chevron, list rows, toggles, text fields using Kobo's keyboard, buttons, progress, toasts, confirm dialogs).</li>
+<li><strong>App backends as separate processes</strong> (shell, Go, anything) speaking one JSON object per line over stdin/stdout. A crashing backend never takes Nickel down.</li>
+<li><strong>One folder = one app</strong>: <code>.adds/apps/&lt;id&gt;/</code> with <code>app.json</code>, <code>ui.json</code>, <code>bin/</code>, <code>data/</code>. Copy to install, delete to uninstall.</li>
+<li><strong>Fail soft</strong>: a per-firmware symbol table and a startup symbol check; on an unknown firmware or a missing symbol the drawer disables itself and every app stays reachable through NickelMenu items generated from <code>app.json</code>.</li>
+<li><strong>Supported firmware</strong>: the five newest Libra 2 firmware builds (see section 3), all on the 4.x line.</li>
+<li>Three first apps: <strong>LocalSend receiver</strong>, <strong>GitHub private-repo book sync</strong> (add-only), <strong>Library tool</strong> (dedupe, <code>dc:language</code>/<code>xml:lang</code> → <code>vi</code>, NFC normalisation).</li>
+<li>A <strong>developer kit</strong> (spec, template app, validator, Mac preview) so a new app needs no C++.</li>
+</ol>
+<h3 id="12-non-goals-v1">1.2 Non-goals (v1)</h3>
+<ul>
+<li>No app catalog / store, no code signing, no sandboxing (backends run as root; only install apps you wrote or read).</li>
+<li>No support for firmware 3.x or 5.x (NickelMenu, NickelHook ecosystem and kobo-tieng-viet are 4.x only).</li>
+<li>No reader-view (in-book) integration; the drawer lives in the main navigation only.</li>
+<li>No replacement of Nickel's home screen, no theming beyond what Nickel's own stylesheet gives (dark mode follows the system).</li>
+<li>No Qt QML, no C++ standard library in the mod (NickelHook guidance), no browser-based UI.</li>
+<li>No background daemons that run all the time; backends run only while their screen is open or an explicit long-running job (sync, receive) is active.</li>
+</ul>
+<h3 id="13-success-criteria-measurable">1.3 Success criteria (measurable)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Criterion</th>
+<th>Target</th>
+<th>How measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>Drawer open latency (tab tap → drawer fully painted)</td>
+<td>≤ 600 ms with 3 apps, ≤ 1000 ms with 20 apps</td>
+<td><code>nh_log</code> timestamps around view push; user stopwatch for sanity</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>App screen open latency (tile tap → screen painted, backend started)</td>
+<td>≤ 800 ms for a shell backend, ≤ 1200 ms for a Go backend</td>
+<td>log timestamps</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>Boot safety</td>
+<td>0 boot loops across all test installs; failsafe proven once on purpose</td>
+<td>test log</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>Idle cost of the mod when no app screen is open</td>
+<td>0 extra processes, 0 timers firing, ≤ 1 MB RSS growth of Nickel after 72 h</td>
+<td><code>/proc/&lt;pid&gt;/status</code> VmRSS before/after soak; <code>top</code></td>
+</tr>
+<tr>
+<td>S5</td>
+<td>Battery impact idle</td>
+<td>≤ 1 % extra drain per 24 h in sleep compared with the user's baseline week</td>
+<td>battery % readings at fixed times (section 9.6)</td>
+</tr>
+<tr>
+<td>S6</td>
+<td>CPU while an app screen is open but idle</td>
+<td>≤ 2 % average over 60 s</td>
+<td><code>top -d 5</code> sampled via telnet/ssh or a log script</td>
+</tr>
+<tr>
+<td>S7</td>
+<td>Memory of the host per open screen</td>
+<td>≤ 4 MB extra RSS per screen, released on back</td>
+<td>VmRSS deltas</td>
+</tr>
+<tr>
+<td>S8</td>
+<td>USB mass-storage</td>
+<td>No file handles on <code>/mnt/onboard</code> held longer than 200 ms; USB connect during an open app screen works and the screen closes cleanly</td>
+<td><code>lsof</code>-style check via <code>/proc/*/fd</code>; manual test</td>
+</tr>
+<tr>
+<td>S9</td>
+<td>Firmware coverage</td>
+<td>Static symbol check passes on all 5 supported <code>libnickel.so</code> builds in CI; runtime detect disables cleanly on an unknown build</td>
+<td>CI job + on-device test</td>
+</tr>
+<tr>
+<td>S10</td>
+<td>Uninstall</td>
+<td>Creating <code>.adds/koboapps/uninstall</code> removes the mod on next boot, leaving Nickel stock; NickelMenu items still work</td>
+<td>manual test</td>
+</tr>
+<tr>
+<td>S11</td>
+<td>UI parity</td>
+<td>User rates each kit screen "looks like a Kobo screen" ≥ 4/5 in sign-off</td>
+<td>sign-off checklist</td>
+</tr>
+<tr>
+<td>S12</td>
+<td>Protocol robustness</td>
+<td>100 % of failure-injection cases (section 9.7) handled without a Nickel crash</td>
+<td>test log</td>
+</tr>
+<tr>
+<td>S13</td>
+<td>Developer kit</td>
+<td>A new "hello" app can be written from the template and shown on device in ≤ 30 minutes by following <code>APPS.md</code></td>
+<td>timed exercise</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-architecture-recap-and-fixed-decisions">2. Architecture recap and fixed decisions</h2>
+<p>Taken from <code>body.html</code> and the NickelHook/NickelMenu/NickelDBus sources read during planning.</p>
+<ul>
+<li><strong>Mod name</strong>: <code>libkoboapps.so</code> (NickelHook requires ≥ 3-letter unique names; under 3 letters are reserved for pgaskin/shermp). Installed by <code>KoboRoot.tgz</code> to <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> (the Qt plugin path NickelHook mods use — <mark>verify</mark> exact path from <code>NickelHook.mk</code> when the toolchain is set up; NickelMenu installs <code>libnm.so</code> there).</li>
+<li><strong>Framework</strong>: NickelHook (<code>nh.c</code>, <code>NickelHook.h</code>, <code>NickelHook.mk</code>) as a git submodule, built with NickelTC (<code>ghcr.io/pgaskin/nickeltc:1</code>, GCC 4.9.4, Qt 5.2.1 sysroot, <code>-march=armv7-a -mtune=cortex-a8 -mfpu=neon -mfloat-abi=hard -mthumb</code>). NickelTC is x86_64 only: on Apple Silicon run Docker with <code>--platform linux/amd64</code> (Rosetta/QEMU emulation; slower but works — <mark>verify</mark> on first build).</li>
+<li><strong>NickelHook features used</strong>: <code>struct nh_info{ name, desc, uninstall_flag, uninstall_xflag, failsafe_delay }</code>, <code>struct nh_hook{ sym, sym_new, lib, out, desc, optional }</code>, <code>struct nh_dlsym{ name, out, desc, optional }</code>, <code>nh_log</code>, <code>nh_dump_log</code>, <code>nh_delete_file</code>. All libnickel symbols for the drawer are <code>optional = true</code> so a missing symbol never fails init; the mod's own <code>init()</code> then decides "drawer on" or "drawer off, menu fallback only".</li>
+<li><strong>Tab bar</strong>: same technique as NickelMenu's <code>menu_main_15505</code> path: hook <code>MainNavView::MainNavView(QWidget*)</code> (<code>_ZN11MainNavViewC1EP7QWidget</code>), find its <code>QHBoxLayout</code>, construct a <code>MainNavButton</code> (<code>_ZN13MainNavButtonC1EP7QWidget</code>, <code>setPixmap</code>, <code>setActivePixmap</code>, <code>setText</code>, signal <code>tapped()</code>), bridge <code>tapped()</code> to our slot. Pixmap style: Nickel uses PNG icon paths; the drawer ships light/dark PNG icons matching Nickel's stroke weight.</li>
+<li><strong>View push</strong>: <code>MainWindowController::sharedInstance()</code> + <code>MainWindowController::pushView(QWidget*)</code> (<code>_ZN20MainWindowController8pushViewEP7QWidget</code>, used by NickelHardcover) and <code>currentView()</code>. Whether <code>pushView</code> keeps the bottom tab bar visible, and how Nickel's own Home/Books views are constructed with the bar, is the main RE spike question (gate G2).</li>
+<li><strong>Dialogs/keyboard</strong>: <code>ConfirmationDialogFactory::getConfirmationDialog</code>, <code>ConfirmationDialog::setTitle/setText/setAcceptButtonText/setRejectButtonText/showCloseButton/addWidget</code>, <code>N3DialogFactory::getDialog</code>, <code>N3Dialog::showKeyboard/hideKeyboard/keyboardFrame/enableFullViewMode/setTitle</code>, <code>KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&amp;)</code>, <code>KeyboardReceiver(QLineEdit*, bool)</code>, <code>TouchLineEdit</code>, <code>TouchTextEdit</code>, <code>TouchCheckBox</code>, <code>TouchLabel</code>, <code>N3ButtonLabel</code>, <code>SettingContainer</code>, <code>N3ConfirmationTextEditField</code> (all seen in NickelHardcover / NickelDBus sources).</li>
+<li><strong>Toast</strong>: <code>MainWindowController::toast(QString const&amp;, QString const&amp;, int)</code>.</li>
+<li><strong>Wi-Fi / rescan / settings</strong>: <code>WirelessWorkflowManager::sharedInstance/connectWireless(bool,bool)/connectWirelessSilently/isInternetAccessible</code>, <code>PlugWorkflowManager::sharedInstance/sync()</code> (rescan books), <code>N3FSSyncManager::sharedInstance/sync(QStringList*)</code>, <code>Settings</code> + <code>ReadingSettings::getDarkMode/setDarkMode</code>.</li>
+<li><strong>Backends</strong>: <code>QProcess</code> per open app, JSON lines on stdin/stdout, stderr to the app's log, <code>SIGTERM</code> then <code>SIGKILL</code> on close; never a shell with the user's data path interpolated.</li>
+<li><strong>NickelMenu fallback</strong>: <code>gen-menu</code> tool (part of the mod and also a standalone script) writes <code>.adds/nm/apps</code> entries from <code>app.json</code> files (NickelMenu reads every file in <code>.adds/nm/</code>). Items use <code>cmd_spawn</code>, <code>cmd_output</code>, <code>nickel_wifi:autoconnect</code>, <code>nickel_misc:rescan_books</code>.</li>
+<li><strong>Storage rule</strong>: everything under <code>/mnt/onboard</code> is opened, read/written and closed within one Qt signal handler or the init function; nothing stays open. Backends own their <code>data/</code> folder and must obey the same rule (they are killed on USB connect, see section 8.7).</li>
+</ul>
+<hr />
+<h2 id="3-firmware-support-matrix">3. Firmware support matrix</h2>
+<h3 id="31-target-the-five-newest-libra-2-builds">3.1 Target: the five newest Libra 2 builds</h3>
+<p>Facts established during planning (8 Oct 2026):</p>
+<ul>
+<li>Kobo's upgrade API for device id <code>00000000-0000-0000-0000-000000000388</code> (Libra 2, "kobo9") returns <code>https://ereaderfiles.kobo.com/firmwares/kobo9/Sep2026/kobo-update-4.38.23828.zip</code> as the latest and nothing newer.</li>
+<li>The Libra 2 stays on a 4.38.2xxxx maintenance line. 4.39.22801 (Apr 2024) was <strong>not</strong> for the Libra 2: the kobo9-labelled package contained a MediaTek (<code>mt8113t-ntx</code>) image and boot-looped Libra 2 devices (MobileRead thread t=360326). 4.39.x–4.45.x are for the newer MediaTek devices (Clara/Libra Colour, Clara BW).</li>
+<li>NickelMenu, NickelHook mods and kobo-tieng-viet support 4.x only ("firmware 5.x is not supported yet").</li>
+<li>Each zip was confirmed by an HTTP HEAD on Kobo's CDN (status 200, size, Last-Modified).</li>
+</ul>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Version</th>
+<th>CDN path (<code>https://ereaderfiles.kobo.com/firmwares/kobo9/…</code>)</th>
+<th>Size</th>
+<th>CDN Last-Modified</th>
+<th>Source / notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>4.38.23828</strong> (device's current)</td>
+<td><code>Sep2026/kobo-update-4.38.23828.zip</code></td>
+<td>121,126,185 B</td>
+<td>22 Sep 2026</td>
+<td>Kobo API "latest"; MobileRead t=375464 (released for "a bunch of Kobos"; patches from 23697 mostly work)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>4.38.23697</strong></td>
+<td><code>May2026/kobo-update-4.38.23697.zip</code></td>
+<td>120,808,533 B</td>
+<td>26 May 2026</td>
+<td>HEAD returned 200 on the kobo9 path; mentioned in t=375464 as the prior build. <mark>verify</mark> that the package really contains a Freescale/Libra 2 image (check <code>upgrade/</code> kernel names and <code>KoboRoot.tgz</code> <code>usr/local/Kobo/version</code>), given the 4.39.22801 mislabel incident</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>4.38.23684</strong></td>
+<td><code>Apr2026/kobo-update-4.38.23684.zip</code></td>
+<td>120,807,586 B</td>
+<td>13 Apr 2026</td>
+<td>matches <code>EarliestChangeLog=4.38.23684</code> on the user's device</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>4.38.23648</strong></td>
+<td><code>Mar2026/kobo-update-4.38.23648.zip</code></td>
+<td>120,798,875 B</td>
+<td>18 Mar 2026</td>
+<td>MobileRead t=372740: Libra 2 rollout, Kobo Remote stability + credit-card fix</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>4.38.23552</strong></td>
+<td><code>Nov2025/kobo-update-4.38.23552.zip</code></td>
+<td>120,793,039 B</td>
+<td>17 Nov 2025</td>
+<td>pgaskin kfw DB entry for kobo9; MobileRead t=370942 (older BT devices incl. Libra 2)</td>
+</tr>
+<tr>
+<td>–</td>
+<td>4.38.23429 (Aug 2025)</td>
+<td><code>Aug2025/kobo-update-4.38.23429.zip</code></td>
+<td>121,752,299 B</td>
+<td>22 Aug 2025</td>
+<td>sixth newest, kept only as "known-older: drawer off" test input</td>
+</tr>
+</tbody>
+</table></div>
+<p>Order between 23697 and 23684 is by build number and CDN month (May 2026 vs Apr 2026). If 23697 turns out not to be a real Libra 2 build, 4.38.23429 moves into slot 5.</p>
+<h3 id="32-design-for-multi-firmware-support">3.2 Design for multi-firmware support</h3>
+<ol>
+<li><strong>Symbol table per firmware</strong> — <code>re/symbols/symbols-&lt;fw&gt;.md</code> (human) plus <code>re/symbols/symbols-&lt;fw&gt;.json</code> (machine), one per build, generated from the same source <code>re/symbols/required.yaml</code> which lists each capability with its mangled symbol and a status per firmware (<code>same</code>, <code>renamed:&lt;new&gt;</code>, <code>missing</code>, <code>untested</code>).</li>
+<li><strong>CI symbol check against all 5 libnickel builds</strong> — <code>tools/symcheck.py</code> runs <code>arm-nickel-linux-gnueabihf-nm -D --defined-only libnickel.so.1.0.0</code> (or <code>readelf --dyn-syms</code>) for every supported build and asserts every <code>required</code> symbol exists and every <code>optional</code> symbol is at least listed with a status. The libnickel files are <strong>not</strong> in the repo; CI downloads each official zip from Kobo's CDN into a cache keyed by version (URLs in <code>re/firmware.lock</code> with sha256), extracts <code>KoboRoot.tgz</code> → <code>usr/local/Kobo/libnickel.so.1.0.0</code>, runs the check and deletes the extraction. Nothing from Kobo is stored as an artifact.</li>
+<li><strong>Runtime version detection</strong> — at init read <code>/mnt/onboard/.kobo/version</code> (format <code>serial,…,4.38.23828,…</code>; field order <mark>verify</mark>, NickelDBus reads the same file) and compare against the table compiled into the mod (<code>fw_table.h</code> generated from <code>required.yaml</code>). Then do an actual <code>dlsym</code> of every needed symbol anyway. Decision rules:
+   - known firmware, all symbols found → drawer on;
+   - unknown 4.38.2xxxx build newer than the table, all symbols found → drawer on with a log line <code>fw not in table, symbols OK</code> and a one-time toast "Ứng dụng: firmware mới, chế độ thử"; 
+   - any required symbol missing, or 3.x/5.x → drawer off, log reason, no toast at boot (toasts at boot can race the UI), the NickelMenu fallback is already there; the first time NickelMenu's "Ứng dụng" item is tapped it shows <code>cmd_output</code> text "Ngăn ứng dụng tắt: <reason>".</li>
+<li><strong>Testing on one physical device</strong> — the user has one Libra 2 on 4.38.23828 and uses it daily. Policy: <strong>static checks for all five builds, dynamic tests on the installed build only.</strong> Flashing a different build is optional and risky:
+   - Upgrading/downgrading by dropping the official zip's contents (<code>upgrade/</code> folder, <code>KoboRoot.tgz</code>, <code>manifest.md5sum</code>) into <code>.kobo/</code> and ejecting is the documented manual-update route; downgrading within 4.38.2xxxx is reported to work on MobileRead but <mark>verify</mark>; it resets mods (every mod reinstalls because <code>KoboRoot.tgz</code> overwrites <code>/usr/local/Kobo</code>) and may re-trigger onboarding and Vietnamese UI fixes (kobo-tieng-viet auto-repairs after an extra reboot).
+   - If a downgrade test is ever wanted, do it at most once, on 4.38.23684 (the previous build already seen on the device), with a full <code>.kobo</code> + <code>.adds</code> backup, a charged battery, and the NickelMenu-only configuration installed first. Not scheduled by default.</li>
+<li><strong>Extra time</strong> — about 2.5 developer days in total: 0.5 d firmware fetch/verification script, 1 d Ghidra batch import + diff of the four extra builds, 0.5 d <code>symcheck</code> CI, 0.5 d runtime detection and tests. Spread across Phases 2 and 3 and already included in the timeline (section 5).</li>
+</ol>
+<hr />
+<h2 id="4-phase-by-phase-breakdown">4. Phase-by-phase breakdown</h2>
+<p>Estimates are agent working hours. "User" lines are what the user must do; they are grouped into batched test sessions (section 5.3).</p>
+<h3 id="phase-0-clean-base-done-8-oct-2026">Phase 0 — Clean base (done, 8 Oct 2026)</h3>
+<ul>
+<li>KOReader removed, backup at <code>~/kobo-backup-20261008</code>.</li>
+<li>Vietnamese UI mod (kobo-tieng-viet) and En–Vi dictionary (tudien) staged, install on eject.</li>
+<li>LocalSend receiver (<code>bethropolis/localgo</code>, linux/arm GOARM=7) at <code>.adds/localsend</code> with <code>start.sh</code>/<code>stop.sh</code> and NickelMenu items.</li>
+<li>NickelMenu with a custom "Tweak" bottom tab via <code>experimental:menu_main_15505_*</code>.</li>
+<li><code>ExcludeSyncFolders</code> set so dot-folders are not imported.</li>
+</ul>
+<p><strong>Remaining acceptance (user, session T0):</strong> the device boots after eject, Vietnamese UI is active, dictionary works in a book, LocalSend start/stop menu items work and a phone can send one EPUB.</p>
+<h3 id="phase-1-app-folders-nickelmenu-fallback-1-day">Phase 1 — App folders + NickelMenu fallback (≈ 1 day)</h3>
+<p><strong>Objective:</strong> define the on-disk app format now, so every later phase and the fallback use the same folders. Ship LocalSend as app #1 and GitHub sync as app #2 through NickelMenu only.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1</td>
+<td>Write <code>spec/app.schema.json</code> (<code>id</code>, <code>name</code>, <code>name_vi</code>, <code>version</code>, <code>icon</code>, <code>backend</code> {cmd, cwd, env}, <code>actions[]</code> {id, label, label_vi, run, needs: [wifi, rescan_after], confirm}, <code>menu</code> {show: bool}, <code>min_host</code>, <code>fallback_only</code> flag)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>Write <code>tools/gen-menu.sh</code> (POSIX sh, runs on the Kobo and on the Mac): scans <code>.adds/apps/*/app.json</code>, emits <code>.adds/nm/apps</code> with one <code>menu_item :main :Ứng dụng › &lt;name&gt; › &lt;action&gt; :cmd_spawn|cmd_output …</code> per action, chaining <code>nickel_wifi:autoconnect</code> / <code>nickel_misc:rescan_books</code> when <code>needs</code> says so. Uses a tiny <code>jq</code>-free parser (busybox <code>sed</code>/<code>awk</code>), so <mark>verify</mark> that the app.json subset stays flat enough for that; else ship a static <code>jsonq</code> Go binary</td>
+<td>3</td>
+</tr>
+<tr>
+<td>1.3</td>
+<td>Move LocalSend to <code>.adds/apps/localsend/</code> (<code>app.json</code>, <code>bin/localgo</code>, <code>bin/start.sh</code>, <code>bin/stop.sh</code>, <code>data/</code>), keep the old <code>.adds/localsend</code> NickelMenu entries until the new ones are verified, then remove</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1.4</td>
+<td>GitHub sync backend v0 (Go, <code>bin/ghsync</code>): reads <code>data/config.json</code> {repo, path, branch, token_file}, lists the folder via the Contents API with the fine-grained read-only PAT from <code>data/token</code> (mode 600), downloads files not present in <code>/mnt/onboard/&lt;dest&gt;/</code> (add-only, never delete, atomic temp-file + rename, skip if same size+sha), writes <code>data/state.json</code>, prints one status line. Cross-compile <code>GOOS=linux GOARCH=arm GOARM=7</code>, static</td>
+<td>4</td>
+</tr>
+<tr>
+<td>1.5</td>
+<td>Menu items for GitHub sync ("Đồng bộ GitHub ngay" = wifi autoconnect → ghsync → rescan_books) and Library tool placeholder</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>1.6</td>
+<td>README for the user: where to paste the token, how to add an app folder</td>
+<td>0.5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Deliverables:</strong> <code>spec/app.schema.json</code>, <code>tools/gen-menu.sh</code>, <code>.adds/apps/localsend/</code>, <code>.adds/apps/ghsync/</code>, <code>.adds/nm/apps</code>.</p>
+<p><strong>Acceptance (device, session T1):</strong> NickelMenu shows "Ứng dụng › LocalSend › Bắt đầu nhận" etc.; a file from the phone arrives and appears in the library after "rescan"; "Đồng bộ GitHub ngay" pulls one new EPUB from the private repo and nothing is deleted; menu regenerates after adding a dummy app folder and rebooting.</p>
+<p><strong>Risks:</strong> NickelMenu's <code>cmd_spawn</code> runs from <code>/</code> as root: scripts must <code>cd</code> themselves. <strong>Rollback:</strong> delete <code>.adds/nm/apps</code>, restore <code>.adds/localsend</code> items. <strong>Dependencies:</strong> user supplies repo <code>owner/repo</code>, folder, token (section 13). <strong>User:</strong> create the PAT, paste into <code>data/token</code>, run session T1.</p>
+<h3 id="phase-2-toolchain-re-setup-hello-world-3-days-15-d-for-the-firmware-matrix">Phase 2 — Toolchain + RE setup + hello-world (≈ 3 days, +1.5 d for the firmware matrix)</h3>
+<p><strong>Objective:</strong> a reproducible build on the Mac, all five libnickel builds analysed in Ghidra with Ghidra reachable from the maintainer, and a hello-world mod whose failsafe and uninstall paths were exercised on the device.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.1</td>
+<td>Create repo skeleton (section 11), add NickelHook submodule, <code>make -f NickelHook/NickelHook.mk NAME=koboapps</code> generator, Makefile targets <code>all</code>, <code>koboroot</code>, <code>clangd</code></td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>2.2</td>
+<td>Docker wrapper <code>tools/tc</code> that runs <code>ghcr.io/pgaskin/nickeltc:1</code> with <code>--platform linux/amd64</code>; confirm <code>arm-nickel-linux-gnueabihf-g++ --version</code> = 4.9.4 and <code>qmake -query</code> shows Qt 5.2.1 (<mark>verify</mark> image tag <code>:1</code> vs <code>:1.0</code>; nickel-screensaver uses <code>:1.0</code>)</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>2.3</td>
+<td><code>tools/fetch-fw.sh &lt;ver&gt;</code>: downloads the official zip for kobo9 into <code>~/.cache/koboapps/fw/&lt;ver&gt;/</code> (outside the repo), checks sha256 against <code>re/firmware.lock</code> (first run records it), extracts only <code>KoboRoot.tgz</code> → <code>usr/local/Kobo/libnickel.so.1.0.0</code>, <code>libnickel.so.1.0.0</code> symbol dump via <code>nm -D</code>, and the <code>version</code>/<code>upgrade</code> identifiers to <mark>verify</mark> it is a Freescale (Libra 2) image. Run for all five builds + 4.38.23429</td>
+<td>2.5</td>
+</tr>
+<tr>
+<td>2.4</td>
+<td>Ghidra: install (needs JDK 21 — <mark>verify</mark> current Ghidra 11.x requirement), create project <code>libnickel</code>, import the five <code>libnickel.so.1.0.0</code> as separate programs named by version, auto-analyse (ARM v7 LE, Thumb aware; enable "Demangler GNU" and "Shared Return Calls"). Expect ~30–60 min per binary on an M-series Mac; run as a batch overnight with <code>analyzeHeadless</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>2.5</td>
+<td>Ghidra: install the plugin zip in Ghidra (<code>File → Install Extensions</code>), enable <code>GhidraPlugin</code>, run <code>bridge_mcp_ghidra.py</code> (Python 3 + <code>mcp</code> SDK), register as an MCP server in the maintainer (<code>
+<td>2</td>
+</tr>
+<tr>
+<td>2.6</td>
+<td>Hello-world mod: <code>nh_info{name="koboapps", uninstall_flag=".adds/koboapps/uninstall", failsafe_delay=15}</code>, one optional dlsym (<code>MainWindowController::sharedInstance</code> + <code>toast</code>), <code>init()</code> reads <code>/mnt/onboard/.kobo/version</code>, logs it, and schedules a toast "Xin chào từ Ứng dụng" 10 s after start through a <code>QTimer::singleShot</code> on the GUI thread. <code>make koboroot</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>2.7</td>
+<td>Failsafe drill design: build variant B that deliberately <code>abort()</code>s in <code>init()</code> to confirm NickelHook removes the mod and Nickel boots; variant C normal. Write the test script for the user (section 9.5, cases SAFE-01..04)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2.8</td>
+<td><code>tools/symcheck.py</code> v0: reads <code>re/symbols/required.yaml</code>, runs over every cached <code>libnickel</code> symbol dump, prints a matrix; wire into <code>make check</code></td>
+<td>2.5</td>
+</tr>
+<tr>
+<td>2.9</td>
+<td><code>re/symbols/symbols-4.38.23828.md</code> skeleton with the symbols the hello-world and NickelMenu/NickelDBus/NickelHardcover already use (section 6.5 format)</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>2.10</td>
+<td>Dev loop tooling: <code>tools/push.sh</code> (copies KoboRoot.tgz to <code>.kobo/</code> over USB or over LocalSend/FTP when the device is not mounted; <mark>verify</mark> which the user prefers), <code>tools/logs.sh</code> (collects <code>.kobo/koboapps_*.log</code>, <code>logread</code> via telnet if enabled)</td>
+<td>1.5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Deliverables:</strong> repo building in Docker, <code>KoboRoot.tgz</code> of hello-world (variants B and C), Ghidra project with 5 programs, Ghidra reachable, <code>symcheck</code> matrix for 5 builds, <code>symbols-4.38.23828.md</code> v0.</p>
+<p><strong>Acceptance (device, session T2):</strong> SAFE-01 variant B: Nickel boots within 2 minutes, mod file gone, log shows failsafe. SAFE-02 variant C: toast appears after boot, log shows firmware string. SAFE-03 uninstall file: mod removed on next boot. SAFE-04: USB connect/disconnect with the mod loaded, no errors. Gate <strong>G1</strong>.</p>
+<p><strong>Risks:</strong> NickelTC under amd64 emulation may be slow or crash (mitigation: build in a cloud x86_64 runner via CI if needed); Ghidra analysis of a ~40 MB C++ binary is slow (headless batch). <strong>Rollback:</strong> failsafe, uninstall flag, or delete <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> over telnet. <strong>User:</strong> approve installing Ghidra/Ghidra and Docker use (section 13), run session T2 (~30 min).</p>
+<h3 id="phase-2b-re-spike-3-days">Phase 2b — RE spike (≈ 3 days)</h3>
+<p><strong>Objective:</strong> answer the two questions that decide the drawer design before writing it: (a) can we push a full-screen view that keeps the bottom tab bar and the status bar, exactly like Home/Books; (b) can we instantiate Nickel's keyboard, list rows and toggles outside Nickel's own dialogs. See section 6 for the capability list.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2b.1</td>
+<td>Trace <code>MainNavView</code> ↔ <code>MainNavController</code> ↔ <code>MainWindowController::pushView</code> ↔ the Home/Library view classes; find how the tab bar is attached (decompile constructors, <code>QObject::objectName</code> strings, stylesheet class names)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>2b.2</td>
+<td>Prototype A: <code>pushView</code> of a plain <code>QWidget</code> with a <code>QLabel</code>; observe whether the tab bar stays, which <code>objectName</code>/<code>setProperty</code> values are needed for the Nickel stylesheet to apply</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2b.3</td>
+<td>Prototype B: header bar. Find the header widget class used by Settings (likely <code>N3SettingsHeader</code>/<code>HeaderView</code> — <mark>verify</mark> name) with back chevron and title</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2b.4</td>
+<td>Prototype C: keyboard. Create <code>TouchLineEdit</code> + <code>KeyboardReceiver</code> + <code>KeyboardFrame::createKeyboard(KeyboardScript, QLocale)</code> inside our view (not inside an <code>N3Dialog</code>); confirm Vietnamese layout from kobo-tieng-viet appears</td>
+<td>3</td>
+</tr>
+<tr>
+<td>2b.5</td>
+<td>Prototype D: list row + toggle. Instantiate <code>SettingContainer</code>-style rows and <code>TouchCheckBox</code>; compare pixel-by-pixel with a Settings screenshot</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2b.6</td>
+<td>Record findings in <code>re/notes/view-push.md</code>, <code>re/notes/keyboard.md</code>, update <code>symbols-4.38.23828.md</code>; cross-check each found symbol on the other four builds with <code>symcheck</code> and Ghidra "find function by name"</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Acceptance (device, session T3):</strong> prototypes A–D shown on device and screenshotted; user says the header/row/toggle look native. Gate <strong>G2</strong> (go/no-go for the native drawer). No-go fallback: "drawer as <code>N3Dialog</code> full-view mode" (NickelHardcover style) which is already proven to work, at the cost of no persistent tab bar.</p>
+<h3 id="phase-3-drawer-host-15-weeks-05-d-firmware-runtime-detection">Phase 3 — Drawer host (≈ 1.5 weeks, +0.5 d firmware runtime detection)</h3>
+<p><strong>Objective:</strong> the "Ứng dụng" tab, the drawer view with tiles and status, app discovery, backend process management, symbol/firmware check and the fallback switch.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.1</td>
+<td><code>src/fw/</code> — version file parser, <code>fw_table.h</code> generator from <code>required.yaml</code>, decision function (section 3.2 rules), unit-tested on host</td>
+<td>3</td>
+</tr>
+<tr>
+<td>3.2</td>
+<td><code>src/nickel/</code> — thin wrappers around every dlsym'd symbol (<code>Nickel::toast()</code>, <code>Nickel::pushView()</code>, …) each checking for <code>nullptr</code>, so the rest of the code never touches raw symbols</td>
+<td>3</td>
+</tr>
+<tr>
+<td>3.3</td>
+<td>Tab button: hook <code>MainNavView</code> ctor, add <code>MainNavButton</code> "Ứng dụng" with icons (<code>res/icons/apps.png</code>, <code>apps_active.png</code>, dark variants), bridge <code>tapped()</code>; respect NickelMenu's own extra button (both mods hook the same ctor — order test)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>3.4</td>
+<td>Drawer view: <code>DrawerView : QWidget</code> with header "Ứng dụng · N ứng dụng", a 2-column grid of <code>AppTile</code> (icon, name, one status line), "Thêm ứng dụng" tile, empty state text. Styled by Nickel's stylesheet through objectNames found in 2b</td>
+<td>6</td>
+</tr>
+<tr>
+<td>3.5</td>
+<td>App registry: scan <code>/mnt/onboard/.adds/apps/*/app.json</code> on tab tap (not at boot), validate against schema (hand-written minimal validator, no std::), cache in memory, re-scan if directory mtime changed</td>
+<td>3</td>
+</tr>
+<tr>
+<td>3.6</td>
+<td>Backend manager: <code>QProcess</code> per app, <code>start(app)</code>, <code>stop(app, graceful=true)</code>, stdin/stdout line framing (max line 64 KB), JSON parse with <code>QJsonDocument</code>, event dispatch, stderr → <code>data/log/backend.log</code> (rotate at 512 KB), exit code handling, restart policy (max 2 restarts per screen session)</td>
+<td>6</td>
+</tr>
+<tr>
+<td>3.7</td>
+<td>Status line protocol (<code>{"status":"…"}</code>) for tiles; the host runs each app's <code>status</code> command (short-lived, 2 s timeout) when the drawer opens, in sequence, never in parallel</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3.8</td>
+<td>Host services the backend can <code>request</code>: <code>wifi_on</code>, <code>rescan_library</code>, <code>toast</code>, <code>confirm</code>, <code>open_url</code> (browser, optional), <code>sleep_inhibit</code> (for long syncs; <mark>verify</mark> the PowerTimer API seen in NickelHardcover <code>PowerTimer::fireAt</code>)</td>
+<td>4</td>
+</tr>
+<tr>
+<td>3.9</td>
+<td>USB handling: hook/observe <code>PlugWorkflowManager</code> signals (NickelDBus uses <code>PlugManager::gadgetMode</code>); on USB connect: stop all backends, pop app screens, close drawer</td>
+<td>3</td>
+</tr>
+<tr>
+<td>3.10</td>
+<td>Logging: <code>nh_log</code> with categories, ring buffer of the last 200 lines dumped to <code>.adds/koboapps/log/host.log</code> on error (write-and-close in a signal handler)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3.11</td>
+<td>Settings screen for the mod itself (rendered with the kit later; for now a plain list): drawer on/off, verbose log, show hidden apps</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3.12</td>
+<td><code>gen-menu</code> integrated: the host regenerates <code>.adds/nm/apps</code> when the app set changes (write-and-close), so the fallback is always current</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>3.13</td>
+<td>Soak build: idle-cost instrumentation (<code>/proc/self/status</code> logged on tab open), no timers when closed</td>
+<td>1.5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Deliverables:</strong> <code>libkoboapps.so</code> v0.3 with drawer, <code>src/fw</code>, <code>src/nickel</code>, <code>src/host</code>, <code>symbols-4.38.23828.md</code> v1, <code>required.yaml</code> with status for all 5 builds.</p>
+<p><strong>Acceptance (device, session T4):</strong> DRW-01..12 (section 9.9). Gate <strong>G3</strong>.</p>
+<p><strong>Risks:</strong> NickelMenu and our mod both hooking <code>MainNavView</code> ctor; Qt object ownership when Nickel destroys views; backends outliving Nickel sleep. <strong>Rollback:</strong> uninstall flag; <code>.adds/koboapps/config</code> <code>drawer_enabled:0</code>. <strong>User:</strong> session T4 (~45 min) plus 72 h soak with the drawer installed but unused (section 9.6).</p>
+<h3 id="phase-4-ui-kit-v1-2-weeks">Phase 4 — UI kit v1 (≈ 2 weeks)</h3>
+<p><strong>Objective:</strong> the ten components plus confirm dialog, bindings, partial refresh, dark mode, Vietnamese strings, error states, Mac preview stub.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.1</td>
+<td><code>ui.json</code> schema v1 (<code>spec/ui.schema.json</code>) and loader; screen stack (<code>push</code>/<code>pop</code>), back chevron pops</td>
+<td>4</td>
+</tr>
+<tr>
+<td>4.2</td>
+<td>Binding engine: <code>$var</code> resolution, <code>set</code>/<code>append</code>/<code>remove</code> ops, dirty tracking per widget, batched repaint on the next event-loop tick</td>
+<td>5</td>
+</tr>
+<tr>
+<td>4.3</td>
+<td>Components, each as <code>kit/&lt;name&gt;.cc</code> wrapping a Nickel widget where one exists: Header, Text, KeyValue, Toggle, TextField (keyboard), BigCode, Progress, List, Button, Toast; Confirm dialog via <code>ConfirmationDialogFactory</code></td>
+<td>20 (2 h each)</td>
+</tr>
+<tr>
+<td>4.4</td>
+<td>Layout: vertical stack with Nickel spacing, scroll with Nickel's <code>QScrollArea</code> behaviour (page-wise), min tap target 120 px (≈ 10 mm at 300 dpi), footer button pinned</td>
+<td>4</td>
+</tr>
+<tr>
+<td>4.5</td>
+<td>E-ink refresh strategy: use Nickel's own update path (no direct <code>mxcfb</code> ioctls in v1); full refresh on screen push/pop, partial on bound-value changes; count flashes in tests</td>
+<td>3</td>
+</tr>
+<tr>
+<td>4.6</td>
+<td>Dark mode: <mark>verify</mark> every component inverts correctly via the Nickel stylesheet; fix icons (PNG pairs)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>4.7</td>
+<td>i18n: <code>name_vi</code>/<code>label_vi</code> fields; host strings in <code>res/strings_vi.json</code> and <code>strings_en.json</code>; pick by Nickel's locale setting (<code>Settings</code> key <mark>verify</mark>: <code>ApplicationSettings.Locale</code>?)</td>
+<td>2</td>
+</tr>
+<tr>
+<td>4.8</td>
+<td>Error states: backend missing/crashed banner inside the screen with "Thử lại"/"Quay lại", schema error screen listing the offending JSON path, timeout spinner text</td>
+<td>3</td>
+</tr>
+<tr>
+<td>4.9</td>
+<td>Host-side unit tests (Qt 5 on the Mac via Homebrew <code>qt@5</code>, <mark>verify</mark> availability on Apple Silicon): binding engine, JSON parser edge cases, layout math</td>
+<td>4</td>
+</tr>
+<tr>
+<td>4.10</td>
+<td><code>preview/</code> Mac app v0: Qt widgets at 1264×1680 scaled to 50 %, greyscale, renders <code>ui.json</code> with the same kit code behind a <code>#ifdef KA_HOST_PREVIEW</code> shim for Nickel widgets</td>
+<td>6</td>
+</tr>
+<tr>
+<td>4.11</td>
+<td>Component sheet app <code>apps/_kitdemo</code> exercising every component with sample bindings; golden screenshots on device (NickelMenu <code>nickel_screenshot:capture</code> or <code>nickel_setting:toggle:screenshots</code>)</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Acceptance (device, session T5):</strong> KIT-01..14. Gate <strong>G4</strong>.</p>
+<p><strong>Risks:</strong> keyboard outside N3Dialog may need <code>N3Dialog</code> after all (then TextField opens a native text-edit dialog, which is acceptable and still native); partial refresh ghosting. <strong>Rollback:</strong> kit disabled by config, drawer still lists apps and runs actions via the fallback-style action list.</p>
+<h3 id="phase-5-port-the-tools-1-week">Phase 5 — Port the tools (≈ 1 week)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5.1</td>
+<td>LocalSend: rewrite <code>start.sh</code>/<code>stop.sh</code> into a long-running backend wrapper (<code>bin/ls-host.sh</code> or Go shim) that starts <code>localgo</code>, parses its output into <code>set</code>/<code>append</code> messages (pin, ip, alias, received list), handles <code>action:start/stop</code>, <code>toggle:auto_rescan</code>, emits <code>request:rescan_library</code> after each file. <mark>verify</mark> localgo prints PIN/received events in a parseable form; otherwise poll the receive folder</td>
+<td>5</td>
+</tr>
+<tr>
+<td>5.2</td>
+<td>LocalSend <code>ui.json</code> per the wireframe (badge, text, bigcode, kv, toggle, list, primary button)</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>5.3</td>
+<td>GitHub sync: extend <code>ghsync</code> to protocol mode (<code>--host</code>): progress <code>set</code> {done,total,current}, errors as <code>toast</code>, <code>confirm</code> before first sync of a new repo, settings screen with TextFields for repo/path and a toggle "Tự đồng bộ khi bật Wi-Fi" (implemented as: on <code>action:sync</code> the host first <code>request:wifi_on</code>)</td>
+<td>5</td>
+</tr>
+<tr>
+<td>5.4</td>
+<td>GitHub <code>ui.json</code> (main + settings screens)</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>5.5</td>
+<td>Library tool backend (Go, <code>bin/libtool</code>): (a) dedupe by normalised title+author (NFC, case-fold, strip punctuation) and by file sha256, listing candidates only; delete only after <code>confirm</code>; (b) fix <code>dc:language</code>/<code>xml:lang</code> → <code>vi</code> in <code>content.opf</code>/XHTML of chosen EPUBs (rewrite zip entries, keep order, <code>mimetype</code> first uncompressed, write temp + rename); (c) NFC-normalise file names and OPF title/creator; (d) always <code>request:rescan_library</code> after changes. Works on <code>/mnt/onboard</code> only in short bursts and never while USB is connected</td>
+<td>8</td>
+</tr>
+<tr>
+<td>5.6</td>
+<td>Library <code>ui.json</code> (scan → results list → confirm → progress → done)</td>
+<td>1.5</td>
+</tr>
+<tr>
+<td>5.7</td>
+<td>Remove the legacy <code>.adds/localsend</code> entries; regenerate menu fallback</td>
+<td>0.5</td>
+</tr>
+<tr>
+<td>5.8</td>
+<td>App-level tests (section 9.9 LS-<em>, GH-</em>, LIB-*) and 72 h soak with LocalSend used daily</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Acceptance (device, sessions T6, T7):</strong> LS-01..08, GH-01..08, LIB-01..06. Gate <strong>G5</strong>.</p>
+<p><strong>Risks:</strong> EPUB rewriting bugs corrupt books — mitigations: operate on a copy, <mark>verify</mark> zip integrity (<code>unzip -t</code> equivalent in Go) before rename, keep <code>.bak</code> for 7 days in <code>data/trash/</code>. <strong>User:</strong> sessions T6/T7, confirm dedupe candidates by eye.</p>
+<h3 id="phase-6-developer-kit-1-week">Phase 6 — Developer kit (≈ 1 week)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Task</th>
+<th>Est (h)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6.1</td>
+<td><code>APPS.md</code>: folder layout, <code>app.json</code>, <code>ui.json</code> reference (every component, prop, event), protocol reference, lifecycle, limits, fallback behaviour, Vietnamese/English</td>
+<td>5</td>
+</tr>
+<tr>
+<td>6.2</td>
+<td><code>apps/_template/</code> hello app (shell backend) + <code>make new-app ID=…</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>6.3</td>
+<td><code>tools/validate</code> (Go, single binary for Mac and Kobo): schema validation of <code>app.json</code>/<code>ui.json</code>, unknown <code>$var</code> detection, tap-target lint, string length lint for 1264 px width</td>
+<td>5</td>
+</tr>
+<tr>
+<td>6.4</td>
+<td>Mac preview v1: hot-reload on file change, fake backend mode (feeds a <code>.jsonl</code> script), screenshot export for golden tests</td>
+<td>5</td>
+</tr>
+<tr>
+<td>6.5</td>
+<td><code>preview</code> golden tests in CI for <code>_kitdemo</code>, LocalSend, GitHub, Library screens</td>
+<td>2</td>
+</tr>
+<tr>
+<td>6.6</td>
+<td>Release pipeline: <code>make release</code> → <code>koboapps-&lt;ver&gt;-KoboRoot.tgz</code>, <code>apps-&lt;id&gt;-&lt;ver&gt;.zip</code>, checksums, GitHub Release draft</td>
+<td>2</td>
+</tr>
+<tr>
+<td>6.7</td>
+<td>Timed exercise: write a brand-new "Pin &amp; giờ" (battery/time) app from the template using only <code>APPS.md</code>; measure against S13</td>
+<td>2</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Acceptance:</strong> CI green (build, symcheck ×5, unit, golden), S13 met, docs reviewed by the user. Gate <strong>G6 = v1.0</strong>.</p>
+<h3 id="phase-7-optional-jan-2027-catalog">Phase 7 (optional, Jan 2027) — Catalog</h3>
+<p>Out of v1 scope. Minimal version: a <code>catalog.json</code> in a GitHub repo listing app zips with sha256; the host's "Thêm ứng dụng" tile downloads and unpacks into <code>.adds/apps/</code> after a confirm. Requires a trust decision (signing) — deferred.</p>
+<hr />
+<h2 id="5-calendar-timeline-milestones-and-gates">5. Calendar timeline, milestones and gates</h2>
+<p>Assumptions: Mon–Fri, ~5 agent hours/day (25 h/week), user test sessions mostly in evenings or weekends, batched (the device is in daily use). Public holidays: none affecting Oct–Dec 2026 in the schedule except the week of 21 Dec which is a half week.</p>
+<h3 id="51-week-by-week">5.1 Week-by-week</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Week</th>
+<th>Dates (2026)</th>
+<th>Phase</th>
+<th>Agent work (≈ h)</th>
+<th>User sessions</th>
+<th>Milestone / gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W1</td>
+<td>Mon 12 – Fri 16 Oct</td>
+<td>P1 (app folders, menu fallback), P2 start (repo, Docker TC, fetch-fw ×6)</td>
+<td>25</td>
+<td><strong>T0</strong> (Phase 0 check, 15 min, Mon/Tue) · <strong>T1</strong> (Phase 1, 30 min, Thu/Fri)</td>
+<td>M1: Phase 1 shipped via NickelMenu (Fri 16)</td>
+</tr>
+<tr>
+<td>W2</td>
+<td>19 – 23 Oct</td>
+<td>P2 (Ghidra batch, Ghidra, hello-world, symcheck, push/log tools)</td>
+<td>25</td>
+<td><strong>T2</strong> (failsafe drill + hello toast + USB, 30 min, Fri 23 or Sat 24)</td>
+<td><strong>G1</strong> go/no-go: failsafe and uninstall proven (Fri 23)</td>
+</tr>
+<tr>
+<td>W3</td>
+<td>26 – 30 Oct</td>
+<td>P2b RE spike (view push, header, keyboard, rows), cross-check on 5 builds</td>
+<td>25</td>
+<td><strong>T3</strong> (prototypes A–D, 30 min, Fri 30)</td>
+<td><strong>G2</strong> go/no-go: native view with tab bar + keyboard confirmed (Fri 30)</td>
+</tr>
+<tr>
+<td>W4</td>
+<td>2 – 6 Nov</td>
+<td>P3 drawer host part 1 (fw detect, wrappers, tab, drawer view, registry)</td>
+<td>25</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>W5</td>
+<td>9 – 13 Nov</td>
+<td>P3 part 2 (backend manager, services, USB, logging, settings)</td>
+<td>25</td>
+<td><strong>T4</strong> (drawer tests DRW-*, 45 min, Fri 13); start 72 h idle soak Fri→Mon</td>
+<td><strong>G3</strong>: drawer host accepted (Mon 16 after soak numbers)</td>
+</tr>
+<tr>
+<td>W6</td>
+<td>16 – 20 Nov</td>
+<td>P4 UI kit part 1 (schema, bindings, 5 components, layout)</td>
+<td>25</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>W7</td>
+<td>23 – 27 Nov</td>
+<td>P4 part 2 (5 components, refresh, dark mode, i18n, errors, unit tests, preview v0, kit demo)</td>
+<td>25</td>
+<td><strong>T5</strong> (KIT-*, 45 min, Fri 27 / Sat 28)</td>
+<td><strong>G4</strong>: kit v1 accepted (Mon 30)</td>
+</tr>
+<tr>
+<td>W8</td>
+<td>30 Nov – 4 Dec</td>
+<td>P5 (LocalSend, GitHub sync)</td>
+<td>25</td>
+<td><strong>T6</strong> (LS-<em>, GH-</em>, 45 min, Fri 4)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>W9</td>
+<td>7 – 11 Dec</td>
+<td>P5 (Library tool, legacy cleanup, app tests), 72 h usage soak</td>
+<td>25</td>
+<td><strong>T7</strong> (LIB-<em>, failure injection FI-</em>, 60 min, Fri 11)</td>
+<td><strong>G5</strong>: apps accepted (Mon 14)</td>
+</tr>
+<tr>
+<td>W10</td>
+<td>14 – 18 Dec</td>
+<td>P6 dev kit (APPS.md, template, validator, preview v1, golden, release)</td>
+<td>25</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>W11</td>
+<td>21 – 23 Dec (3 days)</td>
+<td>Buffer, timed exercise, release v1.0, firmware rehearsal (FW-* static)</td>
+<td>15</td>
+<td><strong>T8</strong> (final sign-off + uninstall/reinstall check, 30 min, Wed 23)</td>
+<td><strong>G6 = v1.0 released</strong> (Wed 23 Dec)</td>
+</tr>
+<tr>
+<td>(Jan 2027)</td>
+<td>optional</td>
+<td>P7 catalog</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+</tr>
+</tbody>
+</table></div>
+<p>Total: 11 weeks, ≈ 265 agent hours, 9 user sessions totalling ≈ 5.5 hours plus two 72 h soaks that need no attention beyond noting battery % twice a day.</p>
+<h3 id="52-buffers-and-slip-rules">5.2 Buffers and slip rules</h3>
+<ul>
+<li>Built-in slack: W11 (3 days) plus ~2 h/week unallocated inside each phase estimate.</li>
+<li>If G2 is <strong>no-go</strong> (no clean view push with tab bar): switch to the <code>N3Dialog</code> full-view design; costs ~3 days; the kit and apps are unaffected because they target the kit API, not the container. Release moves to ~Thu 7 Jan 2027.</li>
+<li>If NickelTC under amd64 emulation fails: build in GitHub Actions (x86_64) and download artifacts; costs ~1 day in W2.</li>
+<li>If any phase slips &gt; 3 days, the agent files a blocker report (section 10) and the timeline is replanned at the next gate rather than silently compressing later phases.</li>
+</ul>
+<h3 id="53-batched-user-test-sessions">5.3 Batched user test sessions</h3>
+<p>Each session has a checklist (section 9.9), takes 15–60 minutes, starts with a backup of <code>.adds</code> and <code>.kobo/KoboReader.sqlite</code> to the Mac, and ends with log collection (<code>tools/logs.sh</code>). Between sessions the device runs the last accepted build so daily reading is never interrupted by a half-finished build. A "quick fix" re-test outside the batch is allowed only for S3-class safety issues.</p>
+<h3 id="54-gono-go-gates">5.4 Go/no-go gates</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Gate</th>
+<th>When</th>
+<th>Pass criteria</th>
+<th>No-go action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G1</td>
+<td>end W2</td>
+<td>SAFE-01..04 pass; build reproducible; 5 libnickel builds fetched and verified as Libra 2 images; symcheck runs</td>
+<td>Stop native work; keep Phase 1 fallback; investigate toolchain/failsafe blocker</td>
+</tr>
+<tr>
+<td>G2</td>
+<td>end W3</td>
+<td>Prototype A pushes a view with tab bar; C shows Kobo keyboard with Vietnamese layout; all symbols used exist on 5/5 builds (or have per-build aliases)</td>
+<td>Switch to N3Dialog full-view container (plan B)</td>
+</tr>
+<tr>
+<td>G3</td>
+<td>after W5 soak</td>
+<td>DRW-01..12 pass; S1, S4, S8 met; symbol/firmware check behaves on a simulated unknown firmware</td>
+<td>Fix before kit work starts; kit work may begin on the Mac preview meanwhile</td>
+</tr>
+<tr>
+<td>G4</td>
+<td>after W7</td>
+<td>KIT-01..14 pass; S11 ≥ 4/5; unit tests + golden tests green</td>
+<td>Reduce v1 component set (drop BigCode/Progress) and continue</td>
+</tr>
+<tr>
+<td>G5</td>
+<td>after W9</td>
+<td>LS/GH/LIB/FI cases pass; S5, S6, S7, S12 met</td>
+<td>Ship LocalSend + GitHub only; Library tool to v1.1</td>
+</tr>
+<tr>
+<td>G6</td>
+<td>23 Dec</td>
+<td>CI green incl. symcheck ×5; S13 met; uninstall verified; user signs off</td>
+<td>Release as 1.0-rc; fix list to January</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="6-reverse-engineering-workplan">6. Reverse-engineering workplan</h2>
+<h3 id="61-legal-stance">6.1 Legal stance</h3>
+<p>Analysis of <code>libnickel.so</code> is done for interoperability with software on a device the user owns, the same way NickelMenu, NickelDBus, NickelHardcover and kobopatch were made. Kobo binaries stay in a local cache on the Mac (and in a CI cache that is never published). The repository contains only our own code, symbol <strong>names</strong>, offsets-free notes and the download URLs of Kobo's public firmware packages. No decompiled Kobo code is committed; notes paraphrase behaviour.</p>
+<h3 id="62-obtaining-libnickel-for-each-build">6.2 Obtaining libnickel for each build</h3>
+<pre><code>tools/fetch-fw.sh 4.38.23828
+# 1. curl https://ereaderfiles.kobo.com/firmwares/kobo9/Sep2026/kobo-update-4.38.23828.zip
+#    → ~/.cache/koboapps/fw/4.38.23828/kobo-update.zip  (121,126,185 bytes; sha256 recorded in re/firmware.lock on first fetch)
+# 2. unzip -l shows: upgrade/ (kernel, u-boot images), KoboRoot.tgz, manifest.md5sum
+#    verify Freescale/Libra 2 image: upgrade/ names contain imx6sll / &quot;io&quot; and NOT mt8113 (verify exact names)
+# 3. tar -xzf KoboRoot.tgz ./usr/local/Kobo/libnickel.so.1.0.0 ./usr/local/Kobo/version (verify path of version file inside KoboRoot; otherwise read from etc/version)
+# 4. arm-nickel-linux-gnueabihf-nm -D --defined-only libnickel.so.1.0.0 | c++filt &gt; symbols.txt
+# 5. sha256 of libnickel recorded next to it
+</code></pre>
+<p>The device's running copy can be cross-checked: <code>/usr/local/Kobo/libnickel.so.1.0.0</code> on the Kobo (via telnet/FTP from NickelMenu's example items) must have the same sha256 as the extracted 4.38.23828 one.</p>
+<h3 id="63-ghidra-Ghidra-setup-one-time-mac">6.3 Ghidra + Ghidra setup (one-time, Mac)</h3>
+<ol>
+<li>Install JDK 21 (<code>brew install --cask temurin@21</code>) and Ghidra (<code>brew install --cask ghidra</code>, <mark>verify</mark> cask availability/version; else download from ghidra-sre.org).</li>
+<li>Download the Ghidra release zip (plugin + <code>bridge_mcp_ghidra.py</code>). In Ghidra: <code>File → Install Extensions → +</code>, pick the zip, restart, enable <code>GhidraPlugin</code> under <code>File → Configure → Developer</code>. Default HTTP port 8080 (<code>Edit → Tool Options → Ghidra HTTP Server</code>).</li>
+<li><code>python3 -m venv ~/.venvs/Ghidra &amp;&amp; pip install mcp requests</code> then register in the maintainer: <code>
+<li>Headless batch import/analysis for the five binaries:
+   <code>analyzeHeadless ~/ghidra-projects libnickel -import libnickel-4.38.23828.so.1.0.0 -processor ARM:LE:32:v7 -analysisTimeoutPerFile 7200</code> (repeat per build, naming programs <code>libnickel-&lt;ver&gt;</code>).</li>
+<li>Open the CodeBrowser on <code>libnickel-4.38.23828</code>; Ghidra serves whichever program is open, so switching builds means opening another program (or running a second Ghidra instance on another port).</li>
+<li>Smoke test from the maintainer: <code>list_classes</code>, <code>search_functions_by_name MainNavView</code>, <code>decompile_function</code>.</li>
+</ol>
+<h3 id="64-capabilities-to-locate-with-starting-points">6.4 Capabilities to locate (with starting points)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Capability</th>
+<th>Starting symbols/classes (known from other mods)</th>
+<th>What to establish</th>
+<th>Needed by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>Push a full-screen view keeping the bottom tab bar and status bar</td>
+<td><code>MainWindowController::pushView(QWidget*)</code>, <code>currentView()</code>, <code>viewWithObjectName(QString)</code>, <code>MainNavController::home()</code>, <code>MainNavView</code> ctor</td>
+<td>How Home/Library views are created and shown; whether the tab bar is part of the pushed view or of the window; objectNames/properties the stylesheet keys on</td>
+<td>Drawer (G2)</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>Tab bar button</td>
+<td><code>MainNavButton</code> ctor, <code>setPixmap</code>, <code>setActivePixmap</code>, <code>setText</code>, <code>tapped()</code></td>
+<td>Active-state handling when our view is current; icon paths and sizes</td>
+<td>Drawer</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>Header with back chevron and title/action</td>
+<td>class used by Settings pages (<mark>verify</mark> name; candidates <code>N3SettingsHeader</code>, <code>HeaderView</code>, <code>TitleBar</code>)</td>
+<td>ctor signature, how "back" pops the view</td>
+<td>Kit Header</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>Settings-style list rows, toggles, static rows</td>
+<td><code>SettingContainer(QWidget*)</code>, <code>TouchCheckBox(QWidget*)</code>, <code>TouchLabel</code>, <code>N3ButtonLabel</code>, NickelHardcover's <code>settings/checkboxrow.cc</code>, <code>menurow.cc</code>, <code>staticrow.cc</code></td>
+<td>Which widget + objectName gives the exact Settings look</td>
+<td>Kit KeyValue/Toggle/List</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>N3 dialogs</td>
+<td><code>N3DialogFactory::getDialog(QWidget*, bool)</code>, <code>N3Dialog::setTitle/enableFullViewMode/enableBackButton/disableCloseButton/showKeyboard/hideKeyboard/keyboardFrame</code></td>
+<td>Full-view mode as plan B container; keyboard hosting</td>
+<td>Plan B, TextField</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Confirmation dialogs</td>
+<td><code>ConfirmationDialogFactory::getConfirmationDialog(QWidget*)</code>, <code>showErrorDialog</code>, <code>showTextEditDialog(QString)</code>, <code>ConfirmationDialog::setTitle/setText/setAcceptButtonText/setRejectButtonText/showCloseButton/setRejectOnOutsideTap/addWidget</code></td>
+<td>Signals for accept/reject (QDialog accepted/rejected)</td>
+<td>Kit Confirm</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Toast</td>
+<td><code>MainWindowController::toast(QString, QString, int)</code></td>
+<td>Duration units (ms), threading rule (GUI thread only)</td>
+<td>Kit Toast</td>
+</tr>
+<tr>
+<td>R8</td>
+<td>Keyboard</td>
+<td><code>KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&amp;)</code>, <code>KeyboardReceiver(QLineEdit*, bool)</code>, <code>SearchKeyboardController::setReceiver/setGoText</code>, <code>TouchLineEdit</code>, <code>TouchTextEdit::setCustomPlaceholderText</code></td>
+<td>Whether a keyboard can be parented to our view; <code>KeyboardScript</code> enum value for Latin/Vietnamese; Go/Enter signal</td>
+<td>Kit TextField</td>
+</tr>
+<tr>
+<td>R9</td>
+<td>Wi-Fi connect</td>
+<td><code>WirelessWorkflowManager::sharedInstance/connectWireless(bool,bool)/connectWirelessSilently/isInternetAccessible/isAirplaneMode</code>, <code>WirelessManager</code> signals (NickelDBus <code>rvConnectSignals</code>)</td>
+<td>Signal to await "connected"; timeout behaviour</td>
+<td>Host service <code>wifi_on</code></td>
+</tr>
+<tr>
+<td>R10</td>
+<td>Library rescan</td>
+<td><code>PlugWorkflowManager::sharedInstance/sync()</code>, <code>N3FSSyncManager::sharedInstance/sync(QStringList*)</code>, <code>pfmDoneProcessing</code> signal (NickelDBus)</td>
+<td>Partial rescan of one folder vs full</td>
+<td>Host service <code>rescan_library</code></td>
+</tr>
+<tr>
+<td>R11</td>
+<td>Dark mode / settings</td>
+<td><code>Settings</code> ctor, <code>getSetting/saveSetting</code>, <code>ReadingSettings::getDarkMode</code>, vtables <code>_ZTV15ReadingSettings</code></td>
+<td>Read current dark mode so icons swap</td>
+<td>Kit theming</td>
+</tr>
+<tr>
+<td>R12</td>
+<td>Refresh / waveform control</td>
+<td>Nickel's own screen update path (QPA plugin <code>libkobo.so</code>? <mark>verify</mark>), <code>FeatureSettings</code> flags, kobopatch notes on "full refresh"</td>
+<td>Whether a widget-level <code>update()</code> yields a partial refresh; when Nickel forces a full flash</td>
+<td>Kit refresh strategy</td>
+</tr>
+<tr>
+<td>R13</td>
+<td>USB / power state</td>
+<td><code>PlugManager::sharedInstance/gadgetMode</code>, <code>PlugWorkflowManager</code> signals, <code>N3PowerWorkflowManager::sharedInstance/requestSleep</code>, <code>PowerTimer</code></td>
+<td>Signals for "USB connected", "going to sleep" to stop backends</td>
+<td>Host</td>
+</tr>
+<tr>
+<td>R14</td>
+<td>Locale</td>
+<td><code>SupportedLocales::supportedLocales(bool)</code>, <code>ApplicationSettings</code> locale key</td>
+<td>Pick vi/en strings</td>
+<td>i18n</td>
+</tr>
+<tr>
+<td>R15</td>
+<td>Screenshot</td>
+<td><code>FeatureSettings.Screenshots</code> setting; NickelMenu <code>nickel_screenshot:capture</code></td>
+<td>Produce test screenshots</td>
+<td>Validation</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="65-recording-symbols-resymbolssymbols-fwmd-format">6.5 Recording symbols: <code>re/symbols/symbols-&lt;fw&gt;.md</code> format</h3>
+<pre><code># libnickel symbols — firmware 4.38.23828 (Libra 2 / kobo9)
+libnickel sha256: &lt;hex&gt;   source: kobo-update-4.38.23828.zip (Sep2026)   analysed: 2026-10-20
+
+| cap | mangled | demangled | sig (our typedef) | kind | req | status | notes |
+|-----|---------|-----------|-------------------|------|-----|--------|-------|
+| R2 | _ZN13MainNavButtonC1EP7QWidget | MainNavButton::MainNavButton(QWidget*) | void (*)(MainNavButton*, QWidget*) | dlsym | required-for-drawer | ok | size ≥ 0x?? bytes, we calloc 256 |
+| R7 | _ZN20MainWindowController5toastERK7QStringS2_i | MainWindowController::toast(QString const&amp;, QString const&amp;, int) | … | dlsym | optional | ok | duration ms |
+| R1 | _ZN11MainNavViewC1EP7QWidget | MainNavView::MainNavView(QWidget*) | … | hook | required-for-drawer | ok | shared with NickelMenu |
+</code></pre>
+<p>Machine form <code>symbols-&lt;fw&gt;.json</code> is generated from <code>required.yaml</code> + the <code>nm</code> dump; <code>kind</code> ∈ {hook, dlsym, vtable}; <code>req</code> ∈ {required-for-drawer, optional, fallback-only}; <code>status</code> ∈ {ok, renamed, missing, untested}. <code>fw_table.h</code> is generated from the five JSON files.</p>
+<h3 id="66-firmware-update-diff-procedure-each-new-libra-2-build">6.6 Firmware-update diff procedure (each new Libra 2 build)</h3>
+<ol>
+<li><code>tools/fetch-fw.sh &lt;new&gt;</code> → symbol dump; <code>tools/symcheck.py --against &lt;new&gt;</code> prints missing/renamed symbols in under a minute.</li>
+<li>If all <code>required-for-drawer</code> symbols exist unchanged: add the build to <code>required.yaml</code> as <code>same</code>, regenerate <code>fw_table.h</code>, build, run the static CI, publish a patch release. Typical cost: 1 h.</li>
+<li>If some are missing: import into Ghidra, use Ghidra <code>search_functions_by_name</code> and string references to find the renamed/moved function, record <code>renamed:&lt;new&gt;</code>, add a per-firmware alias in <code>required.yaml</code>, re-test on device if the user updates. Typical cost: 2–6 h.</li>
+<li>Until then, the runtime check keeps the drawer off on the new build and the NickelMenu fallback carries the apps. Recommend the user keeps Kobo auto-update off (section 13).</li>
+</ol>
+<hr />
+<h2 id="7-ui-kit-spec-v1-and-protocol-spec">7. UI kit spec v1 and protocol spec</h2>
+<h3 id="71-screen-file-uijson">7.1 Screen file (<code>ui.json</code>)</h3>
+<pre><code class="language-json">{
+  &quot;kit&quot;: 1,
+  &quot;screens&quot;: {
+    &quot;main&quot;: {
+      &quot;title&quot;: &quot;LocalSend&quot;,
+      &quot;badge&quot;: &quot;$status&quot;,
+      &quot;action&quot;: { &quot;label&quot;: &quot;Cài đặt&quot;, &quot;push&quot;: &quot;settings&quot; },
+      &quot;body&quot;: [ ...components... ],
+      &quot;footer&quot;: [ { &quot;button&quot;: &quot;Dừng nhận&quot;, &quot;action&quot;: &quot;stop&quot;, &quot;style&quot;: &quot;primary&quot;, &quot;enabled&quot;: &quot;$running&quot; } ]
+    },
+    &quot;settings&quot;: { &quot;title&quot;: &quot;Cài đặt&quot;, &quot;body&quot;: [ ... ] }
+  },
+  &quot;start&quot;: &quot;main&quot;,
+  &quot;vars&quot;: { &quot;status&quot;: &quot;Đang tắt&quot;, &quot;running&quot;: false, &quot;pin&quot;: &quot;&quot;, &quot;received&quot;: [] }
+}
+</code></pre>
+<p>Rules: <code>kit</code> is the schema version; unknown component keys are rendered as an error row, not a crash; <code>vars</code> gives defaults so a screen renders before the backend answers; strings may be plain or <code>{ "vi": "...", "en": "..." }</code>.</p>
+<h3 id="72-components">7.2 Components</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>JSON key</th>
+<th>Props</th>
+<th>Events to backend</th>
+<th>Nickel widget (target)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Header</td>
+<td>screen <code>title</code>, <code>badge</code>, <code>action</code></td>
+<td>title, badge ($var ok), action {label, push | action}</td>
+<td><code>action</code></td>
+<td>Settings header class (R3)</td>
+<td>Back chevron pops; at root pops to drawer</td>
+</tr>
+<tr>
+<td>Text</td>
+<td><code>"text"</code></td>
+<td>value, style: body | caption | heading, align</td>
+<td>–</td>
+<td><code>TouchLabel</code>/<code>QLabel</code> with Nickel font classes</td>
+<td>Word-wrap; caption uses muted colour</td>
+</tr>
+<tr>
+<td>KeyValue</td>
+<td><code>"kv"</code></td>
+<td>rows: [[key, value], …] (values may be <code>$var</code>)</td>
+<td>–</td>
+<td>static row (R4)</td>
+<td>Value right-aligned, elided</td>
+</tr>
+<tr>
+<td>Toggle</td>
+<td><code>"toggle"</code></td>
+<td>label, bind (var name), enabled</td>
+<td><code>{"event":"toggle","bind":…,"value":bool}</code></td>
+<td><code>TouchCheckBox</code> in a <code>SettingContainer</code> row</td>
+<td>Reflects <code>$bind</code>; host updates var optimistically, backend may <code>set</code> it back</td>
+</tr>
+<tr>
+<td>TextField</td>
+<td><code>"field"</code></td>
+<td>label, bind, placeholder, secret: bool, keyboard: text | number | url</td>
+<td><code>{"event":"input","bind":…,"value":str}</code> on Go/Enter or blur</td>
+<td><code>TouchLineEdit</code> + Kobo keyboard (R8)</td>
+<td>If R8 fails, opens native text-edit dialog</td>
+</tr>
+<tr>
+<td>BigCode</td>
+<td><code>"bigcode"</code></td>
+<td>value ($var), digits</td>
+<td>–</td>
+<td><code>QLabel</code> with large Nickel font class</td>
+<td>For PINs; monospace digits</td>
+</tr>
+<tr>
+<td>Progress</td>
+<td><code>"progress"</code></td>
+<td>value ($var 0..1 or {done,total}), label</td>
+<td>–</td>
+<td>Nickel progress bar class (<mark>verify</mark>; NickelDBus has <code>NDBProgressBar</code>)</td>
+<td>Partial refresh only when changed ≥ 5 %</td>
+</tr>
+<tr>
+<td>List</td>
+<td><code>"list"</code></td>
+<td>items ($var array of [primary, secondary] or strings), title, empty_text, max (default 50), tap: action name</td>
+<td><code>{"event":"tap","list":…,"index":n,"item":…}</code></td>
+<td>rows (R4)</td>
+<td>Appends redraw only new rows</td>
+</tr>
+<tr>
+<td>Button</td>
+<td><code>"button"</code></td>
+<td>label, action, style: primary | secondary, enabled ($var), confirm: {text, ok, cancel}</td>
+<td><code>{"event":"action","name":…}</code></td>
+<td><code>N3ButtonLabel</code>/Nickel button class</td>
+<td>Debounced 500 ms; disabled while an action is pending unless <code>async: true</code></td>
+</tr>
+<tr>
+<td>Toast</td>
+<td>backend message</td>
+<td>text, duration (ms, default 3000)</td>
+<td>–</td>
+<td><code>MainWindowController::toast</code></td>
+<td>Max 1 per 2 s per app</td>
+</tr>
+<tr>
+<td>Confirm</td>
+<td>backend message / button prop</td>
+<td>title, text, ok, cancel</td>
+<td><code>{"event":"confirm","id":…,"ok":bool}</code></td>
+<td><code>ConfirmationDialog</code> (R6)</td>
+<td>Modal; timeout 120 s → cancel</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="73-binding-syntax">7.3 Binding syntax</h3>
+<ul>
+<li><code>$name</code> anywhere a string prop is allowed → replaced by <code>vars.name</code>, re-rendered on change. <code>"$name.sub"</code> indexes objects; <code>"$list[0]"</code> not supported in v1.</li>
+<li>Template strings: <code>"Đã nhận $count sách"</code> → substitution of each <code>$ident</code>; literal <code>$</code> as <code>$$</code>.</li>
+<li>Booleans: <code>enabled: "$running"</code> uses truthiness; <code>"!$running"</code> negates.</li>
+<li>Backend ops on vars: <code>set</code> (merge object), <code>append</code> (push to array, cap at <code>max</code> of the consuming List, oldest dropped), <code>remove</code> (<code>{"remove":{"received":0}}</code> by index), <code>clear</code>.</li>
+</ul>
+<h3 id="74-layout-rules-for-e-ink-at-300-dpi-1264-1680">7.4 Layout rules for e-ink at 300 dpi (1264 × 1680)</h3>
+<ul>
+<li>Content width 1264 − 2×72 px gutters = 1120 px; vertical rhythm 24 px; row height 120 px minimum (≈ 10 mm); button height 132 px; minimum tap target 120 × 120 px; touch spacing ≥ 24 px.</li>
+<li>Fonts: Nickel's defaults (follow the system font and size setting); heading ≈ 1.25× body; BigCode 3× body.</li>
+<li>Lines: 2 px separators in Nickel's row colour; no shadows, no gradients, no animation.</li>
+<li>Refresh: push/pop → full refresh (one flash); bound-value change → widget <code>update()</code> only; ≥ 8 partial updates since the last full → force a full refresh on the next change to clear ghosting; never more than 2 updates per second per screen (coalesce).</li>
+<li>Scrolling: page-wise (tap bottom/top zones or Nickel's scroll bar), no kinetic scrolling.</li>
+<li>Dark mode: all colours come from Nickel's stylesheet; icons supply <code>*_dark.png</code>.</li>
+</ul>
+<h3 id="75-i18n">7.5 i18n</h3>
+<p>Strings in <code>ui.json</code> may be <code>{ "vi": …, "en": … }</code>; the host picks the Nickel locale, falls back to <code>vi</code> then <code>en</code>. Host-owned strings (<code>Thử lại</code>, <code>Quay lại</code>, <code>Ứng dụng</code>, errors) live in <code>res/strings_&lt;lang&gt;.json</code>. Dates use <code>dd/MM HH:mm</code>.</p>
+<h3 id="76-error-states">7.6 Error states</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Screen behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ui.json</code> invalid</td>
+<td>Native error screen: title "Không mở được ứng dụng", JSON path and message, buttons Quay lại / Mở menu dự phòng</td>
+</tr>
+<tr>
+<td>Backend binary missing / not executable</td>
+<td>Banner at top: "Không chạy được <cmd>" + Thử lại</td>
+</tr>
+<tr>
+<td>Backend crashed (exit ≠ 0 or signal)</td>
+<td>Banner "Ứng dụng dừng đột ngột (mã n)"; Thử lại restarts (max 2 per screen session), then "Xem log" shows the last 30 stderr lines in a Text block</td>
+</tr>
+<tr>
+<td>Backend silent &gt; <code>timeout</code> after an action</td>
+<td>Button re-enabled, toast "Không phản hồi"</td>
+</tr>
+<tr>
+<td>Protocol error (bad JSON line)</td>
+<td>Line ignored, counted; after 20 bad lines the backend is stopped with reason <code>protocol</code></td>
+</tr>
+<tr>
+<td>Wi-Fi request failed</td>
+<td>Toast "Không kết nối được Wi-Fi", <code>{"event":"wifi","ok":false}</code> to backend</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="77-json-lines-protocol-v1">7.7 JSON-lines protocol v1</h3>
+<p>Transport: backend stdin (host→backend), stdout (backend→host), UTF-8, one JSON object per <code>\n</code>-terminated line, max 64 KB per line, no pretty-printing. stderr is logging only.</p>
+<p><strong>Handshake (first lines):</strong></p>
+<pre><code>host → backend : {&quot;hello&quot;:{&quot;proto&quot;:1,&quot;host&quot;:&quot;koboapps/0.4.0&quot;,&quot;fw&quot;:&quot;4.38.23828&quot;,&quot;lang&quot;:&quot;vi&quot;,&quot;screen&quot;:&quot;main&quot;,&quot;data_dir&quot;:&quot;/mnt/onboard/.adds/apps/localsend/data&quot;,&quot;vars&quot;:{...current vars...}}}
+backend → host : {&quot;ready&quot;:{&quot;proto&quot;:1,&quot;name&quot;:&quot;localsend&quot;,&quot;version&quot;:&quot;1.2.0&quot;,&quot;caps&quot;:[&quot;wifi&quot;,&quot;rescan&quot;]}}
+</code></pre>
+<p>If <code>ready</code> does not arrive within 5 s (configurable <code>app.json: backend.ready_timeout_ms</code>), the host shows the banner and keeps the screen with defaults. A backend that announces <code>proto</code> &gt; 1 is rejected with an error screen.</p>
+<p><strong>Host → backend events</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"event":"action","name":"start","id":17}</code></td>
+<td>Button or header action tapped; <code>id</code> for reply correlation</td>
+</tr>
+<tr>
+<td><code>{"event":"toggle","bind":"auto_rescan","value":true}</code></td>
+<td>Toggle changed</td>
+</tr>
+<tr>
+<td><code>{"event":"input","bind":"repo","value":"owner/repo"}</code></td>
+<td>Text field committed</td>
+</tr>
+<tr>
+<td><code>{"event":"tap","list":"received","index":1,"item":["Đắc Nhân Tâm.epub","860 KB"]}</code></td>
+<td>List row tapped (only if <code>tap</code> set)</td>
+</tr>
+<tr>
+<td><code>{"event":"confirm","id":3,"ok":true}</code></td>
+<td>Answer to a <code>confirm</code> request</td>
+</tr>
+<tr>
+<td><code>{"event":"wifi","ok":true}</code> / <code>{"event":"rescan","ok":true}</code></td>
+<td>Result of a host service request</td>
+</tr>
+<tr>
+<td><code>{"event":"screen","name":"settings"}</code></td>
+<td>User navigated (push/pop)</td>
+</tr>
+<tr>
+<td><code>{"event":"pause"}</code> / <code>{"event":"resume"}</code></td>
+<td>Device going to sleep / waking while the screen is open</td>
+</tr>
+<tr>
+<td><code>{"event":"stop","reason":"back"|"usb"|"shutdown"|"timeout"}</code></td>
+<td>Final message; backend must exit within 3 s</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Backend → host messages</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Meaning / limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"set":{"status":"Đang nhận","pin":"4821"}}</code></td>
+<td>Merge vars; max 16 KB</td>
+</tr>
+<tr>
+<td><code>{"append":{"received":["Nhà Giả Kim.epub","1,2 MB"]}}</code></td>
+<td>Append one item</td>
+</tr>
+<tr>
+<td><code>{"remove":{"received":0}}</code>, <code>{"clear":["received"]}</code></td>
+<td>Remove/clear</td>
+</tr>
+<tr>
+<td><code>{"toast":"Đã nhận 1 sách","duration":3000}</code></td>
+<td>Toast (rate-limited)</td>
+</tr>
+<tr>
+<td><code>{"confirm":{"id":3,"title":"Xoá 2 sách trùng?","text":"…","ok":"Xoá","cancel":"Huỷ"}}</code></td>
+<td>Ask; answer comes as <code>event:confirm</code></td>
+</tr>
+<tr>
+<td><code>{"request":"wifi_on"}</code> / <code>{"request":"rescan_library","paths":["/mnt/onboard/Books"]}</code> / <code>{"request":"sleep_inhibit","ms":600000}</code> / <code>{"request":"open","screen":"done"}</code> / <code>{"request":"back"}</code></td>
+<td>Host services; each answered by an <code>event</code></td>
+</tr>
+<tr>
+<td><code>{"status":"Lần cuối: 08/10 20:15"}</code></td>
+<td>One-line status for the drawer tile (also the only line read by the <code>status</code> command mode)</td>
+</tr>
+<tr>
+<td><code>{"log":"…","level":"info"}</code></td>
+<td>Goes to the app log, not the screen</td>
+</tr>
+<tr>
+<td><code>{"done":{"code":0}}</code></td>
+<td>Backend finished its job voluntarily; host may keep the screen</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Versioning:</strong> <code>proto</code> integer; host supports proto 1; additive fields are allowed without a bump; a renamed/removed field bumps the number. <code>app.json: "min_host": "0.4.0"</code> lets an app refuse older hosts (fallback: the drawer shows "Cần phiên bản mới hơn").</p>
+<p><strong>Timeouts:</strong> ready 5 s; action reply (any message) 30 s then "Không phản hồi"; confirm 120 s; graceful stop 3 s then <code>SIGKILL</code>; status command 2 s.</p>
+<p><strong>Lifecycle:</strong> spawned on screen open (<code>QProcess</code>, cwd = app folder, env <code>KA_DATA</code>, <code>KA_FW</code>, <code>KA_LANG</code>, <code>PATH</code> with <code>bin/</code> first), stopped on back-to-drawer, USB connect, shutdown, or 10 min after sleep unless <code>sleep_inhibit</code> was granted. <code>app.json: backend.keep_alive: true</code> allows a backend (LocalSend receiver) to keep running after the screen closes, until USB connect, shutdown, or the user stops it; the drawer tile then shows its live status and the host polls nothing — the backend writes <code>data/status</code> (write-and-close) at most every 10 s and the tile reads it on drawer open.</p>
+<p><strong>Crash handling:</strong> exit code and signal logged; <code>QProcess::errorOccurred</code> → banner; stderr tail kept (4 KB ring); restart policy 2 per screen session; a backend that crashes 3 times in 10 minutes is marked "lỗi" on its tile until the device reboots or the user taps Thử lại.</p>
+<p><strong>Logging:</strong> host <code>nh_log</code> (<code>.kobo/koboapps_*.log</code> on error via <code>nh_dump_log</code>, plus <code>.adds/koboapps/log/host.log</code> ring dump); per-app <code>data/log/backend.log</code> (stderr, rotated 512 KB × 2). All writes are open-write-close.</p>
+<p><strong>Resource limits:</strong> per backend <code>ulimit -v 256 MB</code> (the Libra 2 has 512 MB RAM — <mark>verify</mark>), nice 5; host refuses to start a 4th concurrent backend; <code>append</code> arrays capped by <code>max</code>; total vars ≤ 256 KB.</p>
+<hr />
+<h2 id="8-safety-and-testing-strategy">8. Safety and testing strategy</h2>
+<h3 id="81-failsafe-testing">8.1 Failsafe testing</h3>
+<p>NickelHook arms a failsafe before <code>init()</code> and disarms it <code>failsafe_delay</code> seconds later; if Nickel crashes before that, the mod is uninstalled on the next boot. We set <code>failsafe_delay = 15</code> and do, once per major build line (hello-world, first drawer build, first kit build), the deliberate-crash drill (SAFE-01). The user can also trigger it by powering off within ~20 s of boot (NickelMenu doc).</p>
+<h3 id="82-uninstall-file">8.2 Uninstall file</h3>
+<p><code>/mnt/onboard/.adds/koboapps/uninstall</code> (NickelHook <code>uninstall_flag</code>): on next boot the mod deletes itself, deletes <code>.adds/nm/apps</code> (our generated menu, via the <code>uninstall()</code> callback) and leaves <code>.adds/apps/</code> untouched. Documented in <code>README</code> and shown on the mod's settings screen.</p>
+<h3 id="83-symbol-and-firmware-check">8.3 Symbol and firmware check</h3>
+<p>Section 3.2. Additionally <code>init()</code> is tiny: read version file, dlsym table, decide, install the <code>MainNavView</code> hook only if "drawer on". Nothing else happens until the tab is tapped.</p>
+<h3 id="84-watchdog">8.4 Watchdog</h3>
+<ul>
+<li>Every host service call and backend wait runs on the GUI thread with Qt timers, never a blocking wait &gt; 50 ms.</li>
+<li>A <code>QTimer</code> watchdog (only while a screen is open) checks every 5 s that the backend answered within its timeouts; otherwise banner + stop.</li>
+<li>Backends get <code>prctl(PR_SET_PDEATHSIG, SIGTERM)</code> equivalent: the host also writes <code>data/pid</code> and <code>gen-menu</code> adds a "Dừng mọi ứng dụng" fallback item (<code>pkill -f .adds/apps/</code>).</li>
+</ul>
+<h3 id="85-memory-cpu-budgets">8.5 Memory / CPU budgets</h3>
+<p>Host ≤ 1 MB idle, ≤ 4 MB per open screen; backend ≤ 64 MB RSS typical, 256 MB hard; CPU ≤ 2 % idle-screen; no polling timers when the drawer is closed. Measured in soak tests (section 9.6).</p>
+<h3 id="86-usb-mass-storage-behaviour">8.6 USB mass-storage behaviour</h3>
+<p>All <code>/mnt/onboard</code> access is open-read/write-close inside signal handlers or <code>init()</code>. On <code>PlugWorkflowManager</code> "connect" signal (or NickelMenu-style detection of <code>gadgetMode</code>): stop every backend (SIGTERM, 3 s, SIGKILL), pop app screens, pop the drawer. Backends must not keep files open either: LocalSend writes each received file to <code>data/tmp/</code> then renames into the target folder; GitHub sync likewise. Tested by FI-05.</p>
+<h3 id="87-test-matrix">8.7 Test matrix</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firmware (static symbol check)</td>
+<td>4.38.23828, 4.38.23697, 4.38.23684, 4.38.23648, 4.38.23552 (+ 4.38.23429 as "older: drawer off" case, + a synthetic 5.x version string)</td>
+</tr>
+<tr>
+<td>Firmware (dynamic, on device)</td>
+<td>4.38.23828 only (others optional, section 3.2 item 4)</td>
+</tr>
+<tr>
+<td>Theme</td>
+<td>light, dark</td>
+</tr>
+<tr>
+<td>Font size</td>
+<td>smallest, default, largest Nickel setting</td>
+</tr>
+<tr>
+<td>Locale</td>
+<td>vi, en</td>
+</tr>
+<tr>
+<td>Mods present</td>
+<td>NickelMenu + kobo-tieng-viet + tudien (baseline); NickelMenu removed (fallback absent); NickelDBus present (conflict check, optional)</td>
+</tr>
+<tr>
+<td>Power</td>
+<td>battery &gt; 50 %, battery &lt; 15 %, charging over USB-power-only adapter</td>
+</tr>
+<tr>
+<td>Connectivity</td>
+<td>Wi-Fi on, off, airplane mode, captive/no-internet</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td><code>.adds/apps</code> empty, 3 apps, 20 dummy apps</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="88-manual-test-scripts-for-the-user">8.8 Manual test scripts for the user</h3>
+<p>Each session T0–T8 is a checklist file <code>docs/test-sessions/T&lt;n&gt;.md</code> with: preparation (backup command, build to install, charge level), numbered steps with the expected screen (reference screenshot where available), a "what to note" column (times, battery %), and the log-collection command at the end. Screenshots: enable <code>nickel_setting:toggle:screenshots</code> via NickelMenu or use <code>nickel_screenshot:capture</code>; files land on the onboard partition root as <code>screen_NNN.png</code> (<mark>verify</mark> path/name on 4.38) and are copied to <code>docs/screens/&lt;session&gt;/</code> on the Mac.</p>
+<h3 id="89-crash-log-collection">8.9 Crash log collection</h3>
+<p><code>tools/logs.sh</code> collects: <code>.kobo/koboapps_*.log</code> (NickelHook dump on init failure), <code>.adds/koboapps/log/host.log</code>, <code>.adds/apps/*/data/log/backend.log</code>, and if telnet is enabled <code>logread</code> (syslog) and <code>dmesg | tail -200</code>. Nickel crash signatures appear in syslog as <code>nickel</code> segfault lines. Logs are attached to the blocker report or the session notes; nothing is uploaded anywhere.</p>
+<hr />
+<h2 id="9-validation">9. Validation</h2>
+<h3 id="91-definition-of-done-per-phase">9.1 Definition of done per phase</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Done when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>Schema committed; <code>gen-menu</code> idempotent; LocalSend and GitHub sync reachable and working from NickelMenu on device; session T1 signed off</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Reproducible Docker build; 5 firmware zips fetched, verified as Libra 2 images, sha256 locked; Ghidra project with 5 programs; Ghidra smoke test; hello-world variants built; SAFE-01..04 passed; <code>symcheck</code> matrix in CI; G1 signed</td>
+</tr>
+<tr>
+<td>P2b</td>
+<td>Prototypes A–D on device, screenshots in <code>docs/screens/T3/</code>; <code>re/notes/*.md</code> written; every symbol used exists on 5/5 builds or has aliases; G2 decision recorded</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>DRW-01..12 and FW-01..05 pass; S1, S4, S8 measured and met; 72 h idle soak numbers recorded; G3 signed</td>
+</tr>
+<tr>
+<td>P4</td>
+<td>KIT-01..14 pass; unit tests + golden tests green; S11 score recorded; G4 signed</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>LS/GH/LIB cases pass; FI-01..10 pass; 72 h usage soak; S5–S7, S12 met; legacy folders removed; G5 signed</td>
+</tr>
+<tr>
+<td>P6</td>
+<td>CI green on a clean clone; <code>APPS.md</code> reviewed; timed exercise ≤ 30 min; release artefacts built; uninstall/reinstall verified (SAFE-05/06); G6 signed</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="92-validation-layers">9.2 Validation layers</h3>
+<ol>
+<li><strong>Static checks</strong> (every commit, CI): compiler warnings as errors for our code (<code>-Wall -Wextra -Werror</code>, GCC 4.9 limits), <code>symcheck.py</code> against the 5 cached libnickel dumps, JSON-schema validation of all <code>app.json</code>/<code>ui.json</code> in <code>apps/</code> (<code>tools/validate</code>), <code>shellcheck</code> on every <code>.sh</code>, <code>go vet</code> + <code>staticcheck</code> for Go backends, a grep gate that no <code>std::</code> symbol appears in <code>nm libkoboapps.so</code> output (except what NickelHook itself uses).</li>
+<li><strong>Unit tests</strong> (host, Mac, Qt 5 via Homebrew — <mark>verify</mark>; else run inside the NickelTC container with <code>qemu-user</code>): protocol framing and parser (long lines, partial lines, invalid UTF-8, nested JSON), binding engine (templates, truthiness, cap/append/remove), layout math (row heights, tap targets at the three font sizes), firmware decision function (table of version strings → on/off/trial).</li>
+<li><strong>Mac preview golden tests</strong>: <code>preview --screenshot</code> renders each screen of <code>_kitdemo</code>, LocalSend, GitHub, Library at 1264×1680 greyscale in light and dark; compared to goldens with a 0.5 % pixel tolerance; goldens updated only by explicit <code>make goldens</code> with a reviewed diff.</li>
+<li><strong>On-device tests</strong>: scripted checklists (section 9.9) in sessions T0–T8, with expected screenshots and log collection.</li>
+<li><strong>Soak tests</strong> (section 9.6).</li>
+<li><strong>Failure-injection tests</strong> (section 9.7).</li>
+<li><strong>Firmware-update rehearsal</strong> (section 9.8).</li>
+<li><strong>Uninstall / rollback verification</strong> (SAFE-05/06).</li>
+<li><strong>Acceptance sign-off</strong>: at each gate the user fills <code>docs/signoff/G&lt;n&gt;.md</code> (checklist results, S-criteria values, score for S11, "go"/"no-go", date).</li>
+</ol>
+<h3 id="93-build-and-static-tooling-commands">9.3 Build and static tooling commands</h3>
+<pre><code>make all                  # cross-build in NickelTC (docker)
+make koboroot             # KoboRoot.tgz
+make check                # symcheck ×5 + validate + shellcheck + nostd grep
+make test                 # host unit tests (Qt 5)
+make goldens / make golden-test
+make release VERSION=1.0.0
+</code></pre>
+<h3 id="94-device-logging-during-tests">9.4 Device logging during tests</h3>
+<p>Verbose mode: <code>.adds/koboapps/config</code> → <code>log:2</code>. Every test case lists the log lines expected (e.g. <code>fw=4.38.23828 table=known drawer=on</code>).</p>
+<h3 id="95-safety-test-cases">9.5 Safety test cases</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SAFE-01</td>
+<td>Install hello-world <strong>variant B</strong> (abort in init); eject; wait</td>
+<td>Kobo shows the Kobo logo, maybe a longer boot, then Home; <code>.kobo/koboapps_*.log</code> exists; <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> gone (check via telnet or by reinstalling and reading log)</td>
+<td>Nickel boots ≤ 3 min; mod removed; no second reboot loop</td>
+</tr>
+<tr>
+<td>SAFE-02</td>
+<td>Install <strong>variant C</strong>; eject</td>
+<td>Boot normal; toast "Xin chào từ Ứng dụng" ~10 s after Home; log has fw line</td>
+<td>Toast seen; log line <code>fw=4.38.23828</code></td>
+</tr>
+<tr>
+<td>SAFE-03</td>
+<td>Create <code>.adds/koboapps/uninstall</code>; reboot</td>
+<td>No toast; file consumed; mod gone</td>
+<td>Both true</td>
+</tr>
+<tr>
+<td>SAFE-04</td>
+<td>With mod installed: connect USB, copy a book, eject, open book</td>
+<td>Normal behaviour, no "repairing library" prompt</td>
+<td>No errors in log; book opens</td>
+</tr>
+<tr>
+<td>SAFE-05 (P6)</td>
+<td>Full uninstall via flag with 3 apps installed</td>
+<td>Drawer tab gone; NickelMenu "Ứng dụng" items gone (our file deleted); <code>.adds/apps</code> intact</td>
+<td>True</td>
+</tr>
+<tr>
+<td>SAFE-06 (P6)</td>
+<td>Reinstall release KoboRoot.tgz over an existing install</td>
+<td>Settings preserved; apps rediscovered</td>
+<td>True</td>
+</tr>
+<tr>
+<td>SAFE-07</td>
+<td>Power off within 10 s of boot (manual failsafe) twice in a row</td>
+<td>Mod uninstalled by NickelHook; Nickel boots</td>
+<td>Documented recovery works</td>
+</tr>
+<tr>
+<td>SAFE-08</td>
+<td>Remove NickelMenu (<code>.adds/nm/uninstall</code>) with our mod installed</td>
+<td>Drawer still works; no crash; fallback simply absent</td>
+<td>True; reinstall NickelMenu afterwards</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="96-soak-tests">9.6 Soak tests</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Setup</th>
+<th>Duration</th>
+<th>Measurements (user notes at ~08:00 and ~20:00; agent reads logs)</th>
+<th>Thresholds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SOAK-1 (W5)</td>
+<td>Drawer installed, never opened; device in normal use; Wi-Fi as usual</td>
+<td>72 h</td>
+<td>Battery % at each note; Nickel VmRSS logged at boot and on each drawer open (<code>tools/logs.sh</code> after); number of backend processes = 0 (<code>ps</code> via telnet or <code>data/pid</code> absent)</td>
+<td>Extra drain ≤ 1 %/24 h vs the user's baseline week; VmRSS growth ≤ 1 MB; no log errors</td>
+</tr>
+<tr>
+<td>SOAK-2 (W9)</td>
+<td>LocalSend used once per day, GitHub sync once per day, Library tool once</td>
+<td>72 h</td>
+<td>Same + per-backend RSS peaks from <code>backend.log</code> self-reports (<code>/proc/self/status</code> printed at exit)</td>
+<td>S5–S7; zero crashes; no stuck backends after sleep</td>
+</tr>
+<tr>
+<td>SOAK-3 (W11)</td>
+<td>Release candidate, keep-alive LocalSend receiver left on for 24 h</td>
+<td>24 h</td>
+<td>Battery, RSS, Wi-Fi state</td>
+<td>Drain ≤ 8 %/24 h with Wi-Fi held on (expected cost of Wi-Fi; <mark>verify</mark> baseline), receiver still answers</td>
+</tr>
+</tbody>
+</table></div>
+<p>Baseline: the user records battery % twice a day for 3 days in W1 with no mod installed (only NickelMenu etc.).</p>
+<h3 id="97-failure-injection-tests">9.7 Failure-injection tests</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Injection</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FI-01</td>
+<td><code>kill -9</code> the backend while its screen is open (via a hidden "Debug: crash" action in <code>_kitdemo</code> or telnet)</td>
+<td>Banner "Ứng dụng dừng đột ngột"; Thử lại restarts; after 2 restarts the button becomes "Xem log"</td>
+<td>No Nickel crash; log shows exit signal</td>
+</tr>
+<tr>
+<td>FI-02</td>
+<td>Corrupt <code>ui.json</code> (truncate; invalid type; unknown component; <code>$undefined</code> var)</td>
+<td>Error screen with path; unknown component → error row; undefined var renders empty and logs once</td>
+<td>No crash; messages match</td>
+</tr>
+<tr>
+<td>FI-03</td>
+<td>Delete one required symbol from the compiled table (build flag <code>-DKA_TEST_MISSING_SYM</code>)</td>
+<td>Drawer off; log reason; NickelMenu fallback works; no boot toast</td>
+<td>True</td>
+</tr>
+<tr>
+<td>FI-04</td>
+<td>Fake firmware version (config override <code>fw_override:5.1.0</code> test hook)</td>
+<td>Drawer off, reason "unsupported line"</td>
+<td>True</td>
+</tr>
+<tr>
+<td>FI-05</td>
+<td>Connect USB while GitHub sync is downloading</td>
+<td>Backend gets <code>stop:usb</code>, exits ≤ 3 s; temp file left only in <code>data/tmp/</code>; after eject the next sync resumes cleanly; no half-written EPUB in the library</td>
+<td>True; <code>.kobo</code> not corrupted</td>
+</tr>
+<tr>
+<td>FI-06</td>
+<td>Turn Wi-Fi off / airplane mode mid-sync</td>
+<td>Backend reports error toast; screen shows "Thử lại"; no hang</td>
+<td>Within 30 s</td>
+</tr>
+<tr>
+<td>FI-07</td>
+<td>Battery &lt; 15 % and start a sync</td>
+<td>Confirm dialog "Pin yếu, vẫn tiếp tục?" (host rule when battery &lt; 15 %)</td>
+<td>Dialog shown; cancel aborts</td>
+</tr>
+<tr>
+<td>FI-08</td>
+<td>Backend floods 10,000 <code>append</code> lines</td>
+<td>List capped at <code>max</code>; UI stays responsive; CPU returns to idle after flood</td>
+<td>≤ 2 s stall; no OOM</td>
+</tr>
+<tr>
+<td>FI-09</td>
+<td>Backend prints 1 MB single line</td>
+<td>Line dropped, counted; after 20 → backend stopped "protocol"</td>
+<td>No crash</td>
+</tr>
+<tr>
+<td>FI-10</td>
+<td>Sleep the device (power button) with a screen open; wake after 15 min</td>
+<td><code>pause</code>/<code>resume</code> delivered; backend still alive (&lt; 10 min rule) or restarted after; screen consistent</td>
+<td>True</td>
+</tr>
+<tr>
+<td>FI-11</td>
+<td>20 dummy app folders, one with a 5 MB icon and one with <code>app.json</code> of 1 MB</td>
+<td>Drawer opens ≤ 1 s; oversize icon replaced by placeholder; oversize json rejected with error tile</td>
+<td>True</td>
+</tr>
+<tr>
+<td>FI-12</td>
+<td>Both NickelMenu "Tweak" tab and our tab configured</td>
+<td>Both buttons visible, both work, order stable across reboots</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="98-firmware-update-rehearsal">9.8 Firmware-update rehearsal</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FW-01</td>
+<td><code>make check</code> with the 5 cached builds</td>
+<td>Matrix all <code>ok</code> for required symbols</td>
+<td>CI green</td>
+</tr>
+<tr>
+<td>FW-02</td>
+<td>Add 4.38.23429 dump to the matrix as "unsupported older"</td>
+<td>Report lists it as not in table; drawer would be off</td>
+<td>Report correct</td>
+</tr>
+<tr>
+<td>FW-03</td>
+<td>Simulate a future build: copy 4.38.23828 dump, rename one required symbol</td>
+<td><code>symcheck</code> fails naming the symbol; runtime (FI-03) disables drawer</td>
+<td>True</td>
+</tr>
+<tr>
+<td>FW-04</td>
+<td>Procedure dry-run: pretend 4.38.24xxx appeared; follow section 6.6 steps 1–2 on the 23697 dump timing the work</td>
+<td>Documented time ≤ 1 h for the "same" case</td>
+<td>Time recorded</td>
+</tr>
+<tr>
+<td>FW-05 (optional, user decides)</td>
+<td>Real downgrade to 4.38.23684 then upgrade back to 23828 (section 3.2 item 4)</td>
+<td>Drawer works on both; mods re-installed; Vietnamese UI self-repairs after extra reboot</td>
+<td>Only if the user accepts the risk; otherwise N/A</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="99-on-device-test-case-tables">9.9 On-device test case tables</h3>
+<p><strong>Drawer (session T4)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DRW-01</td>
+<td>Boot with 3 apps</td>
+<td>Bottom bar shows Trang chủ · Sách · … · Ứng dụng with icon</td>
+<td>Icon crisp, label in Vietnamese, same size as neighbours</td>
+</tr>
+<tr>
+<td>DRW-02</td>
+<td>Tap Ứng dụng</td>
+<td>Drawer with header "Ứng dụng · 3 ứng dụng", 2-column tiles, tab bar remains</td>
+<td>Painted ≤ 600 ms (log); one full refresh only</td>
+</tr>
+<tr>
+<td>DRW-03</td>
+<td>Tap Sách then Ứng dụng again</td>
+<td>Returns to drawer; status lines refreshed</td>
+<td>No duplicate views (log <code>views=1</code>)</td>
+</tr>
+<tr>
+<td>DRW-04</td>
+<td>Tap a tile</td>
+<td>App screen pushed with header back chevron; backend <code>ready</code> logged</td>
+<td>≤ 800 ms</td>
+</tr>
+<tr>
+<td>DRW-05</td>
+<td>Tap back chevron</td>
+<td>Back to drawer; backend <code>stop:back</code> and exit ≤ 3 s</td>
+<td>Log confirms</td>
+</tr>
+<tr>
+<td>DRW-06</td>
+<td>Empty <code>.adds/apps</code></td>
+<td>Drawer shows empty text + "Thêm ứng dụng" tile</td>
+<td>Text correct</td>
+</tr>
+<tr>
+<td>DRW-07</td>
+<td>Add a folder via USB, eject, open drawer</td>
+<td>New app appears without reboot</td>
+<td>True</td>
+</tr>
+<tr>
+<td>DRW-08</td>
+<td>Dark mode on</td>
+<td>Drawer and tiles inverted correctly; icons swap</td>
+<td>No white boxes</td>
+</tr>
+<tr>
+<td>DRW-09</td>
+<td>Largest font size</td>
+<td>Tiles reflow, nothing clipped</td>
+<td>True</td>
+</tr>
+<tr>
+<td>DRW-10</td>
+<td>Open drawer, press power (sleep), wake</td>
+<td>Drawer still shown, no artefacts</td>
+<td>True</td>
+</tr>
+<tr>
+<td>DRW-11</td>
+<td>Mod settings screen: drawer off → reboot</td>
+<td>Tab absent; NickelMenu items present</td>
+<td>True</td>
+</tr>
+<tr>
+<td>DRW-12</td>
+<td>Backend <code>request:wifi_on</code> from <code>_kitdemo</code></td>
+<td>Nickel's Wi-Fi connect flow appears; event <code>wifi ok:true</code> logged</td>
+<td>≤ 20 s</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>UI kit (session T5, using <code>_kitdemo</code>)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KIT-01</td>
+<td>Open component sheet</td>
+<td>Header, Text(3 styles), KV, Toggle, Field, BigCode, Progress, List, Buttons, all visible</td>
+<td>Matches golden ± tolerance</td>
+</tr>
+<tr>
+<td>KIT-02</td>
+<td>Compare side by side with Settings › Reading</td>
+<td>Row height, separators, font weight identical</td>
+<td>User rating ≥ 4/5</td>
+</tr>
+<tr>
+<td>KIT-03</td>
+<td>Tap Toggle</td>
+<td>Flips instantly; event logged; backend <code>set</code> back within 1 s keeps state</td>
+<td>One partial refresh</td>
+</tr>
+<tr>
+<td>KIT-04</td>
+<td>Tap TextField</td>
+<td>Kobo keyboard appears (Vietnamese layout available); typing updates field; Go commits</td>
+<td>Event logged</td>
+</tr>
+<tr>
+<td>KIT-05</td>
+<td>Secret field</td>
+<td>Dots shown; value not in logs</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-06</td>
+<td>Backend <code>set pin</code> every 2 s</td>
+<td>Only BigCode repaints</td>
+<td>No full flash; ≤ 1 partial/2 s</td>
+</tr>
+<tr>
+<td>KIT-07</td>
+<td><code>append</code> 60 items with <code>max</code> 50</td>
+<td>List shows last 50; no scroll jump</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-08</td>
+<td>Progress 0→100 % in 5 % steps</td>
+<td>Smooth; ≤ 20 partial updates</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-09</td>
+<td>Button with <code>confirm</code></td>
+<td>Native Yes/No dialog; cancel sends nothing; ok sends action</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-10</td>
+<td>Toast burst (5 in 1 s)</td>
+<td>Max 1 per 2 s shown, rest dropped and logged</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-11</td>
+<td>Dark mode</td>
+<td>All components correct</td>
+<td>No artefacts</td>
+</tr>
+<tr>
+<td>KIT-12</td>
+<td>Font size small/large</td>
+<td>Layout holds; tap targets ≥ 120 px</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-13</td>
+<td>Locale en</td>
+<td>Host strings switch; <code>{vi,en}</code> strings switch</td>
+<td>True</td>
+</tr>
+<tr>
+<td>KIT-14</td>
+<td>Error screen (bad ui.json)</td>
+<td>Native-looking error with path; "Mở menu dự phòng" opens NickelMenu list</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>LocalSend app (session T6)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LS-01</td>
+<td>Open app, tap "Bắt đầu nhận"</td>
+<td>PIN, IP, alias shown; badge "Đang nhận"; Wi-Fi came on if off</td>
+<td>≤ 5 s after Wi-Fi</td>
+</tr>
+<tr>
+<td>LS-02</td>
+<td>Send one EPUB from the phone</td>
+<td>Row appended with name and size; toast; book appears in Sách after auto-rescan</td>
+<td>≤ 10 s after transfer</td>
+</tr>
+<tr>
+<td>LS-03</td>
+<td>Send 3 files at once</td>
+<td>3 rows; one rescan (debounced 5 s)</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LS-04</td>
+<td>Toggle "Tự cập nhật thư viện" off, send a file</td>
+<td>No rescan; NickelMenu "Import books" imports it</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LS-05</td>
+<td>Back to drawer with keep_alive</td>
+<td>Tile shows "Đang nhận"; receiver still works</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LS-06</td>
+<td>"Dừng nhận"</td>
+<td>Backend exits; badge "Đang tắt"</td>
+<td>≤ 3 s</td>
+</tr>
+<tr>
+<td>LS-07</td>
+<td>Connect USB while receiving</td>
+<td>Receiver stopped; after eject, "Bắt đầu nhận" works again</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LS-08</td>
+<td>Phone sends a 200 MB file</td>
+<td>Progress visible; completes; RSS of localgo &lt; 64 MB</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>GitHub sync app (session T6)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GH-01</td>
+<td>First open without token</td>
+<td>Screen explains where to put the token; sync button disabled</td>
+<td>True</td>
+</tr>
+<tr>
+<td>GH-02</td>
+<td>With token, set repo and folder via fields</td>
+<td>Saved to <code>data/config.json</code>; fields persist after reopen</td>
+<td>True</td>
+</tr>
+<tr>
+<td>GH-03</td>
+<td>"Đồng bộ ngay" with 3 new books in the repo</td>
+<td>Wi-Fi on → progress 0/3…3/3 → toast "Đã đồng bộ 3 sách" → rescan → books in library</td>
+<td>≤ 2 min on normal Wi-Fi</td>
+</tr>
+<tr>
+<td>GH-04</td>
+<td>Run again</td>
+<td>"0 mới", nothing downloaded</td>
+<td>True</td>
+</tr>
+<tr>
+<td>GH-05</td>
+<td>Delete a book on the Kobo, run again</td>
+<td>Book re-downloaded (add-only, no tombstones in v1) — or, if user prefers, skipped via <code>state.json</code> (<strong>decision</strong>, section 13)</td>
+<td>Behaviour matches decision</td>
+</tr>
+<tr>
+<td>GH-06</td>
+<td>Delete a book in the repo, run again</td>
+<td>Nothing deleted on the Kobo</td>
+<td>True</td>
+</tr>
+<tr>
+<td>GH-07</td>
+<td>Wrong token</td>
+<td>Toast "GitHub từ chối (401)"; no crash</td>
+<td>True</td>
+</tr>
+<tr>
+<td>GH-08</td>
+<td>No internet</td>
+<td>Toast and "Thử lại"</td>
+<td>≤ 30 s</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Library tool (session T7)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LIB-01</td>
+<td>Scan with 2 known duplicates planted</td>
+<td>List shows the 2 groups with sizes</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LIB-02</td>
+<td>Confirm delete</td>
+<td>Confirm dialog; deleted files go to <code>data/trash/</code>; rescan; library shows one copy</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LIB-03</td>
+<td>Fix language on 2 EPUBs with <code>en</code></td>
+<td>OPF and XHTML <code>lang</code> = <code>vi</code>; EPUB still opens; Vietnamese hyphenation/dictionary works</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LIB-04</td>
+<td>NFC normalise a file with decomposed Vietnamese name</td>
+<td>Renamed; library entry intact after rescan</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LIB-05</td>
+<td>Cancel mid-run</td>
+<td>Stops at a safe point; no partial files</td>
+<td>True</td>
+</tr>
+<tr>
+<td>LIB-06</td>
+<td>Run with USB connected (should be impossible)</td>
+<td>Host refuses: "Đang kết nối USB"</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="910-sign-off-record">9.10 Sign-off record</h3>
+<p><code>docs/signoff/G&lt;n&gt;.md</code> template: gate, date, build hash, session IDs run, table of case IDs with pass/fail/notes, S-criteria measured values, S11 score, open issues with links to blocker reports, decision (go/no-go), user initials.</p>
+<hr />
+<h2 id="10-blocker-reports">10. Blocker reports</h2>
+<h3 id="101-definitions">10.1 Definitions</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Blocker</strong></td>
+<td>Something that stops planned work from continuing and that the agent cannot resolve alone within the time-box</td>
+<td>A needed libnickel capability does not exist; a permission the agent lacks; hardware needed for a test</td>
+</tr>
+<tr>
+<td><strong>Risk</strong></td>
+<td>Something that <em>might</em> become a blocker; tracked in the risk register with a mitigation, work continues</td>
+<td>NickelTC emulation may be slow</td>
+</tr>
+<tr>
+<td><strong>Question</strong></td>
+<td>A decision only the user can make; work can usually continue on an assumption that is written down</td>
+<td>Which GitHub repo to sync</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="102-severity">10.2 Severity</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Effect</th>
+<th>Response time wanted from the user</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>S1</strong></td>
+<td>Stops all work (or threatens device safety)</td>
+<td>Same day</td>
+</tr>
+<tr>
+<td><strong>S2</strong></td>
+<td>Stops the current phase; other phases can proceed</td>
+<td>Within 2 working days</td>
+</tr>
+<tr>
+<td><strong>S3</strong></td>
+<td>Workaround exists; raised so the decision is explicit and the cost is visible</td>
+<td>At the next gate</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="103-when-to-raise">10.3 When to raise</h3>
+<ul>
+<li>Time-box rule: stop and write a report after <strong>4 hours</strong> on one obstacle, or after <strong>2 failed, materially different approaches</strong>, whichever comes first.</li>
+<li>Immediately (no time-box) for anything that could brick or boot-loop the device, risks user data, or needs a permission/credential.</li>
+<li>A question that blocks a task for more than 1 day becomes an S3 blocker.</li>
+</ul>
+<h3 id="104-template-docsblockersb-nnnmd">10.4 Template (<code>docs/blockers/B-NNN.md</code>)</h3>
+<pre><code># B-NNN — &lt;one-line summary&gt;
+
+- Date: YYYY-MM-DD   Severity: S1 | S2 | S3   Status: open | waiting-user | resolved | withdrawn
+- Phase / task: P&lt;n&gt; / &lt;task id&gt;   Owner: agent   Needs: user | external | time
+- Gate affected: G&lt;n&gt;   Timeline impact: &lt;days&gt; on &lt;milestone&gt;
+
+## What was tried (with evidence)
+1. &lt;approach&gt; — &lt;command / log excerpt / screenshot path&gt; — result
+2. ...
+
+## Impact
+&lt;what cannot proceed, what can; which gate moves and by how much&gt;
+
+## Options
+| # | Option | Pros | Cons | Estimate |
+|---|--------|------|------|----------|
+| A | ... | ... | ... | ... |
+
+## Recommendation
+&lt;option and why&gt;
+
+## Needed from the user, and by when
+&lt;decision / action / credential&gt;, by &lt;date&gt; to hold the &lt;gate&gt; date
+
+## Resolution
+&lt;filled when closed: what was done, date, follow-ups&gt;
+</code></pre>
+<h3 id="105-where-reports-live-and-how-they-are-communicated">10.5 Where reports live and how they are communicated</h3>
+<ul>
+<li>Files: <code>docs/blockers/B-001.md</code>, <code>B-002.md</code>, … plus <code>docs/blockers/INDEX.md</code> (table: ID, date, severity, status, one-line summary, gate affected). Reports are never deleted; superseded ones are marked <code>withdrawn</code>.</li>
+<li>Chat: the agent posts one short message when a report is opened: <code>BLOCKER B-003 (S2, P2b) — libnickel 4.38 has no exported symbol for pushing a view with the tab bar. Needs: your decision between options A/B by Fri 30 Oct. Details: docs/blockers/B-003.md</code>. Status changes get a one-line follow-up. No blocker is buried inside a long progress message.</li>
+<li>Replanning: at the next gate (or immediately for S1) the agent updates section 5 of this plan (dates, buffer consumption) with a short "replan note" referencing the blocker ID; the Gantt table at the end is regenerated; the user acknowledges the new dates in the sign-off file.</li>
+</ul>
+<h3 id="106-example-1">10.6 Example 1</h3>
+<pre><code># B-003 — libnickel 4.38 has no exported symbol for pushing a view with the tab bar
+
+- Date: 2026-10-28   Severity: S2   Status: waiting-user
+- Phase / task: P2b / 2b.1–2b.2   Owner: agent   Needs: user
+- Gate affected: G2   Timeline impact: +3 days on G3 if option B; +0 if option A works within 1 day
+
+## What was tried (with evidence)
+1. MainWindowController::pushView(QWidget*) with a plain QWidget — view shows full screen,
+   bottom MainNavView is hidden. Log: host.log 2026-10-28 14:02 &quot;pushView ok; navbar visible=0&quot;.
+   Screenshot docs/screens/T3/pushview-plain.png.
+2. Searched Ghidra (Ghidra search_functions_by_name) for &quot;MainNav&quot;, &quot;TabBar&quot;, &quot;Footer&quot;:
+   MainNavView is created by MainNavController and parented to the Home/Library views'
+   container, not to the window — i.e. each top-level view embeds its own nav bar
+   (re/notes/view-push.md §3). No exported function builds that container for a foreign widget.
+3. Tried calling the Library view's constructor family (LibraryNavMixin::showAllItemsWithoutSync)
+   and replacing its content widget after construction — content replaced but the view also
+   starts a library query (CPU 100 % for 3 s) and reverts on tab taps. Rejected.
+
+## Impact
+The &quot;real tab next to Books&quot; design cannot be done by one call. Phase 3 tasks 3.3–3.4 blocked;
+3.1, 3.2, 3.5–3.10 (no UI dependency) can continue.
+
+## Options
+| # | Option | Pros | Cons | Estimate |
+|---|--------|------|------|----------|
+| A | Construct our own MainNavView instance (ctor is exported, NickelMenu already hooks it) and embed it at the bottom of our view; hook the active-state so our button is highlighted | Keeps the design; all symbols already in table | Two MainNavView instances alive; risk of double &quot;tapped&quot; routing; needs 1 more RE day | 1–2 d |
+| B | Plan B container: N3Dialog enableFullViewMode with back button (NickelHardcover-proven) | Low risk, known symbols | No persistent tab bar on app screens; drawer opens like a dialog | 0.5 d |
+| C | Hook the Home view's constructor and inject the drawer as a hidden page of its container | Perfect integration | Fragile across builds; NickelHome already hooks there (conflict) | 4–5 d |
+
+## Recommendation
+A, time-boxed to 1 day; fall back to B if the second MainNavView misbehaves.
+
+## Needed from the user, and by when
+Accept the 1-day spike (A) and the fallback (B), by Fri 30 Oct, to keep G2 on 30 Oct.
+Optionally: say whether a drawer without a persistent tab bar (B) is acceptable for v1.
+
+## Resolution
+&lt;pending&gt;
+</code></pre>
+<h3 id="107-example-2">10.7 Example 2</h3>
+<pre><code># B-001 — permission denied building external code on the Mac (Docker socket / NickelTC)
+
+- Date: 2026-10-14   Severity: S1   Status: resolved 2026-10-15
+- Phase / task: P2 / 2.2   Owner: agent   Needs: user
+- Gate affected: G1   Timeline impact: 0 (resolved within 1 day, buffer used: 0)
+
+## What was tried (with evidence)
+1. `tools/tc make all` → &quot;permission denied while trying to connect to the Docker daemon socket
+   at unix:///var/run/docker.sock&quot; (output saved docs/blockers/B-001-docker.txt). Docker Desktop
+   was not running in the user's session; the agent's sandbox cannot start GUI apps.
+2. After the user started Docker Desktop: `docker run --platform linux/amd64 ghcr.io/pgaskin/nickeltc:1`
+   → &quot;exec format error&quot; because Rosetta for Linux containers was disabled in Docker settings.
+3. Tried extracting the toolchain tarball to run natively (NickelTC README) — binaries are x86_64 ELF;
+   cannot run on arm64 macOS without emulation. Rejected.
+
+## Impact
+No cross-build possible → hello-world and everything after it blocked. Phase 1 (shell/Go only) unaffected.
+
+## Options
+| # | Option | Pros | Cons | Estimate |
+|---|--------|------|------|----------|
+| A | User enables &quot;Use Rosetta for x86_64/amd64 emulation&quot; in Docker Desktop and keeps Docker running during dev hours | One click; fastest emulation | Needs the user's action each session | 0.1 d |
+| B | Build in GitHub Actions (x86_64) on every push; download KoboRoot.tgz artifacts | No local emulation; CI needed anyway | Slower loop (~3 min); needs repo on GitHub now | 0.5 d |
+| C | Build NickelTC image for arm64 from source | Native speed | Multi-hour build; &quot;only tested on x86_64&quot; per README; risk of subtle differences | 1–2 d |
+
+## Recommendation
+A now, B as the standing fallback (set up in Phase 6 anyway, pulled forward).
+
+## Needed from the user, and by when
+Enable Rosetta emulation in Docker Desktop → Settings → General, and start Docker Desktop
+before test days; by Thu 15 Oct to keep G1 on 23 Oct.
+
+## Resolution
+2026-10-15: user enabled Rosetta; `make all` succeeds in 2 m 40 s; CI build job added early (tools/ci-build.yml).
+</code></pre>
+<hr />
+<h2 id="11-repo-structure-build-ci-versioning-and-packaging">11. Repo structure, build, CI, versioning and packaging</h2>
+<h3 id="111-layout-githubcomuserkoboapps-private-until-v10">11.1 Layout (<code>github.com/&lt;user&gt;/koboapps</code>, private until v1.0)</h3>
+<pre><code>koboapps/
+├── README.md, LICENSE (MIT for our code), CHANGELOG.md
+├── NickelHook/                 # git submodule (pgaskin/NickelHook)
+├── Makefile                    # includes NickelHook.mk; targets all/koboroot/check/test/release
+├── src/
+│   ├── koboapps.cc             # NickelHook struct, init(), uninstall()
+│   ├── fw/        version.cc fw_table.h(generated) decide.cc
+│   ├── nickel/    symbols.h wrappers.cc (toast, pushView, wifi, rescan, dialogs, keyboard)
+│   ├── host/      registry.cc appmodel.cc backend.cc protocol.cc services.cc usb.cc log.cc settings.cc
+│   ├── drawer/    drawerview.cc apptile.cc navbutton.cc
+│   ├── kit/       screen.cc binding.cc layout.cc refresh.cc  + one file per component
+│   └── json/      minimal QJson helpers (no std::)
+├── res/           icons/*.png (light/dark/active), strings_vi.json, strings_en.json, uninstall-doc
+├── spec/          app.schema.json ui.schema.json protocol.md APPS.md
+├── apps/          _template/ _kitdemo/ localsend/ ghsync/ libtool/   (each: app.json ui.json bin/ src/)
+├── backends/      Go module: cmd/ghsync cmd/libtool cmd/ls-host cmd/validate cmd/jsonq
+├── preview/       Mac Qt preview (CMake), shim for Nickel widgets, goldens/
+├── tools/         tc  push.sh  logs.sh  fetch-fw.sh  gen-menu.sh  symcheck.py  new-app.sh
+├── re/            firmware.lock  symbols/required.yaml  symbols/symbols-&lt;fw&gt;.md|json  notes/*.md
+├── tests/         unit (Qt Test)  fixtures/*.jsonl  device/T0.md … T8.md
+├── docs/          blockers/  signoff/  screens/  test-sessions/
+└── .github/workflows/ci.yml release.yml
+</code></pre>
+<h3 id="112-build-commands">11.2 Build commands</h3>
+<pre><code>git clone --recursive …
+tools/tc make all koboroot                 # Docker NickelTC (amd64 emulation on Apple Silicon)
+make check                                 # symcheck ×5, validate, shellcheck, nostd grep
+cd backends &amp;&amp; GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags=&quot;-s -w&quot; ./cmd/...
+cmake -S preview -B build/preview &amp;&amp; cmake --build build/preview &amp;&amp; build/preview/kapreview apps/localsend/ui.json
+tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kobo/ when mounted
+</code></pre>
+<h3 id="113-ci-github-actions">11.3 CI (GitHub Actions)</h3>
+<ul>
+<li><code>ci.yml</code> on push/PR: (1) <code>shellcheck</code>, <code>go vet</code>, <code>validate</code>; (2) cross-build in <code>ghcr.io/pgaskin/nickeltc:1</code> container, upload <code>KoboRoot.tgz</code> artifact; (3) <code>symcheck</code> against 5 libnickel symbol dumps — the dumps (<code>nm</code> text output, no binaries) are produced by a scheduled job that downloads the official zips into a cache keyed by sha256 and discards the binaries; only the text symbol lists are cached (<strong>decision</strong>: even the text dumps are kept in the CI cache, not committed); (4) host unit tests (ubuntu, <code>qtbase5-dev</code>); (5) preview golden tests (ubuntu, offscreen Qt platform).</li>
+<li><code>release.yml</code> on tag <code>v*</code>: build, package, draft release with checksums.</li>
+</ul>
+<h3 id="114-versioning-and-packaging">11.4 Versioning and packaging</h3>
+<ul>
+<li>Mod: semver <code>MAJOR.MINOR.PATCH</code>; <code>MINOR</code> bump when the protocol or <code>ui.json</code> schema gains fields; <code>MAJOR</code> when <code>proto</code> changes. Version string embedded (<code>KA_VERSION</code> from git describe) and written to <code>.adds/koboapps/version</code> at init (write-and-close).</li>
+<li>Artefacts: <code>koboapps-&lt;ver&gt;-KoboRoot.tgz</code> (contains <code>usr/local/Kobo/imageformats/libkoboapps.so</code>, <code>mnt/onboard/.adds/koboapps/{doc,default-config}</code>); <code>koboapps-apps-&lt;ver&gt;.zip</code> with <code>.adds/apps/{localsend,ghsync,libtool}</code>; individual <code>app-&lt;id&gt;-&lt;ver&gt;.zip</code>. SHA256SUMS alongside.</li>
+<li>Install: copy KoboRoot.tgz into <code>.kobo/</code>, unzip apps into <code>.adds/apps/</code>, eject; Kobo installs and reboots.</li>
+<li><code>required.yaml</code> lists <code>supported_firmware: [4.38.23828, 4.38.23697, 4.38.23684, 4.38.23648, 4.38.23552]</code>; the release notes print the matrix.</li>
+</ul>
+<hr />
+<h2 id="12-risk-register">12. Risk register</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Risk</th>
+<th>Likelihood</th>
+<th>Impact</th>
+<th>Mitigation</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-01</td>
+<td>Boot loop from a bad mod build</td>
+<td>Low</td>
+<td>High</td>
+<td>NickelHook failsafe, <code>failsafe_delay=15</code>, tiny init, SAFE-01 drill per build line, uninstall flag, telnet enabled before risky sessions</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-02</td>
+<td>No clean way to push a view with the tab bar (G2 no-go)</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Plan B N3Dialog full-view container; kit unaffected; +3 days</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-03</td>
+<td>Keyboard cannot be hosted outside N3Dialog</td>
+<td>Medium</td>
+<td>Low</td>
+<td>TextField opens native text-edit dialog instead (still native)</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-04</td>
+<td>NickelTC on Apple Silicon slow/broken</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Rosetta emulation; CI build fallback</td>
+<td>user/agent</td>
+</tr>
+<tr>
+<td>R-05</td>
+<td>Firmware update changes symbols</td>
+<td>Medium over months</td>
+<td>Medium</td>
+<td>Symbol check + 5-build matrix + runtime disable + menu fallback; auto-update off</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-06</td>
+<td>4.38.23697 kobo9 package is not a Libra 2 build</td>
+<td>Medium</td>
+<td>Low</td>
+<td>fetch-fw verifies image type; replace with 4.38.23429 in the matrix</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-07</td>
+<td>Conflict with NickelMenu/NickelHome hooks on <code>MainNavView</code></td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Order-independent injection (append after existing buttons), FI-12, test with "Tweak" tab present</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-08</td>
+<td>Memory growth / leaks inside Nickel over weeks</td>
+<td>Low</td>
+<td>High</td>
+<td>No timers when idle, QObject parenting audit, SOAK tests, VmRSS logging</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-09</td>
+<td>USB corruption from held file handles</td>
+<td>Low</td>
+<td>High</td>
+<td>open-write-close rule, backend stop on USB, FI-05</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-10</td>
+<td>Library tool corrupts an EPUB</td>
+<td>Low</td>
+<td>High</td>
+<td>copy-<mark>verify</mark>-rename, trash folder, <code>unzip -t</code> equivalent, user confirms candidates</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-11</td>
+<td>GitHub PAT leak</td>
+<td>Low</td>
+<td>Medium</td>
+<td>token file mode 600 in <code>data/</code>, never logged, fine-grained read-only, user pastes it</td>
+<td>user</td>
+</tr>
+<tr>
+<td>R-12</td>
+<td>Old GCC 4.9 / Qt 5.2 lacks features used</td>
+<td>Medium</td>
+<td>Low</td>
+<td>No std::, C++11 subset only, clangd database for early errors, CI build</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-13</td>
+<td>Emulated Qt build mismatches device (ABI)</td>
+<td>Low</td>
+<td>High</td>
+<td>Only NickelTC output goes to the device; Mac preview is for layout only</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-14</td>
+<td>User availability for batched sessions slips</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Sessions are short, scheduled at gates, agent continues on Mac-only work (preview, docs, backends)</td>
+<td>user</td>
+</tr>
+<tr>
+<td>R-15</td>
+<td>Ghidra analysis time on 5 binaries</td>
+<td>Medium</td>
+<td>Low</td>
+<td>headless batch overnight; analyse 23828 first, others in background</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-16</td>
+<td>Vietnamese keyboard layout from kobo-tieng-viet not available in our field</td>
+<td>Low</td>
+<td>Medium</td>
+<td>Use <code>KeyboardScript</code> the mod registers (<mark>verify</mark>); else fall back to native text-edit dialog which the mod already patches</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-17</td>
+<td>Battery drain from keep-alive LocalSend receiver (Wi-Fi held on)</td>
+<td>High (by design)</td>
+<td>Low</td>
+<td>Tile shows "Đang nhận"; auto-stop after N hours (configurable, default 2 h); SOAK-3 numbers</td>
+<td>agent</td>
+</tr>
+<tr>
+<td>R-18</td>
+<td>Backends run as root; a bug can delete books</td>
+<td>Low</td>
+<td>High</td>
+<td>Add-only policies, confirm dialogs, trash folder, apps limited to those written in this repo</td>
+<td>user/agent</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="13-open-questions-and-decisions-for-the-user">13. Open questions and decisions for the user</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Question</th>
+<th>Needed by</th>
+<th>Default assumption if no answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1</td>
+<td>OK to install JDK 21, Ghidra, Ghidra and to register an MCP server in the maintainer on the Mac?</td>
+<td>W2 start (19 Oct)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Q2</td>
+<td>OK to run Docker Desktop with Rosetta emulation during dev days?</td>
+<td>W1</td>
+<td>Yes; CI fallback otherwise</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>OK to install test mods (hello-world incl. the deliberate-crash variant) on the Kobo in session T2?</td>
+<td>23 Oct</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Q4</td>
+<td>Turn off Kobo auto-update (and keep Wi-Fi mostly off) while the drawer is young?</td>
+<td>W1</td>
+<td>Yes (recommended)</td>
+</tr>
+<tr>
+<td>Q5</td>
+<td>GitHub repo <code>owner/repo</code>, branch, folder, destination folder on the Kobo; who creates the fine-grained PAT (read-only Contents on that repo only)</td>
+<td>T1 (15 Oct)</td>
+<td>User creates and pastes into <code>.adds/apps/ghsync/data/token</code></td>
+</tr>
+<tr>
+<td>Q6</td>
+<td>GH-05: re-download books deleted on the Kobo, or remember them in <code>state.json</code> and skip?</td>
+<td>W8</td>
+<td>Skip (remember deletions)</td>
+</tr>
+<tr>
+<td>Q7</td>
+<td>Enable telnet/FTP via NickelMenu items for log collection during test sessions (off otherwise)?</td>
+<td>T2</td>
+<td>Yes, toggled per session</td>
+</tr>
+<tr>
+<td>Q8</td>
+<td>Accept plan B (drawer as full-view dialog without persistent tab bar) if G2 fails?</td>
+<td>G2</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Q9</td>
+<td>Willing to do the optional downgrade/upgrade rehearsal FW-05?</td>
+<td>W11</td>
+<td>No (static checks only)</td>
+</tr>
+<tr>
+<td>Q10</td>
+<td>Preferred time windows for the 9 batched sessions (evenings / weekends)?</td>
+<td>W1</td>
+<td>Fridays 20:00–21:00</td>
+</tr>
+<tr>
+<td>Q11</td>
+<td>Language of app names in the drawer: Vietnamese only, or follow Nickel locale?</td>
+<td>W6</td>
+<td>Follow locale, Vietnamese default</td>
+</tr>
+<tr>
+<td>Q12</td>
+<td>LocalSend keep-alive auto-stop after how long?</td>
+<td>W8</td>
+<td>2 hours</td>
+</tr>
+<tr>
+<td>Q13</td>
+<td>Repo visibility (private until 1.0, then public under MIT)?</td>
+<td>W10</td>
+<td>Private → public at 1.0</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="14-summary-gantt-table">14. Summary Gantt table</h2>
+<pre><code>2026            Oct             |        Nov            |        Dec
+Week            W1  W2  W3  W4  | W5  W6  W7  W8  W9    | W10 W11
+Dates (Mon)     12  19  26  2   | 9   16  23  30  7     | 14  21
+P1 menu fallback ██
+P2 toolchain+RE  ░█  ██
+P2b RE spike             ██
+P3 drawer host               ██  ██
+P4 UI kit v1                         ██  ██
+P5 port tools                                ██  ██
+P6 dev kit                                           ██
+Buffer/release                                           ░█
+Gates            M1  G1  G2      G3      G4      G5      G6
+User sessions   T0T1 T2  T3      T4      T5      T6  T7  T8
+Soaks                            ▒▒▒(72h)        ▒▒▒(72h) ▒(24h)
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Milestone</th>
+<th>Date</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>Fri 16 Oct</td>
+<td>Apps via NickelMenu (LocalSend, GitHub sync)</td>
+</tr>
+<tr>
+<td>G1</td>
+<td>Fri 23 Oct</td>
+<td>Toolchain, 5 firmware builds analysed, hello-world failsafe proven</td>
+</tr>
+<tr>
+<td>G2</td>
+<td>Fri 30 Oct</td>
+<td>Native view/keyboard feasibility decided</td>
+</tr>
+<tr>
+<td>G3</td>
+<td>Mon 16 Nov</td>
+<td>Drawer host accepted, idle soak passed</td>
+</tr>
+<tr>
+<td>G4</td>
+<td>Mon 30 Nov</td>
+<td>UI kit v1 accepted</td>
+</tr>
+<tr>
+<td>G5</td>
+<td>Mon 14 Dec</td>
+<td>Three apps accepted, failure injection passed</td>
+</tr>
+<tr>
+<td>G6</td>
+<td>Wed 23 Dec</td>
+<td>v1.0 release, dev kit, CI green on 5 firmware builds</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="15-appendix-reference-facts-collected-during-planning-8-oct-2026">15. Appendix: reference facts collected during planning (8 Oct 2026)</h2>
+<ul>
+<li>NickelHook API (<code>NickelHook.h</code>): <code>nh_info{name, desc, uninstall_flag, uninstall_xflag, failsafe_delay}</code>, <code>nh_hook{sym, sym_new, lib, out, desc, optional}</code>, <code>nh_dlsym{name, out, desc, optional}</code>, <code>nh_log</code>, <code>nh_dump_log</code> (writes <code>/mnt/onboard/.kobo/&lt;name&gt;_YYYY-MM-DD_HH-MM-SS.log</code>), <code>nh_delete_file/dir</code>. README: avoid the C++ standard library; never hold <code>/mnt/onboard</code> file handles longer than a few hundred ms; the init blocks Nickel startup so keep it fast; build with NickelTC; names &lt; 3 letters reserved.</li>
+<li>NickelTC: Docker <code>ghcr.io/pgaskin/nickeltc:1</code> (README) / <code>:1.0</code> (nickel-screensaver README); GCC 4.9.4; Qt 5.2.1 at <code>/usr/local/Qt-5.2.1-arm</code>; flags <code>-march=armv7-a -mtune=cortex-a8 -mfpu=neon -mfloat-abi=hard -mthumb</code>; "only tested on x86_64"; last updated Apr 2021.</li>
+<li>NickelMenu: <code>menu_main_15505_*</code> experimental options control the extra bottom-bar button (label/icon); hooks <code>MainNavView::MainNavView</code>, creates <code>MainNavButton</code>, bridges <code>tapped()</code> through a <code>QPushButton</code> shim, shows <code>NickelTouchMenu</code> with <code>MenuTextItem</code>s; all these symbols are <code>optional</code> and the feature degrades with a log message. Actions available for the fallback: <code>cmd_spawn</code>, <code>cmd_output</code> (≤ 10 s), <code>nickel_wifi:autoconnect|autoconnect_silent|enable|disable|toggle</code>, <code>nickel_misc:rescan_books|rescan_books_full|home|force_usb_connection</code>, <code>nickel_setting:toggle:dark_mode|screenshots|invert|lockscreen</code>, <code>nickel_screenshot:capture</code>, <code>dbg_toast</code>, <code>power:sleep|reboot|shutdown</code>. Uninstall by <code>.adds/nm/uninstall</code> or power-off within 20 s of boot. "Firmware 5.x is not supported yet."</li>
+<li>NickelDBus symbols: <code>PlugManager::sharedInstance/gadgetMode</code>, <code>PlugWorkflowManager::sharedInstance</code>, <code>WirelessManager::sharedInstance</code>, <code>MainWindowController::sharedInstance/toast/currentView</code>, <code>N3Dialog::content</code>, <code>Device::getCurrentDevice</code>, <code>N3FSSyncManager::sharedInstance/sync(QStringList*)</code>, <code>WirelessWatchdog::sharedInstance</code>, <code>ConfirmationDialogFactory::getConfirmationDialog/showTextEditDialog</code>, <code>ConfirmationDialog::setTitle/setText/setAcceptButtonText/setRejectButtonText/showCloseButton/setRejectOnOutsideTap/addWidget</code>, <code>N3ConfirmationTextEditField</code> ctor(s) with <code>KeyboardScript</code>, <code>TouchLineEdit</code>; signal <code>pfmDoneProcessing</code>.</li>
+<li>NickelHardcover (hook/src): <code>MainWindowController::pushView(QWidget*)</code>, <code>viewWithObjectName</code>, <code>N3DialogFactory::getDialog(QWidget*, bool)</code>, <code>N3Dialog::showKeyboard/hideKeyboard/keyboardFrame/enableBackButton/disableCloseButton/enableFullViewMode/setTitle</code>, <code>KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&amp;)</code>, <code>KeyboardReceiver(QLineEdit*|QTextEdit*, bool)</code>, <code>SearchKeyboardController::setReceiver/setGoText</code>, <code>TouchLineEdit</code>, <code>TouchTextEdit::setCustomPlaceholderText</code>, <code>TouchCheckBox</code>, <code>TouchLabel::setHitStateEnabled</code>, <code>N3ButtonLabel</code>, <code>SettingContainer</code>, <code>PowerTimer::fireAt/timeRemaining</code>, <code>WirelessWorkflowManager::connectWireless/connectWirelessSilently/isInternetAccessible</code>, <code>SupportedLocales::supportedLocales</code>, <code>ConfirmationDialogFactory::showErrorDialog</code>; widgets dir has <code>dialog, label, elidedlabel, pagedstack, buttongroup, rating</code>; settings dir has <code>checkboxrow, menurow, staticrow, settingsdialog</code>. "Firmware 5.x not supported." Primary repo on Codeberg.</li>
+<li>Ghidra: Ghidra extension zip installed via <code>File → Install Extensions</code>; plugin <code>GhidraPlugin</code> under <code>File → Configure → Developer</code>; HTTP server default <code>127.0.0.1:8080</code>; Python bridge <code>bridge_mcp_ghidra.py --ghidra-server http://127.0.0.1:8080/</code> (needs the <code>mcp</code> Python SDK); tools include list classes/methods/imports/exports, decompile, rename.</li>
+<li>Kobo firmware: upgrade API <code>https://api.kobobooks.com/1.0/UpgradeCheck/Device/&lt;deviceid&gt;/&lt;affiliate&gt;/&lt;ver&gt;/&lt;serial&gt;</code>; Libra 2 device id <code>…0388</code>, hardware folder <code>kobo9</code>; zip contains <code>upgrade/</code>, <code>KoboRoot.tgz</code>, <code>manifest.md5sum</code>; manual install = copy contents into <code>.kobo/</code> and eject. Five newest Libra 2 builds and CDN facts in section 3.1. kobopatch-patches <code>src/versions</code> ends at 4.38.21908 and 4.39.22801 (no patch sets for the 4.38.23xxx Libra 2 builds there; MobileRead patch threads exist for 4.38.23648 and 4.38.23828).</li>
+<li>kobo-tieng-viet: 4.x only ("không hỗ trợ 3.x và 5.x"); since build 20260319 it self-repairs Vietnamese after a firmware update on the next reboot.</li>
+<li>Device: Kobo Libra 2, N418, Mark 9 "Io", NXP i.MX6SLL, 512 MB RAM (<mark>verify</mark>), 7" 1264×1680 300 ppi, firmware 4.38.23828.</li>
+</ul>
+  </main>
+</div>
+
+</html>

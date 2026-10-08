@@ -1,0 +1,313 @@
+package cmd
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/cli"
+	"github.com/bethropolis/localgo/pkg/discovery"
+	"github.com/bethropolis/localgo/pkg/help"
+	"github.com/bethropolis/localgo/pkg/model"
+	"github.com/bethropolis/localgo/pkg/network"
+	"github.com/bethropolis/localgo/pkg/server"
+	"github.com/google/uuid"
+	"github.com/mdp/qrterminal/v3"
+	"github.com/spf13/cobra"
+	"github.com/bethropolis/localgo/pkg/logging"
+)
+
+var (
+	sharefiles       []string
+	shareport        int
+	shareuseHTTP     bool
+	shareuseHTTPS    bool
+	sharepin         string
+	sharealias       string
+	shareautoAccept  bool
+	sharenoClipboard bool
+	sharehistory     string
+	shareexecHook    string
+	sharequiet       bool
+	sharezip         bool
+	shareconcurrency    int
+	sharemulticastiface string
+	shareOnce           bool
+)
+
+var shareCmd = &cobra.Command{
+	Use:   "share",
+	Short: "Share files so others can download them",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		files := sharefiles
+
+		if len(files) == 0 {
+			selected, err := cli.LaunchFilePicker()
+			if err != nil {
+				return fmt.Errorf("file picker failed: %w", err)
+			}
+			if selected == "" {
+				return fmt.Errorf("no file selected")
+			}
+			files = []string{selected}
+			// Auto-enable zipping if the user selected a directory without --zip
+			if info, statErr := os.Stat(selected); statErr == nil && info.IsDir() && !sharezip {
+				sharezip = true
+			}
+		}
+
+		// Apply overrides
+		if shareport > 0 {
+			Cfg.Port = shareport
+		}
+		// Default to HTTP for browser compatibility; opt into HTTPS with --https.
+		// Self-signed certs trigger a browser security warning that users can bypass.
+		Cfg.HttpsEnabled = false
+		if shareuseHTTPS {
+			Cfg.HttpsEnabled = true
+		}
+		if sharepin != "" {
+			Cfg.PIN = sharepin
+		}
+		if sharealias != "" {
+			Cfg.Alias = sharealias
+		}
+		if shareautoAccept {
+			Cfg.AutoAccept = true
+		}
+		if sharenoClipboard {
+			Cfg.NoClipboard = true
+		}
+		if sharehistory != "" {
+			Cfg.HistoryFile = sharehistory
+		}
+		if shareexecHook != "" {
+			Cfg.ExecHook = shareexecHook
+		}
+		if sharequiet {
+			Cfg.Quiet = true
+		}
+		if shareconcurrency > 0 {
+			Cfg.Concurrency = shareconcurrency
+		}
+		if sharemulticastiface != "" {
+			Cfg.MulticastInterface = sharemulticastiface
+		}
+		if shareOnce {
+			Cfg.ShareOnce = true
+		}
+
+		protocol := "HTTPS"
+		if !Cfg.HttpsEnabled {
+			protocol = "HTTP"
+		}
+
+		displayAlias := Cfg.Alias
+		if Cfg.Private {
+			displayAlias = "Anonymous"
+		}
+
+		if !sharequiet {
+			cli.PrintHeader("Starting LocalGo Web Share")
+			cli.PrintInfo("Alias: %s", displayAlias)
+			cli.PrintInfo("Protocol: %s", protocol)
+			cli.PrintInfo("Port: %d", Cfg.Port)
+			if Cfg.HttpsEnabled && Cfg.SecurityContext != nil && Cfg.SecurityContext.CertificateHash != "" {
+				cli.PrintInfo("Fingerprint: %s...", Cfg.SecurityContext.CertificateHash[:16])
+			}
+		}
+
+	// Verify and prepare files
+		filesMap := make(map[string]model.FileDto)
+		pathsMap := make(map[string]string)
+		var tempFiles []string
+
+		for _, file := range files {
+			fileInfo, err := os.Stat(file)
+			if err != nil {
+				return fmt.Errorf("file not found: %s", err)
+			}
+
+			// Reject directories that won't be zipped
+			if fileInfo.IsDir() && !sharezip {
+				return fmt.Errorf("cannot share directory '%s' without --zip flag", file)
+			}
+
+			// Zip directory if requested
+			if fileInfo.IsDir() && sharezip {
+				zipPath, err := zipDirToTemp(file)
+				if err != nil {
+					return fmt.Errorf("failed to zip directory %s: %w", file, err)
+				}
+				tempFiles = append(tempFiles, zipPath)
+				zipInfo, _ := os.Stat(zipPath)
+				fileInfo = zipInfo
+				file = zipPath
+			}
+
+			f, err := os.Open(file)
+			if err != nil {
+				return fmt.Errorf("failed to open file for detection: %w", err)
+			}
+			buffer := make([]byte, 512)
+			n, _ := f.Read(buffer)
+			contentType := http.DetectContentType(buffer[:n])
+			f.Close()
+
+			modTime := fileInfo.ModTime().Format(time.RFC3339)
+			id := uuid.NewString()
+
+			displayName := filepath.Base(file)
+			if sharezip && strings.HasSuffix(file, ".zip") {
+				displayName = strings.TrimSuffix(filepath.Base(file), ".zip") + ".zip"
+			}
+
+			fileDto := model.FileDto{
+				ID:       id,
+				FileName: displayName,
+				Size:     fileInfo.Size(),
+				FileType: contentType,
+				Metadata: &model.FileMetadata{
+					Modified: &modTime,
+				},
+			}
+
+			filesMap[id] = fileDto
+			pathsMap[id] = file
+			if !sharequiet {
+				cli.PrintInfo("Sharing: %s (%s)", displayName, cli.FormatBytes(fileInfo.Size()))
+			}
+		}
+
+		defer func() {
+			for _, f := range tempFiles {
+				os.Remove(f)
+			}
+		}()
+
+		// Create server
+		srv := server.NewServer(Cfg, logging.Global())
+		sendService := srv.GetSendService()
+
+		// Register files in session
+		_, err := sendService.CreateSession(filesMap, pathsMap)
+		if err != nil {
+			return fmt.Errorf("failed to create send session: %w", err)
+		}
+
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+		defer stop()
+
+		// Start server first to determine the actual port
+		serverErrChan := make(chan error, 1)
+		serverReadyChan := make(chan struct{}, 1)
+		go func() {
+			serverErrChan <- srv.Start(ctx, serverReadyChan)
+		}()
+
+		// Wait for server to be ready
+		select {
+		case err := <-serverErrChan:
+			return fmt.Errorf("server failed: %w", err)
+		case <-serverReadyChan:
+		}
+
+		// Initialize discovery service AFTER server is ready (Cfg.Port may have changed if port was busy)
+		discoverySvcConfig := discovery.DefaultServiceConfig()
+		discoverySvcConfig.MulticastConfig.Port = Cfg.Port
+		discoverySvcConfig.MulticastConfig.MulticastAddr = fmt.Sprintf("%s:%d", Cfg.MulticastGroup, Cfg.Port)
+		discoverySvcConfig.MulticastConfig.InterfaceName = Cfg.MulticastInterface
+		multicastDto := Cfg.ToMulticastDto(true)
+
+		multicast := discovery.NewMulticastDiscovery(discoverySvcConfig.MulticastConfig, multicastDto, logging.Global())
+		httpDiscoverer := discovery.NewHTTPDiscovery(nil, Cfg.ToRegisterDto(), nil, logging.Global())
+		multicast.SetHTTPDiscoverer(httpDiscoverer)
+
+		peerCache := discovery.NewPeerCache(logging.Global())
+		multicast.SetPeerCache(peerCache)
+
+		discoverySvc := discovery.NewService(discoverySvcConfig, multicast, logging.Global())
+		discoverySvc.SetPeerCache(peerCache)
+
+		// Start discovery AFTER server is ready
+		err = discoverySvc.Start(ctx, Cfg.ToMulticastDto(true))
+		if err != nil {
+			return fmt.Errorf("discovery service failed: %w", err)
+		}
+
+		if !sharequiet {
+			cli.PrintSuccess("Server ready! Waiting for connections...")
+
+			scheme := "http"
+			if Cfg.HttpsEnabled {
+				scheme = "https"
+			}
+
+			// Retrieve active network interfaces to display direct URLs
+			localIPs, err := network.GetLocalIPAddresses()
+			if err == nil && len(localIPs) > 0 {
+				cli.PrintHeader("\nAccess URLs:")
+				for _, ip := range localIPs {
+					cli.PrintInfo("  %s://%s:%d", scheme, ip.String(), Cfg.Port)
+				}
+				fmt.Println()
+
+				// Terminal QR code for mobile scanning (must match server scheme)
+				primaryURL := fmt.Sprintf("%s://%s:%d", scheme, localIPs[0].String(), Cfg.Port)
+				cli.PrintHeader("Scan QR Code on Mobile:")
+				qrterminal.GenerateHalfBlock(primaryURL, qrterminal.M, os.Stdout)
+			}
+
+			if Cfg.HttpsEnabled {
+				cli.PrintWarning("HTTPS notice: browsers will show a security warning for the self-signed certificate.")
+				cli.PrintWarning("Proceed past the warning (Advanced → Proceed) to download files.")
+			}
+
+			cli.PrintWarning("Press Ctrl+C to stop sharing")
+		}
+
+		// Wait for server to finish
+		if err := <-serverErrChan; err != nil {
+			return fmt.Errorf("server failed: %w", err)
+		}
+
+		discoverySvc.Stop()
+		if !sharequiet {
+			cli.PrintInfo("Web share stopped")
+		}
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(shareCmd)
+	shareCmd.Flags().StringSliceVar(&sharefiles, "file", []string{}, "File or directory to share")
+	shareCmd.Flags().IntVar(&shareport, "port", 0, "Port to run the server on")
+	shareCmd.Flags().BoolVar(&shareuseHTTP, "http", false, "Deprecated (HTTP is already the default for share)")
+	shareCmd.Flags().BoolVar(&shareuseHTTPS, "https", false, "Use HTTPS with a self-signed certificate (browsers show a security warning)")
+	shareCmd.Flags().StringVar(&sharepin, "pin", "", "PIN for authentication")
+	shareCmd.Flags().StringVar(&sharealias, "alias", "", "Device alias")
+	shareCmd.Flags().BoolVar(&shareautoAccept, "auto-accept", false, "Auto-accept incoming files")
+	shareCmd.Flags().BoolVar(&sharenoClipboard, "no-clipboard", false, "Save text as file")
+	shareCmd.Flags().StringVar(&sharehistory, "history", "", "Path to history file")
+	shareCmd.Flags().StringVar(&shareexecHook, "exec", "", "Shell command to run")
+	shareCmd.Flags().BoolVar(&sharequiet, "quiet", false, "Quiet mode")
+	shareCmd.Flags().BoolVar(&sharezip, "zip", false, "Zip directories before sharing")
+	shareCmd.Flags().IntVar(&shareconcurrency, "concurrency", 0, "Max parallel uploads (0 = use default)")
+	shareCmd.Flags().StringVar(&sharemulticastiface, "iface", "", "Multicast network interface name")
+	shareCmd.Flags().BoolVar(&shareOnce, "once", false, "Stop sharing automatically after the first download completes")
+
+	shareCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if h := help.GetCommandHelp("share"); h != nil {
+			help.ShowCommandHelp(*h)
+		}
+	})
+}
+
+

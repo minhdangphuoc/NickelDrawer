@@ -1,0 +1,1 @@
+{"schema":1,"id":"bad-timeout-with-none","name":"Demo","version":"1.0.0","actions":[{"id":"go","label":"Chạy","run":"bin/run.sh","output":"none","timeout_ms":1000}]}

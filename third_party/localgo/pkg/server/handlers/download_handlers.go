@@ -1,0 +1,148 @@
+package handlers
+
+import (
+	"crypto/subtle"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/bethropolis/localgo/pkg/cli"
+	"github.com/bethropolis/localgo/pkg/config"
+	"github.com/bethropolis/localgo/pkg/httputil"
+	"github.com/bethropolis/localgo/pkg/model"
+	"github.com/bethropolis/localgo/pkg/server/services"
+	"github.com/bethropolis/localgo/pkg/logging"
+)
+
+// DownloadHandler handles file downloading requests.
+type DownloadHandler struct {
+	config      *config.Config
+	sendService *services.SendService
+	logger      *logging.Logger
+	shutdownFn  func() // optional; set by Server for --once support
+}
+
+// SetShutdownFn registers a shutdown callback (used for --once mode).
+func (h *DownloadHandler) SetShutdownFn(fn func()) {
+	h.shutdownFn = fn
+}
+
+
+// NewDownloadHandler creates a new DownloadHandler.
+func NewDownloadHandler(cfg *config.Config, sendService *services.SendService, logger *logging.Logger) *DownloadHandler {
+	return &DownloadHandler{
+		config:      cfg,
+		sendService: sendService,
+		logger:      logger,
+	}
+}
+
+// PrepareDownloadHandler handles POST /v2/prepare-download requests.
+func (h *DownloadHandler) PrepareDownloadHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Received /prepare-download request")
+
+	// --- PIN Check ---
+	if h.config.PIN != "" {
+		pin := r.URL.Query().Get("pin")
+		if subtle.ConstantTimeCompare([]byte(pin), []byte(h.config.PIN)) != 1 {
+			httputil.RespondError(w, http.StatusUnauthorized, "Invalid PIN")
+			return
+		}
+	}
+
+	var session *services.ActiveSendSession
+	if sessionID := r.URL.Query().Get("sessionId"); sessionID != "" {
+		session = h.sendService.GetSessionByID(sessionID)
+	} else {
+		session = h.sendService.GetSession()
+	}
+	if session == nil {
+		httputil.RespondError(w, http.StatusNotFound, "No active sharing session")
+		return
+	}
+
+	info := h.config.ToInfoDto()
+	info.Download = true
+
+	response := model.ReceiveRequestResponseDto{
+		Info:      info,
+		SessionID: session.SessionID,
+		Files:     session.Files,
+	}
+
+	httputil.RespondJSON(w, http.StatusOK, response)
+}
+
+// DownloadHandler handles GET /v2/download requests.
+func (h *DownloadHandler) DownloadHandler(w http.ResponseWriter, r *http.Request) {
+	h.logger.Info("Received /download request")
+
+	// --- PIN Check ---
+	if h.config.PIN != "" {
+		pin := r.URL.Query().Get("pin")
+		if subtle.ConstantTimeCompare([]byte(pin), []byte(h.config.PIN)) != 1 {
+			httputil.RespondError(w, http.StatusUnauthorized, "Invalid PIN")
+			return
+		}
+	}
+
+	query := r.URL.Query()
+	sessionId := query.Get("sessionId")
+	fileId := query.Get("fileId")
+
+	if sessionId == "" || fileId == "" {
+		httputil.RespondError(w, http.StatusBadRequest, "Missing sessionId or fileId parameter")
+		return
+	}
+
+	session := h.sendService.GetSessionByID(sessionId)
+	if session == nil {
+		httputil.RespondError(w, http.StatusNotFound, "Session not found")
+		return
+	}
+
+	fileDto, ok := session.Files[fileId]
+	if !ok {
+		httputil.RespondError(w, http.StatusNotFound, "File not found in session")
+		return
+	}
+
+	localPath, ok := session.FilePaths[fileId]
+	if !ok {
+		httputil.RespondError(w, http.StatusInternalServerError, "File path mapping missing")
+		return
+	}
+
+	file, err := os.Open(localPath)
+	if err != nil {
+		h.logger.Errorf("Failed to open file for download: %v", err)
+		httputil.RespondError(w, http.StatusInternalServerError, "Failed to read file")
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileDto.FileName))
+	w.Header().Set("Content-Type", fileDto.FileType)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileDto.Size))
+	w.WriteHeader(http.StatusOK)
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		h.logger.Errorf("Failed to write file to response: %v", err)
+	} else {
+		h.logger.Infof("Successfully sent file: %s", fileDto.FileName)
+		cli.PrintSuccess("Downloaded by %s: %s (%s)", r.RemoteAddr, fileDto.FileName, cli.FormatBytes(fileDto.Size))
+
+		if h.config.ShareOnce {
+			go func() {
+				time.Sleep(500 * time.Millisecond)
+				cli.PrintInfo("Download completed (--once mode). Stopping server...")
+				if h.shutdownFn != nil {
+					h.shutdownFn()
+				}
+			}()
+		}
+	}
+}

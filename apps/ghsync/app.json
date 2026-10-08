@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "id": "ghsync",
+  "name": "GitHub",
+  "version": "0.1.0",
+  "description": "Sync books from a private GitHub repo (add-only, never deletes)",
+  "actions": [
+    {
+      "id": "sync",
+      "label": "Sync now",
+      "run": "bin/sync.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "wifi": true,
+      "rescan": "none"
+    },
+    {
+      "id": "status",
+      "label": "Status",
+      "run": "bin/status.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "quick"
+    }
+  ]
+}
