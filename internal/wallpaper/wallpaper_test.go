@@ -170,7 +170,6 @@ func TestConfigRoundTripAndValidation(t *testing.T) {
 
 type rig struct {
 	service     *Service
-	wallpapers  string
 	pictures    string
 	screensaver string
 }
@@ -179,12 +178,11 @@ func newRig(t *testing.T) rig {
 	t.Helper()
 	root := t.TempDir()
 	r := rig{
-		wallpapers:  filepath.Join(root, "Pictures", "Wallpapers"),
 		pictures:    filepath.Join(root, "Pictures"),
 		screensaver: filepath.Join(root, ".kobo", "screensaver"),
 	}
 	service := NewService(Paths{AppDir: filepath.Join(root, "app")}, Size{Width: 120, Height: 160}, nil)
-	service.Sources = []string{r.wallpapers, r.pictures}
+	service.Sources = []string{r.pictures}
 	service.ScreensaverDir = r.screensaver
 	r.service = service
 	return r
@@ -216,8 +214,8 @@ func listing(t *testing.T, dir string) []string {
 func TestImportConvertsDedupesAndNeverTouchesOriginals(t *testing.T) {
 	r := newRig(t)
 	one, two := gradientPNG(t, 50, 70), solidJPEG(t, 60, 60, 90)
-	put(t, filepath.Join(r.wallpapers, "one.png"), one)
-	put(t, filepath.Join(r.pictures, "same-as-one.png"), one) // identical content in the second source
+	put(t, filepath.Join(r.pictures, "one.png"), one)
+	put(t, filepath.Join(r.pictures, "same-as-one.png"), one) // identical content in the same folder
 	put(t, filepath.Join(r.pictures, "two.jpg"), two)
 	put(t, filepath.Join(r.pictures, "book.epub"), []byte("PK\x03\x04 book"))
 	put(t, filepath.Join(r.pictures, "Holiday", "deep.png"), one)
@@ -239,22 +237,9 @@ func TestImportConvertsDedupesAndNeverTouchesOriginals(t *testing.T) {
 	if err != nil || again.Added != 0 {
 		t.Errorf("second import = %+v, %v", again, err)
 	}
-	after, _ := os.ReadFile(filepath.Join(r.wallpapers, "one.png"))
+	after, _ := os.ReadFile(filepath.Join(r.pictures, "one.png"))
 	if !bytes.Equal(after, one) {
 		t.Error("original was modified")
-	}
-}
-
-func TestImportFromPicturesAlongsideWallpapersFolderPrecedence(t *testing.T) {
-	r := newRig(t)
-	put(t, filepath.Join(r.pictures, "z.png"), gradientPNG(t, 30, 30))
-	put(t, filepath.Join(r.wallpapers, "a.png"), solidJPEG(t, 30, 30, 10))
-	if _, _, err := r.service.ImportAndApply(); err != nil {
-		t.Fatal(err)
-	}
-	library, _ := LoadLibrary(r.service.Paths)
-	if library.Entries[0].Name != "a.png" || library.Entries[1].Name != "z.png" {
-		t.Errorf("entries = %+v, Wallpapers folder must come first", library.Entries)
 	}
 }
 
@@ -285,8 +270,8 @@ func TestImportContinuesPastBrokenPicture(t *testing.T) {
 
 func TestApplyTouchesOnlyOwnedFiles(t *testing.T) {
 	r := newRig(t)
-	put(t, filepath.Join(r.wallpapers, "a.png"), gradientPNG(t, 30, 30))
-	put(t, filepath.Join(r.wallpapers, "b.png"), solidJPEG(t, 30, 30, 50))
+	put(t, filepath.Join(r.pictures, "a.png"), gradientPNG(t, 30, 30))
+	put(t, filepath.Join(r.pictures, "b.png"), solidJPEG(t, 30, 30, 50))
 	foreign := map[string][]byte{"user.png": []byte("mine"), "nd-wallpaperish.txt": nil, "sleep.jpg": []byte("x")}
 	for name, content := range foreign {
 		put(t, filepath.Join(r.screensaver, name), content)
@@ -351,8 +336,8 @@ func TestOffNeverFollowsOrDeletesSymlinks(t *testing.T) {
 
 func TestNextCyclesAndModeSwitchRefitsFromOriginals(t *testing.T) {
 	r := newRig(t)
-	put(t, filepath.Join(r.wallpapers, "a.png"), gradientPNG(t, 30, 60))
-	put(t, filepath.Join(r.wallpapers, "b.png"), solidJPEG(t, 80, 20, 0))
+	put(t, filepath.Join(r.pictures, "a.png"), gradientPNG(t, 30, 60))
+	put(t, filepath.Join(r.pictures, "b.png"), solidJPEG(t, 80, 20, 0))
 	if _, _, err := r.service.ImportAndApply(); err != nil {
 		t.Fatal(err)
 	}
@@ -388,7 +373,7 @@ func TestApplyWithoutPicturesFails(t *testing.T) {
 
 func TestDefaultSourcesAreTheStorageAllowlist(t *testing.T) {
 	got := DefaultSources()
-	if len(got) != 2 || got[0] != "/mnt/onboard/Pictures/Wallpapers" || got[1] != "/mnt/onboard/Pictures" {
+	if len(got) != 1 || got[0] != "/mnt/onboard/Pictures" {
 		t.Errorf("sources = %v", got)
 	}
 }

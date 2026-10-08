@@ -73,7 +73,6 @@ All user content lives in a few top-level folders with plain names. App state is
 | `documents` | `/mnt/onboard/Documents` | PDF, TXT, HTML, RTF | router |
 | `comics` | `/mnt/onboard/Comics` | CBZ, CBR | router; imageview albums under `Comics/Albums` |
 | `pictures` | `/mnt/onboard/Pictures` | PNG, JPEG, GIF | router |
-| `wallpapers` | `/mnt/onboard/Pictures/Wallpapers` | pictures the user picks as sleep screens | user (USB) |
 | `inbox` | `/mnt/onboard/.adds/koboapps/inbox` | staging for files being received | LocalSend only |
 | `rejected` | `/mnt/onboard/.adds/koboapps/inbox/rejected` | files that failed the allowlist, auto-deleted after 7 days | router |
 | app data | `/mnt/onboard/.adds/apps/<id>/data` | config, tokens, state, logs | that app only |
@@ -147,7 +146,7 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
   "id": "wallpaper",
   "name": "Wallpaper",
   "version": "0.1.0",
-  "storage": { "reads": ["pictures", "wallpapers"], "writes": ["screensaver"] },
+  "storage": { "reads": ["pictures"], "writes": ["screensaver"] },
   "network": false,
   "actions": [ { "id": "import", "label": "Import pictures", "run": "bin/import.sh", "output": "show" } ]
 }

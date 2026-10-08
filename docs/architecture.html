@@ -253,12 +253,6 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <td>router</td>
 </tr>
 <tr>
-<td><code>wallpapers</code></td>
-<td><code>/mnt/onboard/Pictures/Wallpapers</code></td>
-<td>pictures the user picks as sleep screens</td>
-<td>user (USB)</td>
-</tr>
-<tr>
 <td><code>inbox</code></td>
 <td><code>/mnt/onboard/.adds/koboapps/inbox</code></td>
 <td>staging for files being received</td>
@@ -410,7 +404,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
   &quot;id&quot;: &quot;wallpaper&quot;,
   &quot;name&quot;: &quot;Wallpaper&quot;,
   &quot;version&quot;: &quot;0.1.0&quot;,
-  &quot;storage&quot;: { &quot;reads&quot;: [&quot;pictures&quot;, &quot;wallpapers&quot;], &quot;writes&quot;: [&quot;screensaver&quot;] },
+  &quot;storage&quot;: { &quot;reads&quot;: [&quot;pictures&quot;], &quot;writes&quot;: [&quot;screensaver&quot;] },
   &quot;network&quot;: false,
   &quot;actions&quot;: [ { &quot;id&quot;: &quot;import&quot;, &quot;label&quot;: &quot;Import pictures&quot;, &quot;run&quot;: &quot;bin/import.sh&quot;, &quot;output&quot;: &quot;show&quot; } ]
 }

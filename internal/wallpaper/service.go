@@ -36,7 +36,7 @@ func (service *Service) ImportAndApply() (ImportReport, ApplyReport, error) {
 	if err != nil {
 		return ImportReport{}, ApplyReport{}, err
 	}
-	service.ensureWallpapersFolder()
+	service.ensurePicturesFolder()
 	report, err := library.Import(service.Sources, service.Size, config.Mode, service.Log)
 	if err != nil {
 		return report, ApplyReport{}, err
@@ -55,9 +55,9 @@ func (service *Service) saveAndApply(library *Library, config Config, report Imp
 	return report, applied, err
 }
 
-// ensureWallpapersFolder creates the drop folder (the first source) so the first USB copy has a
+// ensureWallpapersFolder creates the Pictures folder (the only source) so the first USB copy has a
 // target. Failure is only logged: the folder may not exist off-device.
-func (service *Service) ensureWallpapersFolder() {
+func (service *Service) ensurePicturesFolder() {
 	if len(service.Sources) == 0 {
 		return
 	}

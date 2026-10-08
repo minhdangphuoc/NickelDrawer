@@ -1,6 +1,6 @@
 # Wallpaper app (sleep screen)
 
-The user puts PNG or JPEG pictures in `/mnt/onboard/Pictures/Wallpapers` (or `/mnt/onboard/Pictures`). **Wallpaper · Import pictures** converts them for the e-ink screen and places them where Nickel looks for sleep-screen images. Press the power button to see the result.
+The user puts PNG or JPEG pictures in `/mnt/onboard/Pictures`. **Wallpaper · Import pictures** converts them for the e-ink screen and places them where Nickel looks for sleep-screen images. Press the power button to see the result.
 
 ## Actions
 
@@ -21,8 +21,7 @@ Read (read-only, never modified or deleted):
 
 | Path | How |
 |---|---|
-| `/mnt/onboard/Pictures/Wallpapers/` | direct children only |
-| `/mnt/onboard/Pictures/` | direct children only (sub-folders, including `Wallpapers`, are not entered) |
+| `/mnt/onboard/Pictures/` | direct children only (sub-folders are not entered) |
 | `/mnt/onboard/.kobo/version` | the device id, to pick the screen size |
 | `/mnt/onboard/.kobo/Kobo/Kobo eReader.conf` | `CurrentLocale` |
 | `/mnt/onboard/.adds/apps/wallpaper/` | the app's own files |
@@ -33,7 +32,7 @@ Write:
 |---|---|
 | `/mnt/onboard/.kobo/screensaver/nd-wallpaper-NNNN.png` | our converted pictures only (temp files `.nd-wallpaper-*.tmp` while copying) |
 | `/mnt/onboard/.adds/apps/wallpaper/data/` | `config.json`, `images/` (converted PNGs + `index.json`), `log.txt` |
-| `/mnt/onboard/Pictures/Wallpapers/` | created if missing (empty folder only) |
+| `/mnt/onboard/Pictures/` | created if missing (empty folder only) |
 
 Rules, enforced in code (`internal/storage`, `internal/wallpaper`) and covered by tests:
 
@@ -42,7 +41,7 @@ Rules, enforced in code (`internal/storage`, `internal/wallpaper`) and covered b
 - Every entry is resolved with `filepath.EvalSymlinks`; it must be a direct child of the real source folder. A link that points elsewhere (another folder, `/etc/...`, a file in a sub-folder) is refused and logged.
 - Only regular files (no devices, pipes, sockets).
 - PNG/JPEG is decided by magic bytes, not by name. Other files are ignored silently (the Pictures folder may hold anything). Pictures over 20 MB are skipped with a logged reason; decoded size is capped at 48 megapixels.
-- Pictures with identical content (SHA-256) are imported once, even when they sit in both folders; `Wallpapers/` is read first.
+- Pictures with identical content (SHA-256) are imported once.
 - Nothing is held open on `/mnt/onboard`: each file is read whole (capped) and closed; all writes are temp file + fsync + rename.
 - In `.kobo/screensaver` only names starting with `nd-wallpaper-` (or `.nd-wallpaper-`) are ever replaced or deleted, regular files only (symlinks are never followed or removed). Other files there are never read, changed or deleted.
 - Nothing is read under `/`, `/etc`, `/usr`, other `.kobo` or `.adds` folders.

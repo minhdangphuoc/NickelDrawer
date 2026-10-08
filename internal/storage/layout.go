@@ -7,7 +7,6 @@
 //	pictures   /mnt/onboard/Pictures
 //	documents  /mnt/onboard/Documents
 //	comics     /mnt/onboard/Comics
-//	wallpapers /mnt/onboard/Pictures/Wallpapers
 //
 // The names are a hardcoded allowlist: callers pick a Folder constant, never a path from
 // configuration or user input.
@@ -19,11 +18,10 @@ import "path/filepath"
 type Folder string
 
 const (
-	Books      Folder = "books"
-	Pictures   Folder = "pictures"
-	Documents  Folder = "documents"
-	Comics     Folder = "comics"
-	Wallpapers Folder = "wallpapers"
+	Books     Folder = "books"
+	Pictures  Folder = "pictures"
+	Documents Folder = "documents"
+	Comics    Folder = "comics"
 
 	// DefaultRoot is where Nickel mounts the user partition.
 	DefaultRoot = "/mnt/onboard"
@@ -31,11 +29,10 @@ const (
 
 // relative maps each folder to its path below the root.
 var relative = map[Folder]string{
-	Books:      "Books",
-	Pictures:   "Pictures",
-	Documents:  "Documents",
-	Comics:     "Comics",
-	Wallpapers: "Pictures/Wallpapers",
+	Books:     "Books",
+	Pictures:  "Pictures",
+	Documents: "Documents",
+	Comics:    "Comics",
 }
 
 var root = DefaultRoot

@@ -48,5 +48,5 @@
   "msg.err_decode": "Không mở được ảnh: {cause}",
   "msg.err_too_large": "Ảnh quá lớn ({width}x{height}).",
   "msg.err_encode": "Không lưu được ảnh đã chuyển đổi: {cause}",
-  "msg.err_no_pictures": "Chưa có ảnh. Chép file PNG hoặc JPEG vào Pictures/Wallpapers, rồi bấm Nhập ảnh."
+  "msg.err_no_pictures": "Chưa có ảnh. Chép file PNG hoặc JPEG vào thư mục Pictures, rồi bấm Nhập ảnh."
 }

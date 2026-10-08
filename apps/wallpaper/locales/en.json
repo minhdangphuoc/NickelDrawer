@@ -39,5 +39,5 @@
   "msg.err_decode": "Cannot open the picture: {cause}",
   "msg.err_too_large": "Picture is too large ({width}x{height}).",
   "msg.err_encode": "Cannot save the converted picture: {cause}",
-  "msg.err_no_pictures": "No pictures yet. Copy PNG or JPEG files to Pictures/Wallpapers, then Import pictures."
+  "msg.err_no_pictures": "No pictures yet. Copy PNG or JPEG files to Pictures, then Import pictures."
 }

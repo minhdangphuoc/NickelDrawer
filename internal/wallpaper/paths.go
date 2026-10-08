@@ -1,4 +1,4 @@
-// Package wallpaper turns pictures from two fixed user folders into e-ink sleep-screen images
+// Package wallpaper turns pictures from the user's Pictures folder into e-ink sleep-screen images
 // that Nickel shows from /mnt/onboard/.kobo/screensaver (see docs/spec/wallpaper.md).
 package wallpaper
 
@@ -20,10 +20,9 @@ const (
 // (/mnt/onboard/.kobo/screensaver on the device).
 func ScreensaverFolder() string { return filepath.Join(storage.Root(), ".kobo", "screensaver") }
 
-// DefaultSources is the hardcoded allowlist, in import order: the Wallpapers folder, then the
-// direct children of Pictures. It is deliberately not configurable.
+// DefaultSources is the hardcoded allowlist, the direct children of Pictures. It is deliberately not configurable.
 func DefaultSources() []string {
-	return []string{storage.Path(storage.Wallpapers), storage.Path(storage.Pictures)}
+	return []string{storage.Path(storage.Pictures)}
 }
 
 // Paths locates the app's own state.

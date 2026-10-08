@@ -52,7 +52,7 @@ func TestLayoutPathsFollowRoot(t *testing.T) {
 	defer SetRoot("/x")()
 	want := map[Folder]string{
 		Books: "/x/Books", Pictures: "/x/Pictures", Documents: "/x/Documents",
-		Comics: "/x/Comics", Wallpapers: "/x/Pictures/Wallpapers",
+		Comics: "/x/Comics",
 	}
 	for folder, path := range want {
 		if got := Path(folder); got != path {
@@ -65,8 +65,8 @@ func TestLayoutPathsFollowRoot(t *testing.T) {
 }
 
 func TestDefaultRootIsOnboard(t *testing.T) {
-	if Path(Wallpapers) != "/mnt/onboard/Pictures/Wallpapers" {
-		t.Errorf("default wallpapers path = %q", Path(Wallpapers))
+	if Path(Pictures) != "/mnt/onboard/Pictures" {
+		t.Errorf("default pictures path = %q", Path(Pictures))
 	}
 }
 

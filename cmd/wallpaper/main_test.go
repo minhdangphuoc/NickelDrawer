@@ -23,7 +23,7 @@ func deviceRoot(t *testing.T) (root, appDir, versionFile string) {
 	if err := png.Encode(&buffer, image.NewRGBA(image.Rect(0, 0, 90, 60))); err != nil {
 		t.Fatal(err)
 	}
-	write(t, filepath.Join(root, "Pictures", "Wallpapers", "a.png"), buffer.Bytes())
+	write(t, filepath.Join(root, "Pictures", "a.png"), buffer.Bytes())
 	appDir = filepath.Join(root, "app")
 	copyLocales(t, appDir)
 	return root, appDir, versionFile
