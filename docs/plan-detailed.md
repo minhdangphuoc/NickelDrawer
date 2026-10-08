@@ -412,6 +412,8 @@ Machine form `symbols-<fw>.json` is generated from `required.yaml` + the `nm` du
 
 ## 7. UI kit spec v1 and protocol spec
 
+> **Updated 2026-10-08:** the component set, sizes, drawer behaviour (list default + optional grid, More-tab entry row, page-turn keys) and screen patterns are now defined in [`docs/spec/ui-kit.md`](spec/ui-kit.md), which supersedes this section where they differ. The JSON-lines protocol below still applies.
+
 ### 7.1 Screen file (`ui.json`)
 
 ```json

@@ -15,6 +15,15 @@
       "rescan": "none"
     },
     {
+      "id": "pair",
+      "label": "Pair with phone",
+      "run": "bin/pair.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "wifi": true,
+      "rescan": "none"
+    },
+    {
       "id": "status",
       "label": "Status",
       "run": "bin/status.sh",
