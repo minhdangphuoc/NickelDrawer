@@ -13,6 +13,9 @@ const (
 	exitFailure = 2 // usage error or I/O failure
 )
 
+// version is the release this binary belongs to; the Makefile sets it with -ldflags.
+var version = "0.0.0"
+
 const usage = `usage: appsctl <command> [flags]
 
 commands:
@@ -22,8 +25,12 @@ commands:
   errors                                   show apps that failed validation
   msg --app ID KEY [NAME=VALUE...]         print an app message in the device language
   device-name                              print the Kobo model name
+  host-msg KEY [NAME=VALUE...]             print a host message in the device language
+  update check|apply|status|rollback       signed updates from GitHub Releases (see docs/UPDATES.md)
+  --version                                print the version
 
-gen-menu, refresh, errors and msg also take --locale, --conf and --koboapps-dir.
+update takes --onboard-root, --api-base, --tmp-dir and --allow-downgrade (apply).
+gen-menu, refresh, errors, msg, host-msg and update also take --locale, --conf and --koboapps-dir.
 `
 
 func main() {
@@ -35,12 +42,18 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stderr, usage)
 		return exitFailure
 	}
+	if args[0] == "--version" {
+		fmt.Fprintln(stdout, "appsctl", version)
+		return exitOK
+	}
 	commands := map[string]func([]string, io.Writer, io.Writer) int{
 		"validate": runValidate,
 		"gen-menu": runGenMenu,
 		"refresh":  runRefresh,
 		"errors":   runErrors,
 		"msg":      runMsg,
+		"host-msg": runHostMsg,
+		"update":   runUpdate,
 
 		"device-name": runDeviceName,
 	}

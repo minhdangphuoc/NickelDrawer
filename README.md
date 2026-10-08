@@ -17,6 +17,10 @@ tools/test-install.sh                                 # run the installer agains
 
 The installer backs up `.adds/nm`, `.adds/apps`, `.adds/koboapps` (and `.adds/localsend` with `--remove-legacy`) to `backups/<date-time>/` first. It replaces `app.json` and `bin/` of each app but never touches an existing `data/` (token, config, PIN, state). Set `KOBO_ROOT` if the volume has another name. Run it only with the Kobo mounted and you present; eject afterwards. `make clean` removes `build/` and `dist/`.
 
+## Updates
+
+Once installed, apps and the host tool update over Wi-Fi from a signed GitHub Release: put `{"repo": "owner/name"}` in `.adds/koboapps/data/update.json`, then tap **Apps · Check for updates** and later **Apps · Update status**. Updates are verified with an ed25519 key embedded in `appsctl`, never touch app `data/` folders, keep the two newest backups and restore automatically if a self-check fails (`appsctl update rollback` undoes the last one). Maintainers publish with `make release VERSION=x.y.z`. Details and trust model: [docs/UPDATES.md](docs/UPDATES.md).
+
 ## Tools
 
 - `tools/vncheck.py FONT...` — count missing Vietnamese glyphs in fonts (needs `fonttools`).

@@ -13,7 +13,10 @@ import (
 
 var update = flag.Bool("update", false, "rewrite golden files")
 
-var englishLabels = Labels{Refresh: "Apps · Refresh list", Errors: "Apps · Errors (2)"}
+var englishLabels = Labels{
+	Refresh: "Apps · Refresh list", Errors: "Apps · Errors (2)",
+	UpdateCheck: "Apps · Check for updates", UpdateStatus: "Apps · Update status",
+}
 
 // vietnamese stands in for locales/vi.json of the app and the host.
 var vietnamese = i18n.NewBundle(i18n.Catalog{
@@ -21,7 +24,10 @@ var vietnamese = i18n.NewBundle(i18n.Catalog{
 	"actions.stop.label":  "Dừng nhận",
 })
 
-var vietnameseLabels = Labels{Refresh: "Ứng dụng · Làm mới danh sách", Errors: "Ứng dụng · Lỗi (2)"}
+var vietnameseLabels = Labels{
+	Refresh: "Ứng dụng · Làm mới danh sách", Errors: "Ứng dụng · Lỗi (2)",
+	UpdateCheck: "Ứng dụng · Kiểm tra cập nhật", UpdateStatus: "Ứng dụng · Trạng thái cập nhật",
+}
 
 func intPtr(n int) *int    { return &n }
 func boolPtr(b bool) *bool { return &b }
@@ -96,5 +102,15 @@ func TestRenderUsesCustomPaths(t *testing.T) {
 	}
 	if want := "/tmp/host/bin/appsctl refresh"; !strings.Contains(got, want) {
 		t.Fatalf("missing %s in\n%s", want, got)
+	}
+}
+
+func TestRenderUpdateItemsStartInBackgroundAndStayUnderTheTimeLimit(t *testing.T) {
+	got := Render(nil, 0, DefaultPaths(), englishLabels)
+	want := "menu_item :main :Apps · Check for updates :nickel_wifi :autoconnect\n" +
+		"  chain_success :cmd_output :9500 :/mnt/onboard/.adds/koboapps/bin/update-apply.sh\n" +
+		"menu_item :main :Apps · Update status :cmd_output :3000 :/mnt/onboard/.adds/koboapps/bin/update-status.sh\n"
+	if !strings.HasSuffix(got, want) {
+		t.Fatalf("update items missing or changed:\n%s", got)
 	}
 }

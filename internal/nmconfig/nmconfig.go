@@ -20,9 +20,20 @@ type Paths struct {
 
 // Labels are the host menu texts, already translated; Errors includes the error count.
 type Labels struct {
-	Refresh string
-	Errors  string
+	Refresh      string
+	Errors       string
+	UpdateCheck  string
+	UpdateStatus string
 }
+
+// The update scripts live in koboapps/bin. cmd_output must return in under 10 s, so the check
+// script only starts the update in the background; the status item shows the result.
+const (
+	updateCheckScript  = "update-apply.sh"
+	updateStatusScript = "update-status.sh"
+	updateCheckMS      = 9500
+	updateStatusMS     = 3000
+)
 
 // DefaultPaths returns the locations on the Kobo.
 func DefaultPaths() Paths {
@@ -33,7 +44,7 @@ func DefaultPaths() Paths {
 }
 
 // Render builds the whole config: app items sorted by (localized) name, an error item when
-// errorCount > 0, and the always-present refresh item. Apps must already be localized.
+// errorCount > 0, and the always-present refresh and update items. Apps must already be localized.
 func Render(apps []manifest.App, errorCount int, paths Paths, labels Labels) string {
 	var out strings.Builder
 	out.WriteString(header)
@@ -47,7 +58,16 @@ func Render(apps []manifest.App, errorCount int, paths Paths, labels Labels) str
 		fmt.Fprintf(&out, "menu_item :main :%s :cmd_output :2000 :%s errors\n", labels.Errors, appsctl)
 	}
 	fmt.Fprintf(&out, "menu_item :main :%s :cmd_output :5000 :%s refresh\n", labels.Refresh, appsctl)
+	writeUpdateItems(&out, paths, labels)
 	return out.String()
+}
+
+func writeUpdateItems(out *strings.Builder, paths Paths, labels Labels) {
+	checkScript := path.Join(paths.KoboappsRoot, "bin", updateCheckScript)
+	statusScript := path.Join(paths.KoboappsRoot, "bin", updateStatusScript)
+	fmt.Fprintf(out, "menu_item :main :%s :nickel_wifi :autoconnect\n", labels.UpdateCheck)
+	fmt.Fprintf(out, "  chain_success :cmd_output :%d :%s\n", updateCheckMS, checkScript)
+	fmt.Fprintf(out, "menu_item :main :%s :cmd_output :%d :%s\n", labels.UpdateStatus, updateStatusMS, statusScript)
 }
 
 // ItemCount is the number of menu items generated for apps (excluding the system items).

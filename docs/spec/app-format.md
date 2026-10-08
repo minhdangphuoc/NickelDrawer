@@ -18,8 +18,12 @@ Host files (not an app, not scanned):
 
 ```
 .adds/koboapps/
-├─ bin/appsctl     host tool (Go, linux/armv7): validates manifests, generates the menu
-└─ lib/common.sh   shared shell helpers for app scripts
+├─ bin/appsctl            host tool (Go, linux/armv7): validates manifests, generates the menu, applies signed updates
+├─ bin/update-apply.sh    menu script: starts `appsctl update apply` in the background
+├─ bin/update-status.sh   menu script: shows the installed version and the last update result
+├─ lib/common.sh          shared shell helpers for app scripts
+├─ locales/               host strings (en.json, vi.json, ...)
+└─ data/                  host state: errors.txt, update.json, update/, rollback/ (never overwritten by updates)
 .adds/nm/koboapps  generated NickelMenu config (do not edit by hand)
 ```
 
@@ -100,7 +104,7 @@ Unknown top-level or action fields are ignored with a warning (forward compatibi
 - Same length and `:` rules as the English fields apply to translated labels.
 - Locale resolution: read `CurrentLocale` from `/mnt/onboard/.kobo/Kobo/Kobo eReader.conf`; try the exact file (`pt_BR.json`), then the language (`pt.json`), then English. Missing keys fall back key by key.
 - Scripts print messages with `appsctl msg --app <id> <key> [name=value ...]`, never literal text.
-- Host strings (the refresh/error items, `appsctl` output) live in `/mnt/onboard/.adds/koboapps/locales/<lang>.json`.
+- Host strings (the refresh/error/update items, `appsctl` output) live in `/mnt/onboard/.adds/koboapps/locales/<lang>.json`. `appsctl` also embeds `en.json`, so a missing or broken `locales/` folder shows English text, never raw keys. Host scripts print them with `appsctl host-msg <key> [name=value ...]`.
 - `appsctl gen-menu` takes `--locale CODE` (override), `--conf FILE` (default `Kobo eReader.conf`) and `--koboapps-dir DIR` (host `locales/` lives there); the installer passes the mounted Kobo's conf and folder.
 - `appsctl validate` checks locale files: valid JSON, keys known to English (unknown keys warn), same placeholders, translated name/label length and `:` rules.
 - `appsctl msg` prints the key and exits 0 when a string is missing, so a script never fails over a translation.
@@ -122,7 +126,16 @@ menu_item :main :LocalSend · Dừng nhận :cmd_output :3000 :/mnt/onboard/.add
 - `output: none` → `:cmd_spawn :quiet :<path>`.
 - Paths are absolute on the device (`/mnt/onboard/.adds/apps/<id>/<run>`). Paths containing `:` are rejected at validation.
 - Invalid apps are skipped and listed in one trailing item: `menu_item :main :Ứng dụng · Lỗi (N) :cmd_output :2000 :/mnt/onboard/.adds/koboapps/bin/appsctl errors`.
-- Always appended system item: `menu_item :main :Ứng dụng · Làm mới danh sách :cmd_output :5000 :/mnt/onboard/.adds/koboapps/bin/appsctl refresh`.
+- Always appended system items, in this order (labels from `menu.refresh`, `menu.update_check`, `menu.update_status`):
+
+```
+menu_item :main :Ứng dụng · Làm mới danh sách :cmd_output :5000 :/mnt/onboard/.adds/koboapps/bin/appsctl refresh
+menu_item :main :Ứng dụng · Kiểm tra cập nhật :nickel_wifi :autoconnect
+  chain_success :cmd_output :9500 :/mnt/onboard/.adds/koboapps/bin/update-apply.sh
+menu_item :main :Ứng dụng · Trạng thái cập nhật :cmd_output :3000 :/mnt/onboard/.adds/koboapps/bin/update-status.sh
+```
+
+  The update script starts the update in the background (a `cmd_output` limit is under 10 s) and the status item shows the result; see `docs/UPDATES.md`. No rescan is chained: NickelMenu cannot rescan conditionally on an update having applied.
 
 ## Script contract
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"path/filepath"
 
 	"koboapps/internal/i18n"
 )
@@ -26,9 +25,4 @@ func (f localeFlags) effectiveLocale() string {
 		return f.locale
 	}
 	return i18n.CurrentLocale(f.confPath)
-}
-
-// hostBundle never fails: missing files fall back to the message key, broken ones are reported.
-func (f localeFlags) hostBundle() (*i18n.Bundle, error) {
-	return i18n.LoadBundle(filepath.Join(f.hostDir, "locales"), f.effectiveLocale())
 }

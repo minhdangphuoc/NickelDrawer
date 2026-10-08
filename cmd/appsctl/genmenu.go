@@ -71,8 +71,10 @@ func generateMenu(options genMenuOptions) (genMenuResult, error) {
 	}
 	paths := nmconfig.Paths{AppsRoot: options.deviceApps, KoboappsRoot: options.deviceHost}
 	labels := nmconfig.Labels{
-		Refresh: bundle.Message("menu.refresh", nil),
-		Errors:  bundle.Message("menu.errors", i18n.Params("count", strconv.Itoa(len(scan.Failures)))),
+		Refresh:      bundle.Message("menu.refresh", nil),
+		Errors:       bundle.Message("menu.errors", i18n.Params("count", strconv.Itoa(len(scan.Failures)))),
+		UpdateCheck:  bundle.Message("menu.update_check", nil),
+		UpdateStatus: bundle.Message("menu.update_status", nil),
 	}
 	config := nmconfig.Render(apps, len(scan.Failures), paths, labels)
 	if err := writeFileAtomically(options.errorsFile, []byte(formatErrorLines(scan.Failures))); err != nil {

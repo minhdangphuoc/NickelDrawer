@@ -70,6 +70,11 @@ check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
 check "locales installed (app)" test -f "$ADDS/apps/localsend/locales/vi.json"
 check "menu in Vietnamese (app labels)" contains "$ADDS/nm/koboapps" "LocalSend · Bắt đầu nhận"
 check "menu in Vietnamese (refresh item)" contains "$ADDS/nm/koboapps" "Ứng dụng · Làm mới danh sách"
+check "menu has update check item (vi)" contains "$ADDS/nm/koboapps" "Ứng dụng · Kiểm tra cập nhật"
+check "menu has update status item (vi)" contains "$ADDS/nm/koboapps" "Ứng dụng · Trạng thái cập nhật"
+check "menu runs the update scripts" contains "$ADDS/nm/koboapps" "/mnt/onboard/.adds/koboapps/bin/update-apply.sh"
+check "update-apply.sh installed and executable" test -x "$ADDS/koboapps/bin/update-apply.sh"
+check "update-status.sh installed and executable" test -x "$ADDS/koboapps/bin/update-status.sh"
 check "menu has no English label under vi" lacks "$ADDS/nm/koboapps" "Start receiving"
 check "menu has no volume path" lacks "$ADDS/nm/koboapps" "$KOBO_ROOT"
 check "items untouched without --remove-legacy" cmp -s "$ADDS/nm/items" "$WORK/items.original"
@@ -97,7 +102,15 @@ sleep 1
 "$INSTALLER" >"$WORK/french.out"
 check "fr menu uses English app labels" contains "$ADDS/nm/koboapps" "LocalSend · Start receiving"
 check "fr menu uses English refresh item" contains "$ADDS/nm/koboapps" "Apps · Refresh list"
+check "fr menu has update check item" contains "$ADDS/nm/koboapps" "Apps · Check for updates"
+check "fr menu has update status item" contains "$ADDS/nm/koboapps" "Apps · Update status"
 write_kobo_conf vi
+
+echo "--- host strings without a locales folder"
+"$REPO_ROOT/build/appsctl-host" host-msg --locale vi --koboapps-dir "$WORK/no-such-koboapps" menu.update_check >"$WORK/fallback.out"
+check "missing locales folder shows English, not the key" contains "$WORK/fallback.out" "Apps · Check for updates"
+"$REPO_ROOT/build/appsctl-host" update status --onboard-root "$KOBO_ROOT" --locale vi >"$WORK/update-status.out"
+check "update status is localized before any update" contains "$WORK/update-status.out" "Chưa cập nhật lần nào."
 
 echo "--- remove legacy"
 sleep 1
