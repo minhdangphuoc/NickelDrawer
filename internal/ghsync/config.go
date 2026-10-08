@@ -4,20 +4,25 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"koboapps/internal/i18n"
+	"koboapps/internal/storage"
 )
 
-const (
-	defaultDest = "/mnt/onboard/GitHub"
-)
+// githubSubfolder keeps synced books apart from the user's own under the books folder.
+const githubSubfolder = "GitHub"
 
 var (
 	defaultExtensions = []string{".epub", ".kepub.epub", ".pdf", ".cbz", ".cbr"}
 	repoPattern       = regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`)
 )
+
+// defaultDest is Books/GitHub (/mnt/onboard/Books/GitHub on the device). A config.json that
+// sets "dest" explicitly, such as the old /mnt/onboard/GitHub, keeps working unchanged.
+func defaultDest() string { return filepath.Join(storage.Path(storage.Books), githubSubfolder) }
 
 // Config is data/config.json.
 type Config struct {
@@ -43,7 +48,7 @@ func LoadConfig(configPath string) (Config, error) {
 
 func (config Config) withDefaults() Config {
 	if config.Dest == "" {
-		config.Dest = defaultDest
+		config.Dest = defaultDest()
 	}
 	if len(config.Extensions) == 0 {
 		config.Extensions = defaultExtensions

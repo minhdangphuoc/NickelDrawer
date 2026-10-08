@@ -1,5 +1,5 @@
 #!/bin/sh
-# Start the LocalSend receiver. NickelMenu runs this after nickel_wifi:autoconnect.
+# Start the LocalSend receiver. Received files land in the inbox and are routed one by one. NickelMenu runs this after nickel_wifi:autoconnect.
 . "$(dirname "$0")/env.sh"
 
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME" "$INBOX"
@@ -20,7 +20,7 @@ DEVICE_NAME=$(device_name)
 
 if ! is_running; then
     "$BINARY" serve --alias "$DEVICE_NAME" --dir "$INBOX" --auto-accept \
-        --pin "$PIN" --no-clipboard --quiet \
+        --pin "$PIN" --no-clipboard --quiet --exec "$ROUTE_HOOK" \
         </dev/null >"$TMP_LOG" 2>&1 &
     echo $! >"$PIDFILE"
     sleep 1

@@ -27,6 +27,9 @@ func TestRepoAppsAreValid(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			if app.Storage == nil {
+				t.Errorf("%s must declare its storage reads/writes and network use in app.json", app.ID)
+			}
 			problems, warnings := CheckLocales(app)
 			if len(problems) > 0 || len(warnings) > 0 {
 				t.Fatalf("locale problems=%v warnings=%v", problems, warnings)

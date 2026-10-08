@@ -73,8 +73,9 @@ All user content lives in a few top-level folders with plain names. App state is
 | `documents` | `/mnt/onboard/Documents` | PDF, TXT, HTML, RTF | router |
 | `comics` | `/mnt/onboard/Comics` | CBZ, CBR | router; imageview albums under `Comics/Albums` |
 | `pictures` | `/mnt/onboard/Pictures` | PNG, JPEG, GIF | router |
-| `inbox` | `/mnt/onboard/.adds/koboapps/inbox` | staging for files being received | LocalSend only |
-| `rejected` | `/mnt/onboard/.adds/koboapps/inbox/rejected` | files that failed the allowlist, auto-deleted after 7 days | router |
+| `inbox` | `/mnt/onboard/.adds/koboapps/inbox` | staging for files being received | LocalSend (localgo); the router empties it |
+| `rejected` | `/mnt/onboard/.adds/koboapps/inbox/rejected` | files that failed the allowlist, `appsctl inbox purge` deletes them after 7 days | router |
+| `screensaver` | `/mnt/onboard/.kobo/screensaver` | Nickel's sleep screen pictures | wallpaper app only |
 | app data | `/mnt/onboard/.adds/apps/<id>/data` | config, tokens, state, logs | that app only |
 | system | `/mnt/onboard/.kobo/...` | Kobo's own files | **only** `.kobo/screensaver/nd-wallpaper-*` (wallpaper app) |
 
@@ -93,50 +94,55 @@ sequenceDiagram
   participant Lib as /Books /Documents /Comics /Pictures
   participant Kobo as Nickel library
   Phone->>LS: send files (PIN)
-  LS->>Inbox: write file (hidden staging, same filesystem)
-  LS->>Router: --exec hook per file
-  Router->>Router: sanitize name, size cap, sniff type, match allowlist
+  LS->>Inbox: write file (name.tmp, then rename)
+  LS->>Router: --exec hook per file, path in $LOCALGO_FILE
+  Router->>Router: regular file in the inbox, sanitize name, size cap, sniff type, match allowlist
   alt allowed
-    Router->>Lib: atomic rename, never overwrite ("name (2).epub")
+    Router->>Lib: claim the name (O_EXCL), atomic rename, never overwrite ("name (2).epub")
   else not allowed
-    Router->>Inbox: move to rejected/ with reason
+    Router->>Inbox: move to rejected/ (reason in the journal)
   end
-  Router->>Router: append journal line
+  Router->>Router: append journal line (flock)
   Note over LS,Kobo: user taps "Stop receiving"
-  LS->>Kobo: rescan library
-  LS-->>Phone: (status on Kobo) "3 books, 2 pictures, 1 rejected"
+  LS->>Router: wait up to 2 s for hooks, then appsctl inbox sort (safety net)
+  LS->>Kobo: rescan library, show "Books: 3, Pictures: 2, Rejected: 1"
 ```
 
 ### 4.2 Allowlist (default rules)
 
 | Type | Extensions | Content check (magic bytes) | Max size | Destination |
 |---|---|---|---|---|
-| EPUB / KEPUB | `.epub`, `.kepub.epub` | ZIP header + `mimetype` = `application/epub+zip` | 200 MB | `books` |
+| EPUB / KEPUB | `.epub`, `.kepub.epub` | ZIP header + first entry stored `mimetype` = `application/epub+zip` | 200 MB | `books` |
 | MOBI | `.mobi` | `BOOKMOBI` at offset 60 | 200 MB | `books` |
 | PDF | `.pdf` | `%PDF-` | 300 MB | `documents` |
 | Text | `.txt` | valid UTF-8, no NUL bytes | 20 MB | `documents` |
-| HTML / RTF | `.html`, `.htm`, `.rtf` | `<` / `{\rtf` near start | 20 MB | `documents` |
-| Comics | `.cbz`, `.cbr` | ZIP / RAR header | 500 MB | `comics` |
-| Pictures | `.png`, `.jpg`, `.jpeg`, `.gif` | PNG / JPEG / GIF header | 30 MB | `pictures` |
+| HTML / RTF | `.html`, `.htm`, `.rtf` | `<` as first visible character / `{\rtf` | 20 MB | `documents` |
+| Comics | `.cbz`, `.cbr` | ZIP / RAR4 or RAR5 signature | 500 MB | `comics` |
+| Pictures | `.png`, `.jpg`, `.jpeg`, `.gif` | PNG / JPEG / GIF signature | 30 MB | `pictures` |
 
-Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension and content must agree; a `.pdf` that is really a ZIP is rejected. The rules are data (`host/config/routing.json`) shipped with the host; a user override file `.adds/koboapps/data/routing.json` may **remove** types or change destinations to other logical names, never add arbitrary paths. Both are validated.
+Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension and content must agree; a `.pdf` that is really a ZIP is rejected. The rules are data (`host/config/routing.json`, installed to `.adds/koboapps/config/routing.json` and replaced on every install). A user override `.adds/koboapps/data/routing.json` (never touched by the installer) may only **remove** types (`{"remove": ["gif"]}`) or **change a destination** to another library folder (`{"destinations": {"txt": "books"}}`); it cannot add types, extensions, checks, size caps or paths. Both files are validated; a bad override is reported and ignored (defaults apply), a bad shipped file stops routing. Format and reason codes: [spec/inbox.md](spec/inbox.md).
 
 ### 4.3 Safety
 
-- File names: NFC-normalized (Vietnamese), path separators and control characters removed, length capped, never starting with `.`.
-- No overwrite: collisions get ` (2)`, ` (3)`.
-- Atomic: staging and library are on the same filesystem, so routing is a rename.
-- Nothing received is ever executed or unpacked. Book files are moved as-is.
-- Journal `.adds/koboapps/data/inbox-journal.jsonl` (one line per file: time, source app, original name, type, destination or rejection reason). The status action summarizes it.
-- Rejected files are kept 7 days so a wrongly rejected file can be recovered over USB, then deleted.
+- Only a regular file directly inside the inbox (or the old `/mnt/onboard/LocalSend` folder, for migration) is routed. The folder is resolved with `EvalSymlinks` and must equal an allowed source; a symlink or other non-regular file is rejected, and the content is read through `O_NOFOLLOW` and checked to be the same file.
+- File names: NFC-normalized (Vietnamese), path separators and control characters removed, vfat-forbidden characters replaced by `_`, never starting with `.`, at most 180 bytes with the extension kept.
+- No overwrite: the destination name is claimed with `O_EXCL`, then the file is renamed onto the claim; collisions get ` (2)`, ` (3)`. No hard links (vfat has none), so parallel routers never clash.
+- Atomic: the inbox and the library are on the same filesystem, so routing is a rename; there is no copy fallback.
+- Nothing received is ever executed or unpacked. Only the first bytes of a file are read (the whole file only for the UTF-8 check, streamed).
+- Journal `.adds/koboapps/data/inbox-journal.jsonl` (one line per file: time, source app, original name, type, destination, stored name, rejection reason). Each append takes an exclusive `flock`, so concurrent routers (localgo runs one hook per file at the same time) cannot interleave lines. `status` summarizes the newest session (entries less than 30 minutes apart).
+- Rejected files are kept 7 days (counted from the rejection) so a wrongly rejected file can be recovered over USB; `appsctl inbox purge` then deletes them, only inside `rejected/`. A leftover `*.tmp` from a cut transfer is deleted at once instead.
 
 ### 4.4 Who uses the router
 
 | Source | How |
 |---|---|
-| LocalSend | localgo saves into `inbox`; its `--exec` hook calls `appsctl inbox route` per file (verify localgo's exec semantics; fallback: route the whole inbox when receiving stops) |
-| GitHub sync | downloads already go through allowlisted extensions; destination becomes `books` → `Books/GitHub` (migration: keep the old folder working) |
-| USB | the user can drop anything into `/Inbox` (optional, later); "Sort inbox" routes it with the same rules |
+| LocalSend | localgo saves into `inbox`; its `--exec` hook runs `appsctl inbox route --from-env --source localsend` per file. "Stop receiving" waits up to 2 s for running hooks, runs `appsctl inbox sort` as a safety net, prints `appsctl inbox status`, then the library rescan runs. "Sort old files" runs `appsctl inbox sort --source-dir /mnt/onboard/LocalSend` in the background to migrate the old folder. |
+| GitHub sync | downloads already go through an extension allowlist; the default destination is `books` -> `Books/GitHub` (`/mnt/onboard/Books/GitHub`). A `config.json` with an explicit `dest` (such as the old `/mnt/onboard/GitHub`) keeps working. |
+| USB | `appsctl inbox route <path>` and `sort` apply the same rules to files in the inbox |
+
+#### Security: the `--exec` hook must have no `%` placeholders
+
+localgo builds the hook by replacing `%f` (path), `%n` (file name), `%a` (sender alias), `%i` and `%s` **inside the shell string** and then runs it with `sh -c`. The file name and alias are chosen by whoever sends the file, so `--exec 'router %n'` lets a sender run commands on the Kobo (a file named `$(...)` or `x; ...`). Therefore the hook is the fixed string `/mnt/onboard/.adds/koboapps/bin/appsctl inbox route --from-env --source localsend`, and `route --from-env` reads the path only from the `LOCALGO_FILE` environment variable, which the shell never parses. `--from-env` refuses an extra path argument. `cmd/appsctl` has a test that fails if the hook gains a `%` or a shell metacharacter.
 
 ## 5. App contract (summary)
 
@@ -152,7 +158,7 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
 }
 ```
 
-`storage` and `network` are new, declarative and checked by `appsctl validate` against the known logical names. Full format: [spec/app-format.md](spec/app-format.md).
+`storage` (logical names `books`, `documents`, `comics`, `pictures`, `inbox`, `rejected`, `screensaver`) and `network` are optional and declarative; `appsctl validate` rejects an unknown name. Full format: [spec/app-format.md](spec/app-format.md).
 
 ## 6. Components and where they live
 
@@ -161,7 +167,7 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
 | App registry, validation, menu, i18n, msg | `cmd/appsctl`, `internal/manifest`, `internal/nmconfig`, `internal/i18n` | spec/app-format.md |
 | Device info | `internal/device` | |
 | Storage layout + safe I/O | `internal/storage` | this document §3 |
-| Inbox router | `internal/inbox` + `appsctl inbox` (planned) | this document §4 |
+| Inbox router | `internal/inbox` + `appsctl inbox` (route, sort, status, purge), rules in `host/config/routing.json` | this document §4, spec/inbox.md |
 | Signed updates | `internal/release`, `internal/update`, `cmd/ndrelease` | UPDATES.md |
 | Apps | `apps/*` | each app's README |
 | Native drawer + UI kit | `mod/` | spec/ui-kit.md, re/notes/G2-findings.md |
@@ -169,8 +175,8 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
 
 ## 7. Roadmap impact
 
-1. `internal/storage` (in progress with the wallpaper app).
-2. `internal/inbox` + `appsctl inbox route|status|sort` + `host/config/routing.json` + tests (fake Kobo).
-3. LocalSend: receive into `inbox`, route per file, status shows the summary, migration of the old `/LocalSend` folder ("Sort old files").
-4. ghsync destination → `books` (`Books/GitHub`), with migration.
-5. `app.json` gains `storage` / `network`; `appsctl validate` checks them.
+1. Done: `internal/storage` (logical folders incl. `inbox`, `rejected`), `internal/inbox` and `appsctl inbox route|sort|status|purge`, `host/config/routing.json`, tests on a fake Kobo.
+2. Done: LocalSend receives into `inbox`, routes per file, shows the summary; "Sort old files" migrates the old `/LocalSend` folder.
+3. Done: ghsync destination `Books/GitHub`; an explicit `dest` keeps working.
+4. Done: `app.json` has `storage` / `network`; `appsctl validate` checks them.
+5. Open: signed updates (`internal/release`) do not yet ship `.adds/koboapps/config/`; until `config` is added to the host folders an update leaves `routing.json` as the installer wrote it.

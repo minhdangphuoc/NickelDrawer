@@ -1,11 +1,14 @@
 {
   "name": "LocalSend",
-  "description": "Nhận sách từ điện thoại qua LocalSend",
+  "description": "Nhận sách và tệp từ điện thoại qua LocalSend",
   "actions.start.label": "Bắt đầu nhận",
   "actions.stop.label": "Dừng nhận",
-
   "msg.wifi_missing": "Chưa kết nối Wi-Fi.\nĐợi Wi-Fi kết nối rồi bấm lại.",
   "msg.start_failed": "Lỗi khởi động:",
   "msg.started": "LocalSend đang nhận sách\n\nTên máy: {device}\nIP: {ip}\nPIN: {pin}\n\nGiữ máy thức khi gửi.\nXong bấm 'Dừng nhận'.",
-  "msg.stopped": "Đã dừng LocalSend.\nThư mục LocalSend có {count} tệp.\nĐang cập nhật thư viện..."
+  "msg.stopped": "Đã dừng LocalSend.\nĐang cập nhật thư viện...",
+  "actions.sort.label": "Sắp xếp tệp cũ",
+  "msg.sort_started": "Đang sắp xếp tệp cũ trong nền.\nBấm lại 'Sắp xếp tệp cũ' để xem kết quả.",
+  "msg.sort_running": "Vẫn đang sắp xếp tệp cũ.\nLát nữa bấm lại.",
+  "msg.sort_nothing": "Không có tệp cũ để sắp xếp."
 }

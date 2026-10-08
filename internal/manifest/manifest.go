@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"unicode/utf8"
+
+	"koboapps/internal/storage"
 )
 
 const (
@@ -34,20 +36,29 @@ var (
 	actionIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,30}$`)
 	semverPattern   = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
-	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "actions"}
+	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "storage", "network", "actions"}
 	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan"}
 )
 
 // App is a parsed app.json. Use the methods for fields that have defaults.
 type App struct {
-	Schema      int      `json:"schema"`
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Description string   `json:"description"`
-	Menu        *bool    `json:"menu"`
-	Actions     []Action `json:"actions"`
-	Dir         string   `json:"-"` // absolute folder the manifest was loaded from
+	Schema      int            `json:"schema"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Version     string         `json:"version"`
+	Description string         `json:"description"`
+	Menu        *bool          `json:"menu"`
+	Storage     *StorageAccess `json:"storage"`
+	Network     bool           `json:"network"`
+	Actions     []Action       `json:"actions"`
+	Dir         string         `json:"-"` // absolute folder the manifest was loaded from
+}
+
+// StorageAccess declares which logical storage folders (see internal/storage) an app reads and
+// writes. It is documentation that appsctl validate checks and reviews hold the code to.
+type StorageAccess struct {
+	Reads  []string `json:"reads"`
+	Writes []string `json:"writes"`
 }
 
 // Action is one runnable entry of an app.
@@ -140,8 +151,34 @@ func validateApp(app App, dir string) []string {
 	if utf8.RuneCountInString(app.Description) > maxDescriptionN {
 		add("description is longer than %d characters; shorten it", maxDescriptionN)
 	}
+	problems = append(problems, validateStorage(app.Storage)...)
 	problems = append(problems, validateActions(app.Actions, dir)...)
 	return problems
+}
+
+func validateStorage(access *StorageAccess) []string {
+	if access == nil {
+		return nil
+	}
+	var problems []string
+	for field, names := range map[string][]string{"reads": access.Reads, "writes": access.Writes} {
+		for _, name := range names {
+			if !storage.IsKnown(name) {
+				problems = append(problems, fmt.Sprintf("storage.%s: unknown folder %q; use one of %s",
+					field, name, knownStorageNames()))
+			}
+		}
+	}
+	sort.Strings(problems)
+	return problems
+}
+
+func knownStorageNames() string {
+	names := make([]string, 0)
+	for _, folder := range storage.Known() {
+		names = append(names, string(folder))
+	}
+	return strings.Join(names, ", ")
 }
 
 // validateText checks length in characters and the NickelMenu field separator ':'.

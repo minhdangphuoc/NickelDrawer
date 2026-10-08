@@ -12,6 +12,16 @@
     "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
     "description": { "type": "string", "maxLength": 120 },
     "menu": { "type": "boolean", "default": true },
+    "storage": {
+      "type": "object",
+      "description": "Logical storage folders (internal/storage) the app reads and writes.",
+      "properties": {
+        "reads": { "type": "array", "items": { "$ref": "#/$defs/storageName" }, "uniqueItems": true },
+        "writes": { "type": "array", "items": { "$ref": "#/$defs/storageName" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
+    "network": { "type": "boolean", "default": false, "description": "The app talks to the network." },
     "actions": {
       "type": "array",
       "minItems": 1,
@@ -20,6 +30,7 @@
     }
   },
   "$defs": {
+    "storageName": { "enum": ["books", "documents", "comics", "pictures", "inbox", "rejected", "screensaver"] },
     "action": {
       "type": "object",
       "required": ["id", "label", "run", "output"],

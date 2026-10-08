@@ -62,6 +62,8 @@ func TestLoadRejectsInvalidManifests(t *testing.T) {
 		{"bad-rescan", "must be one of none, quick, full"},
 		{"bad-label-colon", "must not contain ':'"},
 		{"bad-json", "not valid JSON"},
+		{"bad-storage-unknown", `unknown folder "secrets"`},
+		{"bad-storage-unknown", `unknown folder "/etc"`},
 	}
 	for _, c := range cases {
 		t.Run(c.folder, func(t *testing.T) {
@@ -149,5 +151,18 @@ func TestLoadAllSkipsHiddenAndFiles(t *testing.T) {
 	}
 	if !strings.Contains(scan.Failures[0].Reason(), "schema must be 1") {
 		t.Fatalf("reason = %q", scan.Failures[0].Reason())
+	}
+}
+
+func TestLoadReadsStorageAndNetworkDeclarations(t *testing.T) {
+	app, warnings, err := Load(stageApp(t, "valid-storage"))
+	if err != nil || len(warnings) != 0 {
+		t.Fatalf("err=%v warnings=%v", err, warnings)
+	}
+	if !app.Network || app.Storage == nil {
+		t.Fatalf("network/storage not read: %+v", app)
+	}
+	if strings.Join(app.Storage.Reads, ",") != "pictures" || strings.Join(app.Storage.Writes, ",") != "inbox,books" {
+		t.Errorf("storage = %+v", app.Storage)
 	}
 }

@@ -37,7 +37,9 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
   "id": "localsend",
   "name": "LocalSend",
   "version": "1.0.0",
-  "description": "Receive books from your phone with LocalSend",
+  "description": "Receive books and files from your phone with LocalSend",
+  "storage": { "reads": ["inbox"], "writes": ["inbox", "rejected", "books", "documents", "comics", "pictures"] },
+  "network": true,
   "actions": [
     {
       "id": "start",
@@ -68,6 +70,8 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 | `version` | string | semver `MAJOR.MINOR.PATCH` |
 | `description` | string | optional, ≤ 120 chars |
 | `menu` | bool | optional, default `true`; `false` hides the app from the menu |
+| `storage` | object | optional: `{"reads": [...], "writes": [...]}` with logical folder names; see below |
+| `network` | bool | optional, default `false`; `true` when the app talks to the network |
 | `actions` | array | 1–8 items, `id` unique within the app |
 | `actions[].id` | string | `^[a-z0-9][a-z0-9-]{0,30}$` |
 | `actions[].label` | string | 1–32 chars, no `:` (NickelMenu field separator) |
@@ -76,6 +80,22 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 | `actions[].timeout_ms` | int | only with `output: show`; 500–9999 (NickelMenu limit is < 10000); default 5000 |
 | `actions[].wifi` | bool | default `false`; `true` prepends `nickel_wifi:autoconnect` (does not wait; the script must wait for an IP itself, see `wait_for_wifi` in `common.sh`) |
 | `actions[].rescan` | enum | `none` (default), `quick` = `nickel_misc:rescan_books`, `full` = `nickel_misc:rescan_books_full`; runs only if the action succeeded |
+
+### storage and network
+
+`storage` and `network` declare what the app touches. Nothing is sandboxed (everything runs as root on a Kobo), so the declaration is what reviews and `appsctl validate` hold the code to. Names are **logical**, resolved by `internal/storage`; app code never hardcodes the paths.
+
+| Name | Folder |
+|---|---|
+| `books` | `/mnt/onboard/Books` |
+| `documents` | `/mnt/onboard/Documents` |
+| `comics` | `/mnt/onboard/Comics` |
+| `pictures` | `/mnt/onboard/Pictures` |
+| `inbox` | `/mnt/onboard/.adds/koboapps/inbox` (staging for received files) |
+| `rejected` | `/mnt/onboard/.adds/koboapps/inbox/rejected` |
+| `screensaver` | `/mnt/onboard/.kobo/screensaver` (sleep screen; wallpaper app only) |
+
+An unknown name in `reads` or `writes` makes the manifest invalid (`unknown folder "x"; use one of ...`). The app's own `data/` folder needs no declaration. Files received from the network go through the inbox router, see [inbox.md](inbox.md).
 
 Unknown top-level or action fields are ignored with a warning (forward compatibility).
 
@@ -142,5 +162,5 @@ menu_item :main :Ứng dụng · Trạng thái cập nhật :cmd_output :3000 :/
 - NickelMenu runs commands from `/` as root with a minimal environment: scripts must `cd "$(dirname "$0")/.."` (or use absolute paths) and source `/mnt/onboard/.adds/koboapps/lib/common.sh`.
 - Exit code `0` = success (chains `rescan`), non-zero = failure (NickelMenu shows the error).
 - `output: show` scripts print short status lines through `msg` (never literal text); they must finish before `timeout_ms`. Long work goes to the background with output redirected to `data/log.txt`.
-- Never hold files open under `/mnt/onboard` after the script exits; never write outside the app's own `data/` except the app's declared destination folder (e.g. `/mnt/onboard/LocalSend`, `/mnt/onboard/GitHub`).
+- Never hold files open under `/mnt/onboard` after the script exits; never write outside the app's own `data/` except the app's declared destination folder (a folder named in `storage.writes`, e.g. `inbox` or `books`; GitHub sync writes to `/mnt/onboard/Books/GitHub`).
 - Secrets live in `data/` only, file mode 600, never printed.

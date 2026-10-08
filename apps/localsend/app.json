@@ -3,7 +3,9 @@
   "id": "localsend",
   "name": "LocalSend",
   "version": "1.0.0",
-  "description": "Receive books from your phone with LocalSend",
+  "description": "Receive books and files from your phone with LocalSend",
+  "storage": { "reads": ["inbox"], "writes": ["inbox", "rejected", "books", "documents", "comics", "pictures"] },
+  "network": true,
   "actions": [
     {
       "id": "start",
@@ -18,6 +20,14 @@
       "id": "stop",
       "label": "Stop receiving",
       "run": "bin/stop.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "quick"
+    },
+    {
+      "id": "sort",
+      "label": "Sort old files",
+      "run": "bin/sort.sh",
       "output": "show",
       "timeout_ms": 3000,
       "rescan": "quick"

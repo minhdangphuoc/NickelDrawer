@@ -36,11 +36,12 @@ build: sync-embedded
 # dist/.stamp is what tools/install-to-kobo.sh compares against the sources.
 dist: build
 	rm -rf dist
-	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales
+	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(HOST_DIR)/config $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales
 	cp build/appsctl-linux-armv7 $(HOST_DIR)/bin/appsctl
 	cp host/lib/common.sh $(HOST_DIR)/lib/common.sh
 	cp host/bin/*.sh $(HOST_DIR)/bin/
 	cp host/locales/*.json $(HOST_DIR)/locales/
+	cp host/config/routing.json $(HOST_DIR)/config/routing.json
 	cp apps/localsend/app.json $(APPS_DIR)/localsend/app.json
 	cp apps/localsend/bin/*.sh $(APPS_DIR)/localsend/bin/
 	mkdir -p $(APPS_DIR)/localsend/locales && cp apps/localsend/locales/*.json $(APPS_DIR)/localsend/locales/
@@ -55,7 +56,7 @@ dist: build
 	cp apps/wallpaper/locales/*.json $(APPS_DIR)/wallpaper/locales/
 	cp build/wallpaper-linux-armv7 $(APPS_DIR)/wallpaper/bin/wallpaper
 	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/*
-	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/ghsync/data/config.example.json
+	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/ghsync/data/config.example.json
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp
 

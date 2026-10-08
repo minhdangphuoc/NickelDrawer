@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "rules": [
+    { "type": "epub", "extensions": [".epub", ".kepub.epub"], "check": "epub", "max_bytes": 209715200, "destination": "books" },
+    { "type": "mobi", "extensions": [".mobi"], "check": "mobi", "max_bytes": 209715200, "destination": "books" },
+    { "type": "pdf", "extensions": [".pdf"], "check": "pdf", "max_bytes": 314572800, "destination": "documents" },
+    { "type": "txt", "extensions": [".txt"], "check": "utf8text", "max_bytes": 20971520, "destination": "documents" },
+    { "type": "html", "extensions": [".html", ".htm"], "check": "html", "max_bytes": 20971520, "destination": "documents" },
+    { "type": "rtf", "extensions": [".rtf"], "check": "rtf", "max_bytes": 20971520, "destination": "documents" },
+    { "type": "cbz", "extensions": [".cbz"], "check": "zip", "max_bytes": 524288000, "destination": "comics" },
+    { "type": "cbr", "extensions": [".cbr"], "check": "rar", "max_bytes": 524288000, "destination": "comics" },
+    { "type": "png", "extensions": [".png"], "check": "png", "max_bytes": 31457280, "destination": "pictures" },
+    { "type": "jpeg", "extensions": [".jpg", ".jpeg"], "check": "jpeg", "max_bytes": 31457280, "destination": "pictures" },
+    { "type": "gif", "extensions": [".gif"], "check": "gif", "max_bytes": 31457280, "destination": "pictures" }
+  ]
+}

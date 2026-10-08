@@ -383,8 +383,27 @@ func TestConfigValidation(t *testing.T) {
 	must(t, os.WriteFile(file, []byte(`{"repo":"o/r"}`), 0o644))
 	config, err := LoadConfig(file)
 	must(t, err)
-	if config.Dest != defaultDest || len(config.Extensions) != 5 {
+	if config.Dest != defaultDest() || len(config.Extensions) != 5 {
 		t.Errorf("defaults missing: %+v", config)
+	}
+}
+
+func TestDefaultDestinationIsBooksGitHubAndAnExplicitDestStillWorks(t *testing.T) {
+	loadDest := func(body string) string {
+		file := filepath.Join(t.TempDir(), "config.json")
+		must(t, os.WriteFile(file, []byte(body), 0o644))
+		config, err := LoadConfig(file)
+		must(t, err)
+		return config.Dest
+	}
+	if got := loadDest(`{"repo":"o/r"}`); got != "/mnt/onboard/Books/GitHub" {
+		t.Errorf("default dest = %q, want /mnt/onboard/Books/GitHub", got)
+	}
+	if got := loadDest(`{"repo":"o/r","dest":"/mnt/onboard/GitHub"}`); got != "/mnt/onboard/GitHub" {
+		t.Errorf("an explicit dest must be kept, got %q", got)
+	}
+	if got := loadDest(`{"repo":"o/r","dest":"/mnt/onboard/Books"}`); got != "/mnt/onboard/Books" {
+		t.Errorf("an explicit dest must be kept, got %q", got)
 	}
 }
 

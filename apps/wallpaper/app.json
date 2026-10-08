@@ -4,6 +4,8 @@
   "name": "Wallpaper",
   "version": "0.1.0",
   "description": "Use your own pictures as the sleep screen",
+  "storage": { "reads": ["pictures"], "writes": ["screensaver"] },
+  "network": false,
   "actions": [
     {
       "id": "import",

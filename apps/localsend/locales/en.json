@@ -2,5 +2,8 @@
   "msg.wifi_missing": "Wi-Fi is not connected.\nWait for Wi-Fi, then tap again.",
   "msg.start_failed": "Could not start:",
   "msg.started": "LocalSend is receiving books\n\nDevice name: {device}\nIP: {ip}\nPIN: {pin}\n\nKeep the device awake while sending.\nWhen done, tap 'Stop receiving'.",
-  "msg.stopped": "LocalSend stopped.\nThe LocalSend folder has {count} files.\nUpdating the library..."
+  "msg.stopped": "LocalSend stopped.\nUpdating the library...",
+  "msg.sort_started": "Sorting old files in the background.\nTap 'Sort old files' again to see the result.",
+  "msg.sort_running": "Still sorting old files.\nTap again in a moment.",
+  "msg.sort_nothing": "No old files to sort."
 }

@@ -2,7 +2,7 @@
 
 ## Tiếng Việt
 
-Tải sách mới từ một repo GitHub riêng về `/mnt/onboard/GitHub`. Chỉ thêm, không bao giờ xóa hay ghi đè.
+Tải sách mới từ một repo GitHub riêng về `/mnt/onboard/Books/GitHub` (thư mục `dest` trong `config.json`; cấu hình cũ có `dest` riêng, ví dụ `/mnt/onboard/GitHub`, vẫn chạy như cũ). Chỉ thêm, không bao giờ xóa hay ghi đè.
 
 1. Tạo token: GitHub > Settings > Developer settings > Personal access tokens > **Fine-grained tokens** > Generate.
    - Repository access: **Only select repositories**, chọn đúng một repo sách.
@@ -20,7 +20,7 @@ Chi tiết lỗi: `data/log.txt`. Sách đã tải rồi bị bạn xóa trên m
 
 ## English
 
-Downloads new books from a private GitHub repo into `/mnt/onboard/GitHub`. Add-only: never deletes or overwrites. A book you deleted on the device is not downloaded again (counted as "deleted on the device"); use `bin/ghsync run --redownload-deleted` to override.
+Downloads new books from a private GitHub repo into `/mnt/onboard/Books/GitHub` by default (set `dest` in `config.json` to change it; an older config with its own `dest`, such as `/mnt/onboard/GitHub`, keeps working). Add-only: never deletes or overwrites. A book you deleted on the device is not downloaded again (counted as "deleted on the device"); use `bin/ghsync run --redownload-deleted` to override.
 
 1. Create a **fine-grained personal access token**: Repository access = only the one repo; Permissions = Contents: Read-only (Metadata read-only is added automatically).
 2. Over USB, paste the token into `.adds/apps/ghsync/data/token`.

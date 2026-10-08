@@ -187,7 +187,7 @@ func TestPairSuccessWritesPrivateFilesAndNeverEchoesToken(t *testing.T) {
 	if err := json.Unmarshal(raw, &saved); err != nil {
 		t.Fatal(err)
 	}
-	if saved.Repo != "me/books" || saved.Path != "books" || saved.Branch != "" || saved.Dest != defaultDest {
+	if saved.Repo != "me/books" || saved.Path != "books" || saved.Branch != "" || saved.Dest != defaultDest() {
 		t.Errorf("config = %+v", saved)
 	}
 	if _, err := LoadConfig(e.paths.Config()); err != nil {

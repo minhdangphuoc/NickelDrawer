@@ -1,0 +1,1 @@
+{"schema":1,"id":"valid-storage","name":"Good","version":"1.0.0","network":true,"storage":{"reads":["pictures"],"writes":["inbox","books"]},"actions":[{"id":"go","label":"Run","run":"bin/run.sh","output":"show"}]}

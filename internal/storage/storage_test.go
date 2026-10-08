@@ -64,6 +64,35 @@ func TestLayoutPathsFollowRoot(t *testing.T) {
 	}
 }
 
+func TestInboxFoldersLiveUnderTheHostFolder(t *testing.T) {
+	defer SetRoot("/x")()
+	if got := Path(Inbox); got != "/x/.adds/koboapps/inbox" {
+		t.Errorf("inbox = %q", got)
+	}
+	if got := Path(Rejected); got != "/x/.adds/koboapps/inbox/rejected" {
+		t.Errorf("rejected = %q", got)
+	}
+	if KoboappsDir() != "/x/.adds/koboapps" || LegacyLocalSendDir() != "/x/LocalSend" {
+		t.Errorf("host dir %q, legacy dir %q", KoboappsDir(), LegacyLocalSendDir())
+	}
+}
+
+func TestKnownNamesAreExactlyTheLayout(t *testing.T) {
+	for _, name := range []string{"books", "documents", "comics", "pictures", "inbox", "rejected", "screensaver"} {
+		if !IsKnown(name) {
+			t.Errorf("%s must be a known name", name)
+		}
+	}
+	for _, name := range []string{"", "etc", "Books", "../books", "data"} {
+		if IsKnown(name) {
+			t.Errorf("%q must not be known", name)
+		}
+	}
+	if len(Known()) != 7 {
+		t.Errorf("Known() = %v", Known())
+	}
+}
+
 func TestDefaultRootIsOnboard(t *testing.T) {
 	if Path(Pictures) != "/mnt/onboard/Pictures" {
 		t.Errorf("default pictures path = %q", Path(Pictures))

@@ -72,11 +72,21 @@ backup_path() {
     act cp -R "$source" "$backupDir/$relative"
 }
 
+# Everything in .adds/koboapps except inbox/, which holds received books and could be huge.
+backup_koboapps() {
+    local entry
+    [ -d "$ADDS/koboapps" ] || return 0
+    for entry in "$ADDS/koboapps"/*; do
+        [ "$(basename "$entry")" != inbox ] || continue
+        backup_path "$entry"
+    done
+}
+
 backup_before_writing() {
     backupDir=$REPO_ROOT/backups/$(date +%Y-%m-%d-%H%M%S)
     backup_path "$ADDS/nm"
     backup_path "$ADDS/apps"
-    backup_path "$ADDS/koboapps"
+    backup_koboapps
     if $shouldRemoveLegacy; then
         backup_path "$ADDS/localsend"
     fi
@@ -103,9 +113,16 @@ install_example_config() {
     act cp "$source/data/config.example.json" "$target/data/config.example.json"
 }
 
+# The inbox and its rejected/ folder must exist before the first file arrives. The user's
+# data/routing.json is never written here: install_folder only replaces the folders it is given.
+create_inbox_folders() {
+    act mkdir -p "$ADDS/koboapps/inbox/rejected"
+}
+
 install_host() {
-    install_folder "$DIST_ADDS/koboapps" "$ADDS/koboapps" bin lib locales
-    note_change "installed .adds/koboapps (bin, lib, locales)"
+    install_folder "$DIST_ADDS/koboapps" "$ADDS/koboapps" bin lib locales config
+    create_inbox_folders
+    note_change "installed .adds/koboapps (bin, lib, locales, config, inbox)"
 }
 
 install_apps() {

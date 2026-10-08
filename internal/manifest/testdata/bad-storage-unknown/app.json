@@ -1,0 +1,1 @@
+{"schema":1,"id":"bad-storage-unknown","name":"Bad","version":"1.0.0","storage":{"reads":["books","secrets"],"writes":["/etc"]},"actions":[{"id":"go","label":"Run","run":"bin/run.sh","output":"show"}]}

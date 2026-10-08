@@ -75,6 +75,14 @@ check "no other ghsync data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l |
 check "menu has device paths" contains "$ADDS/nm/koboapps" ":/mnt/onboard/.adds/apps/localsend/bin/start.sh"
 check "menu has refresh item" contains "$ADDS/nm/koboapps" "/mnt/onboard/.adds/koboapps/bin/appsctl refresh"
 check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
+check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
+check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
+check "inbox folder created" test -d "$ADDS/koboapps/inbox"
+check "inbox/rejected folder created" test -d "$ADDS/koboapps/inbox/rejected"
+check "no user routing.json created by the installer" test ! -e "$ADDS/koboapps/data/routing.json"
+check "localsend sort script installed" test -x "$ADDS/apps/localsend/bin/sort.sh"
+check "localsend routes through the inbox hook" contains "$ADDS/apps/localsend/bin/env.sh" "inbox route --from-env --source localsend"
+check "menu has the sort action (vi)" contains "$ADDS/nm/koboapps" "LocalSend · Sắp xếp tệp cũ"
 check "locales installed (app)" test -f "$ADDS/apps/localsend/locales/vi.json"
 check "menu in Vietnamese (app labels)" contains "$ADDS/nm/koboapps" "LocalSend · Bắt đầu nhận"
 check "menu in Vietnamese (refresh item)" contains "$ADDS/nm/koboapps" "Ứng dụng · Làm mới danh sách"
@@ -96,13 +104,19 @@ echo "--- second install keeps data"
 echo "secret-token" >"$ADDS/apps/ghsync/data/token"
 echo '{"repo":"o/r"}' >"$ADDS/apps/ghsync/data/config.json"
 echo "1234" >"$ADDS/apps/localsend/data/pin.txt" 2>/dev/null || { mkdir -p "$ADDS/apps/localsend/data"; echo 1234 >"$ADDS/apps/localsend/data/pin.txt"; }
+echo '{"remove":["gif"]}' >"$ADDS/koboapps/data/routing.json"
+echo "waiting" >"$ADDS/koboapps/inbox/pending.pdf"
 echo "stale" >"$ADDS/apps/ghsync/bin/obsolete.sh"
+echo '{"version":0}' >"$ADDS/koboapps/config/routing.json"
 cp "$ADDS/nm/koboapps" "$WORK/menu.first"
 sleep 1
 "$INSTALLER" >"$WORK/second.out"
 check "token preserved" contains "$ADDS/apps/ghsync/data/token" "secret-token"
 check "config preserved" contains "$ADDS/apps/ghsync/data/config.json" '"o/r"'
 check "pin preserved" contains "$ADDS/apps/localsend/data/pin.txt" "1234"
+check "user routing.json never overwritten" contains "$ADDS/koboapps/data/routing.json" '"remove":["gif"]'
+check "files waiting in the inbox kept" contains "$ADDS/koboapps/inbox/pending.pdf" "waiting"
+check "shipped routing.json refreshed" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
 check "bin/ replaced (stale file gone)" test ! -e "$ADDS/apps/ghsync/bin/obsolete.sh"
 check "menu identical after reinstall" cmp -s "$ADDS/nm/koboapps" "$WORK/menu.first"
 check "second backup holds the token" grep -rqF secret-token "$REPO_ROOT"/backups/*/.adds/apps/ghsync/data/token
