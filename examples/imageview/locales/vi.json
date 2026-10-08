@@ -1,0 +1,15 @@
+{
+  "name": "Xem ảnh",
+  "description": "Gói ảnh thành album truyện cho trình đọc của Kobo",
+  "actions.make-albums.label": "Tạo album",
+  "actions.status.label": "Trạng thái",
+  "msg.started": "Đang tạo album ở nền.\nMột phút nữa mở Trạng thái.",
+  "msg.already_running": "Đang tạo album. Một phút nữa mở Trạng thái.",
+  "msg.no_images": "Không thấy ảnh. Chép tệp png hoặc jpg vào {path} (hoặc thư mục con).",
+  "msg.helper_missing": "Thiếu bin/mkcbz. Biên dịch theo README rồi chép vào thư mục bin của ứng dụng.",
+  "msg.status_running": "Đang tạo album...",
+  "msg.status_idle": "Hiện không tạo album.",
+  "msg.status_result": "Lần gần nhất: {made} mới, {skipped} đã có, {failed} lỗi.",
+  "msg.status_albums": "Có {count} album trong thư viện.",
+  "msg.status_none": "Chưa có album. Bấm Tạo album."
+}

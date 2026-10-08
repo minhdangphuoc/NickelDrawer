@@ -1,0 +1,18 @@
+{
+  "name": "Việc cần làm",
+  "description": "Danh sách việc cần làm trong một tệp văn bản",
+  "actions.show.label": "Xem danh sách",
+  "actions.done-next.label": "Xong việc kế tiếp",
+  "actions.clear-done.label": "Xóa việc đã xong",
+  "actions.add-from-file.label": "Thêm từ tệp",
+  "msg.list_counts": "Chưa xong: {open}   Đã xong: {done}",
+  "msg.list_empty": "Chưa có việc nào. Dùng 'Thêm từ tệp'.",
+  "msg.list_more": "... và {count} việc nữa",
+  "msg.marked_done": "Xong: {item}",
+  "msg.nothing_open": "Không còn việc nào.",
+  "msg.cleared": "Đã xóa {count} việc xong.",
+  "msg.nothing_done": "Chưa có việc nào đã xong.",
+  "msg.added": "Đã thêm {count} việc.",
+  "msg.inbox_empty": "Không có gì để thêm. Ghi mỗi việc một dòng vào {path} rồi thử lại.",
+  "msg.write_failed": "Không lưu được danh sách. Giải phóng bộ nhớ rồi thử lại."
+}

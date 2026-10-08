@@ -314,3 +314,75 @@ screens can still open as N3Dialogs from the native drawer.
    current widget and self-pop; or move to route A.
 3. **Keyboard outside an N3Dialog** and the Vietnamese layout path (`SearchKeyboardControllerFactory`) are
    unproven; fallback is an N3Dialog for text entry only.
+
+---
+
+## Prototype build (2026-10-08, `mod/drawer-proto/`, not yet run on device)
+
+`libnddrawer.so` (NickelHook, NickelTC image pinned as in `mod/hello`), outputs `build/mod/libnddrawer.so`
+and `build/mod/KoboRoot-nddrawer.tgz`. Prototype A = More row (flag `.adds/nickeldrawer/proto-a`),
+prototype C = empty drawer page (flag `proto-c`; `proto-c-pushview` selects route B). Test script:
+`mod/drawer-proto/README.md`. Static checks: `mod/drawer-proto/check-symbols.sh` (passes).
+
+### Route chosen for C: route A (controller push), route B kept behind a flag
+
+Further static work on 23828 removed the main uncertainties of route A:
+
+- Base implementations are trivial and reproduced in the mod: `size()` returns `QSize(-1,-1)` (sret),
+  `viewWillAppear/Disappear/BeDestroyed` empty, `allowedOrientations()` returns 5, `navSection()` 0, ctor
+  zeroes the `QPointer` at +4/+8, dtor releases the QPointer d-ptr. Size 0xc confirmed.
+- `MoreController`'s secondary vtable (offset-to-top −8) has exactly 9 slots: D1, D0, size, viewWillAppear,
+  viewWillDisappear, viewWillBeDestroyed, allowedOrientations, navSection, loadView. The built mod's
+  `DrawerController` secondary vtable was dumped from the `.so` and matches this order slot for slot,
+  with offset-to-top −8 and a `__vmi_class_type_info` listing `QObject` @0 and `AbstractController` @8.
+- Nickel's RTTI use: `push`, `pop`, `prepareView`, `ensureViewLoaded` and `view<QWidget*>` call
+  `__dynamic_cast(controller, &typeinfo(AbstractController), &typeinfo(QObject), -2)`. The mod compiles
+  only `drawer_controller.cc` with `-frtti`; type_info equality on ARM EABI is by name string, and our
+  `_ZTS18AbstractController` is `"18AbstractController"` without the `*` local-type prefix, so Nickel's
+  casts match our class. `typeinfo for QObject` is imported from QtCore (libnickel imports it too).
+- **Lifecycle (correction to Q2):** after `loadView`, `ensureViewLoaded`/`view<QWidget*>` call
+  `controllerAsQObject->setParent(view)` (disassembly at 0xad6d6e–0xad6d78 in the 23828 file: r0 = cast
+  result, r1 = the view from the QPointer). The controller is a child of its view, so `popView`'s
+  `deleteLater()` of the view also deletes the controller. The mod must **not** delete the controller
+  after `pop`. "You're responsible for the lifecycle of this controller!" is logged only when the
+  controller is not a QObject.
+- Runtime guards: `static_assert(sizeof(AbstractController)==0xc)`, QObject/QPointer sizes, and a runtime
+  check that the `AbstractController` subobject sits at +8 before calling `push`. After `push` the mod
+  verifies the view landed in the window stack and that the controller was re-parented; otherwise it
+  cleans up and toasts.
+- `DrawerController` deliberately has no `Q_OBJECT`: moc would make `metaObject()` the key function and
+  emit the vtable in a `-fno-rtti` object (null typeinfo → Nickel's `__dynamic_cast` would crash).
+
+Route B (`pushView`/`popView`, as NickelHardcover) is compiled in and selected by `proto-c-pushview`; it
+watches `QStackedWidget::currentChanged` and pops the drawer when another view becomes current.
+
+### Symbols used (all optional nh_dlsym/nh_hook; 10/10 present in all 5 builds)
+
+| Symbol | Use |
+|---|---|
+| `_ZN8MoreViewC1EP7QWidget` | hook (A) |
+| `_ZN14IconLeftButtonC1EP7QWidget`, `_ZN14IconLeftButton9setPixmapERK7QPixmap`, `_ZN14IconLeftButton7setTextERK7QString` | row (A) |
+| `_ZN20MainWindowController14sharedInstanceEv`, `_ZN20MainWindowController5toastERK7QStringS2_i` | window, toast |
+| `_ZN20MainWindowController4pushEP18AbstractControllerb`, `_ZN20MainWindowController3popEP18AbstractController` | C route A |
+| `_ZN20MainWindowController8pushViewEP7QWidget`, `_ZN20MainWindowController7popViewEP7QWidget` | C route B |
+
+Signal by name (no dlsym): `IconButtonBase::tapped()`. Qt only: `findChild("moreContainerLayout")`,
+`QBoxLayout::insertWidget` after `betaFeaturesButton`, `QSettings` read of
+`[ApplicationPreferences] CurrentLocale` for the label, widget attribute 0x80 + `repaint()` on page flip.
+Pixmap: Nickel resource `:/images/reading/beta_features.png` (placeholder).
+
+### Residual risks for the first boot
+
+1. **Route A ABI at open time** (not at boot): any mismatch in how Nickel uses the controller beyond
+   what was decompiled (e.g. other `dynamic_cast` targets in `prepareView`, which returns null for us and
+   falls back to the QPointer path) would crash on the first tap. Boot itself is unaffected; recovery =
+   delete `proto-c`, try route B.
+2. **`MoreView` hook runs on every More open.** A wrong assumption in `IconLeftButton` construction (256-byte
+   calloc, 0x58 used) would crash when opening More, after the failsafe window. Recovery = delete `proto-a`
+   or the uninstall flag over USB (Nickel restarts after a crash, USB still works).
+3. **Plain Qt widgets on Nickel**: the drawer page uses `QLabel`/`QPushButton`, not Nickel widgets; fonts,
+   sizes and touch-to-click synthesis for the back button are unproven (fallback: More tab/Home closes it).
+4. **Tab-bar state with route B** is not re-evaluated (`pushView` skips `updateNavFooter`).
+5. Behaviour was decompiled on 23828 only; the other four builds share the exported names, not
+   verified code.
+6. Shared uninstall flag with `ndhello`: with both installed, one uninstall run removes only one mod.

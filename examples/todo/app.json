@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "todo",
+  "name": "To-do",
+  "version": "1.0.0",
+  "description": "A small to-do list kept in a text file",
+  "actions": [
+    {
+      "id": "show",
+      "label": "Show list",
+      "run": "bin/show.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "done-next",
+      "label": "Mark next done",
+      "run": "bin/done-next.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "clear-done",
+      "label": "Clear done items",
+      "run": "bin/clear-done.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "add-from-file",
+      "label": "Add from file",
+      "run": "bin/add-from-file.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    }
+  ]
+}

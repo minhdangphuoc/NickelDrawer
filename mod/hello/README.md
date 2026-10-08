@@ -12,7 +12,7 @@ path before any real drawer code.
   (`_ZN20MainWindowController14sharedInstanceEv`, `_ZN20MainWindowController5toastERK7QStringS2_i`).
   Both symbols are optional: if either is missing it logs and does nothing.
 - Failsafe: armed before `init()`, disarmed after 15 s. If Nickel crashes earlier, the mod removes itself on the next boot.
-- Uninstall flag: `/mnt/onboard/.adds/nickeldrawer/uninstall`. If the file exists at boot, the mod deletes
+- Uninstall flag: `/mnt/onboard/.adds/nickeldrawer/uninstall-hello`. If the file exists at boot, the mod deletes
   itself and the flag.
 - Delete-to-uninstall (`uninstall_xflag`) is supported by NickelHook but deliberately unused: it
   uninstalls when the file is absent, which would remove the mod on the first boot.
@@ -34,7 +34,7 @@ current `.kobo/KoboRoot.tgz` state if any), battery above 50 %, the uninstall dr
    (use absolute paths; never leave the shell's working directory on the volume), eject, and let it reboot.
 2. Expect the toast "NickelDrawer test mod loaded" about 8 s after the home screen appears.
    After a USB connect/disconnect, the library must still work.
-3. Uninstall drill: connect USB, create an empty file `.adds/nickeldrawer/uninstall`, eject, reboot.
+3. Uninstall drill: connect USB, create an empty file `.adds/nickeldrawer/uninstall-hello`, eject, reboot.
    Expect no toast and `/usr/local/Kobo/imageformats/libndhello.so` gone (telnet or the next
    NickelHook log dump confirms; the flag file is consumed).
 4. Failsafe drill (separate run, reinstall first): reboot, then power off within about 15 s of boot
@@ -44,7 +44,7 @@ current `.kobo/KoboRoot.tgz` state if any), battery above 50 %, the uninstall dr
 
 In order, stop at the first that works:
 
-1. Create `.adds/nickeldrawer/uninstall` (above) and reboot.
+1. Create `.adds/nickeldrawer/uninstall-hello` (above) and reboot.
 2. Power off within 15 s of boot; the failsafe removes the mod on the next boot.
 3. Delete `/usr/local/Kobo/imageformats/libndhello.so` via telnet/SSH if enabled.
 4. Last resort: factory-safe recovery by re-applying the stock firmware update (user's Kobo guide);

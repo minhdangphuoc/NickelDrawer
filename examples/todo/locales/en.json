@@ -1,0 +1,12 @@
+{
+  "msg.list_counts": "Open: {open}   Done: {done}",
+  "msg.list_empty": "Nothing to do. Use 'Add from file'.",
+  "msg.list_more": "... and {count} more",
+  "msg.marked_done": "Done: {item}",
+  "msg.nothing_open": "No open items.",
+  "msg.cleared": "Removed {count} done items.",
+  "msg.nothing_done": "No done items to remove.",
+  "msg.added": "Added {count} items.",
+  "msg.inbox_empty": "Nothing to add. Put one item per line in {path} and try again.",
+  "msg.write_failed": "Could not save the list. Free some space and try again."
+}

@@ -1,0 +1,45 @@
+{
+  "_preview": "PREVIEW ONLY: ui.json is not supported until the native drawer ships (Phase 3-4). Today the v1 menu actions in app.json are what runs. Component names follow docs/spec/ui-kit.md and may still change.",
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "status": "",
+    "items": [],
+    "newItem": "",
+    "hideDone": false,
+    "canAdd": false
+  },
+  "screens": {
+    "main": {
+      "title": { "en": "To-do", "vi": "Việc cần làm" },
+      "status": "$status",
+      "body": [
+        { "toggle": { "en": "Hide done items", "vi": "Ẩn việc đã xong" }, "bind": "hideDone" },
+        {
+          "list": "$items",
+          "title": { "en": "Items", "vi": "Danh sách" },
+          "empty_text": { "en": "Nothing to do yet", "vi": "Chưa có việc nào" },
+          "max": 50,
+          "tap": "toggle-item",
+          "menu": [
+            { "id": "remove", "label": { "en": "Remove...", "vi": "Xóa..." }, "confirm": true }
+          ]
+        },
+        {
+          "field": { "en": "New item", "vi": "Việc mới" },
+          "bind": "newItem",
+          "keyboard": "text",
+          "placeholder": { "en": "Buy milk", "vi": "Mua sữa" }
+        }
+      ],
+      "footer": [
+        {
+          "button": { "en": "Add item", "vi": "Thêm việc" },
+          "action": "add-item",
+          "style": "primary",
+          "enabled": "$canAdd"
+        }
+      ]
+    }
+  }
+}

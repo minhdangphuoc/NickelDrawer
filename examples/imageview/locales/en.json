@@ -1,0 +1,11 @@
+{
+  "msg.started": "Making albums in the background.\nOpen Status in a minute.",
+  "msg.already_running": "Albums are already being made. Open Status in a minute.",
+  "msg.no_images": "No images found. Put png or jpg files in {path} (or in folders inside it).",
+  "msg.helper_missing": "bin/mkcbz is missing. Build it (see the README) and copy it to the app's bin folder.",
+  "msg.status_running": "Still making albums...",
+  "msg.status_idle": "Not making albums now.",
+  "msg.status_result": "Last run: {made} new, {skipped} up to date, {failed} failed.",
+  "msg.status_albums": "Albums ready: {count}. Find them in your library.",
+  "msg.status_none": "No albums yet. Tap Make albums."
+}

@@ -4,6 +4,85 @@ An app is a folder with a manifest and a few scripts. Copy it to the Kobo and it
 
 The full format rules are in [spec/app-format.md](spec/app-format.md). This guide is the short path.
 
+Skip to [Guidelines](#guidelines) for design rules, or to the two worked examples: [To-do](../examples/todo/README.md) (pure `sh`, several quick actions) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
+
+## Guidelines
+
+Read these before you design an action. An e-ink Kobo is slow, shared with the reader and
+battery powered; a good app is small and quiet.
+
+### Design for e-ink
+
+- **One job per action.** "Sync now" and "Status" are two actions, not one with options. Max 8 actions, and fewer is better.
+- **Results in 12 short lines or fewer.** A dialog is not a log. Show the outcome and the one next step; put details in `data/log.txt`.
+- **Never block for more than 10 seconds.** A `show` action must return before its `timeout_ms` (at most 9999). For longer work use the background pattern: start the job detached (`</dev/null >/dev/null 2>&1 &`), write a pid file and a result file in `/tmp`, return a "started" message, and add a "Status" action that reports the result (and rescans, if you made files). See `apps/ghsync/bin/sync.sh` and `examples/imageview`.
+- **No live progress.** A dialog cannot update, and e-ink should not repaint often. Report "started" and "done", not percentages.
+- **Page-turn keys.** In the future native screens the page-turn buttons flip list pages (the host does this for you with a `list`). In v1 keep the output short enough that paging is never needed.
+- **Long or secret input comes from the phone.** The Kobo keyboard is poor for tokens and paths. Use the pairing pattern: a tiny HTTP page on the LAN with a one-time code, as in [spec/ghsync-pairing.md](spec/ghsync-pairing.md). For small text, read a file the user drops in (see the To-do example's inbox) until `ui.json` fields exist.
+- **Keep your data in `data/`.** Config, state, tokens and logs. Never in the app root, never in `/tmp` if it must survive a reboot.
+- **Hold no files open on `/mnt/onboard`** after the script exits (it blocks USB ejecting). Write to a temp file in the same folder as the target and `mv` it into place, so a power cut never leaves half a file.
+- **Sleep and Wi-Fi are not guaranteed.** The device may sleep and drop Wi-Fi at any time. `wifi: true` only asks for a connection; call `wait_for_wifi` and give a clear message if it fails. Background jobs must tolerate the connection going away, and should stop themselves after a timeout instead of running forever.
+- **Battery.** No polling loops, no busy waits. Do the work, then exit. Prefer `sleep` over spinning, short bursts over long ones, and no work at all when nothing changed (skip files that are already up to date).
+
+### Localization (i18n)
+
+- English is the source: `app.json` strings and `locales/en.json`. Always ship `vi.json` too; other languages are welcome.
+- Scripts never print literal text. Use `appsctl msg --app <id> msg.<key> name=value`. The key in the call includes the `msg.` prefix.
+- Never build a sentence from pieces. Use one string with `{placeholders}`; a translation must use the same placeholders (validated).
+- Keep Vietnamese short. It runs 20 to 40 percent longer than English and has tall diacritics: prefer short verbs ("Xong việc kế tiếp"), no filler words, and keep labels under 32 characters including diacritics.
+- Labels and names may not contain `:`. Use `\n` for line breaks in dialog text; mind the 12-line budget in every language.
+- Check each language with the override: `appsctl msg --locale vi ...`.
+
+### Safety
+
+Apps run as **root** on a device that holds the user's library. So:
+
+- Touch only your own files: your `data/` folder and the one folder your manifest documents (for example `/mnt/onboard/LocalSend`).
+- When you create files in a shared folder (the library root, `Images/`, `Albums/`), give them a name that shows they are yours (a prefix such as `todo-` or a dedicated subfolder) so you can find them later and never collide with the user's.
+- **Never delete or overwrite user files.** Delete only what your app created (or content the user explicitly handed you, like the to-do inbox, which is emptied, not removed). Move to `data/trash/` instead of deleting when unsure.
+- Validate every path from config or the network: no `..`, no absolute paths from outside.
+- Secrets live in `data/` with mode 600 and never appear in output or logs.
+- Do not ship Kobo binaries or firmware files.
+
+### Naming and versioning
+
+- `id`: lowercase, digits, `-`; it equals the folder name and never changes after release (the user's data lives under it).
+- `name` is short (24 chars max) because it prefixes every menu item: "To-do · Show list".
+- Labels are verbs or short noun phrases: "Make albums", "Status". Keep the same label for the same job across apps.
+- Semver: PATCH for fixes, MINOR for new actions or messages, MAJOR when `data/` formats change incompatibly (write a migration or refuse with a clear message). Bump `version` on every release.
+
+### Testing checklist
+
+1. **Validate:** `build/appsctl-host validate <app>` or `go run ./cmd/appsctl validate <app>` has no errors or warnings.
+2. **Lint:** `sh -n bin/*.sh` and `shellcheck bin/*.sh`.
+3. **Mac run with temp dirs:** give every script an environment variable for each path it uses (data dir, input folder, `appsctl`), defaulting to the Kobo path. Run the scripts against a temp copy and check output length, exit codes and that nothing is left open or half written. The examples show this (`TODO_DATA_DIR`, `IMAGEVIEW_IMAGES_DIR`).
+4. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir. Also run `appsctl gen-menu --apps-dir <dir> --out /tmp/menu` and read the generated lines.
+5. **Device checklist** (user present, backups first): refresh list shows the items; each action finishes within its timeout; output is under 12 lines in English and Vietnamese (switch language, tap refresh); failure paths (no Wi-Fi, empty input, missing file) print a clear message; eject works right after (nothing held open); a rescan shows new files; battery and sleep: let the Kobo sleep during a background job and confirm it ends cleanly.
+
+### v1 menu app or v2 native screen (`ui.json`)
+
+The native drawer and `ui.json` are not built yet (Phase 3 and 4); the format is in [spec/ui-kit.md](spec/ui-kit.md) and may still change. v1 apps keep working unchanged: the drawer runs the same actions.
+
+| | v1 menu app (today) | v2 native screen (`ui.json`, later) |
+|---|---|---|
+| Where it appears | NickelMenu items, one per action | An **Apps** row in the More tab, then your own screens |
+| UI | A dialog with text output | Header, lists, toggles, text fields, buttons, QR pairing |
+| Input | None, except files and the phone | Nickel keyboard for short text, phone pairing for secrets |
+| State on screen | Text printed once | Live values (`$var`), updated with partial refresh |
+| Logic | Shell script or binary run per action | A backend process speaking JSON lines (`proto: 1`) |
+| Long jobs | Start in background, "Status" action | Background task with step text and a Stop button |
+| Page-turn keys | Not used | Flip list pages |
+| Cost to build | A manifest and a script | A manifest, a `ui.json`, and a backend |
+| Failure mode | Error dialog | Error screen, NickelMenu fallback stays |
+| Works today | Yes | No: preview only |
+
+Start with v1. Add a `ui.json` when your app needs lists you tap, short text input, or live status.
+
+### Worked examples
+
+- [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a preview `ui.json`.
+- [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, with a Go helper for what BusyBox lacks.
+
 ## 1. Folder layout
 
 ```
@@ -78,7 +157,7 @@ Rules:
 Scripts never print literal text. They call `appsctl msg`:
 
 ```sh
-appsctl msg --app hello greeting name="$name" ip="$ip"
+appsctl msg --app hello msg.greeting name="$name" ip="$ip"
 ```
 
 The menu is built in the current language. After you change the Kobo language, tap the refresh item once.
@@ -140,12 +219,12 @@ APPSCTL=/mnt/onboard/.adds/koboapps/bin/appsctl
 
 ip=$(current_ip)
 if [ -z "$ip" ]; then
-    "$APPSCTL" msg --app hello no_wifi
+    "$APPSCTL" msg --app hello msg.no_wifi
     exit 1
 fi
 
 app_log "$APP_DIR" "greeted from $ip"
-"$APPSCTL" msg --app hello greeting name=reader ip="$ip"
+"$APPSCTL" msg --app hello msg.greeting name=reader ip="$ip"
 ```
 
 ## 6. Validate

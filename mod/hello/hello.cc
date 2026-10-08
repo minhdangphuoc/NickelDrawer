@@ -61,7 +61,7 @@ static int initialize()
 static struct nh_info modInfo = {
     .name = "ndhello",
     .desc = "NickelDrawer hello-world test mod",
-    .uninstall_flag = "/mnt/onboard/.adds/nickeldrawer/uninstall",
+    .uninstall_flag = "/mnt/onboard/.adds/nickeldrawer/uninstall-hello",
     .uninstall_xflag = NULL, // g++ 4.9 rejects skipped designated fields; NULL: no delete-to-uninstall
     .failsafe_delay = 15,
 };
