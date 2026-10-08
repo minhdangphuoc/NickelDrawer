@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "id": "wallpaper",
+  "name": "Wallpaper",
+  "version": "0.1.0",
+  "description": "Use your own pictures as the sleep screen",
+  "actions": [
+    {
+      "id": "import",
+      "label": "Import pictures",
+      "run": "bin/import.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none"
+    },
+    {
+      "id": "next",
+      "label": "Next picture",
+      "run": "bin/next.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none"
+    },
+    {
+      "id": "mode",
+      "label": "Fill / Fit",
+      "run": "bin/mode.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none"
+    },
+    {
+      "id": "rotation",
+      "label": "Fixed / Random",
+      "run": "bin/rotation.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none"
+    },
+    {
+      "id": "off",
+      "label": "Turn off",
+      "run": "bin/off.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none"
+    },
+    {
+      "id": "status",
+      "label": "Status",
+      "run": "bin/status.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none"
+    }
+  ]
+}

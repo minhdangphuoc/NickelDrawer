@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>document.addEventListener("DOMContentLoaded",function(){mermaid.initialize({startOnLoad:true})});</script>
+<title>NickelDrawer Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#1-principles">1. Principles</a><a href="#2-layers">2. Layers</a><a href="#3-storage-layout">3. Storage layout</a><a href="#4-localsend-file-allowlist-and-sorting">4. LocalSend file allowlist and sorting</a><a href="#5-app-contract-summary">5. App contract (summary)</a><a href="#6-components-and-where-they-live">6. Components and where they live</a><a href="#7-roadmap-impact">7. Roadmap impact</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">NickelDrawer · system design v1 · 9 Oct 2026</span>
+      <h1>NickelDrawer architecture</h1>
+      <p class="lede">Principles, layers, the shared storage layout, and how LocalSend sorts received files into Books, Documents, Comics and Pictures through one allowlist.</p>
+      <div class="facts">
+        <div><b>10</b><span>design principles</span></div>
+        <div><b>4 layers</b><span>Kobo · front ends · host · apps</span></div>
+        <div><b>4 folders</b><span>Books · Documents · Comics · Pictures</span></div>
+        <div><b>7 types</b><span>allowed by default; all else rejected</span></div>
+      </div>
+    </header>
+    
+<p>How the pieces fit, the principles behind them, and how files that arrive on the Kobo (LocalSend, GitHub sync, USB) end up in the right place. Status: design v1, 2026-10-09. Decisions are logged in <a href="#">DECISIONS.md</a>.</p>
+<h2 id="1-principles">1. Principles</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Principle</th>
+<th>What it means in practice</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td><strong>Native first</strong></td>
+<td>Look and behave like stock Kobo. Reuse Nickel's own screens, reader, sleep screen and keyboard before drawing anything ourselves.</td>
+</tr>
+<tr>
+<td>P2</td>
+<td><strong>Host owns shared concerns, apps own one job</strong></td>
+<td>Storage layout, file routing, menus, languages, updates and device info live in the host (<code>appsctl</code>). An app does one thing and calls the host for the rest.</td>
+</tr>
+<tr>
+<td>P3</td>
+<td><strong>Declare, don't hardcode</strong></td>
+<td>Apps declare actions, strings and the storage they touch in <code>app.json</code>. Paths are logical names (<code>books</code>, <code>pictures</code>) resolved by the host, never literal paths in app code.</td>
+</tr>
+<tr>
+<td>P4</td>
+<td><strong>Least privilege by declaration</strong></td>
+<td>Everything runs as root on a Kobo, so we cannot sandbox. Instead: each app declares what it reads and writes, <code>appsctl validate</code> checks it, reviews check the code against it, and the native host will broker file access later.</td>
+</tr>
+<tr>
+<td>P5</td>
+<td><strong>Safe by default</strong></td>
+<td>Allowlists, not blocklists. Content sniffing (magic bytes), size caps, sanitized names, no overwrites, atomic writes, never hold files open on <code>/mnt/onboard</code>, never execute received files.</td>
+</tr>
+<tr>
+<td>P6</td>
+<td><strong>Fail soft</strong></td>
+<td>A broken app is skipped and listed; the menu still works. Unknown firmware or a missing symbol turns the native drawer off; NickelMenu stays as the fallback.</td>
+</tr>
+<tr>
+<td>P7</td>
+<td><strong>Offline and private</strong></td>
+<td>No telemetry. Network only when the user taps something (receive, sync, update). Secrets stay in the app's <code>data/</code>.</td>
+</tr>
+<tr>
+<td>P8</td>
+<td><strong>Trust is signed</strong></td>
+<td>Releases are ed25519-signed; the device verifies before installing and rolls back on failure.</td>
+</tr>
+<tr>
+<td>P9</td>
+<td><strong>Any language</strong></td>
+<td>English source strings, translations in <code>locales/</code>; Vietnamese maintained first.</td>
+</tr>
+<tr>
+<td>P10</td>
+<td><strong>Testable without a Kobo</strong></td>
+<td>Every device path has a root override; a fake Kobo tree runs the installer and apps on the Mac and in CI.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="2-layers">2. Layers</h2>
+<pre class="mermaid">flowchart TB
+  subgraph Device[&quot;Kobo (stock firmware 4.38)&quot;]
+    Nickel[&quot;Nickel: stock UI, reader, library, sleep screen&quot;]
+    NM[&quot;NickelMenu: menu fallback&quot;]
+    Drawer[&quot;NickelDrawer mod: native drawer + UI kit (Phase 3-4)&quot;]
+  end
+  subgraph Host[&quot;Host platform (.adds/koboapps)&quot;]
+    appsctl[&quot;appsctl: registry, validate, menu, i18n, device, updates&quot;]
+    storage[&quot;storage: library layout + safe file I/O&quot;]
+    router[&quot;inbox router: allowlist, sniff, sort, journal&quot;]
+  end
+  subgraph Apps[&quot;Apps (.adds/apps/&amp;lt;id&amp;gt;)&quot;]
+    ls[&quot;LocalSend&quot;]
+    gh[&quot;GitHub sync&quot;]
+    wp[&quot;Wallpaper&quot;]
+    more[&quot;your app&quot;]
+  end
+  subgraph Library[&quot;Library folders (user-visible)&quot;]
+    books[&quot;/Books&quot;]
+    docs[&quot;/Documents&quot;]
+    comics[&quot;/Comics&quot;]
+    pics[&quot;/Pictures&quot;]
+  end
+  NM --&gt; Apps
+  Drawer --&gt; Apps
+  Apps --&gt; appsctl
+  ls -- received files --&gt; router
+  gh -- downloaded files --&gt; router
+  router --&gt; storage
+  storage --&gt; Library
+  wp -- reads --&gt; pics
+  wp -- writes nd-wallpaper-* --&gt; Nickel
+  Library --&gt; Nickel
+</pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Owns</th>
+<th>Does not</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Nickel</strong> (Kobo)</td>
+<td>UI, reader, library database, sleep screen</td>
+<td>We never modify it on disk; native features come from hooks at runtime</td>
+</tr>
+<tr>
+<td><strong>Front ends</strong></td>
+<td>NickelMenu items (today), native drawer (Phase 3+)</td>
+<td>Contain app logic</td>
+</tr>
+<tr>
+<td><strong>Host</strong></td>
+<td>App registry and validation, menu generation, i18n, device info, signed updates, <strong>storage layout</strong>, <strong>inbox router</strong></td>
+<td>Know what any specific app does</td>
+</tr>
+<tr>
+<td><strong>Apps</strong></td>
+<td>One job each; their own <code>data/</code></td>
+<td>Touch another app's folder or choose library paths themselves</td>
+</tr>
+<tr>
+<td><strong>Library folders</strong></td>
+<td>User content, visible over USB and in Kobo's library</td>
+<td>Contain anything executable or hidden app state</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="3-storage-layout">3. Storage layout</h2>
+<p>All user content lives in a few top-level folders with plain names. App state is hidden under <code>.adds</code> (excluded from Kobo's library scan by <code>ExcludeSyncFolders</code>).</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Logical name</th>
+<th>Device path</th>
+<th>Holds</th>
+<th>Who writes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>books</code></td>
+<td><code>/mnt/onboard/Books</code></td>
+<td>EPUB, KEPUB, MOBI</td>
+<td>router; ghsync under <code>Books/GitHub</code></td>
+</tr>
+<tr>
+<td><code>documents</code></td>
+<td><code>/mnt/onboard/Documents</code></td>
+<td>PDF, TXT, HTML, RTF</td>
+<td>router</td>
+</tr>
+<tr>
+<td><code>comics</code></td>
+<td><code>/mnt/onboard/Comics</code></td>
+<td>CBZ, CBR</td>
+<td>router; imageview albums under <code>Comics/Albums</code></td>
+</tr>
+<tr>
+<td><code>pictures</code></td>
+<td><code>/mnt/onboard/Pictures</code></td>
+<td>PNG, JPEG, GIF</td>
+<td>router</td>
+</tr>
+<tr>
+<td><code>wallpapers</code></td>
+<td><code>/mnt/onboard/Pictures/Wallpapers</code></td>
+<td>pictures the user picks as sleep screens</td>
+<td>user (USB)</td>
+</tr>
+<tr>
+<td><code>inbox</code></td>
+<td><code>/mnt/onboard/.adds/koboapps/inbox</code></td>
+<td>staging for files being received</td>
+<td>LocalSend only</td>
+</tr>
+<tr>
+<td><code>rejected</code></td>
+<td><code>/mnt/onboard/.adds/koboapps/inbox/rejected</code></td>
+<td>files that failed the allowlist, auto-deleted after 7 days</td>
+<td>router</td>
+</tr>
+<tr>
+<td>app data</td>
+<td><code>/mnt/onboard/.adds/apps/&lt;id&gt;/data</code></td>
+<td>config, tokens, state, logs</td>
+<td>that app only</td>
+</tr>
+<tr>
+<td>system</td>
+<td><code>/mnt/onboard/.kobo/...</code></td>
+<td>Kobo's own files</td>
+<td><strong>only</strong> <code>.kobo/screensaver/nd-wallpaper-*</code> (wallpaper app)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Rules: logical names are resolved by <code>internal/storage</code> (one place, test root override). Reads use the safe-read helpers: direct children only, no hidden files, symlinks must resolve inside the folder, regular files only, type checked by content, size cap.</p>
+<h2 id="4-localsend-file-allowlist-and-sorting">4. LocalSend file allowlist and sorting</h2>
+<h3 id="41-flow">4.1 Flow</h3>
+<pre class="mermaid">sequenceDiagram
+  participant Phone
+  participant LS as localgo (LocalSend)
+  participant Inbox as .adds/koboapps/inbox
+  participant Router as appsctl inbox route
+  participant Lib as /Books /Documents /Comics /Pictures
+  participant Kobo as Nickel library
+  Phone-&gt;&gt;LS: send files (PIN)
+  LS-&gt;&gt;Inbox: write file (hidden staging, same filesystem)
+  LS-&gt;&gt;Router: --exec hook per file
+  Router-&gt;&gt;Router: sanitize name, size cap, sniff type, match allowlist
+  alt allowed
+    Router-&gt;&gt;Lib: atomic rename, never overwrite (&quot;name (2).epub&quot;)
+  else not allowed
+    Router-&gt;&gt;Inbox: move to rejected/ with reason
+  end
+  Router-&gt;&gt;Router: append journal line
+  Note over LS,Kobo: user taps &quot;Stop receiving&quot;
+  LS-&gt;&gt;Kobo: rescan library
+  LS--&gt;&gt;Phone: (status on Kobo) &quot;3 books, 2 pictures, 1 rejected&quot;
+</pre>
+<h3 id="42-allowlist-default-rules">4.2 Allowlist (default rules)</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Extensions</th>
+<th>Content check (magic bytes)</th>
+<th>Max size</th>
+<th>Destination</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EPUB / KEPUB</td>
+<td><code>.epub</code>, <code>.kepub.epub</code></td>
+<td>ZIP header + <code>mimetype</code> = <code>application/epub+zip</code></td>
+<td>200 MB</td>
+<td><code>books</code></td>
+</tr>
+<tr>
+<td>MOBI</td>
+<td><code>.mobi</code></td>
+<td><code>BOOKMOBI</code> at offset 60</td>
+<td>200 MB</td>
+<td><code>books</code></td>
+</tr>
+<tr>
+<td>PDF</td>
+<td><code>.pdf</code></td>
+<td><code>%PDF-</code></td>
+<td>300 MB</td>
+<td><code>documents</code></td>
+</tr>
+<tr>
+<td>Text</td>
+<td><code>.txt</code></td>
+<td>valid UTF-8, no NUL bytes</td>
+<td>20 MB</td>
+<td><code>documents</code></td>
+</tr>
+<tr>
+<td>HTML / RTF</td>
+<td><code>.html</code>, <code>.htm</code>, <code>.rtf</code></td>
+<td><code>&lt;</code> / <code>{\rtf</code> near start</td>
+<td>20 MB</td>
+<td><code>documents</code></td>
+</tr>
+<tr>
+<td>Comics</td>
+<td><code>.cbz</code>, <code>.cbr</code></td>
+<td>ZIP / RAR header</td>
+<td>500 MB</td>
+<td><code>comics</code></td>
+</tr>
+<tr>
+<td>Pictures</td>
+<td><code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.gif</code></td>
+<td>PNG / JPEG / GIF header</td>
+<td>30 MB</td>
+<td><code>pictures</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Everything else (<code>.exe</code>, <code>.sh</code>, <code>.apk</code>, <code>.zip</code>, unknown) is rejected. Extension and content must agree; a <code>.pdf</code> that is really a ZIP is rejected. The rules are data (<code>host/config/routing.json</code>) shipped with the host; a user override file <code>.adds/koboapps/data/routing.json</code> may <strong>remove</strong> types or change destinations to other logical names, never add arbitrary paths. Both are validated.</p>
+<h3 id="43-safety">4.3 Safety</h3>
+<ul>
+<li>File names: NFC-normalized (Vietnamese), path separators and control characters removed, length capped, never starting with <code>.</code>.</li>
+<li>No overwrite: collisions get <code>(2)</code>, <code>(3)</code>.</li>
+<li>Atomic: staging and library are on the same filesystem, so routing is a rename.</li>
+<li>Nothing received is ever executed or unpacked. Book files are moved as-is.</li>
+<li>Journal <code>.adds/koboapps/data/inbox-journal.jsonl</code> (one line per file: time, source app, original name, type, destination or rejection reason). The status action summarizes it.</li>
+<li>Rejected files are kept 7 days so a wrongly rejected file can be recovered over USB, then deleted.</li>
+</ul>
+<h3 id="44-who-uses-the-router">4.4 Who uses the router</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Source</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LocalSend</td>
+<td>localgo saves into <code>inbox</code>; its <code>--exec</code> hook calls <code>appsctl inbox route</code> per file (<mark>verify</mark> localgo's exec semantics; fallback: route the whole inbox when receiving stops)</td>
+</tr>
+<tr>
+<td>GitHub sync</td>
+<td>downloads already go through allowlisted extensions; destination becomes <code>books</code> → <code>Books/GitHub</code> (migration: keep the old folder working)</td>
+</tr>
+<tr>
+<td>USB</td>
+<td>the user can drop anything into <code>/Inbox</code> (optional, later); "Sort inbox" routes it with the same rules</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="5-app-contract-summary">5. App contract (summary)</h2>
+<pre><code class="language-json">{
+  &quot;schema&quot;: 1,
+  &quot;id&quot;: &quot;wallpaper&quot;,
+  &quot;name&quot;: &quot;Wallpaper&quot;,
+  &quot;version&quot;: &quot;0.1.0&quot;,
+  &quot;storage&quot;: { &quot;reads&quot;: [&quot;pictures&quot;, &quot;wallpapers&quot;], &quot;writes&quot;: [&quot;screensaver&quot;] },
+  &quot;network&quot;: false,
+  &quot;actions&quot;: [ { &quot;id&quot;: &quot;import&quot;, &quot;label&quot;: &quot;Import pictures&quot;, &quot;run&quot;: &quot;bin/import.sh&quot;, &quot;output&quot;: &quot;show&quot; } ]
+}
+</code></pre>
+<p><code>storage</code> and <code>network</code> are new, declarative and checked by <code>appsctl validate</code> against the known logical names. Full format: <a href="#">spec/app-format.md</a>.</p>
+<h2 id="6-components-and-where-they-live">6. Components and where they live</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Code</th>
+<th>Spec</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>App registry, validation, menu, i18n, msg</td>
+<td><code>cmd/appsctl</code>, <code>internal/manifest</code>, <code>internal/nmconfig</code>, <code>internal/i18n</code></td>
+<td>spec/app-format.md</td>
+</tr>
+<tr>
+<td>Device info</td>
+<td><code>internal/device</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Storage layout + safe I/O</td>
+<td><code>internal/storage</code></td>
+<td>this document §3</td>
+</tr>
+<tr>
+<td>Inbox router</td>
+<td><code>internal/inbox</code> + <code>appsctl inbox</code> (planned)</td>
+<td>this document §4</td>
+</tr>
+<tr>
+<td>Signed updates</td>
+<td><code>internal/release</code>, <code>internal/update</code>, <code>cmd/ndrelease</code></td>
+<td>UPDATES.md</td>
+</tr>
+<tr>
+<td>Apps</td>
+<td><code>apps/*</code></td>
+<td>each app's README</td>
+</tr>
+<tr>
+<td>Native drawer + UI kit</td>
+<td><code>mod/</code></td>
+<td>spec/ui-kit.md, re/notes/G2-findings.md</td>
+</tr>
+<tr>
+<td>CI, firmware checks</td>
+<td><code>.github/workflows</code>, <code>tools/symcheck.py</code>, <code>tools/fw-watch.sh</code></td>
+<td>CI.md</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="7-roadmap-impact">7. Roadmap impact</h2>
+<ol>
+<li><code>internal/storage</code> (in progress with the wallpaper app).</li>
+<li><code>internal/inbox</code> + <code>appsctl inbox route|status|sort</code> + <code>host/config/routing.json</code> + tests (fake Kobo).</li>
+<li>LocalSend: receive into <code>inbox</code>, route per file, status shows the summary, migration of the old <code>/LocalSend</code> folder ("Sort old files").</li>
+<li>ghsync destination → <code>books</code> (<code>Books/GitHub</code>), with migration.</li>
+<li><code>app.json</code> gains <code>storage</code> / <code>network</code>; <code>appsctl validate</code> checks them.</li>
+</ol>
+  </main>
+</div>
+
+</html>

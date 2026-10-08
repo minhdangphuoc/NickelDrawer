@@ -1,0 +1,61 @@
+// Package storage defines where user files live on the Kobo's visible storage and offers
+// read-only helpers that never leave the folder they are asked to look at.
+//
+// Layout (logical name, device path):
+//
+//	books      /mnt/onboard/Books
+//	pictures   /mnt/onboard/Pictures
+//	documents  /mnt/onboard/Documents
+//	comics     /mnt/onboard/Comics
+//	wallpapers /mnt/onboard/Pictures/Wallpapers
+//
+// The names are a hardcoded allowlist: callers pick a Folder constant, never a path from
+// configuration or user input.
+package storage
+
+import "path/filepath"
+
+// Folder is a logical name in the layout.
+type Folder string
+
+const (
+	Books      Folder = "books"
+	Pictures   Folder = "pictures"
+	Documents  Folder = "documents"
+	Comics     Folder = "comics"
+	Wallpapers Folder = "wallpapers"
+
+	// DefaultRoot is where Nickel mounts the user partition.
+	DefaultRoot = "/mnt/onboard"
+)
+
+// relative maps each folder to its path below the root.
+var relative = map[Folder]string{
+	Books:      "Books",
+	Pictures:   "Pictures",
+	Documents:  "Documents",
+	Comics:     "Comics",
+	Wallpapers: "Pictures/Wallpapers",
+}
+
+var root = DefaultRoot
+
+// SetRoot moves the whole layout (tests, Mac smoke runs) and returns a function that restores it.
+// Not safe for concurrent use; call it before starting work.
+func SetRoot(newRoot string) (restore func()) {
+	previous := root
+	root = newRoot
+	return func() { root = previous }
+}
+
+// Root returns the current root of the layout.
+func Root() string { return root }
+
+// Path returns the absolute path of a folder, or "" for a name that is not in the layout.
+func Path(folder Folder) string {
+	sub, found := relative[folder]
+	if !found {
+		return ""
+	}
+	return filepath.Join(root, filepath.FromSlash(sub))
+}

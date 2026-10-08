@@ -27,6 +27,7 @@ build: sync-embedded
 	mkdir -p build
 	$(ARM_ENV) go build -trimpath -ldflags='$(APPSCTL_LDFLAGS)' -o build/appsctl-linux-armv7 ./cmd/appsctl
 	$(ARM_ENV) $(GO_BUILD) -o build/ghsync-linux-armv7 ./cmd/ghsync
+	$(ARM_ENV) $(GO_BUILD) -o build/wallpaper-linux-armv7 ./cmd/wallpaper
 	cd third_party/localgo && $(ARM_ENV) $(GO_BUILD) -o ../../build/localgo-linux-armv7 ./cmd/localgo
 	go build -ldflags='-X main.version=$(VERSION)' -o build/appsctl-host ./cmd/appsctl
 	go build -o build/nmstrip-host ./cmd/nmstrip
@@ -35,7 +36,7 @@ build: sync-embedded
 # dist/.stamp is what tools/install-to-kobo.sh compares against the sources.
 dist: build
 	rm -rf dist
-	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data
+	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales
 	cp build/appsctl-linux-armv7 $(HOST_DIR)/bin/appsctl
 	cp host/lib/common.sh $(HOST_DIR)/lib/common.sh
 	cp host/bin/*.sh $(HOST_DIR)/bin/
@@ -49,7 +50,11 @@ dist: build
 	mkdir -p $(APPS_DIR)/ghsync/locales && cp apps/ghsync/locales/*.json $(APPS_DIR)/ghsync/locales/
 	cp build/ghsync-linux-armv7 $(APPS_DIR)/ghsync/bin/ghsync
 	cp apps/ghsync/data/config.example.json $(APPS_DIR)/ghsync/data/config.example.json
-	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/*
+	cp apps/wallpaper/app.json $(APPS_DIR)/wallpaper/app.json
+	cp apps/wallpaper/bin/*.sh $(APPS_DIR)/wallpaper/bin/
+	cp apps/wallpaper/locales/*.json $(APPS_DIR)/wallpaper/locales/
+	cp build/wallpaper-linux-armv7 $(APPS_DIR)/wallpaper/bin/wallpaper
+	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/*
 	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/ghsync/data/config.example.json
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp
