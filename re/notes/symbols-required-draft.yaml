@@ -1,0 +1,547 @@
+# DRAFT candidate libnickel symbols for the NickelDrawer host (gate G2 spike, 2026-10-08).
+# Source: re/notes/G2-findings.md. Presence checked against exports-mangled.txt of each build.
+# kind: hook | dlsym | signal (old-style SIGNAL name, no dlsym) | vtable-slot | vtable | typeinfo | reference (studied, not called)
+# req: required-for-drawer | optional | fallback-only  (plan section 6.5)
+version: 0
+builds: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+symbols:
+  - mangled: _ZN8MoreViewC1EP7QWidget
+    demangled: "MoreView::MoreView(QWidget*)"
+    cap: R1-more-row
+    req: required-for-drawer
+    kind: hook
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "add the Apps row after the original ctor"
+  - mangled: _ZN11Ui_MoreView7setupUiEP7QWidget
+    demangled: "Ui_MoreView::setupUi(QWidget*)"
+    cap: R1-more-row
+    req: optional
+    kind: hook
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "alternative hook point"
+  - mangled: _ZN8MoreView20updateVisibleButtonsEv
+    demangled: "MoreView::updateVisibleButtons()"
+    cap: R1-more-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "re-layout after insert (not needed if insertWidget activates)"
+  - mangled: _ZNK14MoreController10navSectionEv
+    demangled: "MoreController::navSection() const"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "reference value 6 = More section"
+  - mangled: _ZN14IconLeftButtonC1EP7QWidget
+    demangled: "IconLeftButton::IconLeftButton(QWidget*)"
+    cap: R4-row
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "object size 0x58; allocate 256"
+  - mangled: _ZN14IconLeftButton9setPixmapERK7QPixmap
+    demangled: "IconLeftButton::setPixmap(QPixmap const&)"
+    cap: R4-row
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN14IconLeftButton7setTextERK7QString
+    demangled: "IconLeftButton::setText(QString const&)"
+    cap: R4-row
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN14IconButtonBase6tappedEv
+    demangled: "IconButtonBase::tapped()"
+    cap: R4-row
+    req: required-for-drawer
+    kind: signal
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "connect with SIGNAL(tapped())"
+  - mangled: _ZN20MainWindowController14sharedInstanceEv
+    demangled: "MainWindowController::sharedInstance()"
+    cap: R1-push
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN20MainWindowController4pushEP18AbstractControllerb
+    demangled: "MainWindowController::push(AbstractController*, bool)"
+    cap: R1-push
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "route A; pass controller+8"
+  - mangled: _ZN20MainWindowController3popEP18AbstractController
+    demangled: "MainWindowController::pop(AbstractController*)"
+    cap: R1-push
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "route A back"
+  - mangled: _ZN20MainWindowController8pushViewEP7QWidget
+    demangled: "MainWindowController::pushView(QWidget*)"
+    cap: R1-push
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "route B / plan B"
+  - mangled: _ZN20MainWindowController7popViewEP7QWidget
+    demangled: "MainWindowController::popView(QWidget*)"
+    cap: R1-push
+    req: required-for-drawer
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "route B back"
+  - mangled: _ZNK20MainWindowController11currentViewEv
+    demangled: "MainWindowController::currentView() const"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "detect when we are current"
+  - mangled: _ZN20MainWindowController13topControllerEv
+    demangled: "MainWindowController::topController()"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN20MainWindowController15updateNavFooterEP18AbstractController
+    demangled: "MainWindowController::updateNavFooter(AbstractController*)"
+    cap: R2-tabbar
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "called by prepareView; navSection 0 hides the tab bar"
+  - mangled: _ZN20MainWindowController5toastERK7QStringS2_i
+    demangled: "MainWindowController::toast(QString const&, QString const&, int)"
+    cap: R7-toast
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "forwards to N3ToasterController::queueMeSomeToast"
+  - mangled: _ZNK20MainWindowController19statusBarControllerEv
+    demangled: "MainWindowController::statusBarController() const"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN18AbstractControllerC1Ev
+    demangled: "AbstractController::AbstractController()"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "only if we reuse Nickel's base ctor"
+  - mangled: _ZN18AbstractControllerD0Ev
+    demangled: "AbstractController::~AbstractController()"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN18AbstractController16ensureViewLoadedEv
+    demangled: "AbstractController::ensureViewLoaded()"
+    cap: R1-push
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN18AbstractController14viewWillAppearEv
+    demangled: "AbstractController::viewWillAppear()"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x0c"
+  - mangled: _ZN18AbstractController17viewWillDisappearEv
+    demangled: "AbstractController::viewWillDisappear()"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x10"
+  - mangled: _ZN18AbstractController19viewWillBeDestroyedEv
+    demangled: "AbstractController::viewWillBeDestroyed()"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x14"
+  - mangled: _ZNK18AbstractController19allowedOrientationsEv
+    demangled: "AbstractController::allowedOrientations() const"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x18"
+  - mangled: _ZN18AbstractController4sizeEv
+    demangled: "AbstractController::size()"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x08"
+  - mangled: _ZNK18AbstractController10navSectionEv
+    demangled: "AbstractController::navSection() const"
+    cap: R1-push
+    req: optional
+    kind: vtable-slot
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "slot +0x1c; base returns 0"
+  - mangled: _ZTV18AbstractController
+    demangled: "vtable for AbstractController"
+    cap: R1-push
+    req: optional
+    kind: vtable
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "layout reference"
+  - mangled: _ZTI18AbstractController
+    demangled: "typeinfo for AbstractController"
+    cap: R1-push
+    req: optional
+    kind: typeinfo
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "needed only if we bind Nickel's RTTI instead of our own"
+  - mangled: _ZN17MainNavController16setActiveSectionE14MainNavSection
+    demangled: "MainNavController::setActiveSection(MainNavSection)"
+    cap: R2-tabbar
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN19N3SettingsPagedView13keyPressEventEP9QKeyEvent
+    demangled: "N3SettingsPagedView::keyPressEvent(QKeyEvent*)"
+    cap: R3-keys
+    req: optional
+    kind: reference
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "Left/Up=prev, Right/Down=next"
+  - mangled: _ZN19TactileButtonFilter6filterEP7QObjectP9QKeyEvent
+    demangled: "TactileButtonFilter::filter(QObject*, QKeyEvent*)"
+    cap: R3-keys
+    req: optional
+    kind: reference
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "F23/F24 -> arrows, applies swap + orientation"
+  - mangled: _ZN15ReadingSettings21invertPageTurnButtonsEv
+    demangled: "ReadingSettings::invertPageTurnButtons()"
+    cap: R3-keys
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "already applied by Nickel; for display only"
+  - mangled: _ZN18Nickel3Application6notifyEP7QObjectP6QEvent
+    demangled: "Nickel3Application::notify(QObject*, QEvent*)"
+    cap: R3-keys
+    req: optional
+    kind: reference
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "key filter chain"
+  - mangled: _ZN10TextHeaderC1EP7QWidget
+    demangled: "TextHeader::TextHeader(QWidget*)"
+    cap: R3-header
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "Wishlist page header"
+  - mangled: _ZN10TextHeader7setTextERK7QString
+    demangled: "TextHeader::setText(QString const&)"
+    cap: R3-header
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN14TextHeaderBase6tappedEv
+    demangled: "TextHeaderBase::tapped()"
+    cap: R3-header
+    req: optional
+    kind: signal
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN14HeaderBarLabelC1EP7QWidget
+    demangled: "HeaderBarLabel::HeaderBarLabel(QWidget*)"
+    cap: R3-header
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "not a page header (DragonMenuBarLabel only)"
+  - mangled: _ZN16SettingContainerC1EP7QWidget
+    demangled: "SettingContainer::SettingContainer(QWidget*)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN16SettingContainer6tappedEv
+    demangled: "SettingContainer::tapped()"
+    cap: R4-row
+    req: optional
+    kind: signal
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN16SettingContainer17setShowBottomLineEb
+    demangled: "SettingContainer::setShowBottomLine(bool)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN15SettingItemBaseC1EP7QWidget
+    demangled: "SettingItemBase::SettingItemBase(QWidget*)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN15SettingItemBase8setLabelERK7QString
+    demangled: "SettingItemBase::setLabel(QString const&)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN15SettingItemBase15setActionWidgetEP7QWidget
+    demangled: "SettingItemBase::setActionWidget(QWidget*)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN27SettingItemWithToggleSwitchC1EP7QWidget
+    demangled: "SettingItemWithToggleSwitch::SettingItemWithToggleSwitch(QWidget*)"
+    cap: R4-toggle
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN27SettingItemWithToggleSwitch5setOnEb
+    demangled: "SettingItemWithToggleSwitch::setOn(bool)"
+    cap: R4-toggle
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN27SettingItemWithToggleSwitch7toggledEb
+    demangled: "SettingItemWithToggleSwitch::toggled(bool)"
+    cap: R4-toggle
+    req: optional
+    kind: signal
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN12ToggleSwitchC1EP7QWidget
+    demangled: "ToggleSwitch::ToggleSwitch(QWidget*)"
+    cap: R4-toggle
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN12ToggleSwitch8setStateEb
+    demangled: "ToggleSwitch::setState(bool)"
+    cap: R4-toggle
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZNK12ToggleSwitch4isOnEv
+    demangled: "ToggleSwitch::isOn() const"
+    cap: R4-toggle
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN12ToggleSwitch7toggledEb
+    demangled: "ToggleSwitch::toggled(bool)"
+    cap: R4-toggle
+    req: optional
+    kind: signal
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN10TouchLabelC1EP7QWidget6QFlagsIN2Qt10WindowTypeEE
+    demangled: "TouchLabel::TouchLabel(QWidget*, QFlags<Qt::WindowType>)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN13TouchCheckBoxC1EP7QWidget
+    demangled: "TouchCheckBox::TouchCheckBox(QWidget*)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN13N3ButtonLabelC1EP7QWidget
+    demangled: "N3ButtonLabel::N3ButtonLabel(QWidget*)"
+    cap: R4-row
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN13TouchLineEditC1EP7QWidget
+    demangled: "TouchLineEdit::TouchLineEdit(QWidget*)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "emits tapped()"
+  - mangled: _ZN13KeyboardFrameC1EP7QWidget
+    demangled: "KeyboardFrame::KeyboardFrame(QWidget*)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "own frame outside N3Dialog (unproven)"
+  - mangled: _ZN13KeyboardFrame14createKeyboardE14KeyboardScriptRK7QLocale
+    demangled: "KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "returns SearchKeyboardController*"
+  - mangled: _ZN16KeyboardReceiverC1EP9QLineEditb
+    demangled: "KeyboardReceiver::KeyboardReceiver(QLineEdit*, bool)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN24SearchKeyboardController11setReceiverEP16KeyboardReceiverb
+    demangled: "SearchKeyboardController::setReceiver(KeyboardReceiver*, bool)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN24SearchKeyboardController9setGoTextERK7QString
+    demangled: "SearchKeyboardController::setGoText(QString const&)"
+    cap: R8-keyboard
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN15N3DialogFactory9getDialogEP7QWidgetb
+    demangled: "N3DialogFactory::getDialog(QWidget*, bool)"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "plan B container"
+  - mangled: _ZN8N3Dialog18enableFullViewModeEv
+    demangled: "N3Dialog::enableFullViewMode()"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8N3Dialog8setTitleERK7QString
+    demangled: "N3Dialog::setTitle(QString const&)"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8N3Dialog13keyboardFrameEv
+    demangled: "N3Dialog::keyboardFrame()"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8N3Dialog12showKeyboardEv
+    demangled: "N3Dialog::showKeyboard()"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8N3Dialog12hideKeyboardEv
+    demangled: "N3Dialog::hideKeyboard()"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8N3Dialog7contentEv
+    demangled: "N3Dialog::content()"
+    cap: R5-dialog
+    req: fallback-only
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN25ConfirmationDialogFactory21getConfirmationDialogEP7QWidget
+    demangled: "ConfirmationDialogFactory::getConfirmationDialog(QWidget*)"
+    cap: R6-confirm
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN25ConfirmationDialogFactory12showOKDialogERK7QStringS2_
+    demangled: "ConfirmationDialogFactory::showOKDialog(QString const&, QString const&)"
+    cap: R6-confirm
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN19N3ToasterController16queueMeSomeToastERK7QStringS2_i
+    demangled: "N3ToasterController::queueMeSomeToast(QString const&, QString const&, int)"
+    cap: R7-toast
+    req: optional
+    kind: reference
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN21AddToCollectionDialog11flashWidgetEP17GenericListWidget
+    demangled: "AddToCollectionDialog::flashWidget(GenericListWidget*)"
+    cap: R12-refresh
+    req: optional
+    kind: reference
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+    note: "WA 0x80 + repaint() = flash"
+  - mangled: _ZN19ApplicationSettings19availableQt6UpgradeEv
+    demangled: "ApplicationSettings::availableQt6Upgrade()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only; or read [ApplicationPreferences] AvailableQt6Upgrade"
+  - mangled: _ZN19ApplicationSettings20skippedQt6UpgradeUrlEv
+    demangled: "ApplicationSettings::skippedQt6UpgradeUrl()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN19ApplicationSettings25qt6UpgradeConfirmedByUserEv
+    demangled: "ApplicationSettings::qt6UpgradeConfirmedByUser()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN19ApplicationSettings28setQt6UpgradeConfirmedByUserEb
+    demangled: "ApplicationSettings::setQt6UpgradeConfirmedByUser(bool)"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only; recovery, untested"
+  - mangled: _ZN14DialogSettings28setQt6UpgradeNoteDialogShownEb
+    demangled: "DialogSettings::setQt6UpgradeNoteDialogShown(bool)"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN14DialogSettings25qt6UpgradeNoteDialogShownEv
+    demangled: "DialogSettings::qt6UpgradeNoteDialogShown()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN18HomePageController25maybeShowQt6UpgradeDialogEv
+    demangled: "HomePageController::maybeShowQt6UpgradeDialog()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: reference
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN6IOUtil19isQt6UpgradePendingERK6Device
+    demangled: "IOUtil::isQt6UpgradePending(Device const&)"
+    cap: R16-qt6-warn
+    req: optional
+    kind: dlsym
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN25Qt6UpgradeWorkflowManager14sharedInstanceEv
+    demangled: "Qt6UpgradeWorkflowManager::sharedInstance()"
+    cap: R16-qt6-warn
+    req: optional
+    kind: reference
+    present: [4.38.23828]
+    note: "23828 only"
+  - mangled: _ZN8SettingsC1ERK6Deviceb
+    demangled: "Settings::Settings(Device const&, bool)"
+    cap: R11-settings
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN8Settings10getSettingERK7QStringRK8QVariant
+    demangled: "Settings::getSetting(QString const&, QVariant const&)"
+    cap: R11-settings
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
+  - mangled: _ZN6Device16getCurrentDeviceEv
+    demangled: "Device::getCurrentDevice()"
+    cap: R11-settings
+    req: optional
+    kind: dlsym
+    present: [4.38.23552, 4.38.23648, 4.38.23684, 4.38.23697, 4.38.23828]
