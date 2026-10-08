@@ -1,0 +1,9 @@
+version: 0
+builds: [1.0.1, 1.0.2]
+symbols:
+  - mangled: _ZN4Core4gonEv
+    req: required-for-drawer
+  - mangled: _ZN4Core4waveEv
+    req: optional
+  - mangled: _ZN4Core4pushEv
+    req: fallback-only

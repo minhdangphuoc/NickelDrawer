@@ -1,0 +1,3 @@
+_ZN4Core4initEv
+_ZN4Core4waveEv
+_ZN4Core4pushEv

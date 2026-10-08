@@ -147,14 +147,13 @@ remove_legacy() {
     fi
 }
 
+# macOS writes ._* and .DS_Store next to anything it copies; Nickel and the menu generator must not see them.
+# Sweeps whole trees (not only the copied folders) so stray files from earlier copies go too.
 clean_appledouble_files() {
     local folder
-    for folder in "$ADDS/koboapps" "$ADDS"/apps/*/; do
+    for folder in "$ADDS/apps" "$ADDS/koboapps" "$ADDS/nm"; do
         [ -d "$folder" ] || continue
-        if command -v dot_clean >/dev/null 2>&1; then
-            act dot_clean -m "$folder"
-        fi
-        act find "$folder" -name '._*' -type f -delete
+        act find "$folder" \( -name '._*' -o -name '.DS_Store' \) -type f -delete
     done
 }
 

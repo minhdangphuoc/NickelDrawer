@@ -1,0 +1,81 @@
+# CI for koboapps. No secrets, no signing (release signing stays on the maintainer's Mac).
+# Kobo binaries are downloaded into $RUNNER_TEMP only, reduced to text symbol dumps and deleted;
+# nothing from Kobo is uploaded as an artifact or cached. See docs/CI.md.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 6 * * 1" # weekly firmware watch, Mondays 06:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Check, build, dist
+        run: make check build dist
+      - name: Installer test (fake Kobo tree)
+        run: bash tools/test-install.sh
+      - name: Symcheck tests
+        run: bash tools/test-symcheck.sh
+
+  symcheck:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install llvm
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends llvm unzip
+      - name: Dump libnickel exports for the supported builds
+        env:
+          WORK_DIR: ${{ runner.temp }}/kobo-fw
+          DUMP_DIR: ${{ runner.temp }}/kobo-symbols
+        run: |
+          set -euo pipefail
+          llvm_nm=$(command -v llvm-nm || ls /usr/bin/llvm-nm-* | head -n 1)
+          mkdir -p "$WORK_DIR" "$DUMP_DIR"
+          # columns: version month url zip_size zip_sha256 libnickel_sha256 build_id verified
+          grep -v '^#' re/firmware.lock | grep -v '^version' | while IFS=$'\t' read -r version month url size zip_sha libnickel_sha build_id verified; do
+            zip_file=$WORK_DIR/$version.zip
+            curl -fsSL --retry 3 -o "$zip_file" "$url"
+            echo "$zip_sha  $zip_file" | sha256sum -c -
+            unzip -q -o "$zip_file" KoboRoot.tgz -d "$WORK_DIR/$version"
+            tar -xzf "$WORK_DIR/$version/KoboRoot.tgz" -C "$WORK_DIR/$version" ./usr/local/Kobo/libnickel.so.1.0.0
+            nickel=$WORK_DIR/$version/usr/local/Kobo/libnickel.so.1.0.0
+            echo "$libnickel_sha  $nickel" | sha256sum -c -
+            mkdir -p "$DUMP_DIR/$version"
+            "$llvm_nm" -D --defined-only --format=just-symbols "$nickel" | LC_ALL=C sort -u >"$DUMP_DIR/$version/exports-mangled.txt"
+            rm -rf "$WORK_DIR/$version" "$zip_file"
+          done
+          rm -rf "$WORK_DIR"
+      - name: Symcheck
+        run: python3 -I tools/symcheck.py --fw-dir "${{ runner.temp }}/kobo-symbols" --no-regenerate
+      - name: Delete dumps
+        if: always()
+        run: rm -rf "${{ runner.temp }}/kobo-symbols" "${{ runner.temp }}/kobo-fw"
+
+  firmware-watch:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look for a new Libra 2 firmware
+        run: |
+          set +e
+          bash tools/fw-watch.sh
+          status=$?
+          if [ "$status" -eq 10 ]; then
+            echo "::warning::New Kobo Libra 2 firmware found, see the log and docs/WORKFLOW.md (firmware-watch)"
+            exit 0
+          fi
+          exit "$status"

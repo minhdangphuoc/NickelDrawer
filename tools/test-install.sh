@@ -58,6 +58,10 @@ check "dry run creates no koboapps folder" test ! -e "$ADDS/koboapps"
 check "dry run prints actions" contains "$WORK/dry.out" "[dry-run]"
 
 echo "--- first install"
+mkdir -p "$ADDS/apps" "$ADDS/koboapps"
+echo junk >"$ADDS/apps/._x"
+echo junk >"$ADDS/nm/.DS_Store"
+echo junk >"$ADDS/koboapps/._y"
 "$INSTALLER" >"$WORK/first.out"
 check "appsctl installed and executable" test -x "$ADDS/koboapps/bin/appsctl"
 check "localgo installed and executable" test -x "$ADDS/apps/localsend/bin/localgo"
@@ -79,6 +83,9 @@ check "menu has no English label under vi" lacks "$ADDS/nm/koboapps" "Start rece
 check "menu has no volume path" lacks "$ADDS/nm/koboapps" "$KOBO_ROOT"
 check "items untouched without --remove-legacy" cmp -s "$ADDS/nm/items" "$WORK/items.original"
 check "legacy folder kept without --remove-legacy" test -d "$ADDS/localsend"
+check "AppleDouble file in .adds/apps removed" test ! -e "$ADDS/apps/._x"
+check ".DS_Store in .adds/nm removed" test ! -e "$ADDS/nm/.DS_Store"
+check "AppleDouble file in .adds/koboapps removed" test ! -e "$ADDS/koboapps/._y"
 check "backup created" test "$(installed_backup_count)" -ge 1
 
 echo "--- second install keeps data"
