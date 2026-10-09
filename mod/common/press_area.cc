@@ -27,6 +27,9 @@ PressArea::PressArea(QWidget *parent)
     : QWidget(parent), longPressTimer(new QTimer(this)), tapGestureType(0), isPressed(false), hasFiredLongPress(false),
       acceptsPresses(true)
 {
+    // Qt 5.2's QElapsedTimer is not invalid when default-constructed; without this
+    // it holds garbage and every first tap is dropped as "too soon" (seen on device).
+    sinceLastTap.invalidate();
     setAttribute(Qt::WA_AcceptTouchEvents, true);
     setFocusPolicy(Qt::NoFocus); // page keys must reach the drawer view
     longPressTimer->setSingleShot(true);
@@ -161,7 +164,7 @@ void PressArea::beginPress(const char *source, const QPoint &position)
     if (!acceptsPresses || isPressed) {
         return;
     }
-    if (sinceLastTap.isValid() && sinceLastTap.elapsed() < DEBOUNCE_MILLISECONDS) {
+    if (isWithinDebounce()) {
         DebugLog::write("press area %p: %s press dropped (%lld ms after the last tap)", static_cast<void *>(this),
                         source, static_cast<long long>(sinceLastTap.elapsed()));
         return;
@@ -222,4 +225,12 @@ void PressArea::logEvent(const char *source, const char *phase, const QPoint &po
     DebugLog::write("press area %p (%s \"%s\"): %s %s at %d,%d%s", static_cast<const void *>(this),
                     metaObject()->className(), qPrintable(objectName()), source, phase, position.x(), position.y(),
                     acceptsPresses ? "" : " (input blocked)");
+}
+
+bool PressArea::isWithinDebounce() const
+{
+    if (!sinceLastTap.isValid())
+        return false;
+    const qint64 elapsed = sinceLastTap.elapsed();
+    return elapsed >= 0 && elapsed < DEBOUNCE_MILLISECONDS; // a negative value means a broken clock, never "too soon"
 }

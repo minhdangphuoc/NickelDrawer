@@ -66,6 +66,7 @@ private:
     void logEvent(const char *source, const char *phase, const QPoint &position) const;
 
     QTimer *longPressTimer;
+    bool isWithinDebounce() const;
     QElapsedTimer sinceLastTap;
     QPoint lastPressPosition;
     int tapGestureType; // 0: Nickel's tap gesture not grabbed
