@@ -21,7 +21,8 @@
       "run": "bin/next.sh",
       "output": "show",
       "timeout_ms": 5000,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": false
     },
     {
       "id": "mode",
@@ -29,7 +30,8 @@
       "run": "bin/mode.sh",
       "output": "show",
       "timeout_ms": 9500,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": false
     },
     {
       "id": "rotation",
@@ -37,7 +39,8 @@
       "run": "bin/rotation.sh",
       "output": "show",
       "timeout_ms": 5000,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": false
     },
     {
       "id": "off",
@@ -45,7 +48,8 @@
       "run": "bin/off.sh",
       "output": "show",
       "timeout_ms": 3000,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": false
     },
     {
       "id": "status",
@@ -53,7 +57,8 @@
       "run": "bin/status.sh",
       "output": "show",
       "timeout_ms": 3000,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": false
     }
   ]
 }

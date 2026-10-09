@@ -63,15 +63,16 @@ func TestRenderMatchesGolden(t *testing.T) {
 		apps       []manifest.App
 		errorCount int
 		labels     Labels
+		hasUpdate  bool
 	}{
-		{"localsend.golden", []manifest.App{localSend()}, 0, englishLabels},
-		{"localsend-vi.golden", []manifest.App{localSend().Localize(vietnamese)}, 2, vietnameseLabels},
-		{"mixed-with-errors.golden", mixedApps(), 2, englishLabels},
-		{"empty.golden", nil, 0, englishLabels},
+		{"localsend.golden", []manifest.App{localSend()}, 0, englishLabels, true},
+		{"localsend-vi.golden", []manifest.App{localSend().Localize(vietnamese)}, 2, vietnameseLabels, true},
+		{"mixed-with-errors.golden", mixedApps(), 2, englishLabels, true},
+		{"empty.golden", nil, 0, englishLabels, false},
 	}
 	for _, c := range cases {
 		t.Run(c.golden, func(t *testing.T) {
-			got := Render(c.apps, c.errorCount, DefaultPaths(), c.labels)
+			got := Render(c.apps, c.errorCount, DefaultPaths(), c.labels, c.hasUpdate)
 			goldenPath := filepath.Join("testdata", c.golden)
 			if *update {
 				if err := os.WriteFile(goldenPath, []byte(got), 0o644); err != nil {
@@ -96,7 +97,7 @@ func TestItemCountSkipsHiddenApps(t *testing.T) {
 }
 
 func TestRenderUsesCustomPaths(t *testing.T) {
-	got := Render([]manifest.App{localSend()}, 0, Paths{AppsRoot: "/tmp/apps", KoboappsRoot: "/tmp/host"}, englishLabels)
+	got := Render([]manifest.App{localSend()}, 0, Paths{AppsRoot: "/tmp/apps", KoboappsRoot: "/tmp/host"}, englishLabels, true)
 	if want := "/tmp/apps/localsend/bin/stop.sh"; !strings.Contains(got, want) {
 		t.Fatalf("missing %s in\n%s", want, got)
 	}
@@ -106,11 +107,30 @@ func TestRenderUsesCustomPaths(t *testing.T) {
 }
 
 func TestRenderUpdateItemsStartInBackgroundAndStayUnderTheTimeLimit(t *testing.T) {
-	got := Render(nil, 0, DefaultPaths(), englishLabels)
+	got := Render(nil, 0, DefaultPaths(), englishLabels, true)
 	want := "menu_item :main :Apps · Check for updates :nickel_wifi :autoconnect\n" +
 		"  chain_success :cmd_output :9500 :/mnt/onboard/.adds/koboapps/bin/update-apply.sh\n" +
 		"menu_item :main :Apps · Update status :cmd_output :3000 :/mnt/onboard/.adds/koboapps/bin/update-status.sh\n"
 	if !strings.HasSuffix(got, want) {
 		t.Fatalf("update items missing or changed:\n%s", got)
+	}
+}
+
+func TestRenderSkipsHiddenActions(t *testing.T) {
+	app := localSend()
+	app.Actions[1].Menu = boolPtr(false)
+	got := Render([]manifest.App{app}, 0, DefaultPaths(), englishLabels, false)
+	if strings.Contains(got, "Stop receiving") || !strings.Contains(got, "Start receiving") {
+		t.Fatalf("hidden action rendered or visible one missing:\n%s", got)
+	}
+	if count := ItemCount([]manifest.App{app}); count != 1 {
+		t.Fatalf("ItemCount = %d, want 1", count)
+	}
+}
+
+func TestRenderOmitsUpdateItemsWithoutUpdateConfig(t *testing.T) {
+	got := Render(nil, 0, DefaultPaths(), englishLabels, false)
+	if strings.Contains(got, "update") || !strings.Contains(got, "Refresh list") {
+		t.Fatalf("want refresh only:\n%s", got)
 	}
 }

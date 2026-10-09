@@ -30,7 +30,8 @@
       "run": "bin/sort.sh",
       "output": "show",
       "timeout_ms": 3000,
-      "rescan": "quick"
+      "rescan": "quick",
+      "menu": false
     }
   ]
 }

@@ -166,3 +166,13 @@ func TestLoadReadsStorageAndNetworkDeclarations(t *testing.T) {
 		t.Errorf("storage = %+v", app.Storage)
 	}
 }
+
+func TestActionMenuDefaultsToTrueAndAcceptsFalse(t *testing.T) {
+	app, warnings, err := Load(stageApp(t, "valid-action-menu"))
+	if err != nil || len(warnings) > 0 {
+		t.Fatalf("err=%v warnings=%v", err, warnings)
+	}
+	if !app.Actions[0].InMenu() || app.Actions[1].InMenu() {
+		t.Fatalf("InMenu = %v, %v; want true, false", app.Actions[0].InMenu(), app.Actions[1].InMenu())
+	}
+}

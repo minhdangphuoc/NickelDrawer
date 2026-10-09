@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -76,17 +78,31 @@ func generateMenu(options genMenuOptions) (genMenuResult, error) {
 		UpdateCheck:  bundle.Message("menu.update_check", nil),
 		UpdateStatus: bundle.Message("menu.update_status", nil),
 	}
-	config := nmconfig.Render(apps, len(scan.Failures), paths, labels)
-	if err := writeFileAtomically(options.errorsFile, []byte(formatErrorLines(scan.Failures))); err != nil {
+	config := nmconfig.Render(apps, len(scan.Failures), paths, labels, options.hasUpdateConfig())
+	itemCount := nmconfig.ItemCount(scan.Apps)
+	errorsText := formatErrorLines(scan.Failures)
+	if itemCount > nmconfig.MaxAppItems {
+		note := fmt.Sprintf("menu: %d app items exceed %d; NickelMenu cannot scroll. Hide actions with \"menu\": false in app.json.",
+			itemCount, nmconfig.MaxAppItems)
+		warnings = append(warnings, note)
+		errorsText += note + "\n"
+	}
+	if err := writeFileAtomically(options.errorsFile, []byte(errorsText)); err != nil {
 		return genMenuResult{}, err
 	}
 	if err := writeFileAtomically(options.menuFile, []byte(config)); err != nil {
 		return genMenuResult{}, err
 	}
 	return genMenuResult{
-		appCount: len(scan.Apps), itemCount: nmconfig.ItemCount(scan.Apps),
+		appCount: len(scan.Apps), itemCount: itemCount,
 		failures: scan.Failures, warnings: warnings, bundle: bundle,
 	}, nil
+}
+
+// hasUpdateConfig is true when update.json exists; without it the update menu items do nothing useful.
+func (options genMenuOptions) hasUpdateConfig() bool {
+	_, err := os.Stat(filepath.Join(options.hostDir, "data", "update.json"))
+	return err == nil
 }
 
 func localizeApps(apps []manifest.App, locale string) (localized []manifest.App, warnings []string) {

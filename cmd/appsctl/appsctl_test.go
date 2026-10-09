@@ -296,3 +296,25 @@ func TestGenMenuScanDirIsIndependentOfDevicePaths(t *testing.T) {
 		t.Fatalf("scan path leaked into menu:\n%s", menu)
 	}
 }
+
+func TestGenMenuWarnsWhenAppItemsExceedTheLimit(t *testing.T) {
+	options := newOptions(t)
+	var actions []string
+	for _, id := range []string{"a", "b", "c", "d", "e", "f", "g"} {
+		actions = append(actions, `{"id":"`+id+`","label":"Act `+id+`","run":"bin/run.sh","output":"show"}`)
+	}
+	writeApp(t, options.appsDir, "good-app",
+		`{"schema":1,"id":"good-app","name":"Good","version":"1.0.0","actions":[`+strings.Join(actions, ",")+`]}`)
+
+	result, err := generateMenu(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.warnings) != 1 || !strings.Contains(result.warnings[0], "7 app items exceed 6") {
+		t.Fatalf("warnings = %v", result.warnings)
+	}
+	errorsText, _ := os.ReadFile(options.errorsFile)
+	if !strings.Contains(string(errorsText), "NickelMenu cannot scroll") {
+		t.Fatalf("errors file = %q", errorsText)
+	}
+}

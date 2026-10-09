@@ -69,7 +69,7 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 | `name` | string | 1–24 chars, no `:` |
 | `version` | string | semver `MAJOR.MINOR.PATCH` |
 | `description` | string | optional, ≤ 120 chars |
-| `menu` | bool | optional, default `true`; `false` hides the app from the menu |
+| `menu` | bool | optional, default `true`; `false` hides the whole app from the menu (see also `actions[].menu`) |
 | `storage` | object | optional: `{"reads": [...], "writes": [...]}` with logical folder names; see below |
 | `network` | bool | optional, default `false`; `true` when the app talks to the network |
 | `actions` | array | 1–8 items, `id` unique within the app |
@@ -79,6 +79,7 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 | `actions[].output` | enum | `show` = NickelMenu `cmd_output`, prints stdout in a dialog (keep under ~12 short lines); `none` = `cmd_spawn:quiet`, runs in background |
 | `actions[].timeout_ms` | int | only with `output: show`; 500–9999 (NickelMenu limit is < 10000); default 5000 |
 | `actions[].wifi` | bool | default `false`; `true` prepends `nickel_wifi:autoconnect` (does not wait; the script must wait for an IP itself, see `wait_for_wifi` in `common.sh`) |
+| `actions[].menu` | bool | optional, default `true`; `false` keeps the action out of NickelMenu (it stays valid and runnable; the native drawer shows it). Keep NickelMenu short: NickelMenu cannot scroll, so a popup taller than the screen cannot be closed |
 | `actions[].rescan` | enum | `none` (default), `quick` = `nickel_misc:rescan_books`, `full` = `nickel_misc:rescan_books_full`; runs only if the action succeeded |
 
 ### storage and network

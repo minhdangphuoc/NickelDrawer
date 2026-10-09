@@ -37,7 +37,7 @@ var (
 	semverPattern   = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
 	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "storage", "network", "actions"}
-	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan"}
+	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan", "menu"}
 )
 
 // App is a parsed app.json. Use the methods for fields that have defaults.
@@ -70,6 +70,7 @@ type Action struct {
 	TimeoutMS *int   `json:"timeout_ms"`
 	Wifi      bool   `json:"wifi"`
 	Rescan    string `json:"rescan"`
+	Menu      *bool  `json:"menu"`
 }
 
 // Warning is a non-fatal remark about a manifest.
@@ -86,6 +87,12 @@ func (e *ValidationError) Error() string {
 
 // InMenu reports whether the app appears in the menu (default true).
 func (a App) InMenu() bool {
+	return a.Menu == nil || *a.Menu
+}
+
+// InMenu reports whether the action appears in NickelMenu (default true). A hidden action stays
+// valid and runnable; the native drawer shows it later.
+func (a Action) InMenu() bool {
 	return a.Menu == nil || *a.Menu
 }
 

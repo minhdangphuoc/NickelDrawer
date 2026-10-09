@@ -41,6 +41,7 @@
         "output": { "enum": ["show", "none"] },
         "timeout_ms": { "type": "integer", "minimum": 500, "maximum": 9999, "default": 5000 },
         "wifi": { "type": "boolean", "default": false },
+        "menu": { "type": "boolean", "default": true },
         "rescan": { "enum": ["none", "quick", "full"], "default": "none" }
       },
       "if": { "properties": { "output": { "const": "none" } }, "required": ["output"] },

@@ -35,5 +35,14 @@ wait_for_hooks
 # Safety net: anything a hook missed (a killed hook, a crash) is routed with the same rules.
 mkdir -p "$DATA_DIR"
 "$APPSCTL" inbox sort --source localsend >/dev/null 2>>"$DATA_DIR/log.txt"
+
+# The "Sort old files" action is not in NickelMenu, so files older versions left in the legacy
+# folder are routed here, once, the same way sort.sh does it.
+has_legacy_files() {
+    [ -n "$(find "$LEGACY_FOLDER" -maxdepth 1 -type f 2>/dev/null | head -n 1)" ]
+}
+if has_legacy_files; then
+    "$APPSCTL" inbox sort --source localsend --source-dir "$LEGACY_FOLDER" >/dev/null 2>>"$DATA_DIR/log.txt"
+fi
 msg "$APP_ID" msg.stopped
 print_inbox_summary

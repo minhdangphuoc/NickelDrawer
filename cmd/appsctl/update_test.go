@@ -26,6 +26,7 @@ func TestMissingLocalesFolderStillRendersEnglishHostLabels(t *testing.T) {
 	options := newOptions(t)
 	options.hostDir = filepath.Join(t.TempDir(), "no-such-koboapps")
 	options.locale = "vi"
+	writeUpdateConfig(t, options.hostDir)
 	writeApp(t, options.appsDir, "good-app", validManifest)
 	writeApp(t, options.appsDir, "bad-app", invalidManifest)
 
@@ -71,6 +72,7 @@ func TestMenuHasLocalizedUpdateItems(t *testing.T) {
 	for locale, labels := range cases {
 		options := newOptions(t)
 		options.locale = locale
+		writeUpdateConfig(t, options.hostDir)
 		writeApp(t, options.appsDir, "good-app", validManifest)
 		if _, err := generateMenu(options); err != nil {
 			t.Fatal(err)
@@ -140,4 +142,10 @@ func TestUpdateRejectsUnknownSubcommand(t *testing.T) {
 	if code := run([]string{"update"}, &out, &errOut); code != exitFailure {
 		t.Fatalf("code=%d", code)
 	}
+}
+
+// writeUpdateConfig creates update.json, which switches the update menu items on.
+func writeUpdateConfig(t *testing.T, hostDir string) {
+	t.Helper()
+	writeLocaleFile(t, filepath.Join(hostDir, "data"), "update.json", []byte("{}"))
 }

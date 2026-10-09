@@ -9,6 +9,7 @@ APP_ID=wallpaper
 PID_FILE=/tmp/wallpaper.pid
 # Output goes to /tmp so no file stays open on /mnt/onboard.
 OUTPUT_FILE=/tmp/wallpaper-last.txt
+RESULT_WAIT_SECONDS=7
 
 require_binary() {
     if [ ! -x "$APP_DIR/bin/wallpaper" ]; then
@@ -38,9 +39,23 @@ run_wallpaper_in_background() {
         msg "$APP_ID" msg.busy
         exit 0
     fi
-    # exec makes the recorded pid the converter itself, so is_working sees it end.
-    sh -c 'echo $$ >"$1"; shift; exec "$@"' sh "$PID_FILE" \
-        "$APP_DIR/bin/wallpaper" "$subcommand" --app-dir "$APP_DIR" "$@" </dev/null >"$OUTPUT_FILE" 2>&1 &
-    sleep 1
+    # The recorded pid is the wrapper shell, which ends after the status summary is written, so
+    # the output always finishes with the current settings (the Status action is not in NickelMenu).
+    sh -c 'echo $$ >"$1"; app=$2; shift 2; "$app/bin/wallpaper" "$@"; "$app/bin/wallpaper" status --app-dir "$app"' sh "$PID_FILE" "$APP_DIR" \
+        "$subcommand" --app-dir "$APP_DIR" "$@" </dev/null >"$OUTPUT_FILE" 2>&1 &
+    wait_for_result
+}
+
+# NickelMenu shows the dialog for at most 9.5 s: show the result if the work ends in time.
+wait_for_result() {
+    waited=0
+    while [ "$waited" -lt "$RESULT_WAIT_SECONDS" ]; do
+        sleep 1
+        waited=$((waited + 1))
+        if ! is_working; then
+            cat "$OUTPUT_FILE"
+            return 0
+        fi
+    done
     msg "$APP_ID" msg.started
 }

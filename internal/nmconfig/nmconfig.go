@@ -43,13 +43,17 @@ func DefaultPaths() Paths {
 	}
 }
 
+// MaxAppItems is how many app items fit in the NickelMenu popup; NickelMenu cannot scroll.
+const MaxAppItems = 6
+
 // Render builds the whole config: app items sorted by (localized) name, an error item when
-// errorCount > 0, and the always-present refresh and update items. Apps must already be localized.
-func Render(apps []manifest.App, errorCount int, paths Paths, labels Labels) string {
+// errorCount > 0, the refresh item, and the update items only when hasUpdateConfig.
+// Apps must already be localized.
+func Render(apps []manifest.App, errorCount int, paths Paths, labels Labels, hasUpdateConfig bool) string {
 	var out strings.Builder
 	out.WriteString(header)
 	for _, app := range sortedMenuApps(apps) {
-		for _, action := range app.Actions {
+		for _, action := range menuActions(app) {
 			writeAction(&out, app, action, paths)
 		}
 	}
@@ -58,7 +62,9 @@ func Render(apps []manifest.App, errorCount int, paths Paths, labels Labels) str
 		fmt.Fprintf(&out, "menu_item :main :%s :cmd_output :2000 :%s errors\n", labels.Errors, appsctl)
 	}
 	fmt.Fprintf(&out, "menu_item :main :%s :cmd_output :5000 :%s refresh\n", labels.Refresh, appsctl)
-	writeUpdateItems(&out, paths, labels)
+	if hasUpdateConfig {
+		writeUpdateItems(&out, paths, labels)
+	}
 	return out.String()
 }
 
@@ -75,10 +81,20 @@ func ItemCount(apps []manifest.App) int {
 	count := 0
 	for _, app := range apps {
 		if app.InMenu() {
-			count += len(app.Actions)
+			count += len(menuActions(app))
 		}
 	}
 	return count
+}
+
+func menuActions(app manifest.App) []manifest.Action {
+	var shown []manifest.Action
+	for _, action := range app.Actions {
+		if action.InMenu() {
+			shown = append(shown, action)
+		}
+	}
+	return shown
 }
 
 func sortedMenuApps(apps []manifest.App) []manifest.App {
