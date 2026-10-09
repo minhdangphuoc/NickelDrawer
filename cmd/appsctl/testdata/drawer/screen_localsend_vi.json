@@ -61,7 +61,7 @@
       "text": "Bắt đầu nhận",
       "style": "secondary",
       "action": "start",
-      "enabled": true
+      "enabled": false
     },
     {
       "type": "button",

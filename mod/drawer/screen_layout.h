@@ -15,8 +15,7 @@
 #include "screen_model.h"
 
 struct PaintItem {
-    // SHAPE_BACK_ARROW: Nickel's back arrow (page_header.h); the preview draws "‹" there.
-    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR, SHAPE_BACK_ARROW };
+    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR };
     enum Align { ALIGN_START, ALIGN_CENTER, ALIGN_END };
 
     Shape shape = SHAPE_RECT;
@@ -30,7 +29,7 @@ struct PaintItem {
     bool isBold = false;
     bool isUnderlined = false;
     Align align = ALIGN_START;
-    int ink = ScreenLogic::INK_BLACK;
+    int ink = ScreenLogic::INK_BLACK; // text, and the border of rects and ellipses
     QByteArray qrModules; // SHAPE_QR: side * side bytes, 1 = dark, quiet zone not included
     int qrSide = 0;
 
@@ -39,7 +38,7 @@ struct PaintItem {
 };
 
 struct TapTarget {
-    enum Kind { TAP_BACK, TAP_HEADER_ACTION, TAP_PREVIOUS_PAGE, TAP_NEXT_PAGE, TAP_COMPONENT };
+    enum Kind { TAP_PREVIOUS_PAGE, TAP_NEXT_PAGE, TAP_COMPONENT };
 
     Kind kind = TAP_COMPONENT;
     QRect rect;
@@ -105,7 +104,8 @@ public:
     ScreenLayout(const ScreenModel &model, int viewHeight, const HostTexts &texts);
 
     int pageCount() const { return frame.pageCount; }
-    // Header, the body blocks of page index, the page bar and the footer.
+    // The body blocks of page index, the page bar and the footer, in view
+    // coordinates; the top HEADER_HEIGHT pixels are the ScreenView's header.
     ScreenPage page(int index) const;
     // Body components first, then footer components.
     int componentCount() const { return components.size(); }
@@ -114,7 +114,6 @@ public:
 private:
     void addComponentBlocks(int index, QList<LayoutBlock> *blocks) const;
     void drawBlock(const LayoutBlock &block, int y, ScreenPage *page) const;
-    void drawHeader(ScreenPage *page) const;
     void drawPageBar(int index, ScreenPage *page) const;
 
     ScreenModel model;

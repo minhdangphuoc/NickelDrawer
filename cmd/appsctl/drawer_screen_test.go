@@ -11,7 +11,7 @@ import (
 )
 
 // localsendState is what a running LocalSend state script would print.
-const localsendState = `{"status":"Receiving","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23",` +
+const localsendState = `{"running":true,"status":"Receiving","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23",` +
 	`"summary":"Books 2 · Rejected 1","received":[["book-one.epub","Books · 1.2 MB"],["A Very Long Title of a Book That Needs Eliding.epub","Books · 2.1 MB"]]}`
 
 // installLocalsend copies the shipped LocalSend app, with its shipped state action, but swaps

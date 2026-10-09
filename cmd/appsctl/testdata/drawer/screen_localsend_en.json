@@ -61,7 +61,7 @@
       "text": "Start receiving",
       "style": "secondary",
       "action": "start",
-      "enabled": true
+      "enabled": false
     },
     {
       "type": "button",

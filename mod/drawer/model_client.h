@@ -16,6 +16,9 @@ class ModelClient : public QObject {
     Q_OBJECT
 public:
     explicit ModelClient(QObject *parent);
+    // Ends with its session (tab tap, Home, back): pending reads are killed,
+    // pending actions finish in the background (AppsctlCall::detach).
+    ~ModelClient();
 
     void requestModel();
     void requestRun(const QString &appId, const DrawerAction &action);
@@ -44,6 +47,7 @@ private slots:
 private:
     enum Request { REQUEST_MODEL, REQUEST_RUN, REQUEST_INFO, REQUEST_REMOVE, REQUEST_SCREEN, REQUEST_EVENT };
 
+    static bool isReadOnly(Request request);
     void startCall(Request request, const QStringList &arguments, int timeoutMilliseconds);
     // The JSON reply of a call that exited 0, or false and the failure text.
     bool replyOf(AppsctlCall *call, QByteArray *json, QString *failure);

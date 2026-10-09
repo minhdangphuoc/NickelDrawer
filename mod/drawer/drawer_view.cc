@@ -219,6 +219,18 @@ void DrawerView::setViewMode(DrawerLogic::ViewMode mode)
     currentPage = DrawerLogic::pageContainingItem(firstVisible, DrawerLogic::itemsPerPage(mode));
 }
 
+void DrawerView::restoreState(DrawerLogic::ViewMode mode, int page)
+{
+    int clamped = DrawerLogic::clampPage(page, items.size(), DrawerLogic::itemsPerPage(mode));
+    DebugLog::write("drawer view: restore %s, page %d (was %s, page %d)", mode == DrawerLogic::VIEW_GRID ? "grid" : "list",
+                    clamped + 1, viewMode == DrawerLogic::VIEW_GRID ? "grid" : "list", currentPage + 1);
+    if (mode == viewMode && clamped == currentPage) {
+        return;
+    }
+    setViewMode(mode);
+    goToPage(clamped);
+}
+
 void DrawerView::onListToggleTapped()
 {
     if (viewMode == DrawerLogic::VIEW_LIST) {

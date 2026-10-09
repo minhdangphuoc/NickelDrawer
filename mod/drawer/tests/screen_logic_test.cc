@@ -23,11 +23,14 @@ static void expectElide(const char *text, int width, int size, Family family, bo
     EXPECT_STREQ(expected, out);
 }
 
+// A large serif size, to check the serif advance estimate (ndpreview_test.go uses the same).
+static const int LARGE_SERIF_SIZE = 60;
+
 static void testCharsPerLine()
 {
     EXPECT_EQ(49, charsPerLine(CONTENT_WIDTH, BODY_SIZE, FAMILY_SANS));
     EXPECT_EQ(17, charsPerLine(400, BODY_SIZE, FAMILY_SANS));
-    EXPECT_EQ(24, charsPerLine(772, HEADER_TITLE_SIZE, FAMILY_SERIF));
+    EXPECT_EQ(24, charsPerLine(772, LARGE_SERIF_SIZE, FAMILY_SERIF));
     EXPECT_EQ(1, charsPerLine(10, BIG_CODE_SIZE, FAMILY_MONO));
 }
 
@@ -68,7 +71,7 @@ static void testElide()
     expectElide("Thiết bị của tôi có tên rất dài", 300, ROW_TEXT_SIZE, FAMILY_SANS, false, "Thiết bị của …");
     expectElide("short", KEY_COLUMN_WIDTH, ROW_TEXT_SIZE, FAMILY_SANS, true, "short");
     expectElide("abcdef", 40, ROW_TEXT_SIZE, FAMILY_SANS, false, "a");
-    expectElide("Việc cần làm rất nhiều thứ", 772, HEADER_TITLE_SIZE, FAMILY_SERIF, false, "Việc cần làm rất nhiều …");
+    expectElide("Việc cần làm rất nhiều thứ", 772, LARGE_SERIF_SIZE, FAMILY_SERIF, false, "Việc cần làm rất nhiều …");
 }
 
 static void testPackPages()
@@ -96,19 +99,19 @@ static void testLayoutBody()
         body[i].gap = 0;
     }
     int pages[12];
-    // 1680 - 72 - 144 (footer + rhythm) - 192 (header + rhythm) = 1272 px: 12 rows fit.
+    // 1680 - 72 - 144 (footer + rhythm) - 145 (header 121 + rhythm) = 1319 px: 12 rows fit.
     BodyFrame frame = layoutBody(body, 12, footerHeight, SCREEN_HEIGHT, pages);
     EXPECT_EQ(HEADER_HEIGHT + RHYTHM, frame.top);
-    EXPECT_EQ(1272 + frame.top, frame.bottom);
+    EXPECT_EQ(1319 + frame.top, frame.bottom);
     EXPECT_EQ(SCREEN_HEIGHT - BOTTOM_MARGIN - BUTTON_HEIGHT, frame.footerTop);
     EXPECT_EQ(1, frame.pageCount);
     // On a shorter view (Nickel's status and tab bars) the page bar takes room from each page.
     frame = layoutBody(body, 12, footerHeight, 1300, pages);
     EXPECT_EQ(2, frame.pageCount);
     EXPECT_EQ(frame.bottom - PAGE_BAR_HEIGHT, frame.pageBarTop);
-    // 892 px body, minus 80 for the bar: 7 rows of 104 on page 1.
-    EXPECT_EQ(0, pages[6]);
-    EXPECT_EQ(1, pages[7]);
+    // 939 px body, minus 80 for the bar: 8 rows of 104 on page 1.
+    EXPECT_EQ(0, pages[7]);
+    EXPECT_EQ(1, pages[8]);
 }
 
 static void testComponentSizes()

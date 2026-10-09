@@ -7,10 +7,6 @@
 using namespace ScreenLogic;
 
 static const char *const CHEVRON_GLYPH = "\xE2\x80\xBA"; // ›
-static const int HEADER_LINE_Y = 52;
-static const int HEADER_LINE_HEIGHT = 44;
-static const int HEADER_LINE_STEP = 48;
-static const int BACK_TAP_WIDTH = GUTTER + 120;
 static const int FIELD_CAPTION_GAP = 8;
 static const int SWITCH_BORDER = 3;
 static const int SWITCH_KNOB = 40;
@@ -419,7 +415,6 @@ ScreenLayout::ScreenLayout(const ScreenModel &screenModel, int viewHeight, const
 ScreenPage ScreenLayout::page(int index) const
 {
     ScreenPage result;
-    drawHeader(&result);
     int y = frame.top;
     for (int i = 0; i < body.size(); i++) {
         if (pageOfBlock[i] == index) {
@@ -436,48 +431,6 @@ ScreenPage ScreenLayout::page(int index) const
         y += footer[i].size.height + footer[i].size.gap;
     }
     return result;
-}
-
-void ScreenLayout::drawHeader(ScreenPage *page) const
-{
-    PaintItem arrow;
-    arrow.shape = PaintItem::SHAPE_BACK_ARROW;
-    arrow.rect = QRect(GUTTER, 40, 64, 88); // the preview's "‹" box (layout.go)
-    page->items.append(arrow);
-    TapTarget back;
-    back.kind = TapTarget::TAP_BACK;
-    back.rect = QRect(0, 0, BACK_TAP_WIDTH, HEADER_HEIGHT);
-    page->targets.append(back);
-
-    int titleWidth = CONTENT_WIDTH - BACK_WIDTH - HEADER_SIDE_WIDTH;
-    PaintItem title = textItem(GUTTER + BACK_WIDTH, 44, titleWidth, 80,
-                               elided(model.title, titleWidth, HEADER_TITLE_SIZE, FAMILY_SERIF, false), HEADER_TITLE_SIZE,
-                               FAMILY_SERIF, PaintItem::ALIGN_START);
-    title.isBold = true;
-    page->items.append(title);
-
-    int sideX = SCREEN_WIDTH - GUTTER - HEADER_SIDE_WIDTH;
-    int y = HEADER_LINE_Y;
-    if (!model.status.isEmpty()) {
-        PaintItem status = textItem(sideX, y, HEADER_SIDE_WIDTH, HEADER_LINE_HEIGHT,
-                                    elided(model.status, HEADER_SIDE_WIDTH, HEADER_STATUS_SIZE, FAMILY_SANS, false),
-                                    HEADER_STATUS_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
-        status.ink = INK_MUTED;
-        page->items.append(status);
-        y += HEADER_LINE_STEP;
-    }
-    if (!model.headerLabel.isEmpty()) {
-        PaintItem action = textItem(sideX, y, HEADER_SIDE_WIDTH, HEADER_LINE_HEIGHT,
-                                    elided(model.headerLabel, HEADER_SIDE_WIDTH, HEADER_STATUS_SIZE, FAMILY_SANS, false),
-                                    HEADER_STATUS_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
-        action.isUnderlined = true;
-        page->items.append(action);
-        TapTarget target;
-        target.kind = TapTarget::TAP_HEADER_ACTION;
-        target.rect = QRect(sideX, 0, HEADER_SIDE_WIDTH + GUTTER, HEADER_HEIGHT);
-        page->targets.append(target);
-    }
-    page->items.append(separatorItem(HEADER_HEIGHT));
 }
 
 void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
@@ -644,7 +597,9 @@ static void drawButton(const LayoutBlock &b, int y, ScreenPage *page)
         ink = PAPER_WHITE;
     }
     if (!b.isTappable) {
+        // Disabled: outline and label dimmed, no target (no press, taps ignored).
         box.fill = NO_FILL;
+        box.ink = INK_DIM;
         ink = INK_DIM;
     }
     int textHeight = b.lines.size() * BODY_LINE_HEIGHT;

@@ -11,12 +11,13 @@ type point struct{ x, y float64 }
 // canvas accumulates antialiased stroke coverage. Strokes are unioned with max, so crossing
 // strokes never get darker than one stroke, which keeps the icon strictly one-colour.
 type canvas struct {
-	size     int
-	coverage []float64
+	size        int
+	strokeWidth float64
+	coverage    []float64
 }
 
-func newCanvas(size int) *canvas {
-	return &canvas{size: size, coverage: make([]float64, size*size)}
+func newCanvas(size int, strokeWidth float64) *canvas {
+	return &canvas{size: size, strokeWidth: strokeWidth, coverage: make([]float64, size*size)}
 }
 
 // strokePath draws a polyline with round caps and joins of the given line width.

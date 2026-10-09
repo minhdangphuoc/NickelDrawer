@@ -34,15 +34,16 @@ func validate(t *testing.T, document string) Report {
 
 func TestValidDocumentsPass(t *testing.T) {
 	cases := map[string]string{
-		"empty screen":    screenJSON(`[]`, ""),
-		"text with style": screenJSON(`[{"text":"Hello","style":"caption","align":"center"}]`, ""),
-		"locale map":      screenJSON(`[{"text":{"en":"Hello","vi":"Xin chào"}}]`, ""),
-		"locale key":      screenJSON(`[{"notice":"@ui.go","title":"@ui.go"}]`, ""),
-		"template":        screenJSON(`[{"text":"PIN $pin, cost $$5"}]`, ""),
-		"kv and bigcode":  screenJSON(`[{"kv":[["IP","$status"]]},{"bigcode":"$pin","digits":4}]`, ""),
-		"list":            screenJSON(`[{"list":"$items","max":10,"tap":"stop","menu":[{"id":"remove","label":"Remove","confirm":true}]}]`, ""),
-		"primary button":  screenJSON(`[]`, `[{"button":"Go","action":"start","style":"primary","enabled":"!$on"}]`),
-		"comment key":     `{"_note":"x","kit":1,"start":"main","screens":{"main":{"title":"Main"}}}`,
+		"empty screen":               screenJSON(`[]`, ""),
+		"text with style":            screenJSON(`[{"text":"Hello","style":"caption","align":"center"}]`, ""),
+		"locale map":                 screenJSON(`[{"text":{"en":"Hello","vi":"Xin chào"}}]`, ""),
+		"locale key":                 screenJSON(`[{"notice":"@ui.go","title":"@ui.go"}]`, ""),
+		"template":                   screenJSON(`[{"text":"PIN $pin, cost $$5"}]`, ""),
+		"kv and bigcode":             screenJSON(`[{"kv":[["IP","$status"]]},{"bigcode":"$pin","digits":4}]`, ""),
+		"list":                       screenJSON(`[{"list":"$items","max":10,"tap":"stop","menu":[{"id":"remove","label":"Remove","confirm":true}]}]`, ""),
+		"primary button":             screenJSON(`[]`, `[{"button":"Go","action":"start","style":"primary","enabled":"!$on"}]`),
+		"buttons enabled from state": screenJSON(`[]`, `[{"button":"Start","action":"start","enabled":"!$on"},{"button":"Stop","action":"stop","style":"primary","enabled":"$on"}]`),
+		"comment key":                `{"_note":"x","kit":1,"start":"main","screens":{"main":{"title":"Main"}}}`,
 	}
 	for name, document := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -73,6 +74,9 @@ func TestRulesRejectWithCode(t *testing.T) {
 		{"bare dollar", screenJSON(`[{"text":"costs $5"}]`, ""), CodeBadBinding},
 		{"index binding", screenJSON(`[{"text":"$items[0]"}]`, ""), CodeBadBinding},
 		{"bad flag", screenJSON(`[{"toggle":"x","bind":"on","enabled":"yes"}]`, ""), CodeBadBinding},
+		{"button flag without $", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":"on"}]`), CodeBadBinding},
+		{"button flag on undeclared var", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":"$ghost"}]`), CodeUnknownVar},
+		{"button flag not a flag", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":1}]`), CodeWrongType},
 		{"list needs pure binding", screenJSON(`[{"list":"items"}]`, ""), CodeBadBinding},
 		{"undeclared var", screenJSON(`[{"text":"$ghost"}]`, ""), CodeUnknownVar},
 		{"undeclared bind", screenJSON(`[{"toggle":"x","bind":"ghost"}]`, ""), CodeUnknownVar},

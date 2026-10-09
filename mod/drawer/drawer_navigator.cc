@@ -10,6 +10,7 @@
 #include "drawer_view.h"
 #include "fallback_strings.h"
 #include "mod_switches.h"
+#include "navigation.h"
 #include "nickel_bridge.h"
 #include "status_bar_inset.h"
 
@@ -46,8 +47,18 @@ void DrawerNavigator::open()
         openWithController();
     }
     if (view) {
+        recordOpenedDrawer();
         session->start();
     }
+}
+
+// The stack starts at More, where the row was tapped: back from the drawer returns there.
+void DrawerNavigator::recordOpenedDrawer()
+{
+    Navigation::clear("drawer opened from More");
+    Navigation::ViewState none = Navigation::stateOf(0, 0);
+    Navigation::push(Navigation::LEVEL_MORE, QString(), none);
+    Navigation::push(Navigation::LEVEL_DRAWER, QString(), none);
 }
 
 bool DrawerNavigator::isOpen() const
@@ -113,6 +124,7 @@ void DrawerNavigator::discardUnpushedView()
 void DrawerNavigator::onBackRequested()
 {
     DebugLog::write("navigator: back");
+    Navigation::pop(NULL); // drawer → More
     if (ModSwitches::usesViewPushRoute()) {
         closeViewPush();
         return;
@@ -155,5 +167,10 @@ void DrawerNavigator::closeViewPush()
 void DrawerNavigator::onViewDestroyed()
 {
     DebugLog::write("navigator: drawer closed");
+    // After back only More is left; otherwise Nickel closed the page (tab tap, Home)
+    // and with it everything stacked on it.
+    const Navigation::Entry *top = Navigation::top();
+    bool isClosedByNickel = top && top->level != Navigation::LEVEL_MORE;
+    Navigation::clear(isClosedByNickel ? "drawer page closed by Nickel (tab or Home)" : "back at More");
     emit drawerClosed();
 }

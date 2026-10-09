@@ -175,6 +175,7 @@ func (v *validator) checkRoot(root map[string]any, screens map[string]any) {
 	for _, id := range sortedKeys(screens) {
 		v.checkScreen(id, screens[id])
 	}
+	v.checkFlow(root, screens)
 }
 
 func (v *validator) checkScreensKey(root map[string]any, screens map[string]any) {

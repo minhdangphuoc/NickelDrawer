@@ -9,10 +9,18 @@ const (
 	contentWidth = screenWidth - 2*gutter
 	rhythm       = 24
 
-	headerHeight   = 168
-	headerTitleSz  = 60
-	headerStatusSz = 32
-	separatorPx    = 2
+	// The header is Nickel's page header (TextHeader, as the drawer's): a 120 px row with the
+	// back arrow, the title in Nickel's header sans and the status/action at the right, then a
+	// 1 px #666666 divider. mod/drawer/screen_logic.h has the same numbers.
+	headerRowHeight  = 120
+	headerDivider    = 1
+	headerHeight     = headerRowHeight + headerDivider
+	headerIconWidth  = 64 // Nickel's "headerIconWidth" on the Libra 2 class
+	headerTitleSz    = 34 // Nickel's N3ButtonLabel size on the Libra 2 class
+	headerStatusSz   = 32
+	headerSideWidth  = 340 // status text and header action, each at most
+	headerDividerInk = 102
+	separatorPx      = 2
 
 	rowHeight     = 104 // key-value, list, toggle and radio rows
 	tapRowHeight  = 128 // a tappable "row" component: above the 120 px tap target

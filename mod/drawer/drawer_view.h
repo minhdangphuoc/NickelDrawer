@@ -36,6 +36,10 @@ public:
     void setModel(const DrawerModel &model);
     // While a dialog or an action is pending: taps and page keys are ignored.
     void setInputBlocked(bool isBlocked);
+    DrawerLogic::ViewMode currentViewMode() const { return viewMode; }
+    int currentPageIndex() const { return currentPage; }
+    // Back from an app screen: the drawer as the user left it (navigation.h).
+    void restoreState(DrawerLogic::ViewMode mode, int page);
 
 signals:
     void backRequested();

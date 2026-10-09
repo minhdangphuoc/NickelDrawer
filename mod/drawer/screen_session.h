@@ -22,7 +22,8 @@ class ScreenView;
 //   field                → Nickel's keyboard, else an "edit on your phone" notice
 //   list row (tap)       → the list's tap action with the row's primary text
 //   header action        → push another screen, or run an action
-// Back pops pushed screens, then closes. A live screen (state action) is
+// Back pops pushed screens (navigation.h: the parent comes back reloaded at
+// its page), then closes. A live screen (state action) is
 // re-read every 5 s while idle. Child of its view: it ends with the view.
 class ScreenSession : public QObject {
     Q_OBJECT
@@ -65,7 +66,6 @@ private:
     ModelClient *client;
     ScreenView *view;
     QTimer *liveTimer;
-    QStringList screenStack; // pushed screen ids; empty entry = the start screen
     bool isLoading;
     bool isEditingField;
     bool isConfirmOpen;

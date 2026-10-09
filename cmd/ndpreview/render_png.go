@@ -162,10 +162,10 @@ func drawRect(canvas *image.Gray, item Item) {
 	if border == 0 {
 		return
 	}
-	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Min.Y+border), inkBlack)
-	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Max.Y-border, bounds.Max.X, bounds.Max.Y), inkBlack)
-	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Min.X+border, bounds.Max.Y), inkBlack)
-	fillRect(canvas, image.Rect(bounds.Max.X-border, bounds.Min.Y, bounds.Max.X, bounds.Max.Y), inkBlack)
+	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Min.Y+border), item.Ink)
+	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Max.Y-border, bounds.Max.X, bounds.Max.Y), item.Ink)
+	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Min.X+border, bounds.Max.Y), item.Ink)
+	fillRect(canvas, image.Rect(bounds.Max.X-border, bounds.Min.Y, bounds.Max.X, bounds.Max.Y), item.Ink)
 }
 
 func drawEllipse(canvas *image.Gray, item Item) {
@@ -178,7 +178,7 @@ func drawEllipse(canvas *image.Gray, item Item) {
 			switch {
 			case distance > 1 || !image.Pt(x, y).In(canvas.Bounds()):
 			case item.Border > 0 && distance >= inner:
-				canvas.SetGray(x, y, color.Gray{Y: inkBlack})
+				canvas.SetGray(x, y, color.Gray{Y: uint8(item.Ink)})
 			case item.Fill != noFill:
 				canvas.SetGray(x, y, color.Gray{Y: uint8(item.Fill)})
 			}

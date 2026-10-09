@@ -9,6 +9,7 @@
 #include "fallback_strings.h"
 #include "field_editor.h"
 #include "model_client.h"
+#include "navigation.h"
 #include "nickel_bridge.h"
 #include "screen_logic.h"
 #include "screen_view.h"
@@ -68,7 +69,6 @@ ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, A
 {
     setParent(view);
     client = new ModelClient(this);
-    screenStack << QString();
     liveTimer->setInterval(ScreenLogic::LIVE_REFRESH_MILLISECONDS);
     connect(liveTimer, SIGNAL(timeout()), this, SLOT(onLiveTimeout()));
     connect(client, SIGNAL(screenLoaded(bool, ScreenModel, QString)), this,
@@ -90,7 +90,10 @@ void ScreenSession::start()
 
 QString ScreenSession::currentScreenId() const
 {
-    return screenStack.last();
+    // The start screen is requested by an empty id; a sub-screen by its own.
+    const Navigation::Entry *top = Navigation::top();
+    bool isSubScreen = top && top->level == Navigation::LEVEL_SUB_SCREEN;
+    return isSubScreen ? QString::fromUtf8(top->id) : QString();
 }
 
 void ScreenSession::load(const QString &screenId)
@@ -145,12 +148,14 @@ void ScreenSession::onBusyChanged(bool isBusy)
 
 void ScreenSession::onBackRequested()
 {
-    if (screenStack.size() > 1) {
-        screenStack.removeLast();
+    const Navigation::Entry *top = Navigation::top();
+    Navigation::Entry parent;
+    if (top && top->level == Navigation::LEVEL_SUB_SCREEN && Navigation::pop(&parent)) {
+        view->restorePageOnNextScreen(parent.state.page); // reloaded fresh, at the page it had
         load(currentScreenId());
         return;
     }
-    close();
+    close(); // DrawerSession pops to the drawer and restores it
 }
 
 void ScreenSession::close()
@@ -166,8 +171,10 @@ void ScreenSession::onHeaderActionTapped()
 {
     const ScreenModel &screen = view->screen();
     if (!screen.headerPush.isEmpty()) {
-        screenStack << screen.headerPush;
-        load(screen.headerPush);
+        if (Navigation::push(Navigation::LEVEL_SUB_SCREEN, screen.headerPush,
+                             Navigation::stateOf(0, view->currentPage()))) {
+            load(screen.headerPush);
+        }
     } else if (!screen.headerAction.isEmpty()) {
         runAction(screen.headerAction);
     }

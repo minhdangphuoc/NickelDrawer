@@ -6,7 +6,7 @@ All sizes are device pixels on the Kobo Libra 2: 300 dpi, 1264 x 1680, 1 mm = 11
 
 ## 1. Principles
 
-1. **Look like Nickel.** Same fonts, row style and dialogs. Serif (Nickel's) for titles, Nickel's UI sans for body. Black on white. Colours come from Nickel's stylesheet, so dark mode works.
+1. **Look like Nickel.** Same fonts, row style and dialogs. Page headers use Nickel's own header (UI sans, §3.1); Nickel's serif only for large in-page titles; Nickel's UI sans for body. Black on white. Colours come from Nickel's stylesheet, so dark mode works.
 2. **No grey fill under text.** The only grey box is the notice box.
 3. **No pills, no badges, no moving bars.** Status is plain text.
 4. **One primary action per screen.** One full-width button at the bottom.
@@ -51,8 +51,10 @@ Purpose: title, back, one status text, one optional action.
 "main": { "title": "LocalSend", "status": "$status", "action": { "label": "Settings", "push": "settings" } }
 ```
 
-- Parts: Nickel's back arrow "←" (left), title, status text at the right. **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
-- Events: `action` (when `action.action` is set); back pops locally.
+- **Same header as the drawer (§5.1):** Nickel's own page header (`TextHeader`, as on Wishlist) through the shared `mod/common/page_header`: back arrow "←" (64 px icon), title left-aligned next to it in Nickel's UI sans at Nickel's header size (34 px on the Libra 2, regular, never the serif), a 120 px row and a 1 px #666666 divider under the whole content width. Pressed, only the arrow shows Nickel's black circle with a white arrow. Without the symbols the mod draws the same header itself.
+- Parts: back arrow (left), title, then at the right of the same row the status text (sans 32 px, dark grey, at most 340 px, elided) and the optional action (underlined, 120 px tap target, inverts while pressed). **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
+- Size: 121 px (row + divider); the body starts 24 px below it. `cmd/ndpreview` draws the same boxes ("←" stands for Nickel's arrow image).
+- Events: `action` (when `action.action` is set); back pops the screen (a pushed screen returns to the one under it, the start screen returns to the drawer). Back is ignored while an action is pending.
 - States: status empty (hidden), status long (elided at the end, one line).
 - Refresh: status change repaints the header text only.
 - Drawer header differs: see §5.1.
@@ -109,7 +111,7 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 - **Primary:** 120 px, full width, black fill, white text, sits in `footer`. One per screen; the validator rejects two.
 - **Secondary:** 120 px, 2 px outline, in the body or footer above the primary.
 - Event: `{"event":"action","name":…}`. Debounced 500 ms. Disabled while an action is pending unless `async: true`.
-- States: enabled, disabled (outline and text dimmed, plus the reason in a Text line when the cause is not obvious), pending (label may switch to "Working…").
+- States: enabled, disabled, pending (label may switch to "Working…"). `enabled` is `true`, `false` or bound from state (`"$running"`, `"!$running"`); the variable must be declared in `vars`. Disabled: no fill, outline and label dimmed (grey 140), no press feedback, taps ignored; add the reason in a Text line when the cause is not obvious. Example (LocalSend): Start `"enabled": "!$running"`, Stop `"enabled": "$running"`.
 - Refresh: press feedback is a partial refresh of the button; a result repaints the button label only.
 
 ### 3.8 Toggle

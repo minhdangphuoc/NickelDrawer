@@ -24,10 +24,11 @@ override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
                      drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc ../common/nickel_fonts.cc \
-                     screen_layout.cc screen_view.cc field_editor.cc screen_session.cc
+                     screen_layout.cc screen_canvas.cc screen_view.cc field_editor.cc screen_session.cc \
+                     navigation_stack.cc navigation.cc
 override MOCS     += nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
                      dialogs.h open_popups.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
-                     screen_view.h field_editor.h screen_session.h
+                     screen_canvas.h screen_view.h field_editor.h screen_session.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
@@ -39,7 +40,7 @@ endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
-TEST_UNITS  := drawer_logic screen_logic qr_encoder
+TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack
 TEST_BINARY := tests/unit_test.bin
 TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++
 

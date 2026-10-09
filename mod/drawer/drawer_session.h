@@ -33,6 +33,7 @@ private slots:
 private:
     void openScreen(const DrawerItem &item);
     bool isScreenOpen() const;
+    void restoreDrawerState();
 
     DrawerView *view;
     ModelClient *client;

@@ -32,7 +32,7 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 
 ## icon.png
 
-Optional `icon.png` next to `app.json`: 96x96 px, monochrome outline (black strokes about 5-6 px with round caps on a transparent background, roughly 10 px inner margin, one stroke weight across all icons). The drawer loads it with `QPixmap` and scales it smoothly (52 px in the list row, larger on a tile); SVG is not supported. `go run ./cmd/iconsgen -repo .` draws the shipped icons, and a test fails when a committed PNG is stale. Host item icons live in `.adds/koboapps/icons/` (`refresh.png`, `updates.png`).
+Optional `icon.png` next to `app.json`: 96x96 px, monochrome outline (black strokes about 5-6 px with round caps on a transparent background, roughly 10 px inner margin, one stroke weight across all icons). The drawer loads it with `QPixmap` and scales it smoothly (52 px in the list row, larger on a tile); SVG is not supported. `go run ./cmd/iconsgen -repo .` draws the shipped icons, and a test fails when a committed PNG is stale. Host item icons live in `.adds/koboapps/icons/` (`refresh.png`, `updates.png`). `apps.png` there is the "Apps" row icon in Nickel's More tab: 50x50 px with ~2 px strokes and 2 px padding, the size of Nickel's own More icons; without it the row falls back to Nickel's beta-features icon.
 
 ## app.json
 

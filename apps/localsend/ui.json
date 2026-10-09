@@ -60,7 +60,8 @@
         {
           "button": "@ui.stop_and_update",
           "action": "stop",
-          "style": "primary"
+          "style": "primary",
+          "enabled": "$running"
         }
       ]
     }

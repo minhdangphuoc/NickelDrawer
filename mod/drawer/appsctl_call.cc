@@ -9,6 +9,9 @@ static const char *const APPSCTL_PATH = "/mnt/onboard/.adds/koboapps/bin/appsctl
 // would block USB export).
 static const char *const WORKING_DIRECTORY = "/";
 
+// A killed child exits at once; this only bounds the wait if it does not.
+static const int KILL_WAIT_MILLISECONDS = 500;
+
 AppsctlCall::AppsctlCall(int tag, const QStringList &arguments, int timeoutMilliseconds, QObject *parent)
     : QObject(parent), callTag(tag), callArguments(arguments), process(new QProcess(this)),
       timer(new QTimer(this)), isComplete(false), callOutcome(OUTCOME_NOT_STARTED), processExitCode(-1)
@@ -28,6 +31,39 @@ void AppsctlCall::start()
     nh_log("appsctl %s", qPrintable(callArguments.join(QLatin1Char(' '))));
     timer->start();
     process->start(QString::fromLatin1(APPSCTL_PATH), callArguments, QIODevice::ReadOnly);
+}
+
+// Never block on QProcess's own destructor wait: a still-running child is
+// killed (SIGKILL) and reaped within a short bound.
+AppsctlCall::~AppsctlCall()
+{
+    abort();
+}
+
+bool AppsctlCall::isRunning() const
+{
+    return process->state() != QProcess::NotRunning;
+}
+
+void AppsctlCall::abort()
+{
+    if (!isRunning()) {
+        return;
+    }
+    isComplete = true; // no finished() from here on
+    timer->stop();
+    process->disconnect(this);
+    process->kill();
+    bool isReaped = process->waitForFinished(KILL_WAIT_MILLISECONDS);
+    nh_log("appsctl %s killed (owner closed)%s", qPrintable(callArguments.value(0)), isReaped ? "" : ", not reaped yet");
+}
+
+void AppsctlCall::detach()
+{
+    disconnect(this, SIGNAL(finished(AppsctlCall *)), 0, 0);
+    setParent(NULL);
+    connect(this, SIGNAL(finished(AppsctlCall *)), this, SLOT(deleteLater()));
+    nh_log("appsctl %s left to finish in the background (owner closed)", qPrintable(callArguments.value(0)));
 }
 
 void AppsctlCall::onProcessFinished(int exitCode, QProcess::ExitStatus status)

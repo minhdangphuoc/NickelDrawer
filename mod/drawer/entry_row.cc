@@ -18,8 +18,11 @@
 static const char *const CONTAINER_LAYOUT_NAME = "moreContainerLayout";
 static const char *const ANCHOR_ROW_NAME = "betaFeaturesButton"; // our row goes right after it
 static const char *const ROW_OBJECT_NAME = "nickelDrawerButton";
-// Placeholder icon from Nickel's own resources until the drawer has its own.
-static const char *const ROW_ICON = ":/images/reading/beta_features.png";
+// Our own icon (cmd/iconsgen, 50x50 like Nickel's More icons), installed by the
+// koboapps installer. Nickel's flask is only the fallback: with it the row
+// looked like a copy of "Beta Features".
+static const char *const ROW_ICON_PATH = "/mnt/onboard/.adds/koboapps/icons/apps.png";
+static const char *const FALLBACK_ROW_ICON = ":/images/reading/beta_features.png";
 static const int DOT_RIGHT_MARGIN = 72;
 static const char *const TAPPED_SIGNAL_SIGNATURE = "tapped()";
 static const int RUN_FROM_EVENT_LOOP = 0;
@@ -33,6 +36,22 @@ static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout)
         return layout->count();
     }
     return anchorIndex + 1;
+}
+
+// QPixmap reads the whole file and closes it before returning: nothing stays
+// open on /mnt/onboard (USB mass storage must be able to take it).
+static QPixmap loadRowIcon()
+{
+    QPixmap icon(QString::fromLatin1(ROW_ICON_PATH));
+    if (!icon.isNull()) {
+        DebugLog::write("entry row: icon %s loaded (%dx%d)", ROW_ICON_PATH, icon.width(), icon.height());
+        return icon;
+    }
+    nh_log("entry row: icon %s missing or invalid, using Nickel's %s", ROW_ICON_PATH, FALLBACK_ROW_ICON);
+    icon = QPixmap(QString::fromLatin1(FALLBACK_ROW_ICON));
+    DebugLog::write("entry row: fallback icon %s %s (%dx%d)", FALLBACK_ROW_ICON, icon.isNull() ? "missing" : "loaded",
+                    icon.width(), icon.height());
+    return icon;
 }
 
 // The exact signal EntryRow connects to, checked on the live object.
@@ -87,10 +106,7 @@ void EntryRow::addTo(QWidget *moreView)
         return;
     }
     row->setObjectName(QString::fromLatin1(ROW_OBJECT_NAME));
-    QPixmap icon(QString::fromLatin1(ROW_ICON));
-    DebugLog::write("entry row: icon %s %s (%dx%d)", ROW_ICON, icon.isNull() ? "missing" : "loaded", icon.width(),
-                    icon.height());
-    NickelBridge::setIconLeftButtonPixmap(row, icon);
+    NickelBridge::setIconLeftButtonPixmap(row, loadRowIcon());
     NickelBridge::setIconLeftButtonText(row, FallbackStrings::text(FallbackStrings::APPS_TITLE));
     DebugLog::write("entry row: pixmap and text set");
 

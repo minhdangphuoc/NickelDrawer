@@ -111,6 +111,7 @@ func TestSchemaAndValidatorAgreeOnBrokenDocuments(t *testing.T) {
 		"unknown prop":      screenJSON(`[{"text":"a","colour":"red"}]`, ""),
 		"bad enum":          screenJSON(`[{"text":"a","style":"huge"}]`, ""),
 		"bad binding flag":  screenJSON(`[{"toggle":"x","bind":"on","enabled":"yes"}]`, ""),
+		"bad button flag":   screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":"on"}]`),
 		"colon in label":    screenJSON(`[]`, `[{"button":"Step 1: go","action":"start"}]`),
 		"too long":          screenJSON(`[{"section":"`+strings.Repeat("x", 41)+`"}]`, ""),
 		"missing english":   screenJSON(`[{"text":{"vi":"Chào"}}]`, ""),

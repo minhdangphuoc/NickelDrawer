@@ -402,7 +402,8 @@ func (rc renderContext) button(label, action string, primary, enabled bool, path
 			box.Fill, ink = inkBlack, paperFull
 		}
 		if !enabled {
-			box.Fill, ink = noFill, inkDim
+			// Disabled: outline and label dimmed, no event (no press, taps ignored).
+			box.Fill, box.Ink, ink = noFill, inkDim, inkDim
 		} else if hasConfirm {
 			box.Confirm = path
 		} else if action != "" {

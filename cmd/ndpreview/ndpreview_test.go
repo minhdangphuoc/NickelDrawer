@@ -16,7 +16,7 @@ import (
 const (
 	localsendDir  = "../../apps/localsend"
 	loopbackAuth  = "127.0.0.1:8790"
-	localsendVars = `{"status":"Đang nhận","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23","received":[["Đắc Nhân Tâm.epub","860 KB"]]}`
+	localsendVars = `{"running":true,"status":"Đang nhận","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23","received":[["Đắc Nhân Tâm.epub","860 KB"]]}`
 )
 
 func writeFile(t *testing.T, path, content string) {
@@ -104,6 +104,70 @@ func TestPageRendersLocalsendInVietnamese(t *testing.T) {
 	}
 	if strings.Contains(body, "Stop and update library") {
 		t.Error("English text leaked into the vi page")
+	}
+}
+
+// localsendButtons lays out the LocalSend screen and returns its two footer buttons' boxes.
+func localsendButtons(t *testing.T, isRunning bool) (start, stop Item) {
+	t.Helper()
+	rc := renderContext{doc: mustLoad(t).doc, locale: "en", vars: map[string]any{"running": isRunning}}
+	page, err := layoutScreen(rc, "main", 0, Overlay{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range page.Items {
+		switch {
+		case item.Shape == "rect" && item.Label == "Start receiving":
+			start = item
+		case item.Shape == "rect" && item.Label == "Stop and update library":
+			stop = item
+		}
+	}
+	if start.W == 0 || stop.W == 0 {
+		t.Fatalf("buttons not found in %d items", len(page.Items))
+	}
+	return start, stop
+}
+
+// A disabled button is dimmed (outline and label) and has no event: no press, taps ignored.
+func TestLocalsendButtonsFollowRunningState(t *testing.T) {
+	for _, isRunning := range []bool{true, false} {
+		start, stop := localsendButtons(t, isRunning)
+		enabled, disabled := start, stop
+		if isRunning {
+			enabled, disabled = stop, start
+		}
+		if enabled.Event == "" || enabled.Ink != inkBlack {
+			t.Errorf("running=%v: enabled button %q has event %q, ink %d", isRunning, enabled.Label, enabled.Event, enabled.Ink)
+		}
+		if disabled.Event != "" || disabled.Confirm != "" || disabled.Ink != inkDim || disabled.Fill != noFill {
+			t.Errorf("running=%v: disabled button %q has event %q, ink %d, fill %d", isRunning, disabled.Label, disabled.Event, disabled.Ink, disabled.Fill)
+		}
+	}
+}
+
+// The header matches the device's PageHeader: sans title at Nickel's header size, the status
+// in the same 120 px row at the right, a 1 px divider under it, the body below.
+func TestHeaderMatchesNickelPageHeader(t *testing.T) {
+	rc := renderContext{doc: mustLoad(t).doc, locale: "en", vars: map[string]any{"status": "Receiving"}}
+	screen := rc.doc.Screens["main"]
+	items := rc.headerItems(screen)
+	byText := map[string]Item{}
+	for _, item := range items {
+		if len(item.Lines) == 1 {
+			byText[item.Lines[0]] = item
+		}
+	}
+	title, status := byText["LocalSend"], byText["Receiving"]
+	if title.Family != familySans || title.Size != headerTitleSz || title.Bold || title.Y != 0 || title.H != headerRowHeight {
+		t.Errorf("title %+v", title)
+	}
+	if status.Y != 0 || status.H != headerRowHeight || status.X+status.W != screenWidth-gutter || status.Align != "end" {
+		t.Errorf("status not at the right of the header row: %+v", status)
+	}
+	divider := items[len(items)-1]
+	if divider.Y != headerRowHeight || divider.H != headerDivider || divider.W != contentWidth {
+		t.Errorf("divider %+v", divider)
 	}
 }
 

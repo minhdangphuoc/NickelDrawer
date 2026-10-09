@@ -4,6 +4,8 @@
 
 #include <NickelHook.h>
 
+#include "debug_log.h"
+
 #include "appsctl_call.h"
 #include "drawer_logic.h"
 #include "fallback_strings.h"
@@ -83,6 +85,41 @@ void ModelClient::requestEvent(const QString &appId, const ScreenEvent &event)
         arguments << QStringLiteral("--screen") << event.screenId;
     }
     startCall(REQUEST_EVENT, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_RUN_SHOW));
+}
+
+ModelClient::~ModelClient()
+{
+    int killed = 0;
+    int detached = 0;
+    QList<AppsctlCall *> calls = findChildren<AppsctlCall *>(QString(), Qt::FindDirectChildrenOnly);
+    for (int i = 0; i < calls.size(); i++) {
+        if (!calls[i]->isRunning()) {
+            continue;
+        }
+        if (isReadOnly(static_cast<Request>(calls[i]->tag()))) {
+            calls[i]->abort();
+            killed++;
+        } else {
+            calls[i]->detach();
+            detached++;
+        }
+    }
+    DebugLog::write("model client: closed, %d pending read(s) killed, %d action(s) left to finish", killed, detached);
+}
+
+bool ModelClient::isReadOnly(Request request)
+{
+    switch (request) {
+    case REQUEST_MODEL:
+    case REQUEST_INFO:
+    case REQUEST_SCREEN:
+        return true;
+    case REQUEST_RUN:
+    case REQUEST_REMOVE:
+    case REQUEST_EVENT:
+        break;
+    }
+    return false;
 }
 
 void ModelClient::startCall(Request request, const QStringList &arguments, int timeoutMilliseconds)

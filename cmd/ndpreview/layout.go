@@ -23,7 +23,7 @@ type Item struct {
 	Bold      bool
 	Underline bool
 	Align     string // start, center, end
-	Ink       int
+	Ink       int    // text colour, and the border of rects and ellipses
 	Event     string // protocol line sent to the backend when tapped
 	Action    string // app.json action a tap also runs (list rows with "tap")
 	Confirm   string // component path whose confirm dialog opens first
@@ -216,38 +216,45 @@ func (rc renderContext) text(raw any) string {
 
 func (rc renderContext) host(key string) string { return hostText(rc.locale, key) }
 
+// headerItems draws the header as the device shows it (mod/drawer/screen_view.cc): Nickel's
+// "←", the title left-aligned next to it in the sans, the status text and the optional action
+// at the right of the same row, and the thin divider under the whole row.
 func (rc renderContext) headerItems(screen *uikit.Screen) []Item {
-	var items []Item
-	back := textItem(gutter, 40, 64, 88, "‹", headerTitleSz, familySans, "start")
+	back := textItem(gutter, 0, headerIconWidth, headerRowHeight, "←", headerTitleSz+8, familySans, "center")
 	back.Label = rc.host("back")
-	items = append(items, back)
-	title := textItem(gutter+72, 44, contentWidth-72-340, 80, elide(rc.text(screen.Title), contentWidth-72-340, headerTitleSz, familySerif, false), headerTitleSz, familySerif, "start")
-	title.Bold = true
-	items = append(items, title)
-	items = append(items, rc.headerRight(screen)...)
-	return append(items, separator(headerHeight))
+	right := rc.headerRight(screen)
+	titleX := gutter + headerIconWidth + rhythm
+	titleWidth := screenWidth - gutter - titleX - len(right)*(headerSideWidth+rhythm)
+	title := textItem(titleX, 0, titleWidth, headerRowHeight, elide(rc.text(screen.Title), titleWidth, headerTitleSz, familySans, false), headerTitleSz, familySans, "start")
+	divider := Item{Shape: "rect", X: gutter, Y: headerRowHeight, W: contentWidth, H: headerDivider, Fill: headerDividerInk}
+	items := []Item{back, title}
+	items = append(items, right...)
+	return append(items, divider)
 }
 
-// headerRight draws the status text and the optional action at the right of the header.
+// headerRight draws the status text and the optional action at the right of the header row,
+// the action last (rightmost), each in a column of at most headerSideWidth.
 func (rc renderContext) headerRight(screen *uikit.Screen) []Item {
 	var items []Item
-	y := 52
 	if screen.Status != nil {
-		status := rc.text(screen.Status)
-		if status != "" {
-			item := textItem(screenWidth-gutter-340, y, 340, 44, elide(status, 340, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
+		if status := rc.text(screen.Status); status != "" {
+			item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(status, headerSideWidth, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
 			item.Ink = inkMuted
 			items = append(items, item)
-			y += 48
 		}
 	}
 	if screen.Action != nil {
 		label := rc.text(screen.Action["label"])
-		item := textItem(screenWidth-gutter-340, y, 340, 44, elide(label, 340, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
+		item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(label, headerSideWidth, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
 		item.Underline = true
 		item.Event = actionEventFor(screen.Action)
 		item.Label = label
 		items = append(items, item)
+	}
+	x := screenWidth - gutter - len(items)*headerSideWidth - (len(items)-1)*rhythm
+	for index := range items {
+		items[index].X = x
+		x += headerSideWidth + rhythm
 	}
 	return items
 }

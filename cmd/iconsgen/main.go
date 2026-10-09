@@ -1,5 +1,5 @@
-// Command iconsgen draws the shipped drawer icons: 96x96 black outline strokes on a
-// transparent background. The output is deterministic, so a test can compare it with the
+// Command iconsgen draws the shipped icons: black outline strokes on a transparent
+// background, 96x96 for the drawer and 50x50 for the More-tab row (Nickel's icon size). The output is deterministic, so a test can compare it with the
 // committed PNGs. Usage: go run ./cmd/iconsgen -repo .
 package main
 
@@ -41,7 +41,7 @@ func writeAll(repo string) error {
 
 func encode(entry icon) ([]byte, error) {
 	var buffer bytes.Buffer
-	if err := png.Encode(&buffer, render(entry.draw).image()); err != nil {
+	if err := png.Encode(&buffer, render(entry).image()); err != nil {
 		return nil, fmt.Errorf("cannot encode %s: %w", entry.path, err)
 	}
 	return buffer.Bytes(), nil

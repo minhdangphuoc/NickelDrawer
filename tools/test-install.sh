@@ -79,6 +79,7 @@ check "no other ghsync data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l |
 check "menu has device paths" contains "$ADDS/nm/koboapps" ":/mnt/onboard/.adds/apps/localsend/bin/start.sh"
 check "menu has refresh item" contains "$ADDS/nm/koboapps" "/mnt/onboard/.adds/koboapps/bin/appsctl refresh"
 check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
+check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
 check "app icon installed" test -f "$ADDS/apps/localsend/icon.png"
 check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
 check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"

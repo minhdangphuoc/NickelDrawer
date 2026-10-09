@@ -1,24 +1,38 @@
 #ifndef NICKELDRAWER_SCREEN_VIEW_H
 #define NICKELDRAWER_SCREEN_VIEW_H
 
-#include <QElapsedTimer>
+#include <QWidget>
 
-#include "drawer_logic.h"
 #include "press_area.h"
-#include "screen_layout.h"
 #include "screen_model.h"
 
-// One app screen drawn over the drawer page (docs/spec/ui-kit.md §3, §5.3).
-// It is a child of the drawer view and covers it, so Nickel's window stack is
-// unchanged; page-turn keys, which Nickel sends to the drawer view, are taken
-// by an event filter on it while the screen is open.
+class PageHeader;
+class QLabel;
+class ScreenCanvas;
+
+// The header action at the right of an app screen header ("Settings"):
+// underlined text, inverted while pressed.
+class HeaderActionButton : public PressArea {
+    Q_OBJECT
+public:
+    explicit HeaderActionButton(QWidget *parent);
+
+    void setText(const QString &text);
+
+private:
+    QLabel *label;
+};
+
+// One app screen drawn over the drawer page (docs/spec/ui-kit.md §3.1, §5.3).
+// It is a child of the drawer view and covers it below Nickel's status bar,
+// so Nickel's window stack is unchanged.
 //
-// Rendering only: it paints the ScreenLayout primitives and reports taps
-// (the pressed target is inverted, the back arrow shows Nickel's pressed arrow);
-// ScreenSession decides what they do. E-ink: a new screen or page flashes once
-// (full refresh); a changed value repaints only the changed primitives
-// (partial), and every 9th partial update in a row is a full one.
-class ScreenView : public PressArea {
+// The header is the drawer's own PageHeader (Nickel's TextHeader: "←", title
+// in Nickel's header sans, left-aligned, 1 px divider, pressed arrow only),
+// with the status text and the optional header action in the same row. The
+// body is a ScreenCanvas under it. Both are plain children of this QWidget:
+// the header must not sit inside a PressArea (see screen_canvas.h).
+class ScreenView : public QWidget {
     Q_OBJECT
 public:
     explicit ScreenView(QWidget *drawerView);
@@ -30,8 +44,11 @@ public:
     // Shows a tapped toggle or radio at once; the reload confirms or reverts it.
     void showToggleState(int component, bool isOn);
     void showRadioValue(int component, const QString &value);
-    // While a dialog or an action is pending: taps and page keys are ignored.
+    // While a dialog or an action is pending: back, taps and page keys are ignored.
     void setInputBlocked(bool isBlocked);
+    int currentPage() const;
+    // Back to a parent screen: its next showScreen opens at page instead of page 1.
+    void restorePageOnNextScreen(int page);
 
 signals:
     void backRequested();
@@ -40,33 +57,24 @@ signals:
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event);
-    void paintEvent(QPaintEvent *event);
-    PressFeedback feedbackAt(const QPoint &position) const;
+    void resizeEvent(QResizeEvent *event);
 
 private slots:
-    void onTapped();
-    void flashNow();
+    void onBackTapped();
+    void onHeaderActionTapped();
 
 private:
+    PageHeader *createHeader();
+    void showHeader();
     void placeBelowStatusBar();
-    void relayout();
-    void applyPage(int index, bool isFullRefresh);
-    QRegion changedRegion(const ScreenPage &next, bool *isSameStructure) const;
-    void scheduleRefresh(DrawerLogic::RefreshKind kind, const QRegion &region);
-    bool handlePageKey(int key);
-    void goToPage(int index);
-    void paintItem(QPainter *painter, const PaintItem &item);
-    const TapTarget *targetAt(const QPoint &position) const;
 
     QWidget *host;
     ScreenModel model;
-    bool hasScreen;
-    ScreenLayout layout;
-    ScreenPage page;
-    int pageIndex;
-    DrawerLogic::RefreshPolicy refreshPolicy;
+    ScreenCanvas *canvas;
+    PageHeader *header;
+    QLabel *statusLabel;
+    HeaderActionButton *actionButton;
     bool isInputBlocked;
-    QElapsedTimer sinceLastTap;
 };
 
 #endif

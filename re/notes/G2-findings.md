@@ -670,3 +670,36 @@ press inverts, release returns cleanly (no ghost). 3. Long-press: Nickel-style b
 dividers, "Gỡ…" last; tap outside closes it; page key closes it; tab tap closes it. 4. Info / result dialogs: OK
 visible, tap outside closes. Remove confirm: tap outside does nothing, Cancel works. 5. `debug.log`: "popup: …
 opened/closed" pairs, "Nickel menu hidden", "redrawn with a plain update".
+
+---
+
+## App screens after their first device run (2026-10-10, not run on device)
+
+**Device result.** LocalSend opened from the drawer (`screens` flag) rendered correctly, but the header back arrow did
+nothing, and the title was the large bold serif of the old preview layout, not the drawer's Nickel header.
+
+**Cause (static reading, no log).** The screen drew its own header as primitives of one `PressArea`
+(`ScreenView`), so it never used the `PageHeader` path that works in the drawer. Two traps for the fix:
+1. A Nickel `TextHeader` must never be a descendant of a `PressArea`: both grab Nickel's tap gesture type, Qt sends
+   `GestureOverride` up the parent chain, and `PressArea::handleGestureOverride` accepts it, so the ancestor takes
+   the gesture and `TextHeaderBase::tapped()` never fires.
+2. `ScreenView` kept a second tap debounce with a plain `elapsed() < 500` check; with the clock problem behind the
+   PressArea debounce fix (negative `elapsed()`), it drops every tap after the first. PressArea's debounce
+   (400 ms, negative = not too soon) is the only one now.
+
+**Fix.** `ScreenView` is a plain `QWidget` holding the shared `PageHeader` (Nickel's `TextHeader`, title left, 1 px
+divider, arrow-only press) at the drawer's position, with the status `QLabel` and a `HeaderActionButton`
+(`PressArea`, inverts) as trailing widgets of the same row, and a sibling `ScreenCanvas` (`PressArea`) under it
+for the body. Back → `ScreenSession::onBackRequested` (pop a pushed screen, else close to the drawer); ignored
+while an action is pending (`setBackEnabled(false)`). Layout header height is now 121 px (`HEADER_HEIGHT`,
+static_assert against `PageHeader`); `cmd/ndpreview` draws the same header. Disabled buttons: dim outline and
+label (border colour = item ink), no target.
+
+**Debug log lines.** "screen view: header created (Nickel's back …)", "header: Nickel back tapped",
+"screen: back tapped on \"main\"", "screen: header action … tapped", "screen: tap on component N …",
+"screen: tap at x,y ignored (no target: text or a disabled control)".
+
+**Validation (next session, `debug` flag on).** 1. Open LocalSend: header identical to the drawer's (sans title,
+"←", thin divider), "Chưa nhận" at the right of the same row. 2. Press the arrow: black circle; release: back to
+the drawer. 3. Not receiving: Start black outline, Stop dim, pressing Stop shows nothing and does nothing.
+Receiving: the reverse. 4. Every tappable target inverts on press; the log has one "screen: tap on …" per tap.

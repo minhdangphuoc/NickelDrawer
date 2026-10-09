@@ -37,6 +37,7 @@ private:
 
     bool isOpen() const;
     bool hasRouteApi() const;
+    void recordOpenedDrawer();
     void openWithController();
     void openWithViewPush();
     void closeViewPush();

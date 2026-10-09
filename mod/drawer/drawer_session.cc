@@ -8,6 +8,7 @@
 #include "drawer_view.h"
 #include "mod_switches.h"
 #include "model_client.h"
+#include "navigation.h"
 #include "nickel_bridge.h"
 #include "screen_session.h"
 
@@ -71,6 +72,9 @@ void DrawerSession::openScreen(const DrawerItem &item)
     if (isScreenOpen() || runner->isRunning()) {
         return;
     }
+    // Records the drawer's view mode and page; back from the screen restores them.
+    Navigation::push(Navigation::LEVEL_APP_SCREEN, item.id,
+                     Navigation::stateOf(view->currentViewMode(), view->currentPageIndex()));
     screenSession = new ScreenSession(item, view, runner);
     connect(screenSession, SIGNAL(closed()), this, SLOT(onScreenClosed()));
     screenSession->start();
@@ -79,11 +83,21 @@ void DrawerSession::openScreen(const DrawerItem &item)
 void DrawerSession::onScreenClosed()
 {
     screenSession = NULL;
+    restoreDrawerState();
     // One full refresh when the drawer page shows again (ui-kit §3: push or pop flashes).
     QTimer::singleShot(RUN_FROM_EVENT_LOOP, this, SLOT(flashDrawer()));
     if (needsReloadAfterScreen) {
         needsReloadAfterScreen = false;
         reload();
+    }
+}
+
+// The screen and any sub-screens it pushed are gone: the drawer as it was.
+void DrawerSession::restoreDrawerState()
+{
+    Navigation::Entry drawer;
+    if (Navigation::popTo(Navigation::LEVEL_DRAWER, &drawer)) {
+        view->restoreState(static_cast<DrawerLogic::ViewMode>(drawer.state.viewMode), drawer.state.page);
     }
 }
 

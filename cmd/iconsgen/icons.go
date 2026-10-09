@@ -6,30 +6,52 @@ const (
 	iconSize    = 96
 	strokeWidth = 5.5
 	center      = iconSize / 2.0
+	iconMargin  = 8 // no ink closer to the edge than this
+
+	// Nickel's More-tab row icons (beta_features.png, help, notebooks… in the nickel binary's
+	// resources, 4.38.23828): 50x50, black on transparent, ~2 px strokes, ink from 2 to 47.
+	moreRowIconSize   = 50
+	moreRowStroke     = 2.25
+	moreRowIconMargin = 2
 )
 
-// icon is one generated file: its path below the repo root and its drawing.
+// style is the pixel size, stroke weight and minimum margin of one icon family.
+type style struct {
+	size   int
+	stroke float64
+	margin int
+}
+
+var (
+	drawerStyle  = style{size: iconSize, stroke: strokeWidth, margin: iconMargin}
+	moreRowStyle = style{size: moreRowIconSize, stroke: moreRowStroke, margin: moreRowIconMargin}
+)
+
+// icon is one generated file: its path below the repo root, its style and its drawing.
 type icon struct {
-	path string
-	draw func(*canvas)
+	path  string
+	style style
+	draw  func(*canvas)
 }
 
 var icons = []icon{
-	{"apps/localsend/icon.png", drawReceive},
-	{"apps/wallpaper/icon.png", drawPicture},
-	{"apps/library/icon.png", drawBooks},
-	{"apps/ghsync/icon.png", drawBranch},
-	{"host/icons/refresh.png", drawRefresh},
-	{"host/icons/updates.png", drawUpdate},
+	{"apps/localsend/icon.png", drawerStyle, drawReceive},
+	{"apps/wallpaper/icon.png", drawerStyle, drawPicture},
+	{"apps/library/icon.png", drawerStyle, drawBooks},
+	{"apps/ghsync/icon.png", drawerStyle, drawBranch},
+	{"host/icons/refresh.png", drawerStyle, drawRefresh},
+	{"host/icons/updates.png", drawerStyle, drawUpdate},
+	// The "Apps" row in Nickel's More tab (mod/drawer/entry_row.cc), next to Nickel's own rows.
+	{"host/icons/apps.png", moreRowStyle, drawAppsGrid},
 }
 
-func render(draw func(*canvas)) *canvas {
-	surface := newCanvas(iconSize)
-	draw(surface)
+func render(entry icon) *canvas {
+	surface := newCanvas(entry.style.size, entry.style.stroke)
+	entry.draw(surface)
 	return surface
 }
 
-func (c *canvas) stroke(points ...point) { c.strokePath(points, strokeWidth) }
+func (c *canvas) stroke(points ...point) { c.strokePath(points, c.strokeWidth) }
 
 // arrowDown is a shaft with a chevron head whose tip is at (x, tipY).
 func (c *canvas) arrowDown(x, topY, tipY, headSize float64) {
@@ -104,4 +126,14 @@ func drawRefresh(c *canvas) {
 func drawUpdate(c *canvas) {
 	c.stroke(circlePoints(point{center, center}, 34)...)
 	c.arrowDown(center, 25, 65, 14)
+}
+
+// drawAppsGrid: four rounded squares in a 2x2 grid (the app drawer), at the More-row size.
+func drawAppsGrid(c *canvas) {
+	const first, side, gap, radius = 4.5, 18.0, 5.0, 3.5
+	for _, top := range []float64{first, first + side + gap} {
+		for _, left := range []float64{first, first + side + gap} {
+			c.stroke(roundedRectPoints(left, top, left+side, top+side, radius)...)
+		}
+	}
 }

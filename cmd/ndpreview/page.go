@@ -107,7 +107,7 @@ func itemHTML(item Item) string {
 		style += "background:" + greyCSS(item.Fill) + ";"
 	}
 	if item.Border > 0 {
-		style += fmt.Sprintf("border:%dpx solid #000;", item.Border)
+		style += fmt.Sprintf("border:%dpx solid %s;", item.Border, greyCSS(item.Ink))
 	}
 	if item.Shape == "ellipse" {
 		style += "border-radius:50%;"

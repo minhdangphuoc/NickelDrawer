@@ -16,11 +16,14 @@ static const int GUTTER = 72;
 static const int CONTENT_WIDTH = SCREEN_WIDTH - 2 * GUTTER;
 static const int RHYTHM = 24;
 
-static const int HEADER_HEIGHT = 168;
-static const int HEADER_TITLE_SIZE = 60;
+// The header is the drawer's PageHeader (Nickel's TextHeader): a 120 px row
+// and a 1 px divider; the title is Nickel's header sans (34 px on the Libra 2).
+static const int HEADER_ROW_HEIGHT = 120;
+static const int HEADER_DIVIDER = 1;
+static const int HEADER_HEIGHT = HEADER_ROW_HEIGHT + HEADER_DIVIDER;
+static const int HEADER_TITLE_SIZE = 34;
 static const int HEADER_STATUS_SIZE = 32;
-static const int HEADER_SIDE_WIDTH = 340; // status and header action column
-static const int BACK_WIDTH = 72;         // back chevron column
+static const int HEADER_SIDE_WIDTH = 340; // status text and header action, each at most
 static const int SEPARATOR = 2;
 
 static const int ROW_HEIGHT = 104;
@@ -141,8 +144,6 @@ QrPlacement placeQr(int moduleCount, int side);
 // A live screen (state action) is re-read this often while visible and idle;
 // the e-ink budget is at most 2 updates per second, steps at most every 5 s.
 static const int LIVE_REFRESH_MILLISECONDS = 5000;
-// Taps closer than this to the previous one are ignored (button debounce).
-static const int TAP_DEBOUNCE_MILLISECONDS = 500;
 
 } // namespace ScreenLogic
 

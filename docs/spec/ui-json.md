@@ -27,7 +27,7 @@ Keys starting with `_` at the top level are comments and are ignored (the To-do 
 | Key | Type | Rule |
 |---|---|---|
 | `kit` | number | Must be `1`. |
-| `start` | string | Id of an existing screen. |
+| `start` | string | Must be `"main"`: every app opens on its `main` screen (section 3.1). |
 | `vars` | object | Default value of every variable a screen binds to. A variable that is not declared here cannot be used. Names: letters, digits, `_`, not starting with a digit. |
 | `screens` | object | Screen id to screen. Use `{}` when every screen is a file in `screens/`. At least one screen must exist in total. Ids match `^[a-z0-9][a-z0-9_-]{0,31}$`. |
 
@@ -35,7 +35,7 @@ Keys starting with `_` at the top level are comments and are ignored (the To-do 
 
 | Key | Required | Type | Notes |
 |---|---|---|---|
-| `title` | yes | text, 40 chars | Serif title in the header. |
+| `title` | yes | text, 40 chars | Title in Nickel's page header (left, next to the back arrow). |
 | `status` | no | text, 40 chars | Plain text at the right of the header. `badge` is accepted as the old name. |
 | `action` | no | object | Header action: `label` (text, 24 chars, no `:`) and exactly one of `push` (screen id) or `action` (app.json action id). |
 | `body` | no | components | Scrolls page-wise. |
@@ -43,9 +43,23 @@ Keys starting with `_` at the top level are comments and are ignored (the To-do 
 | `dialogs` | no | map id to dialog | `title` (40), `text` (200), `ok` (24, no `:`), optional `cancel` (24) and `action` (runs when `ok` is tapped). The backend opens one with `{"dialog":"id"}`. |
 | `toasts` | no | map id to text (60) | Texts the backend may show with `{"toast":"id"}`. |
 
-The header is part of the screen, not a component: back chevron, `title`, `status`, `action`.
+The header is part of the screen, not a component: back arrow, `title`, `status`, `action`.
 
 Rule: **at most one primary button per screen**, counting body, footer and the button of an `empty` component.
+
+### 3.1 Navigation
+
+The view flow is not declared separately: it is the graph of the header `push` links of all screens (`ui.json` and `screens/*.json`). `appsctl validate` checks it:
+
+| Rule | Code |
+|---|---|
+| A screen with the id `main` exists; the app opens on it (`start` is `"main"`). | `ui.flow_no_main`, `ui.flow_start_not_main` |
+| Every screen is reachable from `main` through pushes (no orphan screens). | `ui.flow_unreachable` |
+| At most 2 screens below `main` (main → screen → detail). | `ui.flow_too_deep` |
+| No cycles, a screen pushing itself included. | `ui.flow_cycle` |
+| A push names an existing screen. | `ui.unknown_screen` |
+
+On the Kobo, back ("←") returns one level, like a back stack: a pushed screen → the screen that pushed it (reloaded, at the page it was on) → `main` → the drawer (same list/grid mode and page) → More. A tab tap or Home clears the whole stack. The drawer also refuses at run time to push deeper than 2 below `main` and logs it.
 
 ## 4. Texts
 
@@ -122,6 +136,7 @@ Details:
 | `ui.multiple_primary` | More than one primary button on a screen. |
 | `ui.missing_english`, `ui.bad_locale_key`, `ui.missing_locale_key`, `ui.text_empty` | Text problems. |
 | `ui.text_too_long`, `ui.text_has_colon` | E-ink length limit, or `:` in a label. |
+| `ui.flow_no_main`, `ui.flow_start_not_main`, `ui.flow_unreachable`, `ui.flow_too_deep`, `ui.flow_cycle` | Navigation graph rules (section 3.1). |
 
 Warnings: `ui.translation_longer`, `ui.locale_key_untranslated`, `ui.secret_field`.
 
