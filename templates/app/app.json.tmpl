@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "id": {{json .ID}},
+  "name": {{json .Name}},
+  "version": "0.1.0",
+  "description": "TODO: one sentence about what this app does",
+  "network": false,
+  "actions": [
+    {
+      "id": "run",
+      "label": "Run",
+      "run": "bin/run.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none"
+    }{{if .WithUI}},
+    {
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none",
+      "menu": false
+    }{{end}}
+  ]
+}

@@ -6,13 +6,13 @@ Target: the five newest Libra 2 builds (firmware family `kobo9`, device id endin
 
 | Firmware | Released | Menu apps (NickelMenu) | Native drawer | Status |
 |---|---|---|---|---|
-| 4.38.23828 | Sep 2026 | planned | planned | planned / untested |
-| 4.38.23697 | May 2026 | planned | planned | planned / untested (package contents still to verify) |
+| 4.38.23828 | Sep 2026 | works (gate M1, 2026-10-09) | install/uninstall of a test mod works (gate G1); drawer pending (G2) | menu apps tested on a device |
+| 4.38.23697 | May 2026 | planned | planned | planned / untested (package verified as a Libra 2 build) |
 | 4.38.23684 | Apr 2026 | planned | planned | planned / untested |
 | 4.38.23648 | Mar 2026 | planned | planned | planned / untested |
 | 4.38.23552 | Nov 2025 | planned | planned | planned / untested |
 
-"Untested" means no one has run NickelDrawer on that build yet. This table will change as we test.
+"Works" means it was run on a real device (see `docs/sessions/`). "Untested" means no one has run NickelDrawer on that build yet. This table will change as we test.
 
 How we test: symbol checks against all five builds, and runtime tests on one real device with one build. We cannot run every build on hardware.
 

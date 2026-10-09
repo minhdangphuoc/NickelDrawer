@@ -1,0 +1,24 @@
+# {{.Name}}
+
+TODO: what the app does, in two sentences.
+
+## Develop
+
+```sh
+appsctl validate .{{if .WithUI}}
+ndpreview serve .          # preview ui.json at Kobo size on 127.0.0.1{{end}}
+```
+
+Copy the folder to `/mnt/onboard/.adds/apps/{{.ID}}/` (or run `tools/install-to-kobo.sh` from the NickelDrawer repo) and tap **Apps · Refresh list**.
+
+## What it touches
+
+Declare this in `app.json` so reviews and `appsctl validate` can hold the code to it:
+
+- **Network:** `"network": false` today. Set `true` if the app talks to the network.
+- **Shared folders:** none today. Add `"storage": {"reads": ["pictures"], "writes": ["inbox"]}` with the logical names listed in `docs/spec/app-format.md` when the app reads or writes outside its own `data/` folder.
+- Its own `data/` folder needs no declaration. Never ship `data/` in a package.
+
+## Translate
+
+English lives in `app.json` and `locales/en.json`. Copy `locales/vi.json` to `locales/<lang>.json` and translate it; keep the `{placeholders}` unchanged.

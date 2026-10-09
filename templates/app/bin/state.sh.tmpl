@@ -1,0 +1,16 @@
+#!/bin/sh
+# Prints the values of the `vars` in ui.json as one JSON object (docs/spec/drawer-protocol.md).
+# Messages used here must not contain double quotes or backslashes.
+
+APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
+. /mnt/onboard/.adds/koboapps/lib/common.sh
+
+APP_ID={{.ID}}
+
+lastRun=$(cat "$APP_DIR/data/last-run.txt" 2>/dev/null)
+if [ -z "$lastRun" ]; then
+    status=$(msg "$APP_ID" msg.never_run)
+else
+    status=$(msg "$APP_ID" msg.last_run time="$lastRun")
+fi
+printf '{"status":"%s"}\n' "$status"

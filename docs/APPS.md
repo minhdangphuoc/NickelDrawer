@@ -99,6 +99,14 @@ The preview is a layout check, not Nickel: real fonts and the real refresh behav
 - [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a `ui.json` you can preview with `ndpreview`.
 - [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, with a Go helper for what BusyBox lacks.
 
+## Quick start: `appsctl new`
+
+```sh
+go run ./cmd/appsctl new my-app --name "My App" [--with-ui] [--dir apps]
+```
+
+This creates `my-app/` from `templates/app`: a valid `app.json`, `bin/run.sh` (uses `msg` from `common.sh`), `locales/en.json` and `vi.json`, and a README that explains how to declare `network` and `storage`. With `--with-ui` it also writes a `ui.json` and a `state` action. It refuses an existing folder, validates the result with `appsctl validate` and prints the next steps (validate, `ndpreview serve`, install). The rest of this guide explains each file.
+
 ## 1. Folder layout
 
 ```
