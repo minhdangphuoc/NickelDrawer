@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/png"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -101,5 +103,59 @@ func copyLocales(t *testing.T, appDir string) {
 			t.Fatal(err)
 		}
 		write(t, filepath.Join(appDir, "locales", filepath.Base(file)), content)
+	}
+}
+
+type stateReply struct {
+	Count      int    `json:"count"`
+	Current    string `json:"current"`
+	Mode       string `json:"mode"`
+	Rotation   string `json:"rotation"`
+	LastImport string `json:"last_import"`
+	Busy       bool   `json:"busy"`
+	Status     string `json:"status"`
+}
+
+func readState(t *testing.T, appDir, lastFile, pidFile string) stateReply {
+	t.Helper()
+	status, output := run(t, "state", "--app-dir", appDir, "--locale", "en", "--last-file", lastFile, "--pid-file", pidFile)
+	if status != 0 {
+		t.Fatalf("state exit %d: %s", status, output)
+	}
+	var reply stateReply
+	if err := json.Unmarshal([]byte(output), &reply); err != nil || strings.Count(strings.TrimSpace(output), "\n") != 0 {
+		t.Fatalf("state must be one JSON line, got %q (%v)", output, err)
+	}
+	return reply
+}
+
+func TestStateOfFreshInstallIsEmptyButComplete(t *testing.T) {
+	_, appDir, _ := deviceRoot(t)
+	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
+	want := stateReply{Mode: "fill", Rotation: "fixed", Status: "No pictures"}
+	if reply != want {
+		t.Fatalf("state = %+v, want %+v", reply, want)
+	}
+}
+
+func TestStateAfterImportNamesPictureAndReadsLastResult(t *testing.T) {
+	_, appDir, versionFile := deviceRoot(t)
+	if status, output := run(t, "import", "--app-dir", appDir, "--locale", "en", "--version-file", versionFile); status != 0 {
+		t.Fatalf("import: %s", output)
+	}
+	lastFile := filepath.Join(appDir, "last.txt")
+	write(t, lastFile, []byte("New pictures: 1. Already known: 0.\nPictures: 1\n"))
+	pidFile := filepath.Join(appDir, "run.pid")
+	write(t, pidFile, []byte(strconv.Itoa(os.Getpid())))
+	reply := readState(t, appDir, lastFile, pidFile)
+	if reply.Count != 1 || reply.Current != "a.png" || !reply.Busy || reply.Status != "Converting…" {
+		t.Fatalf("state with a live pid = %+v", reply)
+	}
+	write(t, pidFile, []byte("2147483646"))
+	if reply := readState(t, appDir, lastFile, pidFile); reply.Busy || reply.Status != "1 pictures" {
+		t.Fatalf("state with a stale pid = %+v", reply)
+	}
+	if reply.LastImport != "New pictures: 1. Already known: 0." {
+		t.Fatalf("last import = %q", reply.LastImport)
 	}
 }

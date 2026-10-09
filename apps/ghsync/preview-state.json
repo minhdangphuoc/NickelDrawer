@@ -1,0 +1,16 @@
+{
+  "status": "Pairing open",
+  "configured": true,
+  "repo": "minh/books",
+  "branch": "Default",
+  "folder": "epub",
+  "last_sync": "2026-10-08 21:14",
+  "summary": "3 mới, 120 đã có, 0 lỗi",
+  "running": false,
+  "can_sync": true,
+  "pairing": true,
+  "pair_url": "http://192.168.1.23:8765",
+  "pair_code": "482913",
+  "pair_expires": "Có hiệu lực đến 21:30",
+  "pair_hint": "Mở địa chỉ trên điện thoại và nhập mã. Chỉ dùng trên Wi-Fi nhà bạn."
+}

@@ -12,5 +12,9 @@
   "ui.keep_awake": "Keep this screen open while files arrive.",
   "ui.received": "Received",
   "ui.nothing_yet": "Nothing yet",
-  "ui.stop_and_update": "Stop and update library"
+  "ui.stop_and_update": "Stop and update library",
+  "actions.state.label": "Screen state",
+  "ui.status_receiving": "Receiving",
+  "ui.status_idle": "Not receiving",
+  "ui.start": "Start receiving"
 }

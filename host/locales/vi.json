@@ -47,6 +47,7 @@
   "inbox.folder.documents": "Tài liệu",
   "inbox.folder.comics": "Truyện tranh",
   "inbox.folder.pictures": "Ảnh",
+  "inbox.folder.rejected": "Bị từ chối",
   "inbox.count.books": "Sách: {count}",
   "inbox.count.documents": "Tài liệu: {count}",
   "inbox.count.comics": "Truyện tranh: {count}",

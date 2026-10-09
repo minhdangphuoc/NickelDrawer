@@ -3,9 +3,11 @@
   "start": "main",
   "vars": {
     "status": "",
+    "running": false,
     "pin": "",
     "device": "",
     "ip": "",
+    "summary": "",
     "received": []
   },
   "screens": {
@@ -13,19 +15,53 @@
       "title": "LocalSend",
       "status": "$status",
       "body": [
-        { "bigcode": "$pin", "digits": 4 },
-        { "text": "@ui.pin_hint", "style": "caption", "align": "center" },
-        { "kv": [["@ui.device", "$device"], ["@ui.ip", "$ip"]] },
-        { "notice": "@ui.keep_awake" },
+        {
+          "bigcode": "$pin",
+          "digits": 4
+        },
+        {
+          "text": "@ui.pin_hint",
+          "style": "caption",
+          "align": "center"
+        },
+        {
+          "kv": [
+            [
+              "@ui.device",
+              "$device"
+            ],
+            [
+              "@ui.ip",
+              "$ip"
+            ]
+          ]
+        },
+        {
+          "notice": "@ui.keep_awake"
+        },
+        {
+          "text": "$summary",
+          "style": "caption"
+        },
         {
           "list": "$received",
           "title": "@ui.received",
           "empty_text": "@ui.nothing_yet",
-          "max": 50
+          "max": 10
         }
       ],
       "footer": [
-        { "button": "@ui.stop_and_update", "action": "stop", "style": "primary" }
+        {
+          "button": "@ui.start",
+          "action": "start",
+          "style": "secondary",
+          "enabled": "!$running"
+        },
+        {
+          "button": "@ui.stop_and_update",
+          "action": "stop",
+          "style": "primary"
+        }
       ]
     }
   }

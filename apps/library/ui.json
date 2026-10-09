@@ -1,0 +1,77 @@
+{
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "status": "",
+    "books": "0",
+    "wrong": "0",
+    "not_nfc": "0",
+    "groups": "0",
+    "last_scan": "",
+    "running": false,
+    "phase": "",
+    "done": "0",
+    "total": "0",
+    "detail": "",
+    "can_fix": false,
+    "can_undo": false,
+    "has_pages": false,
+    "has_selection": false,
+    "selected": "",
+    "duplicates": []
+  },
+  "screens": {
+    "main": {
+      "title": "@ui.title",
+      "status": "$status",
+      "body": [
+        {
+          "kv": [
+            ["@ui.books", "$books"],
+            ["@ui.wrong", "$wrong"],
+            ["@ui.not_nfc", "$not_nfc"],
+            ["@ui.groups", "$groups"],
+            ["@ui.last_scan", "$last_scan"]
+          ]
+        },
+        { "steps": { "label": "$phase", "done": "$done", "total": "$total", "detail": "$detail" } },
+        {
+          "button": "@ui.fix",
+          "action": "fix",
+          "style": "secondary",
+          "enabled": "$can_fix",
+          "async": true,
+          "confirm": { "text": "@ui.fix_confirm", "ok": "@ui.fix_ok", "cancel": "@ui.cancel" }
+        },
+        {
+          "button": "@ui.undo",
+          "action": "undo",
+          "style": "secondary",
+          "enabled": "$can_undo",
+          "async": true,
+          "confirm": { "text": "@ui.undo_confirm", "ok": "@ui.undo_ok", "cancel": "@ui.cancel" }
+        },
+        {
+          "list": "$duplicates",
+          "title": "@ui.duplicates",
+          "empty_text": "@ui.no_duplicates",
+          "tap": "pick",
+          "max": 30
+        },
+        { "button": "@ui.next_page", "action": "page", "style": "secondary", "enabled": "$has_pages" },
+        { "text": "$selected", "style": "caption" },
+        {
+          "button": "@ui.trash",
+          "action": "trash",
+          "style": "secondary",
+          "enabled": "$has_selection",
+          "confirm": { "text": "@ui.trash_confirm", "ok": "@ui.trash_ok", "cancel": "@ui.cancel" }
+        },
+        { "notice": "@ui.note" }
+      ],
+      "footer": [
+        { "button": "@ui.scan", "action": "scan", "style": "primary", "enabled": "!$running", "async": true }
+      ]
+    }
+  }
+}

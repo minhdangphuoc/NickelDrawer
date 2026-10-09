@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -49,6 +50,8 @@ type PairOptions struct {
 	Log      *Logger
 	Out      io.Writer // announcements for the Kobo screen
 	Backoff  time.Duration
+	// InfoFile receives the address and code as JSON while pairing is open, for the app screen.
+	InfoFile string
 
 	// Code and Now are test seams; zero values mean a random code and the real clock.
 	Code string
@@ -78,6 +81,7 @@ func Pair(ctx context.Context, options PairOptions) (PairOutcome, error) {
 	}
 	go server.Serve(listener)
 	session.announce(listener.Addr().String())
+	defer os.Remove(options.InfoFile)
 
 	outcome := session.wait(ctx)
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownGracePeriod)
@@ -190,6 +194,10 @@ func (session *pairSession) announce(address string) {
 	fmt.Fprintln(session.options.Out, messages.Message("msg.pair_code", i18n.Params("code", session.code)))
 	fmt.Fprintln(session.options.Out, messages.Message("msg.pair_valid", i18n.Params("minutes", minutes)))
 	session.options.Log.Printf("pairing started on %s", address)
+	info := PairInfo{URL: "http://" + address, Code: session.code, Expires: session.expires}
+	if err := writePairInfo(session.options.InfoFile, info); err != nil {
+		session.options.Log.Printf("cannot write the pairing info for the screen: %v", err)
+	}
 }
 
 func (session *pairSession) wait(ctx context.Context) PairOutcome {

@@ -21,3 +21,5 @@ cmd/*/wallpaper
 cmd/*/ndpreview
 cmd/*/ndrelease
 cmd/*/nmstrip
+/library
+cmd/*/library

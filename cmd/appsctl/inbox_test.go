@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -289,7 +290,7 @@ func TestInboxUnknownSubcommandShowsUsage(t *testing.T) {
 func TestInboxMessagesExistInEnglishAndVietnamese(t *testing.T) {
 	keys := []string{"inbox.routed_file", "inbox.rejected_file", "inbox.already_handled", "inbox.status_empty",
 		"inbox.sorted", "inbox.purged", "inbox.warn_override", "inbox.err_outside", "inbox.err_folder",
-		"inbox.err_rules", "inbox.err_failed", "inbox.reason_line", "inbox.count.rejected"}
+		"inbox.err_rules", "inbox.err_failed", "inbox.reason_line", "inbox.count.rejected", "inbox.folder.rejected"}
 	for _, folder := range summaryFolders {
 		keys = append(keys, "inbox.folder."+string(folder), "inbox.count."+string(folder))
 	}
@@ -424,5 +425,61 @@ func TestTwentyParallelRouteProcessesLoseNoFileAndKeepTheJournalIntact(t *testin
 	entries, skipped, err := inbox.ReadEntries(filepath.Join(f.root, ".adds", "koboapps", "data", "inbox-journal.jsonl"))
 	if err != nil || skipped != 0 || len(entries) != 2*count {
 		t.Errorf("journal has %d entries, %d corrupt lines, err %v", len(entries), skipped, err)
+	}
+}
+
+func (f *inboxFixture) stateJSON(locale string) (summary string, received [][2]string) {
+	f.t.Helper()
+	code, stdout, stderr := f.inboxCommand(locale, "state")
+	if code != exitOK || strings.Count(strings.TrimSpace(stdout), "\n") != 0 {
+		f.t.Fatalf("state exit %d, stdout %q, stderr %q", code, stdout, stderr)
+	}
+	var parsed struct {
+		Summary  string      `json:"summary"`
+		Received [][2]string `json:"received"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &parsed); err != nil {
+		f.t.Fatalf("state is not one JSON object: %v\n%s", err, stdout)
+	}
+	return parsed.Summary, parsed.Received
+}
+
+func TestInboxStateWithEmptyJournalPrintsTheEmptyScreen(t *testing.T) {
+	f := newInboxFixture(t)
+	_, stdout, _ := f.inboxCommand("en", "state")
+	if strings.TrimSpace(stdout) != `{"summary":"","received":[]}` {
+		t.Errorf("state = %q", stdout)
+	}
+}
+
+func TestInboxStateListsTheMixedSessionInVietnamese(t *testing.T) {
+	f := newInboxFixture(t)
+	f.inboxCommand("vi", "route", f.receive("a.pdf", pdfContent))
+	f.inboxCommand("vi", "route", f.receive("b.pdf", pdfContent))
+	summary, received := f.stateJSON("vi")
+	if summary != "Tài liệu 2" || len(received) != 2 || received[0][0] != "b.pdf" ||
+		!strings.HasPrefix(received[0][1], "Tài liệu · ") {
+		t.Errorf("summary %q, received %v", summary, received)
+	}
+}
+
+func TestInboxStateCountsRejectedFilesButDoesNotListThem(t *testing.T) {
+	f := newInboxFixture(t)
+	f.inboxCommand("en", "route", f.receive("a.pdf", pdfContent))
+	f.inboxCommand("en", "route", f.receive("x.exe", "x"))
+	summary, received := f.stateJSON("en")
+	if summary != "Documents 1 · Rejected 1" || len(received) != 1 || received[0][0] != "a.pdf" {
+		t.Errorf("summary %q, received %v", summary, received)
+	}
+}
+
+func TestInboxStateListsAtMostTenRows(t *testing.T) {
+	f := newInboxFixture(t)
+	for index := 0; index < 13; index++ {
+		f.inboxCommand("en", "route", f.receive(fmt.Sprintf("d%02d.pdf", index), pdfContent))
+	}
+	summary, received := f.stateJSON("en")
+	if summary != "Documents 13" || len(received) != 10 {
+		t.Errorf("summary %q, %d rows", summary, len(received))
 	}
 }

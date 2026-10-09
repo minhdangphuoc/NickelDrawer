@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"strconv"
 
@@ -13,6 +14,8 @@ type session struct {
 	service  *wallpaper.Service
 	messages *i18n.Bundle
 	out      io.Writer
+
+	stateFiles wallpaper.ScreenStateFiles
 }
 
 func (current *session) say(key string, pairs ...string) {
@@ -131,4 +134,30 @@ func (current *session) resolveRotation(word string) (wallpaper.Rotation, error)
 		return wallpaper.RotationRandom, nil
 	}
 	return wallpaper.RotationFixed, nil
+}
+
+// screenState is the screen's variables: the service state plus the localized header status.
+type screenState struct {
+	wallpaper.ScreenState
+	Status string `json:"status"`
+}
+
+// state prints the variables of the app screen as one JSON object. Only the header status is
+// localized here; the last import line was written in the device language by the import run.
+func (current *session) state([]string) error {
+	state, err := current.service.ScreenState(current.stateFiles)
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(current.out).Encode(screenState{state, current.headerStatus(state)})
+}
+
+func (current *session) headerStatus(state wallpaper.ScreenState) string {
+	switch {
+	case state.Busy:
+		return current.messages.Message("msg.state_working", nil)
+	case state.Count == 0:
+		return current.messages.Message("msg.state_empty", nil)
+	}
+	return current.messages.Message("msg.state_ready", i18n.Params("count", strconv.Itoa(state.Count)))
 }

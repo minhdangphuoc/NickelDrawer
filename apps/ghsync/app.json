@@ -33,6 +33,15 @@
       "output": "show",
       "timeout_ms": 3000,
       "rescan": "quick"
+    },
+    {
+      "id": "state",
+      "label": "Screen state",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 1000,
+      "rescan": "none",
+      "menu": false
     }
   ]
 }

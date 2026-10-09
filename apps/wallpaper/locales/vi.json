@@ -57,7 +57,12 @@
   "ui.rotation": "Ảnh hiển thị",
   "ui.rotation_fixed": "Cố định",
   "ui.rotation_random": "Ngẫu nhiên",
-  "ui.note": "Thay đổi có tác dụng ở lần nhập ảnh kế tiếp.",
+  "ui.note": "Đổi kích thước sẽ chuyển lại ảnh. Có thể mất khoảng một phút.",
   "ui.turn_off": "Tắt",
-  "ui.import": "Nhập ảnh"
+  "ui.import": "Nhập ảnh",
+  "msg.state_working": "Đang chuyển ảnh…",
+  "msg.state_empty": "Chưa có ảnh",
+  "msg.state_ready": "{count} ảnh",
+  "ui.now_showing": "Màn hình chờ",
+  "actions.state.label": "Trạng thái màn hình"
 }

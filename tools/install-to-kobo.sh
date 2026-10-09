@@ -104,6 +104,7 @@ install_folder() {
         act cp -R "$source/$subfolder" "$target/$subfolder"
     done
     [ ! -f "$source/app.json" ] || act cp "$source/app.json" "$target/app.json"
+    [ ! -f "$source/ui.json" ] || act cp "$source/ui.json" "$target/ui.json"
     act mkdir -p "$target/data"
 }
 

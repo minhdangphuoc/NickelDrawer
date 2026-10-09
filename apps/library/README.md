@@ -1,0 +1,25 @@
+# Library
+
+## Tiếng Việt
+
+Sửa ngôn ngữ cho sách EPUB tiếng Việt và tìm sách trùng, trong `Books`, `Documents` và `Comics`.
+
+1. Bấm **Thư viện · Quét**. Ứng dụng đọc tên sách, tác giả và một đoạn chữ của từng EPUB, rồi báo: số sách, số sách tiếng Việt bị gắn sai ngôn ngữ (thường là "en", làm máy ngắt từ kiểu tiếng Anh), số sách chưa chuẩn NFC, số nhóm sách trùng. Việc này chạy nền; mở màn hình Thư viện (ngăn ứng dụng) để xem tiến độ.
+2. **Sửa ngôn ngữ** (trong màn hình Thư viện): mỗi sách được chép sang `data/backups/<ngày>/` trước, rồi chỉ đổi ngôn ngữ thành `vi` (tệp OPF và thuộc tính `lang`). Sách được kiểm tra lại trước khi thay bản cũ. **Hoàn tác lần sửa** đưa bản gốc về.
+3. Sau khi sửa, hãy chạy **Library Reload** của Kobo. Ứng dụng không bao giờ đụng đến cơ sở dữ liệu `KoboReader.sqlite`.
+4. **Sách trùng**: chạm vào một sách trong danh sách để chọn, rồi bấm **Bỏ vào thùng rác**. Tệp được giữ 30 ngày trong `data/trash/` và không bao giờ bị xóa ngay; bản cuối cùng không thể bỏ đi.
+
+Chỉ đọc `Books`, `Documents`, `Comics` (không theo liên kết tượng trưng, bỏ qua tệp ẩn, tối đa 200 MB mỗi tệp). Chi tiết: `docs/spec/library.md`.
+
+## English
+
+Fixes the language of Vietnamese EPUBs and finds duplicate books in `Books`, `Documents` and `Comics`.
+
+1. Tap **Library · Scan**. The app reads each EPUB's title, author and a text sample, then reports: books, Vietnamese books tagged with another language (usually "en", which gives English hyphenation), books not in NFC, and duplicate groups. It runs in the background; open the Library screen (app drawer) to follow it.
+2. **Fix language** (on the Library screen): each book is copied to `data/backups/<date>/` first, then only its language is set to `vi` (OPF and `lang` attributes). The new file is re-read before it replaces the old one. **Undo last fix** puts the originals back.
+3. After fixing, run Kobo's **Library Reload**. The app never touches `KoboReader.sqlite`.
+4. **Duplicates**: tap a book in the list to select it, then tap **Move to trash**. The file is kept 30 days in `data/trash/`, never deleted at once, and the last copy cannot be removed.
+
+It only reads `Books`, `Documents` and `Comics` (no symbolic links followed, hidden files skipped, 200 MB per file at most). Details: `docs/spec/library.md`.
+
+`bin/library` is copied from `build/` by `make dist` and is not committed.

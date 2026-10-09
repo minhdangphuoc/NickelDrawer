@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "id": "library",
+  "name": "Library",
+  "version": "0.1.0",
+  "description": "Fix the language of Vietnamese books and find duplicate books",
+  "storage": { "reads": ["books", "documents", "comics"], "writes": ["books", "documents", "comics"] },
+  "network": false,
+  "actions": [
+    {
+      "id": "scan",
+      "label": "Scan",
+      "run": "bin/scan.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none"
+    },
+    {
+      "id": "fix",
+      "label": "Fix language",
+      "run": "bin/fix.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "undo",
+      "label": "Undo last fix",
+      "run": "bin/undo.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "pick",
+      "label": "Select duplicate",
+      "run": "bin/pick.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "page",
+      "label": "Next page",
+      "run": "bin/page.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "trash",
+      "label": "Move to trash",
+      "run": "bin/trash.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 1000,
+      "rescan": "none",
+      "menu": false
+    }
+  ]
+}

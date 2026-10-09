@@ -389,3 +389,31 @@ func TestPairCodeIsSixDigits(t *testing.T) {
 		}
 	}
 }
+
+func TestPairPublishesInfoForTheScreenWhileOpenOnly(t *testing.T) {
+	messages, _ := i18n.LoadBundle("../../apps/ghsync/locales", "en")
+	infoFile := filepath.Join(t.TempDir(), "pair.json")
+	out := &syncBuffer{}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Pair(ctx, PairOptions{
+			Paths: Paths{AppDir: t.TempDir()}, IP: "127.0.0.1", Port: 18766, Messages: messages, Out: out,
+			Code: pairCode, InfoFile: infoFile,
+		})
+	}()
+	waitForText(t, out, "127.0.0.1:18766")
+	info, ok := readPairInfo(infoFile, time.Now())
+	if !ok || info.URL != "http://127.0.0.1:18766" || info.Code != pairCode {
+		t.Fatalf("info = %+v, ok=%v", info, ok)
+	}
+	if stat, _ := os.Stat(infoFile); stat.Mode().Perm() != 0o600 {
+		t.Errorf("info file mode = %v, want 600", stat.Mode().Perm())
+	}
+	cancel()
+	<-done
+	if _, err := os.Stat(infoFile); !os.IsNotExist(err) {
+		t.Errorf("the info file must be removed when pairing ends (err=%v)", err)
+	}
+}

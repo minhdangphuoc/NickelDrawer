@@ -71,6 +71,8 @@ func execute(args []string, out io.Writer) int {
 		return runCommand(args[1:], out)
 	case "status":
 		return statusCommand(args[1:], out)
+	case "state":
+		return stateCommand(args[1:], out)
 	case "pair":
 		return pairCommand(args[1:], out)
 	default:

@@ -47,6 +47,7 @@
   "inbox.folder.documents": "Documents",
   "inbox.folder.comics": "Comics",
   "inbox.folder.pictures": "Pictures",
+  "inbox.folder.rejected": "Rejected",
   "inbox.count.books": "Books: {count}",
   "inbox.count.documents": "Documents: {count}",
   "inbox.count.comics": "Comics: {count}",

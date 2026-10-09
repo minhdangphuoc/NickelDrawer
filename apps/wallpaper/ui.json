@@ -4,31 +4,83 @@
   "vars": {
     "status": "",
     "count": "0",
+    "current": "",
     "mode": "fill",
-    "rotation": "fixed"
+    "rotation": "fixed",
+    "last_import": "",
+    "busy": false
   },
   "screens": {
     "main": {
       "title": "@ui.title",
       "status": "$status",
       "body": [
-        { "text": "@ui.intro" },
-        { "kv": [["@ui.pictures", "$count"]] },
+        {
+          "text": "@ui.intro"
+        },
+        {
+          "kv": [
+            [
+              "@ui.pictures",
+              "$count"
+            ],
+            [
+              "@ui.now_showing",
+              "$current"
+            ]
+          ]
+        },
+        {
+          "text": "$last_import",
+          "style": "caption"
+        },
         {
           "radio": "@ui.mode",
           "bind": "mode",
-          "options": [["fill", "@ui.mode_fill"], ["fit", "@ui.mode_fit"]]
+          "options": [
+            [
+              "fill",
+              "@ui.mode_fill"
+            ],
+            [
+              "fit",
+              "@ui.mode_fit"
+            ]
+          ],
+          "enabled": "!$busy"
         },
         {
           "radio": "@ui.rotation",
           "bind": "rotation",
-          "options": [["fixed", "@ui.rotation_fixed"], ["random", "@ui.rotation_random"]]
+          "options": [
+            [
+              "fixed",
+              "@ui.rotation_fixed"
+            ],
+            [
+              "random",
+              "@ui.rotation_random"
+            ]
+          ],
+          "enabled": "!$busy"
         },
-        { "notice": "@ui.note" },
-        { "button": "@ui.turn_off", "action": "off", "style": "secondary" }
+        {
+          "notice": "@ui.note"
+        },
+        {
+          "button": "@ui.turn_off",
+          "action": "off",
+          "style": "secondary",
+          "enabled": "!$busy"
+        }
       ],
       "footer": [
-        { "button": "@ui.import", "action": "import", "style": "primary" }
+        {
+          "button": "@ui.import",
+          "action": "import",
+          "style": "primary",
+          "enabled": "!$busy"
+        }
       ]
     }
   }

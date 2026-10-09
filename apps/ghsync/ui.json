@@ -1,0 +1,75 @@
+{
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "status": "",
+    "configured": false,
+    "repo": "",
+    "branch": "",
+    "folder": "",
+    "last_sync": "",
+    "summary": "",
+    "running": false,
+    "can_sync": false,
+    "pairing": false,
+    "pair_url": "",
+    "pair_code": "",
+    "pair_expires": "",
+    "pair_hint": ""
+  },
+  "screens": {
+    "main": {
+      "title": "@ui.title",
+      "status": "$status",
+      "body": [
+        {
+          "pair": {
+            "url": "$pair_url",
+            "code": "$pair_code",
+            "title": "@ui.pair_title",
+            "hint": "$pair_hint",
+            "expires": "$pair_expires"
+          }
+        },
+        {
+          "button": "@ui.pair",
+          "action": "pair",
+          "style": "secondary",
+          "enabled": "!$pairing"
+        },
+        {
+          "kv": [
+            [
+              "@ui.repo",
+              "$repo"
+            ],
+            [
+              "@ui.branch",
+              "$branch"
+            ],
+            [
+              "@ui.folder",
+              "$folder"
+            ],
+            [
+              "@ui.last_sync",
+              "$last_sync"
+            ]
+          ]
+        },
+        {
+          "text": "$summary",
+          "style": "caption"
+        }
+      ],
+      "footer": [
+        {
+          "button": "@ui.sync",
+          "action": "sync",
+          "style": "primary",
+          "enabled": "$can_sync"
+        }
+      ]
+    }
+  }
+}

@@ -34,6 +34,11 @@
       "text": "Keep this screen open while files arrive."
     },
     {
+      "type": "text",
+      "text": "Books 2 · Rejected 1",
+      "style": "caption"
+    },
+    {
       "type": "list",
       "title": "Received",
       "bind": "received",
@@ -41,16 +46,23 @@
       "items": [
         [
           "book-one.epub",
-          ""
+          "Books · 1.2 MB"
         ],
         [
           "A Very Long Title of a Book That Needs Eliding.epub",
-          "2.1 MB"
+          "Books · 2.1 MB"
         ]
       ]
     }
   ],
   "footer": [
+    {
+      "type": "button",
+      "text": "Start receiving",
+      "style": "secondary",
+      "action": "start",
+      "enabled": true
+    },
     {
       "type": "button",
       "text": "Stop and update library",

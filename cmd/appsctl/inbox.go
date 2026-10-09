@@ -38,6 +38,7 @@ func runInbox(args []string, stdout, stderr io.Writer) int {
 		"route":  runInboxRoute,
 		"sort":   runInboxSort,
 		"status": runInboxStatus,
+		"state":  runInboxState,
 		"purge":  runInboxPurge,
 	}
 	if len(args) == 0 {
@@ -254,6 +255,37 @@ func (session *inboxSession) formatSummary(summary inbox.Summary) string {
 			"count", strconv.Itoa(reason.Count)) + "\n"
 	}
 	return text
+}
+
+// stateLabelIDs are the folder ids (and "rejected") the screen summary and list name.
+var stateLabelIDs = []string{"books", "documents", "comics", "pictures", "rejected"}
+
+// runInboxState prints the LocalSend screen's inbox fields as one JSON object line.
+func runInboxState(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("inbox state", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	var session inboxSession
+	session.register(flags)
+	if err := flags.Parse(args); err != nil || flags.NArg() > 0 {
+		fmt.Fprintln(stderr, inboxUsage)
+		return exitFailure
+	}
+	session.open(stderr)
+	defer session.close()
+	entries, _, err := inbox.ReadEntries(inbox.JournalPath())
+	if err != nil {
+		return session.fail(stderr, err)
+	}
+	labels := make(map[string]string, len(stateLabelIDs))
+	for _, id := range stateLabelIDs {
+		labels[id] = session.say("inbox.folder." + id)
+	}
+	encoded, err := inbox.BuildScreenState(entries).JSON(labels)
+	if err != nil {
+		return session.fail(stderr, err)
+	}
+	fmt.Fprintln(stdout, string(encoded))
+	return exitOK
 }
 
 func runInboxPurge(args []string, stdout, stderr io.Writer) int {

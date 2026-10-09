@@ -92,5 +92,28 @@
   "msg.err_pair_no_ip": "No Wi-Fi address found. Turn Wi-Fi on and try again.",
   "msg.err_pair_ip_invalid": "Not a usable LAN address: {ip}",
   "msg.err_pair_listen": "Cannot listen on {address}. Is pairing already open? ({cause})",
-  "msg.err_pair_code": "Cannot make a pairing code: {cause}"
+  "msg.err_pair_code": "Cannot make a pairing code: {cause}",
+
+  "msg.state_status_running": "Syncing…",
+  "msg.state_status_pairing": "Pairing open",
+  "msg.state_status_unpaired": "Not paired",
+  "msg.state_status_ready": "Ready",
+  "msg.state_never": "Never synced",
+  "msg.state_failed": "Last sync failed. See data/log.txt.",
+  "msg.state_summary": "{new} new, {existing} already here, {errors} errors",
+  "msg.state_default_branch": "Default",
+  "msg.state_whole_repo": "Whole repo",
+  "msg.state_pair_idle": "Tap Pair with phone to get an address and a code.",
+  "msg.state_pair_open": "Open the address on your phone and enter the code. Use only on your own Wi-Fi.",
+
+  "actions.state.label": "Screen state",
+  "ui.title": "GitHub",
+  "ui.repo": "Repo",
+  "ui.branch": "Branch",
+  "ui.folder": "Folder",
+  "ui.last_sync": "Last sync",
+  "ui.pair_title": "Pair with phone",
+  "ui.pair": "Pair with phone",
+  "ui.sync": "Sync now",
+  "msg.state_pair_until": "Valid until {time}"
 }

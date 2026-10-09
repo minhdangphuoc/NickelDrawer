@@ -1,0 +1,26 @@
+{
+  "status": "Đang nhận",
+  "running": true,
+  "pin": "4821",
+  "device": "Kobo Libra 2",
+  "ip": "192.168.1.23",
+  "summary": "Sách 2 · Tài liệu 1 · Từ chối 1",
+  "received": [
+    [
+      "Dune.epub",
+      "Sách · 1.8 MB"
+    ],
+    [
+      "Báo cáo quý 3.pdf",
+      "Tài liệu · 420.0 KB"
+    ],
+    [
+      "Truyện tranh tập 1.cbz",
+      "Truyện tranh · 24.3 MB"
+    ],
+    [
+      "Tieng Viet Co Dau.epub",
+      "Sách · 2.1 MB"
+    ]
+  ]
+}

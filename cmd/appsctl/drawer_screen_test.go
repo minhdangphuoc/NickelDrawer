@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,15 +12,16 @@ import (
 
 // localsendState is what a running LocalSend state script would print.
 const localsendState = `{"status":"Receiving","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23",` +
-	`"received":["book-one.epub",["A Very Long Title of a Book That Needs Eliding.epub","2.1 MB"]]}`
+	`"summary":"Books 2 · Rejected 1","received":[["book-one.epub","Books · 1.2 MB"],["A Very Long Title of a Book That Needs Eliding.epub","Books · 2.1 MB"]]}`
 
-// installLocalsend copies the shipped LocalSend app and adds a state action, so the golden
-// files show bindings filled from state and locale keys resolved.
+// installLocalsend copies the shipped LocalSend app, with its shipped state action, but swaps
+// bin/state.sh for a script printing localsendState: the real one sources the device's
+// /mnt/onboard paths. The golden files show bindings filled from state and locale keys resolved.
 func installLocalsend(t *testing.T, root drawerRoot) {
 	t.Helper()
 	source := filepath.Join("..", "..", "apps", "localsend")
 	target := filepath.Join(root.apps, "localsend")
-	for _, relative := range []string{"ui.json", "locales/en.json", "locales/vi.json", "bin/start.sh", "bin/stop.sh", "bin/sort.sh"} {
+	for _, relative := range []string{"app.json", "ui.json", "locales/en.json", "locales/vi.json", "bin/start.sh", "bin/stop.sh", "bin/sort.sh"} {
 		data, err := os.ReadFile(filepath.Join(source, filepath.FromSlash(relative)))
 		if err != nil {
 			t.Fatal(err)
@@ -29,7 +29,6 @@ func installLocalsend(t *testing.T, root drawerRoot) {
 		writeExecutable(t, filepath.Join(target, filepath.FromSlash(relative)), data)
 	}
 	writeExecutable(t, filepath.Join(target, "bin", "state.sh"), []byte("#!/bin/sh\necho '"+localsendState+"'\n"))
-	writeExecutable(t, filepath.Join(target, "app.json"), localsendManifestWithState(t, source))
 }
 
 func writeExecutable(t *testing.T, path string, data []byte) {
@@ -40,26 +39,6 @@ func writeExecutable(t *testing.T, path string, data []byte) {
 	if err := os.WriteFile(path, data, 0o755); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func localsendManifestWithState(t *testing.T, source string) []byte {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join(source, "app.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var manifest map[string]any
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	manifest["actions"] = append(manifest["actions"].([]any), map[string]any{
-		"id": "state", "label": "State", "run": "bin/state.sh", "output": "show", "menu": false,
-	})
-	encoded, err := json.Marshal(manifest)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return encoded
 }
 
 // generousStatusBudget keeps the real state script inside its budget under -race.

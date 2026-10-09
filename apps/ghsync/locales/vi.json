@@ -98,5 +98,28 @@
   "msg.err_pair_no_ip": "Không có địa chỉ Wi-Fi. Bật Wi-Fi rồi thử lại.",
   "msg.err_pair_ip_invalid": "Không phải địa chỉ mạng nội bộ dùng được: {ip}",
   "msg.err_pair_listen": "Không mở được {address}. Có phải đang mở kết nối rồi? ({cause})",
-  "msg.err_pair_code": "Không tạo được mã kết nối: {cause}"
+  "msg.err_pair_code": "Không tạo được mã kết nối: {cause}",
+
+  "msg.state_status_running": "Đang đồng bộ…",
+  "msg.state_status_pairing": "Đang kết nối",
+  "msg.state_status_unpaired": "Chưa kết nối",
+  "msg.state_status_ready": "Sẵn sàng",
+  "msg.state_never": "Chưa đồng bộ lần nào",
+  "msg.state_failed": "Lần đồng bộ cuối bị lỗi. Xem data/log.txt.",
+  "msg.state_summary": "{new} mới, {existing} đã có, {errors} lỗi",
+  "msg.state_default_branch": "Mặc định",
+  "msg.state_whole_repo": "Cả repo",
+  "msg.state_pair_idle": "Nhấn Kết nối bằng điện thoại để lấy địa chỉ và mã.",
+  "msg.state_pair_open": "Mở địa chỉ trên điện thoại và nhập mã. Chỉ dùng trên Wi-Fi nhà bạn.",
+
+  "actions.state.label": "Trạng thái màn hình",
+  "ui.title": "GitHub",
+  "ui.repo": "Repo",
+  "ui.branch": "Nhánh",
+  "ui.folder": "Thư mục",
+  "ui.last_sync": "Đồng bộ lúc",
+  "ui.pair_title": "Kết nối điện thoại",
+  "ui.pair": "Kết nối điện thoại",
+  "ui.sync": "Đồng bộ ngay",
+  "msg.state_pair_until": "Có hiệu lực đến {time}"
 }

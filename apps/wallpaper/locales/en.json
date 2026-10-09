@@ -49,7 +49,12 @@
   "ui.rotation": "Which picture",
   "ui.rotation_fixed": "Fixed",
   "ui.rotation_random": "Random",
-  "ui.note": "Changes apply the next time you import pictures.",
+  "ui.note": "Changing the size re-fits your pictures. This can take a minute.",
   "ui.turn_off": "Turn off",
-  "ui.import": "Import pictures"
+  "ui.import": "Import pictures",
+  "msg.state_working": "Converting…",
+  "msg.state_empty": "No pictures",
+  "msg.state_ready": "{count} pictures",
+  "ui.now_showing": "On sleep screen",
+  "actions.state.label": "Screen state"
 }

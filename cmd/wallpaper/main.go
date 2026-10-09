@@ -27,6 +27,8 @@ type commonFlags struct {
 	confPath    string
 	locale      string
 	versionFile string
+	lastFile    string
+	pidFile     string
 }
 
 func (common *commonFlags) register(flags *flag.FlagSet) {
@@ -34,6 +36,8 @@ func (common *commonFlags) register(flags *flag.FlagSet) {
 	flags.StringVar(&common.confPath, "conf", i18n.DefaultConfPath, "Kobo eReader.conf holding CurrentLocale")
 	flags.StringVar(&common.locale, "locale", "", "language code overriding the device language, e.g. vi")
 	flags.StringVar(&common.versionFile, "version-file", device.DefaultVersionFile, "Kobo .kobo/version file (device id decides the screen size)")
+	flags.StringVar(&common.lastFile, "last-file", "/tmp/wallpaper-last.txt", "text the last background import printed (state command)")
+	flags.StringVar(&common.pidFile, "pid-file", "/tmp/wallpaper.pid", "pid file of a running background import (state command)")
 }
 
 func (common commonFlags) messages() *i18n.Bundle {
@@ -67,6 +71,7 @@ var commands = map[string]command{
 	"rotation": {1, false, (*session).setRotation},
 	"off":      {0, false, (*session).turnOff},
 	"status":   {0, false, (*session).status},
+	"state":    {0, false, (*session).state},
 }
 
 func execute(args []string, out io.Writer) int {
@@ -115,5 +120,6 @@ func runSession(selected command, common commonFlags, messages *i18n.Bundle, out
 	}
 	return selected.run(&session{
 		service: wallpaper.NewService(paths, size, log), messages: messages, out: out,
+		stateFiles: wallpaper.ScreenStateFiles{LastOutput: common.lastFile, PidFile: common.pidFile},
 	}, arguments)
 }

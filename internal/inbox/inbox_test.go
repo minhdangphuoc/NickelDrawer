@@ -736,3 +736,58 @@ func TestTextCheckHandlesCharactersCutByChunkBoundaries(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildScreenStateCountsAndListsLastSession(t *testing.T) {
+	kobo := newFakeKobo(t)
+	must(t, os.MkdirAll(storage.Path(storage.Books), 0o755))
+	must(t, os.WriteFile(filepath.Join(storage.Path(storage.Books), "a.epub"), make([]byte, 1536), 0o644))
+	base := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
+	entries := []Entry{
+		{Time: base.Add(-3 * time.Hour), Name: "old.epub", Destination: "books", StoredAs: "old.epub"},
+		{Time: base, Name: "a.epub", Destination: "books", StoredAs: "a.epub"},
+		{Time: base.Add(time.Minute), Name: "bad.exe", Destination: "rejected", Reason: "unsupported"},
+		{Time: base.Add(2 * time.Minute), Name: "gone.pdf", Destination: "documents", StoredAs: "gone.pdf"},
+	}
+	_ = kobo
+	state := BuildScreenState(entries)
+	if state.Books != 1 || state.Documents != 1 || state.Rejected != 1 {
+		t.Fatalf("counts = %+v", state)
+	}
+	items := state.ListItems(map[string]string{"books": "Books"})
+	want := [][2]string{{"gone.pdf", "documents"}, {"a.epub", "Books · 1.5 KB"}}
+	if !reflect.DeepEqual(items, want) {
+		t.Fatalf("items = %v, want %v", items, want)
+	}
+}
+
+func TestBuildScreenStateEmptyAndLimited(t *testing.T) {
+	newFakeKobo(t)
+	if state := BuildScreenState(nil); state.Rejected != 0 || len(state.Received) != 0 {
+		t.Fatalf("empty = %+v", state)
+	}
+	base := time.Date(2026, 10, 1, 9, 0, 0, 0, time.UTC)
+	var entries []Entry
+	for index := 0; index < 15; index++ {
+		entries = append(entries, Entry{Time: base.Add(time.Duration(index) * time.Second),
+			Name: fmt.Sprintf("b%02d.epub", index), Destination: "books"})
+	}
+	state := BuildScreenState(entries)
+	if len(state.Received) != 10 || state.Received[0].Name != "b14.epub" {
+		t.Fatalf("received = %+v", state.Received)
+	}
+}
+
+func TestScreenStateJSONShape(t *testing.T) {
+	newFakeKobo(t)
+	raw, err := BuildScreenState(nil).JSON(nil)
+	if err != nil || string(raw) != `{"summary":"","received":[]}` {
+		t.Fatalf("json = %s, %v", raw, err)
+	}
+}
+
+func TestScreenStateSummaryListsNonZeroCounters(t *testing.T) {
+	state := ScreenState{Books: 2, Comics: 1, Rejected: 3}
+	if got := state.Summary(map[string]string{"books": "Sách", "rejected": "Từ chối"}); got != "Sách 2 · comics 1 · Từ chối 3" {
+		t.Fatalf("summary = %q", got)
+	}
+}

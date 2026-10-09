@@ -15,7 +15,10 @@ import (
 	"koboapps/internal/i18n"
 )
 
-const defaultPairPidFile = "/tmp/ghsync-pair.pid"
+const (
+	defaultPairPidFile  = "/tmp/ghsync-pair.pid"
+	defaultPairInfoFile = "/tmp/ghsync-pair.json"
+)
 
 func pairCommand(args []string, out io.Writer) int {
 	flags := flag.NewFlagSet("pair", flag.ContinueOnError)
@@ -27,6 +30,7 @@ func pairCommand(args []string, out io.Writer) int {
 	port := flags.Int("port", ghsync.DefaultPairPort, "TCP port")
 	lifetime := flags.Duration("lifetime", ghsync.DefaultPairLifetime, "how long pairing stays open")
 	pidFile := flags.String("pid-file", defaultPairPidFile, "where the running session records its process id")
+	infoFile := flags.String("info-file", defaultPairInfoFile, "where the open session writes its address and code for the app screen")
 	shouldStop := flags.Bool("stop", false, "stop a running pairing session")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
@@ -42,6 +46,7 @@ func pairCommand(args []string, out io.Writer) int {
 		Port:     *port,
 		Lifetime: *lifetime,
 		Backoff:  time.Second,
+		InfoFile: *infoFile,
 	}, *pidFile)
 }
 
