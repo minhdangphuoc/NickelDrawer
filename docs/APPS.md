@@ -99,6 +99,52 @@ The preview is a layout check, not Nickel: real fonts and the real refresh behav
 - [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a `ui.json` you can preview with `ndpreview`.
 - [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, with a Go helper for what BusyBox lacks.
 
+### Nested views and back
+
+NickelDrawer has one back stack, like Nickel's own pages. Design your screens to fit it.
+
+```
+More (Nickel) → Apps drawer → your app's main screen → sub-screen → (detail)
+                                   ←                 ←             ←
+```
+
+**Rules**
+
+- **"←" goes back exactly one level** and restores the previous view as the user left it: same page, same list/grid mode, fresh data. You never draw your own "Back" button in the content.
+- **The main screen's "←" returns to the drawer.** A tap on a bottom tab (Home, Books, …) leaves your app entirely; that is Nickel's normal behaviour, don't fight it.
+- **Keep it shallow: at most two levels inside your app** (main → sub-screen → detail). If you need a third level, the design is too deep: merge screens or use a popup menu.
+- **No cycles.** A sub-screen never pushes its own parent again (A → B → A). Use "←" instead.
+- **Each screen has its own short title** (≤ 24 characters, no app-name prefix) and its status, if any, on the right of the header.
+- **Leaving a screen never cancels work.** Background jobs keep running; when the user comes back, the screen shows the current status.
+
+**Which container to use**
+
+| Need | Use | Example |
+|---|---|---|
+| A place the user stays: state, lists, the main buttons | **Screen** (`screens/<id>.json`) | LocalSend receiving screen |
+| Details or a group of options for one thing | **Sub-screen**, opened with `push` | Library → "Duplicates" |
+| Choose one of several actions on an item | **Popup menu** (long-press) | Duplicate → Move to trash / Keep |
+| Confirm something destructive, or show one result | **Dialog** (OK / Cancel) | "Remove this app?" |
+| Tell the user something finished | **Toast** (one line, disappears) | "3 books added" |
+
+- **Never stack modals:** no dialog on top of a popup, no navigation from inside a dialog, at most one dialog at a time.
+- **Don't hide screens behind long-press only.** Long-press is a shortcut; every screen must also be reachable by a visible row or header action.
+- **After an action, stay on the screen** and let it refresh. Show a toast or a short dialog for the result; don't push a "result screen".
+
+**How to declare it**
+
+Open a sub-screen with a header action that has `push` (the target screen id; `appsctl validate` checks that it exists):
+
+```json
+{
+  "title": "@screen.main.title",
+  "action": { "label": "@action.duplicates", "push": "duplicates" },
+  "body": [ … ]
+}
+```
+
+Sub-screens read the same `state` action as the main screen, so bindings stay consistent across the stack. Preview the whole flow with `ndpreview serve`: the arrow keys flip pages and "←" pops, exactly like on the device.
+
 ## Quick start: `appsctl new`
 
 ```sh
