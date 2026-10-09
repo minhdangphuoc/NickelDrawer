@@ -386,3 +386,43 @@ Pixmap: Nickel resource `:/images/reading/beta_features.png` (placeholder).
 5. Behaviour was decompiled on 23828 only; the other four builds share the exported names, not
    verified code.
 6. Shared uninstall flag with `ndhello`: with both installed, one uninstall run removes only one mod.
+
+---
+
+## Drawer host build (2026-10-09, `mod/drawer/`, not yet run on device)
+
+`libnickeldrawer.so` (NickelHook name `nickeldrawer`), outputs `build/mod/libnickeldrawer.so` and
+`build/mod/KoboRoot-nickeldrawer.tgz`. Evolved from `mod/drawer-proto/` (left untouched). Architecture,
+flags, degradation table and the first-boot script: `mod/drawer/README.md`.
+
+Structure: `nickel_bridge.cc` is the only file naming libnickel symbols (hook + dlsym tables, firmware
+check, fail-soft wrappers); `check-symbols.sh` fails if any other source does. The route A controller is the
+prototype's `AbstractController` mirror unchanged; the rebuilt `.so` again shows `DrawerController`'s
+secondary vtable with offset-to-top −8 and 9 slots, typeinfo names `18AbstractController` /
+`16DrawerController`. Kill switch `.adds/nickeldrawer/disable` keeps the bridge inert; route B via
+`.adds/nickeldrawer/pushview`; uninstall flag `.adds/nickeldrawer/uninstall` (same path as the prototype:
+uninstall `nddrawer` first).
+
+### Symbols added since the prototype (all optional, 5/5 builds, mangled and demangled dumps)
+
+| Symbol | Use | Source of the calling convention |
+|---|---|---|
+| `_ZN25ConfirmationDialogFactory12showOKDialogERK7QStringS2_` | result / Info dialog | NickelMenu (body is rich text, so the mod HTML-escapes and turns `\n` into `<br>`) |
+| `_ZN25ConfirmationDialogFactory21getConfirmationDialogEP7QWidget` | confirm (Remove, Wi-Fi) | NickelHardcover (returns a `QDialog`; `accepted()`/`rejected()`, `open()`) |
+| `_ZN18ConfirmationDialog8setTitleERK7QString`, `…7setTextERK7QString`, `…19setAcceptButtonTextERK7QString`, `…19setRejectButtonTextERK7QString`, `…15showCloseButtonEb` | confirm texts | NickelHardcover |
+| `_ZN23WirelessWorkflowManager14sharedInstanceEv`, `…20isInternetAccessibleEv`, `…15connectWirelessEbb` | `needs_wifi` → connect, poll, retry once | NickelMenu `autoconnect` passes `(true, false)`; NickelHardcover polls `isInternetAccessible` 1 s × 30 because the signal is unreliable |
+| `_ZN19PlugWorkflowManager14sharedInstanceEv`, `…4syncEv` | quick rescan | NickelMenu `rescan_books` |
+| `_ZN19PlugWorkflowManager18onCancelAndConnectEv`, `…9unpluggedEv` | full rescan | NickelMenu `rescan_books_full` (it sleeps 1 s between them; the mod uses a 1 s timer) |
+
+Total 25 names checked (24 hook/dlsym + the `IconButtonBase::tapped()` signal). Not found in any build:
+a `WirelessWorkflowManager::connectingFailed()` export (NickelHardcover connects it by name; it is probably
+an unexported signal), so the mod relies on polling only.
+
+### Open questions for the device run
+
+1. Does `TactileButtonFilter` deliver page keys to our view while Nickel's `ConfirmationDialog` is open?
+   It is not an `N3Dialog`, so Q3's redirect to `N3Dialog::content()` may not apply. The mod blocks its own
+   input while its plain dialogs and pending actions are up, but cannot see when Nickel's OK dialog closes.
+2. `IconLeftButton::setText` with an embedded `\n` for the More row's status line (look not verified).
+3. Touch → plain Qt widgets: `PressArea` accepts both `QTouchEvent` and synthesized mouse events.
+4. Whether `QPixmap` loads `icon.svg` (needs the svg image-format plugin in Nickel's Qt).

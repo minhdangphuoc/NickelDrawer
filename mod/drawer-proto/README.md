@@ -130,7 +130,7 @@ Without `proto-a` the More tab is stock again, even with `proto-c` present.
 
 In order, stop at the first that works:
 
-1. `touch /Volumes/KOBOeReader/.adds/nickeldrawer/uninstall`, eject, reboot. The mod deletes
+1. `touch /Volumes/KOBOeReader/.adds/nickeldrawer/uninstall-proto`, eject, reboot. The mod deletes
    `/usr/local/Kobo/imageformats/libnddrawer.so` and the flag. Check: "NickelDrawer log" shows no new
    `loaded on` line after the next reboot. Remove the flag files and `.adds/nm/nddrawer-log` too.
 2. Power off within 15 s of boot (or let Nickel crash during that window); the failsafe removes the mod.

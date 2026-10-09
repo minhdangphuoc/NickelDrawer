@@ -1,0 +1,47 @@
+#ifndef NICKELDRAWER_ENTRY_ROW_H
+#define NICKELDRAWER_ENTRY_ROW_H
+
+#include <QObject>
+
+#include "drawer_model.h"
+
+class ModelClient;
+class QWidget;
+class UpdateDot;
+
+// The "Apps" row in Nickel's More tab (docs/spec/ui-kit.md §5.1): a Nickel
+// IconLeftButton after "Beta Features". Tap opens the drawer. Its second line
+// is a summary of running apps and updates, and a black dot shows when an
+// update exists; both come from `appsctl drawer model`. If appsctl fails the
+// row just reads "Apps".
+class EntryRow : public QObject {
+    Q_OBJECT
+public:
+    // MoreView-created handler registered with the bridge. Fails soft: logs
+    // and leaves the More tab untouched when anything is missing.
+    static void addTo(QWidget *moreView);
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event);
+
+private slots:
+    void onTapped();
+    void refreshSummary();
+    void onModelLoaded(const DrawerModel &model);
+
+private:
+    explicit EntryRow(QWidget *row);
+
+    void showSummary(const QString &summary, bool hasUpdate);
+    void placeDot();
+
+    QWidget *row;
+    UpdateDot *updateDot;
+    ModelClient *client;
+};
+
+// Second line of the row: "{name} {status}" for running apps with a status,
+// joined with " · ", then "1 update" / "{n} updates". Empty when nothing to say.
+QString entrySummary(const DrawerModel &model, int *updateCount);
+
+#endif

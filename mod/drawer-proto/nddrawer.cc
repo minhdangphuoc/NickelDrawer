@@ -59,7 +59,7 @@ static int initialize()
 static struct nh_info modInfo = {
     .name = "nddrawer",
     .desc = "NickelDrawer gate-G2 prototypes (More row, drawer page)",
-    .uninstall_flag = "/mnt/onboard/.adds/nickeldrawer/uninstall",
+    .uninstall_flag = "/mnt/onboard/.adds/nickeldrawer/uninstall-proto",
     .uninstall_xflag = NULL, // g++ 4.9 rejects skipped designated fields; NULL: no delete-to-uninstall
     .failsafe_delay = 15,
 };
