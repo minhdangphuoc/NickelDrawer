@@ -27,6 +27,7 @@ commands:
   device-name                              print the Kobo model name
   host-msg KEY [NAME=VALUE...]             print a host message in the device language
   inbox route|sort|status|purge            sort received files into Books, Documents, Comics, Pictures (docs/spec/inbox.md)
+  drawer model|run|info|remove              JSON for the native drawer (docs/spec/drawer-protocol.md)
   update check|apply|status|rollback       signed updates from GitHub Releases (see docs/UPDATES.md)
   --version                                print the version
 
@@ -56,6 +57,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		"host-msg": runHostMsg,
 		"update":   runUpdate,
 		"inbox":    runInbox,
+		"drawer":   runDrawer,
 
 		"device-name": runDeviceName,
 	}

@@ -1,0 +1,99 @@
+{
+  "v": 1,
+  "title": "Apps",
+  "hint": "Hold an app for info or to remove it.",
+  "sections": [
+    {
+      "id": "installed",
+      "title": "INSTALLED",
+      "items": [
+        {
+          "id": "alpha",
+          "name": "Alpha",
+          "status": "Receiving 4821",
+          "badge": false,
+          "running": true,
+          "actions": [
+            {
+              "id": "start",
+              "label": "Start",
+              "kind": "show",
+              "primary": true
+            },
+            {
+              "id": "stop",
+              "label": "Stop",
+              "kind": "show"
+            },
+            {
+              "id": "status",
+              "label": "Status",
+              "kind": "show"
+            },
+            {
+              "id": "bg",
+              "label": "Background",
+              "kind": "background"
+            }
+          ]
+        },
+        {
+          "id": "beta",
+          "name": "Beta",
+          "status": "",
+          "badge": false,
+          "running": false,
+          "actions": [
+            {
+              "id": "open",
+              "label": "Open",
+              "kind": "show",
+              "primary": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "title": "SYSTEM",
+      "items": [
+        {
+          "id": "_refresh",
+          "name": "Refresh list",
+          "status": "",
+          "badge": false,
+          "actions": [
+            {
+              "id": "refresh",
+              "label": "Refresh",
+              "kind": "show",
+              "primary": true
+            }
+          ]
+        },
+        {
+          "id": "_updates",
+          "name": "Updates",
+          "status": "",
+          "badge": false,
+          "actions": [
+            {
+              "id": "check",
+              "label": "Check for updates",
+              "kind": "show",
+              "primary": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "app": "broken",
+      "message": "name must be 1-24 characters (got 0)"
+    }
+  ]
+}
+
