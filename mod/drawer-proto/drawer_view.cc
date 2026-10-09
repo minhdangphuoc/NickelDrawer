@@ -3,16 +3,18 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
-#include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "debug_log.h"
+#include "nickel_fonts.h"
+#include "press_area.h"
 #include "status_bar_inset.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
 static const int SIDE_GUTTER = 72;
 static const int HEADER_HEIGHT = 120;
+static const int BACK_BUTTON_SIDE = 120; // minimum tap target (ui-kit §1.5)
 static const int ROW_HEIGHT = 152;
 static const int ROWS_PER_PAGE = 3;
 static const int PAGE_COUNT = 2;
@@ -21,12 +23,15 @@ static const int PAGE_COUNT = 2;
 // 0x80 asks for a flashing full update (re/notes/G2-findings.md Q4).
 static const Qt::WidgetAttribute FULL_REFRESH_ATTRIBUTE = static_cast<Qt::WidgetAttribute>(0x80);
 
+// Families are Nickel's own, filled in at run time (nickel_fonts.h): the
+// generic "serif" had no Vietnamese and drew "Ứng dụng" as "□ng d□ng".
 static const char *const VIEW_STYLE =
     "DrawerView { background: white; }"
-    "QLabel, QPushButton { color: black; background: white; border: none; }"
+    "QWidget { font-family: @BODY_FAMILY@; }"
+    "QLabel { color: black; background: white; border: none; }"
     "#drawerHeader { background: white; }"
-    "#drawerTitle { font-size: 44px; font-family: serif; }"
-    "#drawerBack { font-size: 64px; min-width: 120px; min-height: 120px; }"
+    "#drawerTitle { font-family: @TITLE_FAMILY@; font-size: 44px; font-weight: bold; }"
+    "#drawerBackGlyph { font-size: 64px; }"
     "#drawerRow { font-size: 36px; border-bottom: 2px solid #c0c0c0; }"
     "#drawerPageIndicator { font-size: 32px; }";
 
@@ -34,7 +39,7 @@ DrawerView::DrawerView(const QString &title)
     : QWidget(NULL), rootLayout(NULL), header(NULL), pageIndicator(NULL), currentPage(0), hasLoggedLayout(false)
 {
     setObjectName(QStringLiteral("nickelDrawerView"));
-    setStyleSheet(QString::fromLatin1(VIEW_STYLE));
+    setStyleSheet(NickelFonts::styleSheet(VIEW_STYLE));
     setAttribute(Qt::WA_StyledBackground, true); // plain QWidget subclasses ignore "background" otherwise
     // Same status-bar properties MoreView sets, so Nickel's pushView does not guess.
     setProperty("showIndicators", true);
@@ -63,21 +68,39 @@ QWidget *DrawerView::createHeader(const QString &title)
     header->setAttribute(Qt::WA_StyledBackground, true);
     header->setFixedHeight(HEADER_HEIGHT);
 
-    QPushButton *back = new QPushButton(QString::fromUtf8("‹"), header);
-    back->setObjectName(QStringLiteral("drawerBack"));
-    back->setFlat(true);
-    back->setFocusPolicy(Qt::NoFocus); // page keys must reach the view, not the button
-    connect(back, SIGNAL(clicked()), this, SIGNAL(backRequested()));
-
     QLabel *titleLabel = new QLabel(title, header);
     titleLabel->setObjectName(QStringLiteral("drawerTitle"));
 
     QHBoxLayout *layout = new QHBoxLayout(header);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(back);
+    layout->addWidget(createBackButton(header));
     layout->addWidget(titleLabel, 1);
     DebugLog::write("drawer view: header created (back + title \"%s\")", qPrintable(title));
     return header;
+}
+
+// A plain QPushButton never got clicked() on the device (Nickel delivers taps
+// as its own gesture, not as mouse clicks); PressArea takes every path.
+PressArea *DrawerView::createBackButton(QWidget *parent)
+{
+    PressArea *back = new PressArea(parent);
+    back->setObjectName(QStringLiteral("drawerBack"));
+    back->setFixedSize(BACK_BUTTON_SIDE, BACK_BUTTON_SIDE);
+    QLabel *glyph = new QLabel(QString::fromUtf8("‹"), back);
+    glyph->setObjectName(QStringLiteral("drawerBackGlyph"));
+    glyph->setAlignment(Qt::AlignCenter);
+    glyph->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    QHBoxLayout *layout = new QHBoxLayout(back);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(glyph);
+    connect(back, SIGNAL(tapped()), this, SLOT(onBackTapped()));
+    return back;
+}
+
+void DrawerView::onBackTapped()
+{
+    DebugLog::write("drawer view: back tapped, emitting backRequested");
+    emit backRequested();
 }
 
 QWidget *DrawerView::createRows()

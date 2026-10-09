@@ -5,6 +5,7 @@
 #include <QWidget>
 
 class QKeyEvent;
+class PressArea;
 class QLabel;
 class QShowEvent;
 class QVBoxLayout;
@@ -27,9 +28,11 @@ protected:
 
 private slots:
     void logLayoutGeometry();
+    void onBackTapped();
 
 private:
     QWidget *createHeader(const QString &title);
+    PressArea *createBackButton(QWidget *parent);
     QWidget *createRows();
     QLabel *createPageIndicator();
     void showPage(int page);

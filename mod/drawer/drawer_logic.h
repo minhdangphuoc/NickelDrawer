@@ -105,9 +105,8 @@ enum Language { LANGUAGE_ENGLISH, LANGUAGE_VIETNAMESE };
 // Nickel's CurrentLocale ("vi", "vi_VN", "en_US", empty) to a fallback table.
 Language languageForLocale(const char *locale);
 
-// ---- Long-press ----
+// ---- Confirmations ----
 
-static const int LONG_PRESS_MILLISECONDS = 600;
 static const int CONFIRM_TIMEOUT_MILLISECONDS = 120000;
 
 } // namespace DrawerLogic

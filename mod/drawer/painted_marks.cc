@@ -3,6 +3,8 @@
 #include <QPainter>
 #include <QPixmap>
 
+#include "nickel_fonts.h"
+
 static const int DOT_DIAMETER = 20;
 static const int TOGGLE_SIDE = 120;      // minimum tap target (ui-kit §1.5)
 static const int TOGGLE_GLYPH_SIDE = 44;
@@ -100,8 +102,6 @@ void AppMark::paintEvent(QPaintEvent *)
     painter.setPen(QPen(Qt::black, OUTLINE_WIDTH));
     painter.setBrush(Qt::NoBrush);
     painter.drawRect(rect().adjusted(1, 1, -1, -1));
-    QFont font = painter.font();
-    font.setPixelSize(height() / 2);
-    painter.setFont(font);
+    painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, height() / 2, false));
     painter.drawText(rect(), Qt::AlignCenter, initial);
 }

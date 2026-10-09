@@ -35,6 +35,10 @@ bool isActive();
 // The firmware string read by activate() ("unknown" on failure).
 const char *firmware();
 
+// The gesture type of Nickel's tap gesture (TapGestureRecognizer::_gestureType),
+// read live; 0 when the symbol is missing, not yet registered, or the bridge is inert.
+int tapGestureType();
+
 // ---- More tab ----
 typedef void (*MoreViewCreatedHandler)(QWidget *moreView);
 // Called after Nickel's MoreView constructor, on the GUI thread.

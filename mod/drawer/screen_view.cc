@@ -11,7 +11,7 @@
 
 #include "fallback_strings.h"
 #include "nickel_bridge.h"
-#include "screen_fonts.h"
+#include "nickel_fonts.h"
 #include "status_bar_inset.h"
 
 using namespace ScreenLogic;
@@ -331,13 +331,28 @@ static void paintEllipse(QPainter *painter, const PaintItem &item)
     painter->restore();
 }
 
+// Screens name a family kind; the families themselves are Nickel's (never generic ones).
+static NickelFonts::Role fontRoleFor(ScreenLogic::Family family)
+{
+    switch (family) {
+    case ScreenLogic::FAMILY_SERIF:
+        return NickelFonts::ROLE_TITLE;
+    case ScreenLogic::FAMILY_MONO:
+        return NickelFonts::ROLE_MONO;
+    case ScreenLogic::FAMILY_SANS:
+        break;
+    }
+    return NickelFonts::ROLE_BODY;
+}
+
 // Lines are vertically centred in their line height. The layout already
 // elided them with the preview's estimate; a real font that is still wider
 // is elided again rather than clipped mid-glyph.
 static void paintText(QPainter *painter, const PaintItem &item)
 {
     painter->save();
-    QFont font = ScreenFonts::font(item.family, item.size, item.isBold, item.isUnderlined);
+    QFont font = NickelFonts::font(fontRoleFor(item.family), item.size, item.isBold);
+    font.setUnderline(item.isUnderlined);
     painter->setFont(font);
     painter->setPen(grey(item.ink));
     painter->setClipRect(item.rect);

@@ -18,8 +18,8 @@ override VERSION := 0.1.0-proto
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := libnddrawer.so
-override SOURCES  += nddrawer.cc ../common/debug_log.cc nickel_api.cc device_state.cc more_row.cc ../common/status_bar_inset.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
-override MOCS     += more_row.h drawer_view.h drawer_launcher.h
+override SOURCES  += nddrawer.cc ../common/debug_log.cc nickel_api.cc device_state.cc more_row.cc ../common/status_bar_inset.cc ../common/press_area.cc ../common/nickel_fonts.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
+override MOCS     += more_row.h ../common/press_area.h drawer_view.h drawer_launcher.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
@@ -41,5 +41,5 @@ docker-build:
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.
 docker-clean:
-	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o
+	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o ../common/*.moc
 	cd $(NICKELHOOK_DIR) && rm -f $(GENERATED_IN_VENDOR)

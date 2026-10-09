@@ -50,6 +50,9 @@ static QObject *(*KeyboardFrame_createKeyboard)(QWidget *frame, int keyboardScri
 static void (*KeyboardReceiver_construct)(void *receiver, QLineEdit *lineEdit, bool unknown);
 static void (*SearchKeyboardController_setReceiver)(QObject *controller, void *receiver, bool unknown);
 static void (*SearchKeyboardController_setGoText)(QObject *controller, QString const &text);
+// Data symbol: the Qt::GestureType that Nickel's TapGestureRecognizer registered
+// (0 until Nickel registers it at startup, after our init).
+static int *TapGestureRecognizer_gestureType;
 // Original MoreView::MoreView(QWidget*), returned by the PLT hook.
 static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }
@@ -145,6 +148,7 @@ struct nh_dlsym symbolTable[] = {
                   SearchKeyboardController_setReceiver, "field keyboard"),
     NICKEL_SYMBOL("_ZN24SearchKeyboardController9setGoTextERK7QString", SearchKeyboardController_setGoText,
                   "field keyboard"),
+    NICKEL_SYMBOL("_ZN20TapGestureRecognizer12_gestureTypeE", TapGestureRecognizer_gestureType, "taps"),
     {0},
 };
 
@@ -226,6 +230,11 @@ const char *firmware()
 void setMoreViewCreatedHandler(MoreViewCreatedHandler handler)
 {
     moreViewCreatedHandler = handler;
+}
+
+int tapGestureType()
+{
+    return isBridgeActive && TapGestureRecognizer_gestureType ? *TapGestureRecognizer_gestureType : 0;
 }
 
 // ---- More tab ----

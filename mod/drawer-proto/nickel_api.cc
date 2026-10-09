@@ -14,6 +14,7 @@ void (*MainWindowController_popView)(void *, QWidget *);
 void (*IconLeftButton_construct)(void *, QWidget *);
 void (*IconLeftButton_setPixmap)(void *, QPixmap const &);
 void (*IconLeftButton_setText)(void *, QString const &);
+int *TapGestureRecognizer_gestureType;
 void (*MoreView_construct_original)(void *, QWidget *);
 }
 
@@ -39,6 +40,11 @@ bool hasControllerPush()
 bool hasViewPush()
 {
     return MainWindowController_sharedInstance && MainWindowController_pushView && MainWindowController_popView;
+}
+
+int tapGestureType()
+{
+    return TapGestureRecognizer_gestureType ? *TapGestureRecognizer_gestureType : 0;
 }
 
 void *mainWindow()

@@ -9,6 +9,7 @@
 #include "debug_log.h"
 #include "device_state.h"
 #include "nickel_api.h"
+#include "press_area.h"
 
 static const char *const FLAG_PROTOTYPE_A = "/mnt/onboard/.adds/nickeldrawer/proto-a";
 static const char *const FLAG_PROTOTYPE_C = "/mnt/onboard/.adds/nickeldrawer/proto-c";
@@ -52,6 +53,7 @@ static int initialize()
 
     decidePrototypeA();
     decidePrototypeC();
+    PressArea::setTapGestureTypeProvider(NickelApi::tapGestureType);
     nh_log("loaded on %s: prototype A %s, prototype C %s (route %s)", firmware,
            prototypeSwitches.isMoreRowEnabled ? "on" : "off", prototypeSwitches.isDrawerEnabled ? "on" : "off",
            prototypeSwitches.usesViewPushRoute ? "B pushView" : "A controller");
@@ -116,6 +118,10 @@ static struct nh_dlsym modSymbols[] = {
     {.name = "_ZN14IconLeftButton7setTextERK7QString",
      .out = nh_symoutptr(IconLeftButton_setText),
      .desc = "IconLeftButton::setText (prototype A)",
+     .optional = true},
+    {.name = "_ZN20TapGestureRecognizer12_gestureTypeE",
+     .out = nh_symoutptr(TapGestureRecognizer_gestureType),
+     .desc = "TapGestureRecognizer::_gestureType (prototype C taps)",
      .optional = true},
     {0},
 };

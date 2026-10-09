@@ -96,15 +96,20 @@ Report: a photo of the More tab, the "NickelDrawer log" output, anything odd in 
 2. Wait 20 s, open More, tap "Apps".
 
 Expected:
-- A page with a back chevron "‹" and the title "Apps"/"Ứng dụng", three rows "Placeholder 1..3",
+- A page with a back chevron "‹" and the title "Apps"/"Ứng dụng" (every letter drawn, in Nickel's bold
+  serif), three rows "Placeholder 1..3",
   and "1 / 2" at the bottom. **The bottom tab bar stays visible with More highlighted.**
   Log: `drawer: route A: push controller`, `drawer controller: loadView`, `viewWillAppear`,
-  `drawer: route A: open`.
+  `drawer: route A: open`, then `fonts: title "..." (...), Vietnamese U+1EE8 ok, U+1EE5 ok` for title,
+  body and mono (a `fonts: WARNING` line means a font lacks Vietnamese) and
+  `press area: Nickel tap gesture type 0x... grabbed`.
 - Press the page-forward button: rows become "Placeholder 4..6", indicator "2 / 2", the screen
   flashes once. Log: `drawer: key 0x1000014 (next) page 1 -> 2` (or 0x1000015). Press it again:
   nothing changes, log says `(at edge)`. Page-back button: back to page 1.
   If Settings → Reading → "swap page-turn buttons" is on, the direction swaps too (Nickel applies it).
-- Tap "‹": back to the More tab. Log: `drawer: back tapped`, `viewWillBeDestroyed`,
+- Tap "‹": back to the More tab. Log: `press area ... "drawerBack": <path> ...` for each event received
+  (path `nickel tap gesture`, `touch` or `mouse`: report which), `tap via <path>`,
+  `drawer view: back tapped`, `viewWillBeDestroyed`,
   `drawer controller destroyed`.
 - Open the drawer again and tap the **Home** tab: Home opens; tap More: the normal More list, no
   leftover drawer. Log shows `drawer controller destroyed` once per close.

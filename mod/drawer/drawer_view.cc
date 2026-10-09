@@ -12,6 +12,7 @@
 #include "fallback_strings.h"
 #include "item_widgets.h"
 #include "nickel_bridge.h"
+#include "nickel_fonts.h"
 #include "painted_marks.h"
 #include "status_bar_inset.h"
 #include "view_settings.h"
@@ -25,12 +26,14 @@ static const int CONTENT_WIDTH = 1120;
 static const int GRID_TILE_SIDE =
     (CONTENT_WIDTH - (DrawerLogic::GRID_COLUMNS - 1) * SPACING) / DrawerLogic::GRID_COLUMNS;
 
-// Black on white, no grey fills; separators 2 px (ui-kit §1, §2).
+// Black on white, no grey fills; separators 2 px (ui-kit §1, §2). Families are
+// Nickel's own, filled in at run time (nickel_fonts.h): never generic ones.
 static const char *const VIEW_STYLE =
     "DrawerView { background: white; }"
     "#drawerHeader { background: white; }"
+    "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: black; background: transparent; }"
-    "#drawerTitle { font-family: serif; font-size: 46px; }"
+    "#drawerTitle { font-family: @TITLE_FAMILY@; font-size: 46px; font-weight: bold; }"
     "#drawerGlyph { font-size: 64px; }"
     "#drawerRow { border-bottom: 2px solid black; background: white; }"
     "#drawerTile { background: white; }"
@@ -41,7 +44,7 @@ static const char *const VIEW_STYLE =
     "#drawerSectionLabel { font-size: 26px; font-weight: bold; }"
     "#drawerHint { font-size: 28px; }"
     "#drawerPageIndicator { font-size: 32px; }"
-    "#drawerEmptyTitle { font-family: serif; font-size: 40px; }"
+    "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: 40px; font-weight: bold; }"
     "#drawerEmptyText { font-size: 30px; }";
 
 static QLabel *createTextLabel(const QString &text, const char *objectName, QWidget *parent)
@@ -58,7 +61,7 @@ DrawerView::DrawerView()
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerView"));
-    setStyleSheet(QString::fromLatin1(VIEW_STYLE));
+    setStyleSheet(NickelFonts::styleSheet(VIEW_STYLE));
     setAttribute(Qt::WA_StyledBackground, true);
     // Same status-bar properties MoreView sets, so Nickel's pushView does not guess.
     setProperty("showIndicators", true);
@@ -92,6 +95,7 @@ DrawerView::DrawerView()
 PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent)
 {
     PressArea *button = new PressArea(parent);
+    button->setObjectName(QString::fromUtf8(glyph));
     button->setFixedSize(FOOTER_BUTTON_SIDE, FOOTER_BUTTON_SIDE);
     QLabel *label = createTextLabel(QString::fromUtf8(glyph), "drawerGlyph", button);
     label->setAlignment(Qt::AlignCenter);

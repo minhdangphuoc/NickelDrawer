@@ -20,12 +20,12 @@ include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
 override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
-                     model_parser.cc appsctl_call.cc model_client.cc view_settings.cc press_area.cc \
+                     model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc \
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
-                     drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc screen_fonts.cc \
+                     drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc ../common/nickel_fonts.cc \
                      screen_layout.cc screen_view.cc field_editor.cc screen_session.cc
-override MOCS     += nickel_bridge.h appsctl_call.h model_client.h press_area.h drawer_view.h plain_dialog.h \
+override MOCS     += nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h drawer_view.h plain_dialog.h \
                      dialogs.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
                      screen_view.h field_editor.h screen_session.h
 override PKGCONF  += Qt5Widgets
@@ -61,5 +61,5 @@ docker-test:
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.
 docker-clean:
-	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o $(TEST_BINARY)
+	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o ../common/*.moc $(TEST_BINARY)
 	cd $(NICKELHOOK_DIR) && rm -f $(GENERATED_IN_VENDOR)

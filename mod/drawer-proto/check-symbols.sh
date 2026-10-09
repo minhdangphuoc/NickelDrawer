@@ -91,6 +91,15 @@ check_vtable_typeinfo() {
 	"$repo_root/mod/common/check-vtable-typeinfo.sh" libnddrawer.so || fail "vtable typeinfo check"
 }
 
+# Generic families resolve through the system fontconfig default, which has no
+# Vietnamese ("Ứng dụng" drew as "□ng d□ng"); fonts come from nickel_fonts.h.
+check_no_generic_font_families() {
+	offenders=$(grep -nE 'font-family: *(serif|sans-serif|sans|monospace)\b|QFont::(Serif|SansSerif|TypeWriter|Monospace)' \
+		"$script_dir"/*.cc "$script_dir"/*.h "$repo_root"/mod/common/*.cc "$repo_root"/mod/common/*.h || true)
+	[ -z "$offenders" ] || fail "generic font family used (use NickelFonts): $offenders"
+}
+
+check_no_generic_font_families
 check_firmware_exports
 check_binary
 check_vtable_typeinfo

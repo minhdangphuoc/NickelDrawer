@@ -9,9 +9,10 @@
 #include "fallback_strings.h"
 #include "mod_switches.h"
 #include "nickel_bridge.h"
+#include "nickel_fonts.h"
 #include "screen_logic.h"
 
-static const char *const CONTENT_STYLE = "QLineEdit { font-size: 40px; border: 2px solid black; padding: 16px; }";
+static const char *const CONTENT_STYLE = "QLineEdit { font-family: @BODY_FAMILY@; font-size: 40px; border: 2px solid black; padding: 16px; }";
 static const char *const NUMBER_KEYBOARD = "number";
 static const char *const URL_KEYBOARD = "url";
 
@@ -49,7 +50,7 @@ bool FieldEditor::show(const QString &label, const QString &value, bool isSecret
 {
     // The content becomes the dialog's child, so Nickel deletes it with the dialog.
     QFrame *content = new QFrame();
-    content->setStyleSheet(QString::fromLatin1(CONTENT_STYLE));
+    content->setStyleSheet(NickelFonts::styleSheet(CONTENT_STYLE));
     QVBoxLayout *layout = new QVBoxLayout(content);
     layout->setContentsMargins(ScreenLogic::GUTTER, ScreenLogic::RHYTHM, ScreenLogic::GUTTER, ScreenLogic::RHYTHM);
     lineEdit = new QLineEdit(content);

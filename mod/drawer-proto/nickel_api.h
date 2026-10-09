@@ -21,6 +21,9 @@ extern void (*MainWindowController_popView)(void *window, QWidget *view);
 extern void (*IconLeftButton_construct)(void *button, QWidget *parent);
 extern void (*IconLeftButton_setPixmap)(void *button, QPixmap const &pixmap);
 extern void (*IconLeftButton_setText)(void *button, QString const &text);
+// Data symbol: the Qt::GestureType Nickel's TapGestureRecognizer registered
+// (0 until Nickel registers it at startup, after our init).
+extern int *TapGestureRecognizer_gestureType;
 // Original MoreView::MoreView(QWidget*), returned by the NickelHook PLT hook.
 extern void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }
@@ -31,6 +34,9 @@ bool hasToast();
 bool hasIconLeftButton();
 bool hasControllerPush(); // route A: push/pop an AbstractController
 bool hasViewPush();       // route B: pushView/popView a bare widget
+
+// Nickel's tap gesture type, read live; 0 when missing or not registered yet.
+int tapGestureType();
 
 // Nickel's main window controller, or NULL (logged) when unavailable.
 void *mainWindow();

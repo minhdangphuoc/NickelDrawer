@@ -8,6 +8,7 @@
 #include <QTimer>
 
 #include "drawer_logic.h"
+#include "nickel_fonts.h"
 #include "press_area.h"
 
 static const int DIALOG_WIDTH = 1000;
@@ -18,8 +19,9 @@ static const int BORDER_WIDTH = 2;
 
 static const char *const DIALOG_STYLE =
     "PlainDialog { background: white; }"
+    "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: black; background: transparent; }"
-    "#plainDialogTitle { font-family: serif; font-size: 42px; }"
+    "#plainDialogTitle { font-family: @TITLE_FAMILY@; font-size: 42px; font-weight: bold; }"
     "#plainDialogText { font-size: 32px; }"
     "#plainDialogButton { border: 2px solid black; background: white; }"
     "#plainDialogButtonLabel { font-size: 32px; }";
@@ -28,7 +30,7 @@ PlainDialog::PlainDialog(const QString &title, const QString &text, const QList<
     : QDialog(NULL, Qt::Dialog | Qt::FramelessWindowHint), hasAnswered(false)
 {
     setAttribute(Qt::WA_DeleteOnClose, true);
-    setStyleSheet(QString::fromLatin1(DIALOG_STYLE));
+    setStyleSheet(NickelFonts::styleSheet(DIALOG_STYLE));
     setFixedWidth(DIALOG_WIDTH);
 
     QVBoxLayout *column = new QVBoxLayout(this);
