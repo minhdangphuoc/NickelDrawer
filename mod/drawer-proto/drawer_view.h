@@ -6,9 +6,12 @@
 
 class QKeyEvent;
 class QLabel;
+class QShowEvent;
+class QVBoxLayout;
 
 // Prototype C: an empty drawer page. Header (back chevron + title), three
-// placeholder rows and a page indicator. The page-turn keys arrive as arrow
+// placeholder rows and a page indicator. The top margin leaves room for
+// Nickel's status bar, which overlays the page (status_bar_inset.h). The page-turn keys arrive as arrow
 // keys (Nickel's TactileButtonFilter already applied the swap setting).
 class DrawerView : public QWidget {
     Q_OBJECT
@@ -20,6 +23,10 @@ signals:
 
 protected:
     void keyPressEvent(QKeyEvent *event);
+    void showEvent(QShowEvent *event);
+
+private slots:
+    void logLayoutGeometry();
 
 private:
     QWidget *createHeader(const QString &title);
@@ -27,10 +34,14 @@ private:
     QLabel *createPageIndicator();
     void showPage(int page);
     void requestFullRefresh();
+    void applyStatusBarInset();
 
+    QVBoxLayout *rootLayout;
+    QWidget *header;
     QList<QLabel *> rows;
     QLabel *pageIndicator;
     int currentPage;
+    bool hasLoggedLayout;
 };
 
 #endif

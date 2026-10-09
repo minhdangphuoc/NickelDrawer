@@ -7,11 +7,12 @@
 #include <QPainter>
 #include <QTimer>
 
-#include <NickelHook.h>
+#include "debug_log.h"
 
 #include "fallback_strings.h"
 #include "nickel_bridge.h"
 #include "screen_fonts.h"
+#include "status_bar_inset.h"
 
 using namespace ScreenLogic;
 
@@ -51,12 +52,21 @@ ScreenView::ScreenView(QWidget *drawerView)
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerScreen"));
     setAttribute(Qt::WA_OpaquePaintEvent, true); // paintEvent covers every pixel
-    setGeometry(host->rect());
+    placeBelowStatusBar();
     host->installEventFilter(this);
     connect(this, SIGNAL(tapped()), this, SLOT(onTapped()));
     sinceLastTap.invalidate();
     raise();
     show();
+}
+
+// The screen covers the drawer page except the strip under Nickel's status bar,
+// so its header (back, title) stays visible.
+void ScreenView::placeBelowStatusBar()
+{
+    int inset = StatusBarInset::topInsetFor(host);
+    setGeometry(host->rect().adjusted(0, inset, 0, 0));
+    StatusBarInset::logGeometry("screen placed", this, NULL);
 }
 
 const ScreenComponent *ScreenView::component(int index) const
@@ -194,7 +204,7 @@ bool ScreenView::eventFilter(QObject *watched, QEvent *event)
         return false;
     }
     if (event->type() == QEvent::Resize) {
-        setGeometry(host->rect());
+        placeBelowStatusBar();
         relayout();
         return false;
     }
@@ -213,7 +223,7 @@ bool ScreenView::handlePageKey(int key)
         return false;
     }
     if (isInputBlocked) {
-        nh_log("screen: page key ignored while a dialog or action is pending");
+        DebugLog::write("screen: page key ignored while a dialog or action is pending");
         return true;
     }
     goToPage(DrawerLogic::pageAfterKey(pageIndex, pageKey, layout.pageCount(), ONE_PAGE_PER_STEP));
@@ -225,7 +235,7 @@ void ScreenView::goToPage(int index)
     if (index == pageIndex) {
         return;
     }
-    nh_log("screen: page %d -> %d", pageIndex + 1, index + 1);
+    DebugLog::write("screen: page %d -> %d", pageIndex + 1, index + 1);
     pageIndex = index;
     applyPage(index, true);
 }

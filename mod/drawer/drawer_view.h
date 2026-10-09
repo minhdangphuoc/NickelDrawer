@@ -18,7 +18,9 @@ class ViewToggleIcon;
 // The drawer page (docs/spec/ui-kit.md §5.2): header with back chevron, serif
 // title and list/grid toggles; one page of rows (7, with section labels) or
 // tiles (3 x 2); hint line; page indicator with on-screen arrows. Page-turn
-// keys arrive as arrow keys (Left/Up back, Right/Down forward).
+// keys arrive as arrow keys (Left/Up back, Right/Down forward). The top margin
+// leaves room for Nickel's status bar, which overlays the page
+// (status_bar_inset.h).
 //
 // Rendering only: taps are reported as signals; the session decides.
 class DrawerView : public QWidget {
@@ -49,9 +51,11 @@ private slots:
     void onItemTapped();
     void onItemLongPressed();
     void flashNow();
+    void logLayoutGeometry();
 
 private:
     QWidget *createHeader();
+    void applyStatusBarInset();
     QWidget *createFooter();
     PressArea *createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent);
 
@@ -75,6 +79,8 @@ private:
     QStringList sectionTitles;
     QString hint;
 
+    QVBoxLayout *rootLayout;
+    QWidget *header;
     QLabel *titleLabel;
     ViewToggleIcon *listToggle;
     ViewToggleIcon *gridToggle;
@@ -90,6 +96,7 @@ private:
     int currentPage;
     bool isInputBlocked;
     bool hasModel;
+    bool hasLoggedLayout;
 };
 
 #endif

@@ -18,7 +18,7 @@ override VERSION := 0.1.0-proto
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := libnddrawer.so
-override SOURCES  += nddrawer.cc ../common/debug_log.cc nickel_api.cc device_state.cc more_row.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
+override SOURCES  += nddrawer.cc ../common/debug_log.cc nickel_api.cc device_state.cc more_row.cc ../common/status_bar_inset.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
 override MOCS     += more_row.h drawer_view.h drawer_launcher.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden

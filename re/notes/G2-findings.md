@@ -475,3 +475,70 @@ are written to the debug log; confirm them on the device.
    the previous index), and does Home with the dialog open leave it orphaned? (The editor closes it when the
    screen view is destroyed.)
 3. Partial refresh of a changed region (`update(QRegion)`) without attribute 0x80: waveform quality on the toggle.
+
+---
+
+## Header on device (2026-10-09, prototype C on 4.38.23828, Libra 2)
+
+**Symptom.** Route A works (tab bar kept, "Thêm" active, page keys switch 1/2 ↔ 2/2, no crash), but the header
+(back "‹" + title) is not visible: the first placeholder row starts right under Nickel's status bar. The debug
+log had no drawer lines, because the drawer path logged with `nh_log` (syslog, RAM only) instead of `DebugLog`.
+
+**Cause: the header is drawn under the status bar, not hidden or removed.** Evidence (23828, static):
+
+- `MainWindowController::createStatusBar` builds a `StatusBarController` whose parent is the main window widget;
+  `StatusBarController::loadView` creates the `StatusBarView` as a child of that same window. It is an overlay,
+  not an item of the window layout (`createWindowStack` puts only the `QStackedWidget` in its `QVBoxLayout`), and
+  `setupGeometry` gives the stack container the window rect. So every pushed page starts at y = 0, under the bar.
+- `showStatusBarAsNecessary` reads the page's `showIndicators`, `showStatusBottomLine`, `showTitle` properties and
+  passes them to `updateStatusBarWithSettings(title, indicators, line)`: **`showTitle` = "show the status bar"**
+  (`showStatusBar()` / `hideStatusBar()`, i.e. `QWidget::show/hide` of `StatusBarView`). It does not inject a
+  title or back button; nothing replaces or collapses our children.
+- Nickel's own pages reserve the room themselves in QSS (extracted from the `nickel` binary's resources, kept
+  in `~/.cache/nickeldrawer/qss/`): `#StatusBarView[qApp_deviceIsStorm=true] { min/max-height: 126px }` and
+  `#moreContainer` / `#container` / `#mainContainer[qApp_deviceIsStorm=true] { qproperty-topMargin: 128 }`
+  (MoreView, Wishlist-style pages; Daylight: bar 140, margin 146). `Ui_MoreView::setupUi` and
+  `Ui_WishlistView::setupUi` set all layout margins to 0 in code; the 128 px comes only from the QSS.
+- Our page had top margin 0 and a 120 px header, so the header sat entirely under the opaque white bar
+  (`#StatusBarView[showIndicators=true] { background-color: white }`), and the rows began at y = 120, just under
+  the bar's bottom edge — what the photo shows. Z-order cannot be fixed from inside the page: the bar is a
+  sibling of an ancestor of our view.
+
+**Nickel's own back.** Sub-pages build it themselves: `Ui_WishlistView::setupUi` makes a `TextHeader` with
+`setPixmap(":/images/reading/back_arrow.png")` + `setText`, and `TextHeaderBase::tapped()` ends in
+`WishlistController::back()` = `MainWindowController::sharedInstance()->pop(this)`. There is no back injected by
+the status bar or by `pushView`. `TextHeader(QWidget*)`, `TextHeader::setText`, `TextHeaderBase::setPixmap`,
+`TextHeaderBase::tapped()`, `MainWindowController::statusBarController()`, `StatusBarController::statusBarHeight()`
+are exported in all 5 builds, but a `TextHeader` would sit under the bar just the same, and the drawer host's
+header also carries the list/grid toggles; so the fix keeps our own header (same pop path as Nickel's back) and
+leaves `TextHeader` as a later look-and-feel option.
+
+**Fix (both mods, no new libnickel symbols).** `mod/common/status_bar_inset.{h,cc}`: in `showEvent` the page
+finds Nickel's bar by object name (`window()->findChild<QWidget*>("StatusBarView")`, plain Qt), measures how far
+it covers the page (`mapToGlobal`), and sets the root layout's top margin to that + 2 px (Nickel's 126 → 128).
+Bar hidden → 0; bar not found or measurement implausible (> 1/3 of the page) → 128 and a log line. The header
+got an object name (`drawerHeader`) and a white styled background. The drawer host's `ScreenView` now covers the
+page below the bar (`host->rect().adjusted(0, inset, 0, 0)`), so screen headers are visible too. Back is
+unchanged: `backRequested` → `MainWindowController::pop(controller)` (route A) / `popView` (route B).
+
+**Logging (debug flag `.adds/nickeldrawer/debug`).** The whole route-A path now goes to `debug.log`:
+open requested, push controller / push returned (view, parent), `loadView`, `viewWillAppear`, view constructed,
+header created, `status bar: covers N px, inset M`, geometry "after push", "after show" and "after first layout"
+(view, view parent, layout margins, `StatusBarView`, header: local rect, global y range, visible/hidden, and
+"header overlap with status bar N px"), page keys, back, pop / pop returned, `viewWillBeDestroyed`, controller
+destroyed. The drawer host also logs "screen placed".
+
+**Retest (prototype C, then the drawer host).**
+
+1. Gate G1 drill done, user present; `.adds/nickeldrawer/debug` flag file present; install
+   `build/mod/KoboRoot-nddrawer.tgz`.
+2. More → our row: header with "‹" and the title is visible below the time/battery row; three rows below it.
+3. Page keys: 1/2 ↔ 2/2 still works. Tap "‹": back on the More screen, tab bar still there.
+4. Open again, then Home tab, then More: normal More screen.
+5. Copy `debug.log` into `backups/<date>/`. Expect `inset 128` (or the measured value), "header below the bar"
+   with overlap 0 in "after first layout", the bar at global y 0..126, the header starting at y ≥ 126.
+   If the bar is "not found", note the fallback line; if the overlap is still > 0, the geometry lines show which
+   widget moved.
+6. Same steps with `KoboRoot-nickeldrawer.tgz` (uninstall `nddrawer` first), plus one app screen (`screens`
+   flag): its header must also start below the bar. Check the footer/page indicator is not clipped in list view
+   (128 px less height for 7 rows; the geometry lines give the numbers).

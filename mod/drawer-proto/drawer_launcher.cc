@@ -2,12 +2,13 @@
 
 #include <QStackedWidget>
 
-#include <NickelHook.h>
+#include "debug_log.h"
 
 #include "device_state.h"
 #include "drawer_controller.h"
 #include "drawer_view.h"
 #include "nickel_api.h"
+#include "status_bar_inset.h"
 
 static const bool PUSH_WITHOUT_ANIMATION = false;
 
@@ -23,12 +24,13 @@ DrawerLauncher *DrawerLauncher::instance()
 void DrawerLauncher::open()
 {
     DrawerLauncher *launcher = instance();
+    DebugLog::write("drawer: open requested (route %s)", prototypeSwitches.usesViewPushRoute ? "B" : "A");
     if (launcher->isOpen()) {
-        nh_log("drawer: already open, ignoring tap");
+        DebugLog::write("drawer: already open, ignoring tap");
         return;
     }
     if (!launcher->hasRouteApi()) {
-        nh_log("drawer: libnickel API for route %s missing, prototype C disabled",
+        DebugLog::write("drawer: libnickel API for route %s missing, prototype C disabled",
                prototypeSwitches.usesViewPushRoute ? "B (pushView)" : "A (controller)");
         NickelApi::showToast(QStringLiteral("NickelDrawer: drawer unavailable (see log)"));
         return;
@@ -61,17 +63,19 @@ void DrawerLauncher::openWithController(void *window)
 {
     controller = new DrawerController(view);
     if (!controller->hasNickelLayout()) {
-        nh_log("drawer: route A: unexpected AbstractController offset, not pushing");
+        DebugLog::write("drawer: route A: unexpected AbstractController offset, not pushing");
         delete controller;
         discardUnpushedView();
         return;
     }
 
-    nh_log("drawer: route A: push controller");
+    DebugLog::write("drawer: route A: push controller");
     MainWindowController_push(window, controller->asNickelController(), PUSH_WITHOUT_ANIMATION);
+    DebugLog::write("drawer: route A: push returned, view %p parent %p", static_cast<void *>(view.data()),
+                    view ? static_cast<void *>(view->parentWidget()) : NULL);
 
     if (!view || !view->parentWidget()) {
-        nh_log("drawer: route A: push did not add the view to the window stack, cleaning up");
+        DebugLog::write("drawer: route A: push did not add the view to the window stack, cleaning up");
         delete controller;
         discardUnpushedView();
         return;
@@ -79,25 +83,26 @@ void DrawerLauncher::openWithController(void *window)
     if (controller && controller->parent() != view) {
         // Nickel normally parents the controller to the view; without that the
         // controller would outlive the page. Do it ourselves and say so.
-        nh_log("drawer: route A: controller not parented to the view by Nickel, fixing");
+        DebugLog::write("drawer: route A: controller not parented to the view by Nickel, fixing");
         controller->setParent(view);
     }
-    nh_log("drawer: route A: open");
+    StatusBarInset::logGeometry("after push", view, NULL);
+    DebugLog::write("drawer: route A: open");
 }
 
 void DrawerLauncher::openWithViewPush(void *window)
 {
-    nh_log("drawer: route B: pushView");
+    DebugLog::write("drawer: route B: pushView");
     MainWindowController_pushView(window, view);
 
     watchedStack = view ? qobject_cast<QStackedWidget *>(view->parentWidget()) : NULL;
     if (!watchedStack) {
-        nh_log("drawer: route B: view not in a QStackedWidget after pushView, cleaning up");
+        DebugLog::write("drawer: route B: view not in a QStackedWidget after pushView, cleaning up");
         discardUnpushedView();
         return;
     }
     connect(watchedStack, SIGNAL(currentChanged(int)), this, SLOT(onStackCurrentChanged(int)));
-    nh_log("drawer: route B: open");
+    DebugLog::write("drawer: route B: open");
 }
 
 void DrawerLauncher::discardUnpushedView()
@@ -108,18 +113,20 @@ void DrawerLauncher::discardUnpushedView()
 
 void DrawerLauncher::onBackRequested()
 {
-    nh_log("drawer: back tapped");
+    DebugLog::write("drawer: back tapped");
     if (prototypeSwitches.usesViewPushRoute) {
         closeViewPush();
         return;
     }
     void *window = NickelApi::mainWindow();
     if (!window || !controller) {
-        nh_log("drawer: route A: cannot pop (window or controller gone)");
+        DebugLog::write("drawer: route A: cannot pop (window or controller gone)");
         return;
     }
     // pop() deletes the view later (deleteLater), and the controller with it.
+    DebugLog::write("drawer: route A: pop controller %p", static_cast<void *>(controller.data()));
     MainWindowController_pop(window, controller->asNickelController());
+    DebugLog::write("drawer: route A: pop returned");
 }
 
 void DrawerLauncher::onStackCurrentChanged(int index)
@@ -127,7 +134,7 @@ void DrawerLauncher::onStackCurrentChanged(int index)
     if (!view || !watchedStack || watchedStack->currentWidget() == view) {
         return;
     }
-    nh_log("drawer: route B: another view became current (index %d), closing drawer", index);
+    DebugLog::write("drawer: route B: another view became current (index %d), closing drawer", index);
     closeViewPush();
 }
 
@@ -139,7 +146,7 @@ void DrawerLauncher::closeViewPush()
     }
     void *window = NickelApi::mainWindow();
     if (!window || !view) {
-        nh_log("drawer: route B: cannot popView (window or view gone)");
+        DebugLog::write("drawer: route B: cannot popView (window or view gone)");
         return;
     }
     MainWindowController_popView(window, view);

@@ -47,6 +47,7 @@ private slots:
     void flashNow();
 
 private:
+    void placeBelowStatusBar();
     void relayout();
     void applyPage(int index, bool isFullRefresh);
     QRegion changedRegion(const ScreenPage &next, bool *isSameStructure) const;

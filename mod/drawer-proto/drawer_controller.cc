@@ -2,7 +2,7 @@
 
 #include "drawer_controller.h"
 
-#include <NickelHook.h>
+#include "debug_log.h"
 
 // Values taken from libnickel's own implementations (23828).
 static const int NO_PREFERRED_SIZE = -1;
@@ -47,7 +47,7 @@ DrawerController::DrawerController(QWidget *view)
 
 DrawerController::~DrawerController()
 {
-    nh_log("drawer controller destroyed");
+    DebugLog::write("drawer controller destroyed");
 }
 
 int DrawerController::navSection() const
@@ -58,21 +58,21 @@ int DrawerController::navSection() const
 void DrawerController::loadView()
 {
     if (!preparedView) {
-        nh_log("drawer controller: loadView without a view (already deleted)");
+        DebugLog::write("drawer controller: loadView without a view (already deleted)");
         return;
     }
-    nh_log("drawer controller: loadView");
+    DebugLog::write("drawer controller: loadView");
     loadedView = preparedView;
 }
 
 void DrawerController::viewWillAppear()
 {
-    nh_log("drawer controller: viewWillAppear");
+    DebugLog::write("drawer controller: viewWillAppear");
 }
 
 void DrawerController::viewWillBeDestroyed()
 {
-    nh_log("drawer controller: viewWillBeDestroyed");
+    DebugLog::write("drawer controller: viewWillBeDestroyed");
 }
 
 AbstractController *DrawerController::asNickelController()

@@ -7,12 +7,13 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#include <NickelHook.h>
+#include "debug_log.h"
 
 #include "fallback_strings.h"
 #include "item_widgets.h"
 #include "nickel_bridge.h"
 #include "painted_marks.h"
+#include "status_bar_inset.h"
 #include "view_settings.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
@@ -27,6 +28,7 @@ static const int GRID_TILE_SIDE =
 // Black on white, no grey fills; separators 2 px (ui-kit §1, §2).
 static const char *const VIEW_STYLE =
     "DrawerView { background: white; }"
+    "#drawerHeader { background: white; }"
     "QLabel { color: black; background: transparent; }"
     "#drawerTitle { font-family: serif; font-size: 46px; }"
     "#drawerGlyph { font-size: 64px; }"
@@ -50,9 +52,9 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 }
 
 DrawerView::DrawerView()
-    : QWidget(NULL), titleLabel(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
+    : QWidget(NULL), rootLayout(NULL), header(NULL), titleLabel(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
       hintLabel(NULL), pageIndicator(NULL), viewMode(ViewSettings::load()), currentPage(0), isInputBlocked(false),
-      hasModel(false)
+      hasModel(false), hasLoggedLayout(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerView"));
@@ -72,16 +74,19 @@ DrawerView::DrawerView()
     hintLabel->setAlignment(Qt::AlignHCenter);
     hintLabel->setWordWrap(true);
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(SIDE_GUTTER, 0, SIDE_GUTTER, 0);
-    layout->setSpacing(0);
-    layout->addWidget(createHeader());
-    layout->addWidget(pageArea, 1);
-    layout->addWidget(hintLabel);
-    layout->addWidget(createFooter());
+    // Top margin is the status-bar inset, known only once Nickel shows the view (showEvent).
+    rootLayout = new QVBoxLayout(this);
+    rootLayout->setContentsMargins(SIDE_GUTTER, StatusBarInset::FALLBACK_TOP_INSET, SIDE_GUTTER, 0);
+    rootLayout->setSpacing(0);
+    header = createHeader();
+    rootLayout->addWidget(header);
+    rootLayout->addWidget(pageArea, 1);
+    rootLayout->addWidget(hintLabel);
+    rootLayout->addWidget(createFooter());
 
     setViewMode(viewMode);
     renderPage(); // "Loading…" until the session delivers the model
+    DebugLog::write("drawer view: constructed %p, header %p", static_cast<void *>(this), static_cast<void *>(header));
 }
 
 PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent)
@@ -102,6 +107,8 @@ PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, 
 QWidget *DrawerView::createHeader()
 {
     QWidget *header = new QWidget(this);
+    header->setObjectName(QStringLiteral("drawerHeader"));
+    header->setAttribute(Qt::WA_StyledBackground, true);
     header->setFixedHeight(HEADER_HEIGHT);
     titleLabel = createTextLabel(FallbackStrings::text(FallbackStrings::APPS_TITLE), "drawerTitle", header);
     listToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_LIST, header);
@@ -117,6 +124,7 @@ QWidget *DrawerView::createHeader()
     layout->addWidget(titleLabel, 1);
     layout->addWidget(listToggle);
     layout->addWidget(gridToggle);
+    DebugLog::write("drawer view: header created (back, title, list/grid toggles)");
     return header;
 }
 
@@ -357,8 +365,27 @@ void DrawerView::flashNow()
 void DrawerView::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
+    applyStatusBarInset();
+    StatusBarInset::logGeometry("after show", this, header);
+    if (!hasLoggedLayout) {
+        hasLoggedLayout = true;
+        QTimer::singleShot(0, this, SLOT(logLayoutGeometry())); // runs after the layout pass
+    }
     setFocus(Qt::OtherFocusReason);
     scheduleRefresh(DrawerLogic::refreshForOpen(&refreshPolicy));
+}
+
+void DrawerView::applyStatusBarInset()
+{
+    int inset = StatusBarInset::topInsetFor(this);
+    rootLayout->setContentsMargins(SIDE_GUTTER, inset, SIDE_GUTTER, 0);
+    rootLayout->activate();
+    DebugLog::write("drawer view: top inset %d", inset);
+}
+
+void DrawerView::logLayoutGeometry()
+{
+    StatusBarInset::logGeometry("after first layout", this, header);
 }
 
 const DrawerItem *DrawerView::itemForSender() const
@@ -398,12 +425,12 @@ void DrawerView::keyPressEvent(QKeyEvent *event)
     }
     event->accept();
     if (isInputBlocked) {
-        nh_log("drawer: page key ignored while a dialog or action is pending");
+        DebugLog::write("drawer: page key ignored while a dialog or action is pending");
         return;
     }
     int perPage = DrawerLogic::itemsPerPage(viewMode);
     int target = DrawerLogic::pageAfterKey(currentPage, key, items.size(), perPage);
-    nh_log("drawer: key 0x%x page %d -> %d", event->key(), currentPage + 1, target + 1);
+    DebugLog::write("drawer: key 0x%x page %d -> %d", event->key(), currentPage + 1, target + 1);
     if (target != currentPage) {
         goToPage(target);
     }

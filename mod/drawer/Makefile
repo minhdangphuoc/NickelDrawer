@@ -19,7 +19,7 @@ override VERSION := 0.1.0
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
-override SOURCES  += nickeldrawer.cc ../common/debug_log.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
+override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc press_area.cc \
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
