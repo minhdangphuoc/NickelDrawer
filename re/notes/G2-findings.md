@@ -431,3 +431,47 @@ an unexported signal), so the mod relies on polling only.
 2. `IconLeftButton::setText` with an embedded `\n` for the More row's status line (look not verified).
 3. Touch → plain Qt widgets: `PressArea` accepts both `QTouchEvent` and synthesized mouse events.
 4. Whether `QPixmap` loads `icon.svg` (needs the svg image-format plugin in Nickel's Qt).
+
+---
+
+## Phase 4 build: native app screens (2026-10-09, `mod/drawer/`, not run on device)
+
+Behind the flag `.adds/nickeldrawer/screens` (default off). Tapping an app whose model item has `screen: true`
+opens a `ScreenView` as a **child of our own drawer view** (it covers it), so Nickel's window stack is not
+touched for screens; page keys still arrive at the drawer view (TactileButtonFilter → `currentView()`, Q3)
+and an event filter on it hands them to the screen. Taps on the plain widget are handled from a 0 ms timer
+(protoA lesson); every new class has typeinfo (`check-vtable-typeinfo.sh`: 24 vtables).
+
+### Keyboard for `field` (Q4 path, unproven on device)
+
+Proven recipe of NickelHardcover on these builds, not our own `KeyboardFrame`: `N3DialogFactory::getDialog(content,
+true)` → `N3Dialog::setTitle` → `MainWindowController::pushView(dialog)` → `N3Dialog::keyboardFrame()` →
+`KeyboardFrame::createKeyboard(frame, 0, QLocale())` (returns the `SearchKeyboardController`) → `KeyboardReceiver(QLineEdit*,
+false)` in a zeroed 256-byte block (NickelHardcover uses 128; the receiver is never freed) →
+`SearchKeyboardController::setReceiver(receiver, false)`, `setGoText` → `N3Dialog::showKeyboard()`. Signals by name:
+`KeyboardController::commitRequested()` (Go) and `N3Dialog::closeTapped()` (cancel); our receiver is a parentless
+QObject. The line edit is a plain `QLineEdit`. Close = `popView(dialog)`. The dialog carries the property
+`nickelDrawerOverlay`, so route B's stack watcher does not close the drawer when it becomes current. Flag
+`no-keyboard` forces the "edit on your phone" notice.
+
+New symbols (all optional, `nh_dlsym`; 10/10 present in the 5 builds' mangled and demangled dumps, checked by
+`check-symbols.sh`, now 35 names): `_ZN15N3DialogFactory9getDialogEP7QWidgetb`, `_ZN8N3Dialog8setTitleERK7QString`,
+`_ZN8N3Dialog13keyboardFrameEv`, `_ZN8N3Dialog12showKeyboardEv`,
+`_ZN13KeyboardFrame14createKeyboardE14KeyboardScriptRK7QLocale`, `_ZN16KeyboardReceiverC1EP9QLineEditb`,
+`_ZN24SearchKeyboardController11setReceiverEP16KeyboardReceiverb`, `_ZN24SearchKeyboardController9setGoTextERK7QString`;
+signals `_ZN18KeyboardController15commitRequestedEv`, `_ZN8N3Dialog11closeTappedEv`.
+
+### Fonts
+
+No libnickel API for UI fonts was identified. The screen uses the first installed family of Nickel's own fonts
+as registered in-process with `QFontDatabase` (sans: Avenir Next, Avenir, Gill Sans, Kobo Nickel; serif: Georgia,
+Amasis, Caecilia, Malabar; mono: Courier New, Courier), else Qt's default with a style hint. The chosen names
+are written to the debug log; confirm them on the device.
+
+### Open questions for the device run
+
+1. Does Nickel's `QLocale()` select the Vietnamese keyboard (kobo-tieng-viet) or must the UI locale be passed?
+2. Does `popView` of the keyboard dialog make the drawer view current again on route A (QStackedLayout picks
+   the previous index), and does Home with the dialog open leave it orphaned? (The editor closes it when the
+   screen view is destroyed.)
+3. Partial refresh of a changed region (`update(QRegion)`) without attribute 0x80: waveform quality on the toggle.

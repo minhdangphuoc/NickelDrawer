@@ -21,6 +21,30 @@ type drawerOptions struct {
 	menuFile   string
 	errorsFile string
 	confirm    bool
+	screenID   string
+	value      optionalValue
+}
+
+// optionalValue is a string flag that remembers whether it was given, because an empty
+// field value ("--value ”") differs from no value at all.
+type optionalValue struct {
+	text  string
+	isSet bool
+}
+
+func (v *optionalValue) String() string { return v.text }
+
+func (v *optionalValue) Set(text string) error {
+	v.text, v.isSet = text, true
+	return nil
+}
+
+func (v optionalValue) pointer() *string {
+	if !v.isSet {
+		return nil
+	}
+	text := v.text
+	return &text
 }
 
 func (o *drawerOptions) register(flags *flag.FlagSet) {
@@ -30,6 +54,8 @@ func (o *drawerOptions) register(flags *flag.FlagSet) {
 	flags.StringVar(&o.menuFile, "out", defaultMenuFile, "NickelMenu config file regenerated after changes")
 	flags.StringVar(&o.errorsFile, "errors-file", defaultErrorsFile, "file receiving one line per invalid app")
 	flags.BoolVar(&o.confirm, "confirm", false, "confirm a destructive command (remove)")
+	flags.StringVar(&o.screenID, "screen", "", "screen id (screen, event; default: the start screen)")
+	flags.Var(&o.value, "value", "value of a toggle, radio option, field or list row (event)")
 }
 
 // drawerSession is one parsed invocation with its collaborators.
@@ -53,6 +79,8 @@ func runDrawer(args []string, stdout, stderr io.Writer) int {
 		"run":    drawerRun,
 		"info":   drawerInfo,
 		"remove": drawerRemove,
+		"screen": drawerScreen,
+		"event":  drawerEvent,
 	}
 	handler, found := subcommands[args[0]]
 	if !found {
@@ -167,6 +195,23 @@ func refreshHostItem(session drawerSession) (any, error) {
 	return drawer.RunResult{
 		V: drawer.ProtocolVersion, OK: true, Text: strings.TrimRight(refreshSummary(result), "\n"), Rescan: manifest.RescanNone,
 	}, nil
+}
+
+func drawerScreen(session drawerSession) (any, error) {
+	if len(session.positions) != 1 {
+		return nil, drawerUsageError()
+	}
+	return session.config.Screen(session.positions[0], session.options.screenID)
+}
+
+func drawerEvent(session drawerSession) (any, error) {
+	if len(session.positions) != 2 {
+		return nil, drawerUsageError()
+	}
+	return session.config.RunEvent(drawer.Event{
+		AppID: session.positions[0], ActionID: session.positions[1],
+		Value: session.options.value.pointer(), ScreenID: session.options.screenID,
+	})
 }
 
 func drawerRemove(session drawerSession) (any, error) {

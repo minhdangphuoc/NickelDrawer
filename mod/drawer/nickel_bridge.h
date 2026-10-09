@@ -17,6 +17,7 @@
 
 class AbstractController;
 class QDialog;
+class QLineEdit;
 class QPixmap;
 class QWidget;
 
@@ -66,6 +67,22 @@ bool hasConfirmDialog();
 // shown; the caller connects and calls open(). NULL when missing.
 QDialog *createConfirmDialog(const QString &title, const QString &text, const QString &acceptLabel,
                              const QString &rejectLabel);
+
+// Property set on views the drawer pushes over itself (the keyboard dialog);
+// route B's stack watcher must not close the drawer when one becomes current.
+static const char OVERLAY_PROPERTY[] = "nickelDrawerOverlay";
+
+// ---- Keyboard (field editing; NickelHardcover's proven N3Dialog path) ----
+bool hasKeyboardDialog();
+// Shows Nickel's N3Dialog around content (it becomes the dialog's child) with
+// Nickel's keyboard typing into lineEdit, pushed on the window stack. The
+// keyboard's Go key emits commitRequested() and the dialog's close button
+// closeTapped(); both are connected to receiver's slots. Returns the dialog,
+// or NULL (logged) when anything is missing.
+QWidget *openKeyboardDialog(QWidget *content, QLineEdit *lineEdit, const QString &title, const QString &goText,
+                            QObject *receiver, const char *commitSlot, const char *closeSlot);
+// Pops the dialog from the window stack (hides it and deletes it later).
+void closeKeyboardDialog(QWidget *dialog);
 
 // ---- Wi-Fi and library ----
 bool hasWifi();

@@ -12,8 +12,9 @@
 // Menu ids of the drawer's own entries; '#' cannot start an app action id.
 static const char *const MENU_INFO_ID = "#info";
 static const char *const MENU_REMOVE_ID = "#remove";
-// The app's status action feeds the model's status line; it is not a menu entry.
+// The app's status and state actions feed the drawer and its screen; they are not menu entries.
 static const char *const STATUS_ACTION_ID = "status";
+static const char *const STATE_ACTION_ID = "state";
 static const char *const RESCAN_QUICK = "quick";
 static const char *const RESCAN_FULL = "full";
 
@@ -24,7 +25,7 @@ static DialogChoice choice(const QString &id, const QString &label)
 }
 
 ActionRunner::ActionRunner(ModelClient *modelClient, QObject *parent)
-    : QObject(parent), client(modelClient), hasRetriedAfterWifi(false), isBusy(false)
+    : QObject(parent), client(modelClient), isScreenEvent(false), hasRetriedAfterWifi(false), isBusy(false)
 {
     connect(client, SIGNAL(actionFinished(ActionResult)), this, SLOT(onActionFinished(ActionResult)));
     connect(client, SIGNAL(infoLoaded(bool, AppInfo, QString)), this, SLOT(onInfoLoaded(bool, AppInfo, QString)));
@@ -59,8 +60,36 @@ void ActionRunner::runPrimary(const DrawerItem &item)
 void ActionRunner::runAction(const DrawerAction &action)
 {
     currentAction = action;
-    nh_log("action: %s %s", qPrintable(currentItem.id), qPrintable(action.id));
-    client->requestRun(currentItem.id, action);
+    isScreenEvent = false;
+    runCurrent();
+}
+
+void ActionRunner::runScreenEvent(const DrawerItem &app, const ScreenEvent &event)
+{
+    if (isBusy) {
+        return;
+    }
+    currentItem = app;
+    currentEvent = event;
+    currentAction = DrawerAction();
+    currentAction.id = event.actionId;
+    isScreenEvent = true;
+    hasRetriedAfterWifi = false;
+    setBusy(true);
+    runCurrent();
+}
+
+// Runs (or, after Wi-Fi came up, re-runs) the current action or screen event.
+void ActionRunner::runCurrent()
+{
+    if (isScreenEvent) {
+        // The value is never logged: a field may hold a PIN.
+        nh_log("action: event %s %s", qPrintable(currentItem.id), qPrintable(currentEvent.actionId));
+        client->requestEvent(currentItem.id, currentEvent);
+        return;
+    }
+    nh_log("action: %s %s", qPrintable(currentItem.id), qPrintable(currentAction.id));
+    client->requestRun(currentItem.id, currentAction);
 }
 
 void ActionRunner::onActionFinished(const ActionResult &result)
@@ -105,7 +134,7 @@ void ActionRunner::onWifiAnswer(bool isAccepted)
 void ActionRunner::onWifiConnected()
 {
     hasRetriedAfterWifi = true;
-    runAction(currentAction);
+    runCurrent();
 }
 
 void ActionRunner::onWifiFailed()
@@ -116,6 +145,9 @@ void ActionRunner::onWifiFailed()
 
 void ActionRunner::presentResult(const ActionResult &result)
 {
+    if (presentScreenSignal(result)) {
+        return;
+    }
     bool isToast = currentAction.isBackground && result.isOk;
     if (isToast && NickelBridge::hasToast()) {
         NickelBridge::showToast(result.text.isEmpty() ? currentAction.label : result.text);
@@ -124,6 +156,39 @@ void ActionRunner::presentResult(const ActionResult &result)
     if (!result.text.isEmpty()) {
         Dialogs::showMessage(currentItem.name, result.text);
     }
+}
+
+// A toast or dialog the script opened by id on its screen (drawer event).
+bool ActionRunner::presentScreenSignal(const ActionResult &result)
+{
+    if (result.hasDialog) {
+        pendingDialog = result.dialog;
+        QString cancel = pendingDialog.cancel.isEmpty() ? FallbackStrings::text(FallbackStrings::CANCEL) : pendingDialog.cancel;
+        ConfirmQuestion *question = new ConfirmQuestion(pendingDialog.title, pendingDialog.text, pendingDialog.ok, cancel);
+        connect(question, SIGNAL(answered(bool)), this, SLOT(onDeclaredDialogAnswer(bool)));
+        question->ask();
+        return true;
+    }
+    if (result.toast.isEmpty()) {
+        return false;
+    }
+    if (NickelBridge::hasToast()) {
+        NickelBridge::showToast(result.toast);
+    } else {
+        Dialogs::showMessage(currentItem.name, result.toast);
+    }
+    return true;
+}
+
+void ActionRunner::onDeclaredDialogAnswer(bool isAccepted)
+{
+    if (!isAccepted || pendingDialog.action.isEmpty()) {
+        return;
+    }
+    ScreenEvent event;
+    event.actionId = pendingDialog.action;
+    event.screenId = currentEvent.screenId;
+    runScreenEvent(currentItem, event);
 }
 
 void ActionRunner::rescanIfAsked(const ActionResult &result)
@@ -158,7 +223,8 @@ void ActionRunner::openMenu(const DrawerItem &item)
         choices << choice(QString::fromLatin1(MENU_INFO_ID), FallbackStrings::text(FallbackStrings::MENU_INFO));
     }
     for (int i = 1; i < item.actions.size(); i++) {
-        if (item.actions[i].id != QLatin1String(STATUS_ACTION_ID)) {
+        const QString &id = item.actions[i].id;
+        if (id != QLatin1String(STATUS_ACTION_ID) && id != QLatin1String(STATE_ACTION_ID)) {
             choices << choice(item.actions[i].id, item.actions[i].label);
         }
     }

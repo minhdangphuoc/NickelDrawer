@@ -22,6 +22,7 @@ struct DrawerItem {
     bool hasUpdate = false; // "badge"
     bool isRunning = false;
     bool isProblem = false; // synthetic row for errors[] or a failed appsctl call
+    bool hasScreen = false; // "screen": the app has a ui.json screen
     QList<DrawerAction> actions; // the first one is the primary (tap) action
 
     bool hasPrimaryAction() const { return !actions.isEmpty(); }
@@ -43,12 +44,32 @@ struct DrawerModel {
     bool isUsable = false; // false: the sections hold only an error row
 };
 
-// Reply of `drawer run` and `drawer remove`.
+// A dialog declared on an app screen, or a button's confirm question.
+struct DeclaredDialog {
+    QString title;
+    QString text;
+    QString ok;
+    QString cancel; // empty: the drawer's own "Cancel"
+    QString action; // run as a screen event when OK is tapped; may be empty
+};
+
+// Reply of `drawer run`, `drawer event` and `drawer remove`.
 struct ActionResult {
     bool isOk = false;
     bool needsWifi = false;
     QString text;
     QString rescan; // "none", "quick", "full" or empty
+    QString toast;  // drawer event: a toast declared on the screen
+    bool hasDialog = false;
+    DeclaredDialog dialog; // drawer event: a dialog declared on the screen
+};
+
+// One tap on an app screen (`drawer event`).
+struct ScreenEvent {
+    QString actionId;
+    QString value;
+    bool hasValue = false; // false: no --value, NICKELDRAWER_VALUE stays unset
+    QString screenId;      // lets the script open the screen's declared toasts and dialogs
 };
 
 // Reply of `drawer info`.

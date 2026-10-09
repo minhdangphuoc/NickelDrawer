@@ -92,7 +92,7 @@ func TestPageRendersLocalsendInVietnamese(t *testing.T) {
 		"bigcode PIN":    ">4821<",
 		"kv key":         "Thiết bị",
 		"kv value":       "Kobo Libra 2",
-		"vi notice":      "Giữ máy Kobo thức khi đang nhận tệp.",
+		"vi notice":      "Để màn hình này mở khi đang nhận tệp.",
 		"received row":   "Đắc Nhân Tâm.epub",
 		"primary button": "Dừng và cập nhật thư viện",
 		"stop action":    `&#34;name&#34;:&#34;stop&#34;`,

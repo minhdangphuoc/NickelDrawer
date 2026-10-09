@@ -5,8 +5,11 @@
 #include <string.h>
 
 #include <QDialog>
+#include <QLineEdit>
+#include <QLocale>
 #include <QPixmap>
 #include <QTimer>
+#include <QVariant>
 #include <QWidget>
 
 #include "debug_log.h"
@@ -38,6 +41,15 @@ static void *(*PlugWorkflowManager_sharedInstance)();
 static void (*PlugWorkflowManager_sync)(void *manager);
 static void (*PlugWorkflowManager_onCancelAndConnect)(void *manager);
 static void (*PlugWorkflowManager_unplugged)(void *manager);
+static QWidget *(*N3DialogFactory_getDialog)(QWidget *content, bool hasKeyboard);
+static void (*N3Dialog_setTitle)(QWidget *dialog, QString const &title);
+static QWidget *(*N3Dialog_keyboardFrame)(QWidget *dialog);
+static void (*N3Dialog_showKeyboard)(QWidget *dialog);
+// KeyboardScript is an enum passed in a register; 0 is what NickelHardcover passes.
+static QObject *(*KeyboardFrame_createKeyboard)(QWidget *frame, int keyboardScript, QLocale const &locale);
+static void (*KeyboardReceiver_construct)(void *receiver, QLineEdit *lineEdit, bool unknown);
+static void (*SearchKeyboardController_setReceiver)(QObject *controller, void *receiver, bool unknown);
+static void (*SearchKeyboardController_setGoText)(QObject *controller, QString const &text);
 // Original MoreView::MoreView(QWidget*), returned by the PLT hook.
 static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }
@@ -45,6 +57,8 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // Signals connected by name (old-style SIGNAL(), no dlsym). check-symbols.sh
 // verifies these too.
 // signal-symbol: _ZN14IconButtonBase6tappedEv
+// signal-symbol: _ZN18KeyboardController15commitRequestedEv
+// signal-symbol: _ZN8N3Dialog11closeTappedEv
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
 static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
@@ -57,6 +71,10 @@ static const bool PUSH_WITHOUT_ANIMATION = false;
 // IconLeftButton is 0x58 bytes on 23828; allocate generously and zeroed (as
 // NickelMenu does for MainNavButton) so a slightly larger class still fits.
 static const size_t ICON_LEFT_BUTTON_ALLOCATION = 256;
+// KeyboardReceiver's size is unknown; NickelHardcover uses 128 bytes, twice that leaves room.
+static const size_t KEYBOARD_RECEIVER_ALLOCATION = 256;
+static const int DEFAULT_KEYBOARD_SCRIPT = 0;
+static const bool WITH_KEYBOARD = true;
 // NickelMenu's "autoconnect" arguments: shows Nickel's connect UI when needed.
 static const bool CONNECT_WIRELESS_FIRST_ARGUMENT = true;
 static const bool CONNECT_WIRELESS_SECOND_ARGUMENT = false;
@@ -116,6 +134,17 @@ struct nh_dlsym symbolTable[] = {
     NICKEL_SYMBOL("_ZN19PlugWorkflowManager18onCancelAndConnectEv", PlugWorkflowManager_onCancelAndConnect,
                   "full rescan"),
     NICKEL_SYMBOL("_ZN19PlugWorkflowManager9unpluggedEv", PlugWorkflowManager_unplugged, "full rescan"),
+    NICKEL_SYMBOL("_ZN15N3DialogFactory9getDialogEP7QWidgetb", N3DialogFactory_getDialog, "field keyboard"),
+    NICKEL_SYMBOL("_ZN8N3Dialog8setTitleERK7QString", N3Dialog_setTitle, "field keyboard"),
+    NICKEL_SYMBOL("_ZN8N3Dialog13keyboardFrameEv", N3Dialog_keyboardFrame, "field keyboard"),
+    NICKEL_SYMBOL("_ZN8N3Dialog12showKeyboardEv", N3Dialog_showKeyboard, "field keyboard"),
+    NICKEL_SYMBOL("_ZN13KeyboardFrame14createKeyboardE14KeyboardScriptRK7QLocale", KeyboardFrame_createKeyboard,
+                  "field keyboard"),
+    NICKEL_SYMBOL("_ZN16KeyboardReceiverC1EP9QLineEditb", KeyboardReceiver_construct, "field keyboard"),
+    NICKEL_SYMBOL("_ZN24SearchKeyboardController11setReceiverEP16KeyboardReceiverb",
+                  SearchKeyboardController_setReceiver, "field keyboard"),
+    NICKEL_SYMBOL("_ZN24SearchKeyboardController9setGoTextERK7QString", SearchKeyboardController_setGoText,
+                  "field keyboard"),
     {0},
 };
 
@@ -345,6 +374,80 @@ QDialog *createConfirmDialog(const QString &title, const QString &text, const QS
     ConfirmationDialog_setRejectButtonText(dialog, rejectLabel);
     ConfirmationDialog_showCloseButton(dialog, false);
     return dialog;
+}
+
+// ---- Keyboard ----
+
+bool hasKeyboardDialog()
+{
+    return hasViewPush() && N3DialogFactory_getDialog && N3Dialog_setTitle && N3Dialog_keyboardFrame &&
+           N3Dialog_showKeyboard && KeyboardFrame_createKeyboard && KeyboardReceiver_construct &&
+           SearchKeyboardController_setReceiver && SearchKeyboardController_setGoText;
+}
+
+// Nickel's KeyboardReceiver for lineEdit. It is never freed (NickelHardcover
+// does the same): its ownership inside Nickel is unknown and it is small.
+static void *createKeyboardReceiver(QLineEdit *lineEdit)
+{
+    void *receiver = calloc(1, KEYBOARD_RECEIVER_ALLOCATION);
+    if (!receiver) {
+        nh_log("bridge: out of memory for KeyboardReceiver");
+        return NULL;
+    }
+    KeyboardReceiver_construct(receiver, lineEdit, false);
+    return receiver;
+}
+
+static bool attachKeyboard(QWidget *dialog, QLineEdit *lineEdit, const QString &goText, QObject *receiver,
+                           const char *commitSlot)
+{
+    QWidget *frame = N3Dialog_keyboardFrame(dialog);
+    QObject *controller = frame ? KeyboardFrame_createKeyboard(frame, DEFAULT_KEYBOARD_SCRIPT, QLocale()) : NULL;
+    void *keyboardReceiver = controller ? createKeyboardReceiver(lineEdit) : NULL;
+    if (!keyboardReceiver) {
+        nh_log("bridge: keyboard frame %p controller %p", (void *)frame, (void *)controller);
+        return false;
+    }
+    SearchKeyboardController_setReceiver(controller, keyboardReceiver, false);
+    SearchKeyboardController_setGoText(controller, goText);
+    if (!QObject::connect(controller, SIGNAL(commitRequested()), receiver, commitSlot)) {
+        nh_log("bridge: cannot connect commitRequested()");
+        return false;
+    }
+    return true;
+}
+
+QWidget *openKeyboardDialog(QWidget *content, QLineEdit *lineEdit, const QString &title, const QString &goText,
+                            QObject *receiver, const char *commitSlot, const char *closeSlot)
+{
+    void *window = hasKeyboardDialog() ? mainWindow() : NULL;
+    if (!window || !content || !lineEdit || !receiver) {
+        nh_log("bridge: keyboard dialog unavailable");
+        return NULL;
+    }
+    QWidget *dialog = N3DialogFactory_getDialog(content, WITH_KEYBOARD);
+    if (!dialog) {
+        nh_log("bridge: N3DialogFactory::getDialog returned null");
+        return NULL;
+    }
+    DebugLog::write("bridge: keyboard dialog %p (%s)", (void *)dialog, dialog->metaObject()->className());
+    N3Dialog_setTitle(dialog, title);
+    dialog->setProperty(OVERLAY_PROPERTY, true);
+    QObject::connect(dialog, SIGNAL(closeTapped()), receiver, closeSlot);
+    MainWindowController_pushView(window, dialog);
+    dialog->show();
+    if (!attachKeyboard(dialog, lineEdit, goText, receiver, commitSlot)) {
+        MainWindowController_popView(window, dialog);
+        return NULL;
+    }
+    N3Dialog_showKeyboard(dialog);
+    lineEdit->setFocus(Qt::OtherFocusReason);
+    return dialog;
+}
+
+void closeKeyboardDialog(QWidget *dialog)
+{
+    popView(dialog);
 }
 
 // ---- Wi-Fi and library ----

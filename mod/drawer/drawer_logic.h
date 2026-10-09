@@ -68,7 +68,14 @@ enum ProtocolCheck { PROTOCOL_OK, PROTOCOL_MISSING, PROTOCOL_TOO_NEW };
 
 ProtocolCheck checkProtocolVersion(bool hasVersion, int version);
 
-enum AppsctlCommand { COMMAND_MODEL, COMMAND_RUN_SHOW, COMMAND_RUN_BACKGROUND, COMMAND_INFO, COMMAND_REMOVE };
+enum AppsctlCommand {
+    COMMAND_MODEL,
+    COMMAND_RUN_SHOW,
+    COMMAND_RUN_BACKGROUND,
+    COMMAND_INFO,
+    COMMAND_REMOVE,
+    COMMAND_SCREEN
+};
 
 // Hard timeout the mod applies to an appsctl call.
 int timeoutMillisecondsFor(AppsctlCommand command);

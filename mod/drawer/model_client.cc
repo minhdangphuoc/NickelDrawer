@@ -64,6 +64,27 @@ void ModelClient::requestRemove(const QString &appId)
               DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_REMOVE));
 }
 
+void ModelClient::requestScreen(const QString &appId, const QString &screenId)
+{
+    QStringList arguments = drawerArguments("screen") << appId;
+    if (!screenId.isEmpty()) {
+        arguments << QStringLiteral("--screen") << screenId;
+    }
+    startCall(REQUEST_SCREEN, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_SCREEN));
+}
+
+void ModelClient::requestEvent(const QString &appId, const ScreenEvent &event)
+{
+    QStringList arguments = drawerArguments("event") << appId << event.actionId;
+    if (event.hasValue) {
+        arguments << QStringLiteral("--value") << event.value;
+    }
+    if (!event.screenId.isEmpty()) {
+        arguments << QStringLiteral("--screen") << event.screenId;
+    }
+    startCall(REQUEST_EVENT, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_RUN_SHOW));
+}
+
 void ModelClient::startCall(Request request, const QStringList &arguments, int timeoutMilliseconds)
 {
     AppsctlCall *call = new AppsctlCall(request, arguments, timeoutMilliseconds, this);
@@ -85,6 +106,12 @@ void ModelClient::onCallFinished(AppsctlCall *call)
         break;
     case REQUEST_REMOVE:
         deliverActionResult(call, true);
+        break;
+    case REQUEST_SCREEN:
+        deliverScreen(call);
+        break;
+    case REQUEST_EVENT:
+        deliverActionResult(call, false);
         break;
     }
     call->deleteLater();
@@ -148,4 +175,13 @@ void ModelClient::deliverInfo(AppsctlCall *call)
     AppInfo info;
     bool isLoaded = replyOf(call, &json, &failure) && ModelParser::parseAppInfo(json, &info, &failure);
     emit infoLoaded(isLoaded, info, failure);
+}
+
+void ModelClient::deliverScreen(AppsctlCall *call)
+{
+    QByteArray json;
+    QString failure;
+    ScreenModel screen;
+    bool isLoaded = replyOf(call, &json, &failure) && ModelParser::parseScreen(json, &screen, &failure);
+    emit screenLoaded(isLoaded, screen, failure);
 }

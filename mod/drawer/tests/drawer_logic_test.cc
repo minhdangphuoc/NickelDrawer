@@ -1,24 +1,10 @@
 // Host unit tests for drawer_logic (no Qt, no C++ standard library).
 // Run: make -C mod/drawer docker-test
 
-#include <stdio.h>
-
 #include "../drawer_logic.h"
+#include "test_expect.h"
 
 using namespace DrawerLogic;
-
-static int failures = 0;
-
-#define EXPECT_EQ(expected, actual)                                                                      \
-    do {                                                                                                 \
-        long expectedValue = (long)(expected);                                                           \
-        long actualValue = (long)(actual);                                                               \
-        if (expectedValue != actualValue) {                                                              \
-            printf("FAIL %s:%d: %s == %ld, expected %ld\n", __FILE__, __LINE__, #actual, actualValue,     \
-                   expectedValue);                                                                       \
-            failures++;                                                                                  \
-        }                                                                                                \
-    } while (0)
 
 static void testPageCount()
 {
@@ -103,6 +89,7 @@ static void testProtocol()
     EXPECT_EQ(3000, timeoutMillisecondsFor(COMMAND_MODEL));
     EXPECT_EQ(3000, timeoutMillisecondsFor(COMMAND_RUN_BACKGROUND));
     EXPECT_EQ(true, timeoutMillisecondsFor(COMMAND_RUN_SHOW) > 30000);
+    EXPECT_EQ(5000, timeoutMillisecondsFor(COMMAND_SCREEN));
     EXPECT_EQ(true, isHostItemId("_refresh"));
     EXPECT_EQ(false, isHostItemId("localsend"));
     EXPECT_EQ(false, isHostItemId(""));
@@ -139,10 +126,5 @@ int main()
     testProtocol();
     testWifiRetry();
     testLocale();
-    if (failures) {
-        printf("%d failure(s)\n", failures);
-        return 1;
-    }
-    printf("drawer_logic: all tests passed\n");
-    return 0;
+    return finishTests("drawer_logic");
 }

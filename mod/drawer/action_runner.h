@@ -13,6 +13,8 @@ class ModelClient;
 //                show the result (dialog for "show", toast for "background");
 //                rescan the library when the reply asks for it.
 //   long-press → menu: Info, the other actions, Remove… (with confirm).
+//   screen tap → `drawer event` with the same Wi-Fi, result and rescan rules;
+//                a toast or dialog declared on the screen is shown as such.
 // One thing at a time: while busy, the view ignores input.
 class ActionRunner : public QObject {
     Q_OBJECT
@@ -21,6 +23,8 @@ public:
 
     void runPrimary(const DrawerItem &item);
     void openMenu(const DrawerItem &item);
+    void runScreenEvent(const DrawerItem &app, const ScreenEvent &event);
+    bool isRunning() const { return isBusy; }
 
 signals:
     void busyChanged(bool isBusy);
@@ -36,10 +40,13 @@ private slots:
     void onInfoLoaded(bool isLoaded, const AppInfo &info, const QString &failure);
     void onRemoveAnswer(bool isAccepted);
     void onRemoveFinished(const ActionResult &result);
+    void onDeclaredDialogAnswer(bool isAccepted);
 
 private:
     void setBusy(bool isBusy);
     void runAction(const DrawerAction &action);
+    void runCurrent();
+    bool presentScreenSignal(const ActionResult &result);
     void askForWifi();
     void presentResult(const ActionResult &result);
     void rescanIfAsked(const ActionResult &result);
@@ -50,6 +57,9 @@ private:
     ModelClient *client;
     DrawerItem currentItem;
     DrawerAction currentAction;
+    bool isScreenEvent;
+    ScreenEvent currentEvent;
+    DeclaredDialog pendingDialog;
     bool hasRetriedAfterWifi;
     bool isBusy;
 };

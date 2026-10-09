@@ -1,0 +1,64 @@
+{
+  "v": 1,
+  "app": "localsend",
+  "screen": "main",
+  "title": "LocalSend",
+  "status": "Receiving",
+  "body": [
+    {
+      "type": "bigcode",
+      "text": "4821",
+      "digits": 4
+    },
+    {
+      "type": "text",
+      "text": "Enter this PIN on your phone",
+      "style": "caption",
+      "align": "center"
+    },
+    {
+      "type": "kv",
+      "rows": [
+        [
+          "Device",
+          "Kobo Libra 2"
+        ],
+        [
+          "IP",
+          "192.168.1.23"
+        ]
+      ]
+    },
+    {
+      "type": "notice",
+      "text": "Keep this screen open while files arrive."
+    },
+    {
+      "type": "list",
+      "title": "Received",
+      "bind": "received",
+      "empty_text": "Nothing yet",
+      "items": [
+        [
+          "book-one.epub",
+          ""
+        ],
+        [
+          "A Very Long Title of a Book That Needs Eliding.epub",
+          "2.1 MB"
+        ]
+      ]
+    }
+  ],
+  "footer": [
+    {
+      "type": "button",
+      "text": "Stop and update library",
+      "style": "primary",
+      "action": "stop",
+      "enabled": true
+    }
+  ],
+  "live": true
+}
+

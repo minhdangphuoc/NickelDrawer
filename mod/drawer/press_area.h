@@ -16,6 +16,8 @@ public:
 
     // While disabled for input (dialog open, action pending), presses are ignored.
     void setAcceptsPresses(bool isAccepting);
+    // Where the last press started, in widget coordinates (for areas with many targets).
+    QPoint pressPosition() const { return lastPressPosition; }
 
 signals:
     void tapped();
@@ -30,11 +32,12 @@ private slots:
     void onLongPressTimeout();
 
 private:
-    void beginPress();
+    void beginPress(const QPoint &position);
     void endPress(bool isInside);
     void cancelPress();
 
     QTimer *longPressTimer;
+    QPoint lastPressPosition;
     bool isPressed;
     bool hasFiredLongPress;
     bool acceptsPresses;

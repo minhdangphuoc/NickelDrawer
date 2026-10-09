@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"koboapps/internal/manifest"
+	"koboapps/internal/uikit"
 )
 
 const (
@@ -47,6 +48,7 @@ type Item struct {
 	Icon    string   `json:"icon,omitempty"`
 	Badge   bool     `json:"badge"`
 	Running *bool    `json:"running,omitempty"` // apps only
+	Screen  bool     `json:"screen,omitempty"`  // the app has a ui.json: a tap opens its screen
 	Actions []Action `json:"actions"`
 }
 
@@ -114,6 +116,7 @@ func (c Config) appItem(app manifest.App, status Status) Item {
 		Status:  status.Line,
 		Icon:    iconPath(app),
 		Running: &running,
+		Screen:  uikit.HasUI(app.Dir),
 		Actions: modelActions(localizedApp.Actions),
 	}
 }

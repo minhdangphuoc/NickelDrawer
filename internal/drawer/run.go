@@ -17,6 +17,9 @@ type RunResult struct {
 	Rescan    string `json:"rescan"`
 	Wifi      bool   `json:"wifi"`
 	NeedsWifi bool   `json:"needs_wifi,omitempty"`
+	// Set by drawer event when the script opened a toast or dialog declared on the screen.
+	Toast  string        `json:"toast,omitempty"`
+	Dialog *ScreenDialog `json:"dialog,omitempty"`
 }
 
 // Run executes an action declared in the app's manifest; nothing else can run.

@@ -3,6 +3,7 @@
 package drawer
 
 import (
+	"context"
 	"net"
 	"os"
 	"time"
@@ -32,6 +33,7 @@ type Config struct {
 	StatusTimeout time.Duration // per app, default 1 s
 	ShowTimeout   time.Duration // cap for actions of kind show, default 30 s
 
+	ScriptEnv   []string           // extra environment for action scripts (drawer event)
 	RunScript   ScriptRunner       // default: execute with a minimal environment
 	StartScript func(string) error // default: detached start
 	HasIP       func() bool        // default: a non-loopback IPv4 address exists
@@ -68,14 +70,16 @@ func (c Config) runScript() ScriptRunner {
 	if c.RunScript != nil {
 		return c.RunScript
 	}
-	return ExecScript
+	return func(ctx context.Context, script string) ScriptOutput {
+		return ExecScriptWithEnv(ctx, script, c.ScriptEnv)
+	}
 }
 
 func (c Config) startScript() func(string) error {
 	if c.StartScript != nil {
 		return c.StartScript
 	}
-	return StartDetached
+	return func(script string) error { return StartDetachedWithEnv(script, c.ScriptEnv) }
 }
 
 func (c Config) hasIP() bool {

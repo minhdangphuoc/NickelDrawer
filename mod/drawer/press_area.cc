@@ -28,10 +28,12 @@ void PressArea::setAcceptsPresses(bool isAccepting)
 bool PressArea::event(QEvent *event)
 {
     switch (event->type()) {
-    case QEvent::TouchBegin:
-        beginPress();
+    case QEvent::TouchBegin: {
+        QTouchEvent *touch = static_cast<QTouchEvent *>(event);
+        beginPress(touch->touchPoints().isEmpty() ? QPoint() : touch->touchPoints().first().pos().toPoint());
         event->accept();
         return true;
+    }
     case QEvent::TouchEnd: {
         QTouchEvent *touch = static_cast<QTouchEvent *>(event);
         bool isInside = touch->touchPoints().isEmpty() || rect().contains(touch->touchPoints().first().pos().toPoint());
@@ -49,7 +51,7 @@ bool PressArea::event(QEvent *event)
 
 void PressArea::mousePressEvent(QMouseEvent *event)
 {
-    beginPress();
+    beginPress(event->pos());
     event->accept();
 }
 
@@ -59,11 +61,12 @@ void PressArea::mouseReleaseEvent(QMouseEvent *event)
     event->accept();
 }
 
-void PressArea::beginPress()
+void PressArea::beginPress(const QPoint &position)
 {
     if (!acceptsPresses || isPressed) {
         return;
     }
+    lastPressPosition = position;
     isPressed = true;
     hasFiredLongPress = false;
     longPressTimer->start();

@@ -29,17 +29,24 @@ type ScriptOutput struct {
 type ScriptRunner func(ctx context.Context, script string) ScriptOutput
 
 // scriptEnvironment is deliberately small: NickelMenu starts scripts from Nickel, not from a
-// login shell, so scripts must not depend on anything else.
-func scriptEnvironment() []string {
-	return []string{"PATH=" + scriptPath, "HOME=/"}
+// login shell, so scripts must not depend on anything else. extra carries the few protocol
+// variables a drawer event passes (NICKELDRAWER_VALUE).
+func scriptEnvironment(extra []string) []string {
+	return append([]string{"PATH=" + scriptPath, "HOME=/"}, extra...)
 }
 
-// ExecScript runs script from "/" with the minimal environment. The whole process group is
-// killed on timeout, so a script's background children cannot keep the pipe open.
+// ExecScript runs script from "/" with the minimal environment.
 func ExecScript(ctx context.Context, script string) ScriptOutput {
+	return ExecScriptWithEnv(ctx, script, nil)
+}
+
+// ExecScriptWithEnv runs script from "/" with the minimal environment plus extra. The whole
+// process group is killed on timeout, so a script's background children cannot keep the pipe
+// open.
+func ExecScriptWithEnv(ctx context.Context, script string, extra []string) ScriptOutput {
 	command := exec.CommandContext(ctx, script)
 	command.Dir = "/"
-	command.Env = scriptEnvironment()
+	command.Env = scriptEnvironment(extra)
 	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	command.Cancel = func() error { return syscall.Kill(-command.Process.Pid, syscall.SIGKILL) }
 	command.WaitDelay = killGrace
@@ -66,9 +73,14 @@ func ExecScript(ctx context.Context, script string) ScriptOutput {
 
 // StartDetached starts script in its own session with no output and does not wait for it.
 func StartDetached(script string) error {
+	return StartDetachedWithEnv(script, nil)
+}
+
+// StartDetachedWithEnv is StartDetached with extra environment variables.
+func StartDetachedWithEnv(script string, extra []string) error {
 	command := exec.Command(script)
 	command.Dir = "/"
-	command.Env = scriptEnvironment()
+	command.Env = scriptEnvironment(extra)
 	command.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	devNull, err := os.OpenFile(os.DevNull, os.O_RDWR, 0)
 	if err != nil {

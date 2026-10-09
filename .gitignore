@@ -6,3 +6,18 @@ __pycache__/
 dist/
 local/
 re/symbols/*/exports.txt
+
+# Go binaries built in the repo root or next to their main package
+/appsctl
+/ghsync
+/wallpaper
+/ndpreview
+/ndrelease
+/nmstrip
+/mkcbz
+cmd/*/appsctl
+cmd/*/ghsync
+cmd/*/wallpaper
+cmd/*/ndpreview
+cmd/*/ndrelease
+cmd/*/nmstrip

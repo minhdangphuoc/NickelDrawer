@@ -1,6 +1,7 @@
 #include "drawer_navigator.h"
 
 #include <QStackedWidget>
+#include <QVariant>
 
 #include <NickelHook.h>
 
@@ -122,6 +123,11 @@ void DrawerNavigator::onBackRequested()
 void DrawerNavigator::onStackCurrentChanged(int index)
 {
     if (!view || !watchedStack || watchedStack->currentWidget() == view) {
+        return;
+    }
+    QWidget *current = watchedStack->currentWidget();
+    if (current && current->property(NickelBridge::OVERLAY_PROPERTY).toBool()) {
+        nh_log("navigator: route B: drawer overlay %d is current, drawer stays", index);
         return;
     }
     nh_log("navigator: route B: view %d became current, closing the drawer", index);

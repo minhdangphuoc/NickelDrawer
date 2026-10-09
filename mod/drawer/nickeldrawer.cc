@@ -24,8 +24,8 @@ static int initialize()
         return 0;
     }
     NickelBridge::setMoreViewCreatedHandler(EntryRow::addTo);
-    nh_log("active on %s (route %s)", NickelBridge::firmware(),
-           ModSwitches::usesViewPushRoute() ? "B pushView" : "A controller");
+    nh_log("active on %s (route %s, app screens %s)", NickelBridge::firmware(),
+           ModSwitches::usesViewPushRoute() ? "B pushView" : "A controller", ModSwitches::usesScreens() ? "on" : "off");
     return 0;
 }
 

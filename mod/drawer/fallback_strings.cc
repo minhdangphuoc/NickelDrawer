@@ -48,6 +48,12 @@ static const Translation TABLE[] = {
     {"{name} {status}", "{name} {status}"},
     {" · ", " · "},
     {"NickelDrawer is not available (see log).", "NickelDrawer không dùng được (xem nhật ký)."},
+    {"On", "Bật"},
+    {"Off", "Tắt"},
+    {"Back", "Quay lại"},
+    {"Can't open the app", "Không mở được ứng dụng"},
+    {"Change this from your phone or computer.", "Hãy đổi mục này từ điện thoại hoặc máy tính."},
+    {"OK", "OK"},
 };
 
 static_assert(sizeof(TABLE) / sizeof(TABLE[0]) == FallbackStrings::KEY_COUNT, "one translation per FallbackStrings::Key");

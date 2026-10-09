@@ -5,6 +5,7 @@
 #include <QString>
 
 #include "drawer_model.h"
+#include "screen_model.h"
 
 class AppsctlCall;
 
@@ -21,6 +22,10 @@ public:
     void requestInfo(const QString &appId);
     // Only after the user confirmed; passes --confirm.
     void requestRemove(const QString &appId);
+    // One app screen; an empty screenId asks for the start screen.
+    void requestScreen(const QString &appId, const QString &screenId);
+    // A tap on an app screen; the reply arrives as actionFinished().
+    void requestEvent(const QString &appId, const ScreenEvent &event);
 
 signals:
     // Always emitted; on failure the model holds one problem row.
@@ -30,12 +35,14 @@ signals:
     void actionFinished(const ActionResult &result);
     void infoLoaded(bool isLoaded, const AppInfo &info, const QString &failure);
     void removeFinished(const ActionResult &result);
+    // On failure: isLoaded false and failure = the reason (already localized).
+    void screenLoaded(bool isLoaded, const ScreenModel &screen, const QString &failure);
 
 private slots:
     void onCallFinished(AppsctlCall *call);
 
 private:
-    enum Request { REQUEST_MODEL, REQUEST_RUN, REQUEST_INFO, REQUEST_REMOVE };
+    enum Request { REQUEST_MODEL, REQUEST_RUN, REQUEST_INFO, REQUEST_REMOVE, REQUEST_SCREEN, REQUEST_EVENT };
 
     void startCall(Request request, const QStringList &arguments, int timeoutMilliseconds);
     // The JSON reply of a call that exited 0, or false and the failure text.
@@ -43,6 +50,7 @@ private:
     void deliverModel(AppsctlCall *call);
     void deliverActionResult(AppsctlCall *call, bool isRemove);
     void deliverInfo(AppsctlCall *call);
+    void deliverScreen(AppsctlCall *call);
 };
 
 #endif

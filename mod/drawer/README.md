@@ -12,7 +12,7 @@ present and gate G1 passed (see "First-boot test script" below).
 
 ```sh
 make -C mod/drawer docker-build   # build/mod/libnickeldrawer.so, build/mod/KoboRoot-nickeldrawer.tgz
-make -C mod/drawer docker-test    # host unit tests of drawer_logic (container's native g++, -nostdinc++)
+make -C mod/drawer docker-test    # host unit tests of drawer_logic, screen_logic, qr_encoder (native g++, -nostdinc++)
 mod/drawer/check-symbols.sh       # bridge-only symbols, 5/5 firmware exports, ARM hard-float, NEEDED, no STL, KoboRoot contents
 ```
 
@@ -30,6 +30,11 @@ entry_row ── tap ─► drawer_navigator ── route A ─► drawer_contro
 drawer_session ── model_client (appsctl via QProcess, async) ─► model_parser (QJsonDocument)
               └── action_runner ─► dialogs / plain_dialog, wifi_connector, bridge (toast, rescan)
 drawer_logic: Qt-free rules (paging, refresh, protocol, retry, locale), unit-tested on the host
+
+Phase 4 (flag `screens`): drawer_session ── tap on an app with "screen" ─► screen_session
+screen_session ── model_client (`drawer screen`) ─► screen_view (child of drawer_view, covers it)
+              └── taps ─► action_runner (`drawer event`), field_editor (Nickel keyboard via the bridge)
+screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, unit-tested on the host
 ```
 
 | File | One job |
@@ -56,6 +61,14 @@ drawer_logic: Qt-free rules (paging, refresh, protocol, retry, locale), unit-tes
 | `drawer_controller.{h,cc}` | ABI mirror of Nickel's `AbstractController` (built with `-frtti`, no `Q_OBJECT`) |
 | `drawer_navigator.{h,cc}` | open/close by route A (push/pop) or route B (pushView/popView + watcher) |
 | `entry_row.{h,cc}` | More-tab row, status summary line and update dot |
+| `screen_model.h` | plain structs of a `drawer screen` reply |
+| `screen_logic.{h,cc}` | pure ndpreview metrics and rules: wrap, elide, pages, component heights (Qt-free) |
+| `qr_encoder.{h,cc}` | QR byte mode, level M, versions 1–20; checked against segno matrices (Qt-free) |
+| `screen_layout.{h,cc}` | components → drawing primitives and tap targets, one page at a time (port of `cmd/ndpreview`) |
+| `screen_fonts.{h,cc}` | Nickel's registered font families (serif, sans, mono), Qt default as fallback |
+| `screen_view.{h,cc}` | paints a page, page keys (event filter on the drawer view), taps, full/partial refresh |
+| `field_editor.{h,cc}` | `field` editing in Nickel's N3Dialog keyboard; else the caller shows "edit on your phone" |
+| `screen_session.{h,cc}` | one open app screen: load, live re-read, taps → events, pushed screens, back |
 
 ### Protocol handling (v1)
 
@@ -86,6 +99,8 @@ the 9th partial update in a row is upgraded to a full one. A changed item list r
 | `.adds/nickeldrawer/uninstall` | NickelHook removes the mod and the flag at the next boot |
 | `.adds/nickeldrawer/disable` | kill switch: the mod loads, the bridge stays inert, the More tab is stock |
 | `.adds/nickeldrawer/pushview` | open the drawer with route B (`pushView`) instead of the controller push |
+| `.adds/nickeldrawer/screens` | Phase 4: tapping an app that has a `ui.json` opens its native screen; without the flag the tap runs the primary action as before (default off until G2 passes) |
+| `.adds/nickeldrawer/no-keyboard` | `field` taps show the "edit on your phone" notice instead of Nickel's keyboard |
 | `.adds/nickeldrawer/debug` | step log of row construction and the tap path in `.adds/nickeldrawer/debug.log` (append, fsync, close per line; restarts at 64 KB). Survives a Nickel crash, unlike syslog. Shared with the prototype (`mod/common/debug_log.cc`) |
 
 The prototype `libnddrawer.so` uses the same uninstall path: **uninstall the prototype first** (one flag
@@ -103,6 +118,9 @@ run removes only one of them).
 | appsctl missing / slow / crashing / bad JSON / too new | problem row + "Try again" row; the More row just reads "Apps" |
 | `drawer.ini` not writable | logged, list/grid choice not kept |
 | icon not loadable (e.g. SVG plugin missing) | the app's initial in an outlined square |
+| `drawer screen` fails (no/invalid `ui.json`, appsctl error) | blocking error screen: reason, **Back**, **Try again** |
+| keyboard symbols missing or `no-keyboard` | a `field` tap shows a toast "Change this from your phone or computer." |
+| a QR value too long (> 666 bytes) | an empty square frame, the address stays as text |
 
 Failsafe: a crash in the first 15 s after boot removes the mod (NickelHook).
 
@@ -118,6 +136,22 @@ Failsafe: a crash in the first 15 s after boot removes the mod (NickelHook).
 7. `connectWireless(true,false)` UI and `isInternetAccessible` polling; `PlugWorkflowManager` rescans.
 8. SVG icons via `QPixmap` (needs Nickel's svg image plugin).
 9. QSettings writing `drawer.ini` on the FAT partition while Nickel runs.
+10. App screens (flag `screens`): the screen view over the drawer page (fonts, sizes vs the ndpreview PNG),
+    page keys on long screens, partial refresh of a toggled switch, the N3Dialog keyboard for a `field`
+    (`KeyboardReceiver` size and `QLocale()` keyboard layout are unverified), QR scannable from a phone.
+
+### App screens (Phase 4)
+
+`appsctl drawer screen` returns the screen with texts and bindings resolved; the mod never evaluates
+bindings. Layout is a line-by-line port of `cmd/ndpreview` (same metrics, the same average-advance text
+wrap and elide, the same paging), so `ndpreview render` shows what the device draws; only the glyphs
+differ (a real font wider than the estimate is elided again instead of clipped). The view height is the
+real one (Nickel's status and tab bars take part of 1680 px), so long screens page earlier than the
+preview. Taps: buttons, rows, `empty` and the header action run `drawer event`; toggles and radios show the
+new value at once and run the action named like their variable with `--value`; list rows with `tap` pass
+the row's primary text; `field` opens Nickel's keyboard. List row menus are not supported yet. Back pops
+pushed screens, then returns to the drawer (one flash). A screen whose app has a `state` action is re-read
+every 5 s while idle; unchanged primitives are not repainted.
 
 ## First-boot test script (later, with the user present)
 

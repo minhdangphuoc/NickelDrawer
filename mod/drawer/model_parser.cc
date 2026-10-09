@@ -90,11 +90,93 @@ static DrawerItem parseItem(const QJsonObject &object)
     item.hasUpdate = boolField(object, "badge");
     item.isRunning = boolField(object, "running");
     item.isProblem = false;
+    item.hasScreen = boolField(object, "screen");
     QJsonArray actions = object.value(QLatin1String("actions")).toArray();
     for (int i = 0; i < actions.size(); i++) {
         item.actions.append(parseAction(actions.at(i).toObject()));
     }
     return item;
+}
+
+static DeclaredDialog parseDeclaredDialog(const QJsonObject &object)
+{
+    DeclaredDialog dialog;
+    dialog.title = stringField(object, "title");
+    dialog.text = stringField(object, "text");
+    dialog.ok = stringField(object, "ok");
+    dialog.cancel = stringField(object, "cancel");
+    dialog.action = stringField(object, "action");
+    return dialog;
+}
+
+// [[a, b], ...] as pairs; malformed entries are skipped.
+static QList<TextPair> pairListField(const QJsonObject &object, const char *key)
+{
+    QList<TextPair> pairs;
+    QJsonArray array = object.value(QLatin1String(key)).toArray();
+    for (int i = 0; i < array.size(); i++) {
+        QJsonArray pair = array.at(i).toArray();
+        if (pair.size() == 2) {
+            pairs.append(TextPair(pair.at(0).toString(), pair.at(1).toString()));
+        }
+    }
+    return pairs;
+}
+
+static ScreenComponent parseComponent(const QJsonObject &object)
+{
+    ScreenComponent component;
+    component.type = stringField(object, "type");
+    component.text = stringField(object, "text");
+    component.style = stringField(object, "style");
+    component.align = stringField(object, "align");
+    component.title = stringField(object, "title");
+    component.detail = stringField(object, "detail");
+    component.caption = stringField(object, "caption");
+    component.action = stringField(object, "action");
+    component.bind = stringField(object, "bind");
+    QJsonValue value = object.value(QLatin1String("value"));
+    component.isOn = value.toBool(false);
+    component.value = value.isString() ? value.toString() : QString();
+    component.isEnabled = object.value(QLatin1String("enabled")).toBool(true);
+    component.options = pairListField(object, "options");
+    component.placeholder = stringField(object, "placeholder");
+    component.keyboard = stringField(object, "keyboard");
+    component.isSecret = boolField(object, "secret");
+    component.digits = object.value(QLatin1String("digits")).toInt(0);
+    component.rows = pairListField(object, "rows");
+    component.url = stringField(object, "url");
+    component.code = stringField(object, "code");
+    component.hint = stringField(object, "hint");
+    component.expires = stringField(object, "expires");
+    component.label = stringField(object, "label");
+    component.done = stringField(object, "done");
+    component.total = stringField(object, "total");
+    QJsonValue confirm = object.value(QLatin1String("confirm"));
+    component.hasConfirm = confirm.isObject();
+    if (component.hasConfirm) {
+        component.confirm = parseDeclaredDialog(confirm.toObject());
+    }
+    component.isAsync = boolField(object, "async");
+    component.emptyText = stringField(object, "empty_text");
+    component.tap = stringField(object, "tap");
+    component.items = pairListField(object, "items");
+    component.button = stringField(object, "button");
+    return component;
+}
+
+static QList<ScreenComponent> parseComponents(const QJsonArray &array)
+{
+    QList<ScreenComponent> components;
+    for (int i = 0; i < array.size(); i++) {
+        ScreenComponent component = parseComponent(array.at(i).toObject());
+        if (component.type.isEmpty()) {
+            nh_log("parser: screen component without type skipped");
+            continue;
+        }
+        components.append(component);
+    }
+    return components;
 }
 
 static DrawerSection parseSection(const QJsonObject &object)
@@ -171,6 +253,12 @@ bool parseActionResult(const QByteArray &json, ActionResult *result, QString *fa
     result->needsWifi = boolField(object, "needs_wifi");
     result->text = stringField(object, "text");
     result->rescan = stringField(object, "rescan");
+    result->toast = stringField(object, "toast");
+    QJsonValue dialog = object.value(QLatin1String("dialog"));
+    result->hasDialog = dialog.isObject();
+    if (result->hasDialog) {
+        result->dialog = parseDeclaredDialog(dialog.toObject());
+    }
     return true;
 }
 
@@ -192,6 +280,38 @@ bool parseAppInfo(const QByteArray &json, AppInfo *info, QString *failure)
     info->writes = stringListField(storage, "writes");
     info->usesNetwork = boolField(object, "network");
     info->path = stringField(object, "path");
+    return true;
+}
+
+bool parseScreen(const QByteArray &json, ScreenModel *screen, QString *failure)
+{
+    QJsonObject object;
+    if (!readObject(json, &object)) {
+        *failure = FallbackStrings::text(FallbackStrings::APPSCTL_BAD_REPLY);
+        return false;
+    }
+    if (!hasSupportedVersion(object, failure)) {
+        return false;
+    }
+    screen->app = stringField(object, "app");
+    screen->screen = stringField(object, "screen");
+    screen->title = stringField(object, "title");
+    screen->status = stringField(object, "status");
+    QJsonObject header = object.value(QLatin1String("action")).toObject();
+    screen->headerLabel = stringField(header, "label");
+    screen->headerPush = stringField(header, "push");
+    screen->headerAction = stringField(header, "action");
+    screen->body = parseComponents(object.value(QLatin1String("body")).toArray());
+    screen->footer = parseComponents(object.value(QLatin1String("footer")).toArray());
+    QJsonObject dialogs = object.value(QLatin1String("dialogs")).toObject();
+    for (QJsonObject::const_iterator it = dialogs.constBegin(); it != dialogs.constEnd(); ++it) {
+        screen->dialogs.insert(it.key(), parseDeclaredDialog(it.value().toObject()));
+    }
+    QJsonObject toasts = object.value(QLatin1String("toasts")).toObject();
+    for (QJsonObject::const_iterator it = toasts.constBegin(); it != toasts.constEnd(); ++it) {
+        screen->toasts.insert(it.key(), it.value().toString());
+    }
+    screen->isLive = boolField(object, "live");
     return true;
 }
 
