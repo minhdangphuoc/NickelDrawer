@@ -13,6 +13,8 @@ The user puts PNG or JPEG pictures in `/mnt/onboard/Pictures`. **Wallpaper · Im
 | Turn off | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
 | Status | running job or last result, picture count, mode, rotation, files on the sleep screen |
 
+**Requirement.** Pictures show only with a current book and both Kobo settings on: Settings → Energy saving and privacy → "Show current read" and "Show book cover full screen" (see "What Nickel does"). The app reads `[PowerOptions] ShowBookCover` and `FullscreenCoverStretch` from `Kobo eReader.conf` (read only, never written) and, when either is not true or the file is unreadable, adds a hint line to Status, the import result and the screen (state fields `sleep_screen_ready`, `sleep_screen_hint`; the notice is hidden when the hint is empty). It cannot check for a current book.
+
 CLI: `wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status [--app-dir DIR] [--locale CODE] [--version-file FILE]` (flags before positional arguments).
 
 ## Safety: what the app reads and writes

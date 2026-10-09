@@ -9,6 +9,7 @@
   "msg.imported": "New pictures: {added}. Already known: {duplicates}.",
   "msg.import_failed": "Pictures that could not be used: {count}. See data/log.txt.",
   "msg.applied": "Sleep screen ready: {count} picture(s). Press power to see it.",
+  "msg.sleep_screen_hint": "Turn on in Settings → Energy saving and privacy: “Show current read” and “Show book cover full screen”.",
   "msg.next": "Picture {number}: {name}",
   "msg.mode_fill": "Fill: pictures cover the screen (edges cropped). Re-fitted: {count}.",
   "msg.mode_fit": "Fit: whole picture on white. Re-fitted: {count}.",

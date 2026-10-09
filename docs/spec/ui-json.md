@@ -88,7 +88,7 @@ A component is one object with one component key; its other keys are properties 
 | `qr` | binding or literal (200) | `caption` (60) | none |
 | `pair` | object `{url, code, title, hint, expires}`; `url` (120) and `code` (16) required | none | none |
 | `steps` | object `{label, done, total, detail}`; `label` (40), `done` and `total` (16) required | none | none |
-| `notice` | text (200) | `title` (40) | none |
+| `notice` | text (200); a notice whose text resolves to empty is hidden, so bind a variable to show it conditionally | `title` (40) | none |
 | `button` | label text (32, no `:`) | `action` (required), `style`: `primary` / `secondary` (default `secondary`), `enabled`, `confirm`, `async` | `action` |
 | `list` | one binding to an array variable | `title` (40), `empty_text` (60), `max` (1 to 200, default 50), `tap` (action id), `menu` (1 to 6 items) | `tap`, `menu` |
 | `empty` | heading text (40) | `text` (120), and together `button` (label, 32) with `action`; the button is a primary button | `action` |

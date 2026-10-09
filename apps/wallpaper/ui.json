@@ -8,7 +8,9 @@
     "mode": "fill",
     "rotation": "fixed",
     "last_import": "",
-    "busy": false
+    "busy": false,
+    "sleep_screen_ready": true,
+    "sleep_screen_hint": ""
   },
   "screens": {
     "main": {
@@ -63,6 +65,9 @@
             ]
           ],
           "enabled": "!$busy"
+        },
+        {
+          "notice": "$sleep_screen_hint"
         },
         {
           "notice": "@ui.note"

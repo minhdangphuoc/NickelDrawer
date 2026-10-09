@@ -5,5 +5,7 @@
   "rotation": "random",
   "last_import": "New pictures: 3. Already known: 4.",
   "busy": false,
+  "sleep_screen_ready": false,
+  "sleep_screen_hint": "Turn on in Settings → Energy saving and privacy: “Show current read” and “Show book cover full screen”.",
   "status": "7 pictures"
 }

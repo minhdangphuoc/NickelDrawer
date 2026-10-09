@@ -268,7 +268,11 @@ func stringProp(object map[string]any, key string) string {
 func (s screenContext) components(components []uikit.Component) []ScreenComponent {
 	resolved := make([]ScreenComponent, 0, len(components))
 	for _, component := range components {
-		resolved = append(resolved, s.component(component))
+		next := s.component(component)
+		if next.Type == "notice" && next.Text == "" {
+			continue // a notice bound to an empty variable is hidden
+		}
+		resolved = append(resolved, next)
 	}
 	return resolved
 }

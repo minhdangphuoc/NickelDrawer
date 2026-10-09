@@ -114,11 +114,16 @@ type stateReply struct {
 	LastImport string `json:"last_import"`
 	Busy       bool   `json:"busy"`
 	Status     string `json:"status"`
+
+	SleepScreenReady bool   `json:"sleep_screen_ready"`
+	SleepScreenHint  string `json:"sleep_screen_hint"`
 }
+
+const enSleepHint = "Turn on in Settings → Energy saving and privacy: “Show current read” and “Show book cover full screen”."
 
 func readState(t *testing.T, appDir, lastFile, pidFile string) stateReply {
 	t.Helper()
-	status, output := run(t, "state", "--app-dir", appDir, "--locale", "en", "--last-file", lastFile, "--pid-file", pidFile)
+	status, output := run(t, "state", "--app-dir", appDir, "--locale", "en", "--last-file", lastFile, "--pid-file", pidFile, "--conf", filepath.Join(appDir, "Kobo eReader.conf"))
 	if status != 0 {
 		t.Fatalf("state exit %d: %s", status, output)
 	}
@@ -132,7 +137,7 @@ func readState(t *testing.T, appDir, lastFile, pidFile string) stateReply {
 func TestStateOfFreshInstallIsEmptyButComplete(t *testing.T) {
 	_, appDir, _ := deviceRoot(t)
 	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
-	want := stateReply{Mode: "fill", Rotation: "fixed", Status: "No pictures"}
+	want := stateReply{Mode: "fill", Rotation: "fixed", Status: "No pictures", SleepScreenHint: enSleepHint}
 	if reply != want {
 		t.Fatalf("state = %+v, want %+v", reply, want)
 	}
@@ -157,5 +162,30 @@ func TestStateAfterImportNamesPictureAndReadsLastResult(t *testing.T) {
 	}
 	if reply.LastImport != "New pictures: 1. Already known: 0." {
 		t.Fatalf("last import = %q", reply.LastImport)
+	}
+}
+
+func TestStateHidesHintWhenNickelSettingsAreOn(t *testing.T) {
+	_, appDir, _ := deviceRoot(t)
+	write(t, filepath.Join(appDir, "Kobo eReader.conf"), []byte("[PowerOptions]\nShowBookCover=true\nFullscreenCoverStretch=true\n"))
+	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
+	if !reply.SleepScreenReady || reply.SleepScreenHint != "" {
+		t.Fatalf("state = %+v, want ready with an empty hint", reply)
+	}
+}
+
+func TestImportAndStatusTellWhichKoboSettingsToTick(t *testing.T) {
+	_, appDir, versionFile := deviceRoot(t)
+	conf := filepath.Join(appDir, "Kobo eReader.conf")
+	write(t, conf, []byte("[PowerOptions]\nShowBookCover=true\nFullscreenCoverStretch=false\n"))
+	common := []string{"--app-dir", appDir, "--locale", "en", "--version-file", versionFile, "--conf", conf}
+	for _, command := range []string{"import", "status"} {
+		if status, output := run(t, append([]string{command}, common...)...); status != 0 || !strings.Contains(output, enSleepHint) {
+			t.Fatalf("%s exit %d, want the hint in %q", command, status, output)
+		}
+	}
+	write(t, conf, []byte("[PowerOptions]\nShowBookCover=true\nFullscreenCoverStretch=true\n"))
+	if _, output := run(t, append([]string{"status"}, common...)...); strings.Contains(output, "Turn on in Settings") {
+		t.Fatalf("status shows the hint although both settings are on: %q", output)
 	}
 }

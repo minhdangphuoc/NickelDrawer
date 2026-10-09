@@ -120,6 +120,6 @@ func runSession(selected command, common commonFlags, messages *i18n.Bundle, out
 	}
 	return selected.run(&session{
 		service: wallpaper.NewService(paths, size, log), messages: messages, out: out,
-		stateFiles: wallpaper.ScreenStateFiles{LastOutput: common.lastFile, PidFile: common.pidFile},
+		confPath: common.confPath, stateFiles: wallpaper.ScreenStateFiles{LastOutput: common.lastFile, PidFile: common.pidFile, ConfPath: common.confPath},
 	}, arguments)
 }

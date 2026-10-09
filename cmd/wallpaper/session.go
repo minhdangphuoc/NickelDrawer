@@ -16,6 +16,7 @@ type session struct {
 	out      io.Writer
 
 	stateFiles wallpaper.ScreenStateFiles
+	confPath   string
 }
 
 func (current *session) say(key string, pairs ...string) {
@@ -30,7 +31,15 @@ func (current *session) importPictures([]string) error {
 	}
 	current.sayCounts(imported)
 	current.say("msg.applied", "count", strconv.Itoa(applied.Shown))
+	current.sayHintIfSleepScreenOff()
 	return nil
+}
+
+// sayHintIfSleepScreenOff tells the user which Kobo settings still hide the pictures.
+func (current *session) sayHintIfSleepScreenOff() {
+	if ready, _ := wallpaper.SleepScreenReady(current.confPath); !ready {
+		current.say("msg.sleep_screen_hint")
+	}
 }
 
 func (current *session) sayCounts(imported wallpaper.ImportReport) {
@@ -102,6 +111,7 @@ func (current *session) status([]string) error {
 	current.say("msg.status_mode_" + string(status.Config.Mode))
 	current.say("msg.status_rotation_" + string(status.Config.Rotation))
 	current.say("msg.status_shown", "count", strconv.Itoa(status.Shown))
+	current.sayHintIfSleepScreenOff()
 	return nil
 }
 
@@ -139,7 +149,8 @@ func (current *session) resolveRotation(word string) (wallpaper.Rotation, error)
 // screenState is the screen's variables: the service state plus the localized header status.
 type screenState struct {
 	wallpaper.ScreenState
-	Status string `json:"status"`
+	Status          string `json:"status"`
+	SleepScreenHint string `json:"sleep_screen_hint"`
 }
 
 // state prints the variables of the app screen as one JSON object. Only the header status is
@@ -149,7 +160,7 @@ func (current *session) state([]string) error {
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(current.out).Encode(screenState{state, current.headerStatus(state)})
+	return json.NewEncoder(current.out).Encode(screenState{state, current.headerStatus(state), current.sleepScreenHint(state)})
 }
 
 func (current *session) headerStatus(state wallpaper.ScreenState) string {
@@ -160,4 +171,12 @@ func (current *session) headerStatus(state wallpaper.ScreenState) string {
 		return current.messages.Message("msg.state_empty", nil)
 	}
 	return current.messages.Message("msg.state_ready", i18n.Params("count", strconv.Itoa(state.Count)))
+}
+
+// sleepScreenHint is empty when ready, so the screen's notice stays hidden.
+func (current *session) sleepScreenHint(state wallpaper.ScreenState) string {
+	if state.SleepScreenReady {
+		return ""
+	}
+	return current.messages.Message("msg.sleep_screen_hint", nil)
 }

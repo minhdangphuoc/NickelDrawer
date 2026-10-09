@@ -8,6 +8,8 @@ Dùng ảnh của bạn làm màn hình chờ (ảnh hiện khi máy ngủ, bấ
 2. Bấm **Hình nền · Nhập ảnh**. Ảnh được đổi sang kích thước màn hình, 16 mức xám, rồi đặt vào `.kobo/screensaver`. Việc này chạy nền; một phút sau bấm **Trạng thái** để xem kết quả.
 3. **Ảnh kế tiếp** đổi ảnh. **Lấp đầy / Vừa khung**: phủ kín màn hình (cắt mép) hoặc giữ nguyên cả ảnh trên nền trắng. **Cố định / Ngẫu nhiên**: một ảnh, hoặc máy chọn ngẫu nhiên trong tất cả. **Tắt hình nền** gỡ ảnh của ứng dụng khỏi `.kobo/screensaver`.
 
+Điều kiện để ảnh hiện: bật trong Cài đặt → Tiết kiệm pin và riêng tư cả «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình», và máy có một cuốn sách đã mở gần đây. Ứng dụng sẽ nhắc nếu hai mục này đang tắt.
+
 Ứng dụng chỉ đọc ảnh trực tiếp trong `Pictures`, không bao giờ sửa hay xóa ảnh gốc, và chỉ ghi các file `nd-wallpaper-*.png` trong `.kobo/screensaver`; file khác ở đó giữ nguyên. Nếu bạn dùng mục NickelMenu "Screensaver" (đổi tên `.kobo/screensaver`), hãy để nó ở trạng thái BẬT thì ảnh mới hiện. Chi tiết: `docs/spec/wallpaper.md`.
 
 ## English
@@ -17,6 +19,8 @@ Use your own pictures as the Kobo's sleep screen (shown when the device sleeps; 
 1. Over USB, copy PNG or JPEG files (up to 20 MB each) into `Pictures`. The folder is created the first time you tap **Wallpaper · Import pictures** if it is missing.
 2. Tap **Wallpaper · Import pictures**. Pictures are scaled to the screen, reduced to 16 gray levels with dithering and placed in `.kobo/screensaver`. It runs in the background; tap **Status** a minute later for the result.
 3. **Next picture** changes the picture. **Fill / Fit**: cover the screen (edges cropped) or keep the whole picture on white. **Fixed / Random**: one picture, or Nickel picks any. **Turn off** removes the app's pictures from `.kobo/screensaver`.
+
+Requirement: in Settings → Energy saving and privacy turn on both “Show current read” and “Show book cover full screen”, and have a recently opened book. The app shows a hint while either setting is off.
 
 The app only reads files directly inside `Pictures`, never changes or deletes your originals, and only writes `nd-wallpaper-*.png` in `.kobo/screensaver`; other files there are left alone. If you use the NickelMenu "Screensaver" toggle (it renames `.kobo/screensaver`), keep it ON or the pictures will not show. Details: `docs/spec/wallpaper.md`.
 

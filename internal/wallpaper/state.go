@@ -15,6 +15,8 @@ type ScreenState struct {
 	Rotation   Rotation `json:"rotation"`
 	LastImport string   `json:"last_import"`
 	Busy       bool     `json:"busy"`
+
+	SleepScreenReady bool `json:"sleep_screen_ready"`
 }
 
 // ScreenStateFiles are the /tmp files the action scripts leave behind; they are not part of the
@@ -22,6 +24,7 @@ type ScreenState struct {
 type ScreenStateFiles struct {
 	LastOutput string // text printed by the last background import
 	PidFile    string // exists while a background run is working
+	ConfPath   string // Kobo eReader.conf, read only, for the sleep screen settings
 }
 
 // ScreenState reads the library, settings and the script leftovers. It never converts a picture.
@@ -36,6 +39,7 @@ func (service *Service) ScreenState(files ScreenStateFiles) (ScreenState, error)
 	}
 	state.LastImport = firstLine(files.LastOutput)
 	state.Busy = isProcessAlive(files.PidFile)
+	state.SleepScreenReady, _ = SleepScreenReady(files.ConfPath)
 	return state, nil
 }
 

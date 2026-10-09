@@ -53,6 +53,9 @@ func (rc renderContext) componentBlocks(c uikit.Component) []block {
 	case "steps":
 		return rc.stepsBlocks(c)
 	case "notice":
+		if rc.text(c.Main()) == "" {
+			return nil // a notice bound to an empty variable is hidden
+		}
 		return []block{rc.noticeBlock(c)}
 	case "button":
 		return []block{rc.buttonBlock(c)}
