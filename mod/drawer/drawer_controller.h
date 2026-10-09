@@ -8,10 +8,9 @@
 // size 0xc; virtual slots in this exact order. Nickel calls these slots through
 // the vtable and casts with __dynamic_cast, so:
 //   - do not add, remove or reorder virtuals or data members;
-//   - drawer_controller.cc must be compiled with -frtti (Makefile does this), or
-//     the vtable has no typeinfo and Nickel's dynamic_cast crashes;
-//   - DrawerController must not use Q_OBJECT: moc would own the key function
-//     and emit the vtable in a -fno-rtti object.
+//   - the mod must be compiled with -frtti (the Makefile does this for every
+//     file), or the vtable has no typeinfo and Nickel's dynamic_cast crashes;
+//   - DrawerController does not use Q_OBJECT, so moc cannot add virtuals.
 
 #include <QObject>
 #include <QPointer>

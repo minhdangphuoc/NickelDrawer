@@ -10,6 +10,9 @@ the tab bar and receives the page-turn keys.
 | A | `.adds/nickeldrawer/proto-a` | Hooks `MoreView::MoreView(QWidget*)`, adds one `IconLeftButton` row "Apps" (or "Ứng dụng" when Nickel's language is Vietnamese) right after "Beta Features". Tap: opens prototype C if enabled, else toast "NickelDrawer: row tapped". |
 | C | `.adds/nickeldrawer/proto-c` | Empty drawer page: back chevron + title, 3 placeholder rows, page indicator "1 / 2". Page-turn keys flip between pages 1 and 2 (logged, full e-ink refresh). Back returns to More. Opened only from the prototype A row, so it needs `proto-a` too. |
 | C, route B | `.adds/nickeldrawer/proto-c-pushview` | Optional. Opens C with `pushView`/`popView` instead of the controller push (use only if route A misbehaves). |
+| Debug log | `.adds/nickeldrawer/debug` | Optional. Logs each step of row construction and the tap path to `.adds/nickeldrawer/debug.log` (append, fsync, close per line; restarts at 64 KB), so the steps before a crash survive it. |
+
+The first build crashed Nickel on tapping the row; cause and retest steps: `re/notes/protoA-crash.md`.
 
 Flags are read once at boot: **reboot after adding or removing one.** No flag = the mod is
 installed but does nothing except one log line.

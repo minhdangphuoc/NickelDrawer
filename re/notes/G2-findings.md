@@ -387,6 +387,11 @@ Pixmap: Nickel resource `:/images/reading/beta_features.png` (placeholder).
    verified code.
 6. Shared uninstall flag with `ndhello`: with both installed, one uninstall run removes only one mod.
 
+**Device result 2026-10-09:** the row shows, but tapping it crashed Nickel. Cause: our row children were built
+with `-fno-rtti` (null typeinfo), and `IconButtonBase::tapGesture` `__dynamic_cast`s every child of the
+button on press. Both mods are now built with `-frtti`, and a vtable check was added; see
+`re/notes/protoA-crash.md`.
+
 ---
 
 ## Drawer host build (2026-10-09, `mod/drawer/`, not yet run on device)

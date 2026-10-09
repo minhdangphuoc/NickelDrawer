@@ -12,11 +12,14 @@ LIBRARY_NAME    := libnickeldrawer.so
 
 ifneq ($(IN_NICKELTC),)
 # --- inside the container: NickelHook build system ---
+# -frtti for every file: Nickel runs __dynamic_cast on our objects (IconButtonBase::tapGesture on
+# the row's children, push/pop on the controller), and a vtable built with -fno-rtti has a null
+# typeinfo slot that crashes it (re/notes/protoA-crash.md). check-symbols.sh checks every vtable.
 override VERSION := 0.1.0
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
-override SOURCES  += nickeldrawer.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
+override SOURCES  += nickeldrawer.cc ../common/debug_log.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc press_area.cc \
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
@@ -25,14 +28,11 @@ override MOCS     += nickel_bridge.h appsctl_call.h model_client.h press_area.h 
                      dialogs.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
-override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -fno-rtti
-override CPPFLAGS += -I$(NICKELHOOK_DIR)
+override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
+override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common
 
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
-# Nickel dynamic_casts our controller (push/pop/prepareView), so its vtable
-# needs typeinfo. The later flag wins over -fno-rtti.
-drawer_controller.o: override CXXFLAGS += -frtti
 endif
 
 # --- on the host ---
@@ -55,5 +55,5 @@ docker-test:
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.
 docker-clean:
-	rm -f *.o *.moc *.so KoboRoot.tgz $(TEST_BINARY)
+	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o $(TEST_BINARY)
 	cd $(NICKELHOOK_DIR) && rm -f $(GENERATED_IN_VENDOR)

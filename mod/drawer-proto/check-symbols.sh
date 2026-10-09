@@ -6,6 +6,7 @@
 #    in ~/.cache/nickeldrawer/symbols/<fw>/ when those exist.
 # 2. The library is ARM, hard-float, needs only the expected libraries, and
 #    imports nothing from the C++ standard library beyond the ABI runtime.
+# 3. Every vtable has typeinfo (mod/common/check-vtable-typeinfo.sh).
 # Exits non-zero on the first category that fails; prints every failure.
 set -eu
 
@@ -84,8 +85,15 @@ check_binary() {
 	echo "binary: ARM hard-float; NEEDED: $(echo $needed)"
 }
 
+# Every vtable must carry typeinfo: Nickel __dynamic_casts the mod's objects.
+check_vtable_typeinfo() {
+	[ -f "$library" ] || return 0 # check_binary already reported it
+	"$repo_root/mod/common/check-vtable-typeinfo.sh" libnddrawer.so || fail "vtable typeinfo check"
+}
+
 check_firmware_exports
 check_binary
+check_vtable_typeinfo
 
 if [ "$failures" -ne 0 ]; then
 	echo "$failures check(s) failed" >&2

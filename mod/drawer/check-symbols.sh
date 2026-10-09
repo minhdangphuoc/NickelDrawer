@@ -9,6 +9,7 @@
 # 3. The library is ARM, hard-float, needs only the expected libraries,
 #    imports nothing from the C++ standard library beyond the ABI runtime,
 #    and the KoboRoot installs exactly the library.
+# 4. Every vtable has typeinfo (mod/common/check-vtable-typeinfo.sh).
 # Prints every failure; exits non-zero when any check failed.
 set -eu
 
@@ -115,8 +116,15 @@ check_koboroot() {
 
 check_bridge_is_only_symbol_user
 check_firmware_exports
+# Every vtable must carry typeinfo: Nickel __dynamic_casts the mod's objects.
+check_vtable_typeinfo() {
+	[ -f "$library" ] || return 0 # check_binary already reported it
+	"$repo_root/mod/common/check-vtable-typeinfo.sh" $library_name || fail "vtable typeinfo check"
+}
+
 check_binary
 check_koboroot
+check_vtable_typeinfo
 
 if [ "$failures" -ne 0 ]; then
 	echo "$failures check(s) failed" >&2

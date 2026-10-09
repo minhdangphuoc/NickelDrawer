@@ -3,16 +3,17 @@
 #include <QEvent>
 #include <QPixmap>
 #include <QStringList>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
 
 #include <NickelHook.h>
 
+#include "debug_log.h"
 #include "drawer_navigator.h"
 #include "fallback_strings.h"
 #include "model_client.h"
 #include "nickel_bridge.h"
-#include "painted_marks.h"
 
 static const char *const CONTAINER_LAYOUT_NAME = "moreContainerLayout";
 static const char *const ANCHOR_ROW_NAME = "betaFeaturesButton"; // our row goes right after it
@@ -20,6 +21,8 @@ static const char *const ROW_OBJECT_NAME = "nickelDrawerButton";
 // Placeholder icon from Nickel's own resources until the drawer has its own.
 static const char *const ROW_ICON = ":/images/reading/beta_features.png";
 static const int DOT_RIGHT_MARGIN = 72;
+static const char *const TAPPED_SIGNAL_SIGNATURE = "tapped()";
+static const int RUN_FROM_EVENT_LOOP = 0;
 
 static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout)
 {
@@ -30,6 +33,15 @@ static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout)
         return layout->count();
     }
     return anchorIndex + 1;
+}
+
+// The exact signal EntryRow connects to, checked on the live object.
+static bool hasTappedSignal(QWidget *row)
+{
+    int signalIndex = row->metaObject()->indexOfSignal(TAPPED_SIGNAL_SIGNATURE);
+    DebugLog::write("entry row: %s %s signal index %d", row->metaObject()->className(), TAPPED_SIGNAL_SIGNATURE,
+                    signalIndex);
+    return signalIndex >= 0;
 }
 
 QString entrySummary(const DrawerModel &model, int *updateCount)
@@ -75,26 +87,40 @@ void EntryRow::addTo(QWidget *moreView)
         return;
     }
     row->setObjectName(QString::fromLatin1(ROW_OBJECT_NAME));
-    NickelBridge::setIconLeftButtonPixmap(row, QPixmap(QString::fromLatin1(ROW_ICON)));
+    QPixmap icon(QString::fromLatin1(ROW_ICON));
+    DebugLog::write("entry row: icon %s %s (%dx%d)", ROW_ICON, icon.isNull() ? "missing" : "loaded", icon.width(),
+                    icon.height());
+    NickelBridge::setIconLeftButtonPixmap(row, icon);
     NickelBridge::setIconLeftButtonText(row, FallbackStrings::text(FallbackStrings::APPS_TITLE));
+    DebugLog::write("entry row: pixmap and text set");
 
+    if (!hasTappedSignal(row)) {
+        nh_log("entry row: %s has no %s signal, removing the row", row->metaObject()->className(),
+               TAPPED_SIGNAL_SIGNATURE);
+        delete row;
+        return;
+    }
     EntryRow *entry = new EntryRow(row);
     if (!QObject::connect(row, SIGNAL(tapped()), entry, SLOT(onTapped()))) {
         nh_log("entry row: could not connect tapped(), removing the row");
-        delete row; // also deletes the entry (its child)
+        delete row; // the entry follows through destroyed()
         return;
     }
     int index = insertIndexAfterAnchor(moreView, layout);
     layout->insertWidget(index, row);
     nh_log("entry row: added at index %d", index);
+    DebugLog::write("entry row: row %p entry %p, %d children on the row", (void *)row, (void *)entry,
+                    row->children().size());
     entry->refreshSummary();
 }
 
 EntryRow::EntryRow(QWidget *moreRow)
-    : QObject(moreRow), row(moreRow), updateDot(new UpdateDot(moreRow)), client(new ModelClient(this))
+    : QObject(NULL), row(moreRow), updateDot(new UpdateDot(moreRow)), client(new ModelClient(this)),
+      isTapPending(false)
 {
     updateDot->hide();
-    row->installEventFilter(this);
+    connect(moreRow, SIGNAL(destroyed()), this, SLOT(deleteLater()));
+    moreRow->installEventFilter(this);
     connect(client, SIGNAL(modelLoaded(DrawerModel)), this, SLOT(onModelLoaded(DrawerModel)));
     connect(DrawerNavigator::instance(), SIGNAL(drawerClosed()), this, SLOT(refreshSummary()));
 }
@@ -102,7 +128,26 @@ EntryRow::EntryRow(QWidget *moreRow)
 void EntryRow::onTapped()
 {
     nh_log("entry row: tapped");
+    DebugLog::write("entry row: tapped() received by %p, sender %p, row %s", (void *)this, (void *)sender(),
+                    row ? "alive" : "gone");
+    if (isTapPending) {
+        DebugLog::write("entry row: tap already pending, ignoring");
+        return;
+    }
+    isTapPending = true;
+    QTimer::singleShot(RUN_FROM_EVENT_LOOP, this, SLOT(handleTap()));
+}
+
+void EntryRow::handleTap()
+{
+    isTapPending = false;
+    if (!row) {
+        DebugLog::write("entry row: row gone before the tap was handled, ignoring");
+        return;
+    }
+    DebugLog::write("entry row: opening the drawer");
     DrawerNavigator::instance()->open();
+    DebugLog::write("entry row: drawer open returned");
 }
 
 void EntryRow::refreshSummary()
@@ -123,6 +168,9 @@ void EntryRow::onModelLoaded(const DrawerModel &model)
 
 void EntryRow::showSummary(const QString &summary, bool hasUpdate)
 {
+    if (!row || !updateDot) {
+        return; // the More view was rebuilt while appsctl ran
+    }
     QString title = FallbackStrings::text(FallbackStrings::APPS_TITLE);
     // IconLeftButton has one text; the status goes on a second line of it.
     NickelBridge::setIconLeftButtonText(row, summary.isEmpty() ? title : title + QLatin1Char('\n') + summary);
@@ -132,13 +180,16 @@ void EntryRow::showSummary(const QString &summary, bool hasUpdate)
 
 void EntryRow::placeDot()
 {
+    if (!row || !updateDot) {
+        return;
+    }
     updateDot->move(row->width() - DOT_RIGHT_MARGIN - updateDot->width(), (row->height() - updateDot->height()) / 2);
     updateDot->raise();
 }
 
 bool EntryRow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == row && event->type() == QEvent::Resize) {
+    if (row && watched == row.data() && event->type() == QEvent::Resize) {
         placeDot();
     }
     return QObject::eventFilter(watched, event);

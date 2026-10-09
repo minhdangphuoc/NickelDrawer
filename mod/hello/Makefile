@@ -17,7 +17,7 @@ override LIBRARY  := libndhello.so
 override SOURCES  += hello.cc toast.cc
 override MOCS     += toast.h
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
-override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -fno-rtti
+override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
 override CPPFLAGS += -I$(NICKELHOOK_DIR)
 
 include $(NICKELHOOK_DIR)/NickelHook.mk

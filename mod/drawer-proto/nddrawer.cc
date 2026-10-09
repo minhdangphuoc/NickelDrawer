@@ -6,6 +6,7 @@
 
 #include <NickelHook.h>
 
+#include "debug_log.h"
 #include "device_state.h"
 #include "nickel_api.h"
 
@@ -40,6 +41,7 @@ static void decidePrototypeC()
 
 static int initialize()
 {
+    DebugLog::enableIfFlagged("nddrawer");
     char firmware[32];
     DeviceState::readFirmware(firmware, sizeof(firmware));
     if (!DeviceState::isSupportedFirmware(firmware)) {
@@ -53,6 +55,8 @@ static int initialize()
     nh_log("loaded on %s: prototype A %s, prototype C %s (route %s)", firmware,
            prototypeSwitches.isMoreRowEnabled ? "on" : "off", prototypeSwitches.isDrawerEnabled ? "on" : "off",
            prototypeSwitches.usesViewPushRoute ? "B pushView" : "A controller");
+    DebugLog::write("init: firmware %s, prototype A %d, prototype C %d", firmware, prototypeSwitches.isMoreRowEnabled,
+                    prototypeSwitches.isDrawerEnabled);
     return 0;
 }
 

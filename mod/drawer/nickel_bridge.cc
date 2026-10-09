@@ -9,6 +9,8 @@
 #include <QTimer>
 #include <QWidget>
 
+#include "debug_log.h"
+
 // ---- libnickel entry points (filled by NickelHook before init; NULL if absent) ----
 
 extern "C" {
@@ -216,8 +218,11 @@ QWidget *createIconLeftButton(QWidget *parent)
         nh_log("bridge: out of memory for IconLeftButton");
         return NULL;
     }
+    DebugLog::write("bridge: constructing IconLeftButton at %p, parent %p", memory, (void *)parent);
     IconLeftButton_construct(memory, parent);
-    return reinterpret_cast<QWidget *>(memory);
+    QWidget *button = reinterpret_cast<QWidget *>(memory);
+    DebugLog::write("bridge: constructed %s", button->metaObject()->className());
+    return button;
 }
 
 void setIconLeftButtonPixmap(QWidget *button, const QPixmap &pixmap)
@@ -294,8 +299,10 @@ void showToast(const QString &text)
         nh_log("bridge: no toast, text was: %s", qPrintable(text));
         return;
     }
+    DebugLog::write("bridge: toast on window %p: %s", window, qPrintable(text));
     // Empty (not null) secondary text: the form proven on device by ndhello.
     MainWindowController_toast(window, text, QStringLiteral(""), TOAST_DURATION_MILLISECONDS);
+    DebugLog::write("bridge: toast queued");
 }
 
 bool hasMessageDialog()
@@ -430,6 +437,7 @@ void FullRescanFinisher::finish()
 extern "C" __attribute__((visibility("default"))) void nickeldrawer_MoreView_construct(void *moreView, QWidget *parent)
 {
     MoreView_construct_original(moreView, parent);
+    DebugLog::write("bridge: MoreView constructed %p", moreView);
     if (isBridgeActive && moreViewCreatedHandler) {
         // MoreView derives from QWidget as its first base.
         moreViewCreatedHandler(reinterpret_cast<QWidget *>(moreView));

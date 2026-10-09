@@ -86,6 +86,7 @@ the 9th partial update in a row is upgraded to a full one. A changed item list r
 | `.adds/nickeldrawer/uninstall` | NickelHook removes the mod and the flag at the next boot |
 | `.adds/nickeldrawer/disable` | kill switch: the mod loads, the bridge stays inert, the More tab is stock |
 | `.adds/nickeldrawer/pushview` | open the drawer with route B (`pushView`) instead of the controller push |
+| `.adds/nickeldrawer/debug` | step log of row construction and the tap path in `.adds/nickeldrawer/debug.log` (append, fsync, close per line; restarts at 64 KB). Survives a Nickel crash, unlike syslog. Shared with the prototype (`mod/common/debug_log.cc`) |
 
 The prototype `libnddrawer.so` uses the same uninstall path: **uninstall the prototype first** (one flag
 run removes only one of them).

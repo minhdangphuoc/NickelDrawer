@@ -2,6 +2,8 @@
 
 #include <NickelHook.h>
 
+#include "debug_log.h"
+
 extern "C" {
 void *(*MainWindowController_sharedInstance)();
 void (*MainWindowController_toast)(void *, QString const &, QString const &, int);
@@ -59,6 +61,7 @@ void showToast(const QString &text)
         return;
     }
     void *window = mainWindow();
+    DebugLog::write("toast: window %p, text \"%s\"", window, qPrintable(text));
     if (window) {
         // Empty (not null) secondary text: the form proven on device by ndhello.
         MainWindowController_toast(window, text, QStringLiteral(""), TOAST_DURATION_MILLISECONDS);

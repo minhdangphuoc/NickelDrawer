@@ -4,6 +4,7 @@
 
 #include <NickelHook.h>
 
+#include "debug_log.h"
 #include "entry_row.h"
 #include "mod_switches.h"
 #include "nickel_bridge.h"
@@ -12,6 +13,7 @@ static const int FAILSAFE_DELAY_SECONDS = 15;
 
 static int initialize()
 {
+    DebugLog::enableIfFlagged("nickeldrawer");
     ModSwitches::readAtBoot();
     if (ModSwitches::isKillSwitchOn()) {
         // Hooks stay installed but pass straight through to Nickel.

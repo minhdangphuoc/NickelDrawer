@@ -11,22 +11,22 @@ GENERATED_IN_VENDOR := nhplugin.json nhplugin.moc nhplugin.moc.o nh.o
 
 ifneq ($(IN_NICKELTC),)
 # --- inside the container: NickelHook build system ---
+# -frtti for every file: Nickel runs __dynamic_cast on our objects (IconButtonBase::tapGesture on
+# the row's children, push/pop on the controller), and a vtable built with -fno-rtti has a null
+# typeinfo slot that crashes it (re/notes/protoA-crash.md). check-symbols.sh checks every vtable.
 override VERSION := 0.1.0-proto
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := libnddrawer.so
-override SOURCES  += nddrawer.cc nickel_api.cc device_state.cc more_row.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
+override SOURCES  += nddrawer.cc ../common/debug_log.cc nickel_api.cc device_state.cc more_row.cc drawer_view.cc drawer_launcher.cc drawer_controller.cc
 override MOCS     += more_row.h drawer_view.h drawer_launcher.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
-override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -fno-rtti
-override CPPFLAGS += -I$(NICKELHOOK_DIR)
+override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
+override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common
 
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
-# Nickel dynamic_casts our controller (push/pop/topController), so its vtable
-# needs typeinfo. Later flag wins over -fno-rtti.
-drawer_controller.o: override CXXFLAGS += -frtti
 endif
 
 # --- on the host ---
@@ -41,5 +41,5 @@ docker-build:
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.
 docker-clean:
-	rm -f *.o *.moc *.so KoboRoot.tgz
+	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o
 	cd $(NICKELHOOK_DIR) && rm -f $(GENERATED_IN_VENDOR)
