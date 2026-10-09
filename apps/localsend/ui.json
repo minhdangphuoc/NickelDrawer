@@ -1,0 +1,32 @@
+{
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "status": "",
+    "pin": "",
+    "device": "",
+    "ip": "",
+    "received": []
+  },
+  "screens": {
+    "main": {
+      "title": "LocalSend",
+      "status": "$status",
+      "body": [
+        { "bigcode": "$pin", "digits": 4 },
+        { "text": "@ui.pin_hint", "style": "caption", "align": "center" },
+        { "kv": [["@ui.device", "$device"], ["@ui.ip", "$ip"]] },
+        { "notice": "@ui.keep_awake" },
+        {
+          "list": "$received",
+          "title": "@ui.received",
+          "empty_text": "@ui.nothing_yet",
+          "max": 50
+        }
+      ],
+      "footer": [
+        { "button": "@ui.stop_and_update", "action": "stop", "style": "primary" }
+      ]
+    }
+  }
+}

@@ -74,3 +74,20 @@ func TestLocalizeUsesTranslationsAndSkipsInvalidOnes(t *testing.T) {
 		t.Fatalf("invalid translations must fall back: %+v", fallback)
 	}
 }
+
+// Texts that ui.json references as "@ui.key" are app-defined keys, like "msg.*": known, not warned about.
+func TestCheckLocalesKnowsScreenTextKeys(t *testing.T) {
+	app := loadStaged(t, "locales-valid")
+	english := englishStrings(app, i18n.Catalog{"ui.stop": "Stop", "msg.hello": "Hi"})
+	if english["ui.stop"] != "Stop" || english["msg.hello"] != "Hi" {
+		t.Fatalf("english reference lacks app-defined keys: %v", english)
+	}
+	problems, warnings := checkCatalog("vi", i18n.Catalog{"ui.stop": "Dừng"}, english, app, true)
+	if len(problems) > 0 || len(warnings) > 0 {
+		t.Fatalf("problems=%v warnings=%v", problems, warnings)
+	}
+	_, warnings = checkCatalog("vi", i18n.Catalog{"other.stop": "x"}, english, app, true)
+	if len(warnings) != 1 {
+		t.Fatalf("a key with an unknown prefix must still warn: %v", warnings)
+	}
+}

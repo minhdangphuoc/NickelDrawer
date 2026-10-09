@@ -1,6 +1,6 @@
 # UI kit v1 (NickelDrawer)
 
-Status: approved screen designs (design canvas, 8 Oct 2026). This file is the written contract. It refines plan §7 (`docs/plan-detailed.md`); where they differ, this file wins until the plan is updated. The `ui.json` schema is `kit: 1`; the protocol is JSON-lines `proto: 1` (plan §7.7) and does not change here.
+Status: approved screen designs (design canvas, 8 Oct 2026). This file is the written design contract; the exact `ui.json` keys, limits and error codes are in [ui-json.md](ui-json.md), which wins where they differ. It refines plan §7 (`docs/plan-detailed.md`); where they differ, this file wins until the plan is updated. The `ui.json` schema is `kit: 1`; the protocol is JSON-lines `proto: 1` (plan §7.7) and does not change here.
 
 All sizes are device pixels on the Kobo Libra 2: 300 dpi, 1264 x 1680, 1 mm = 11.8 px.
 
@@ -35,7 +35,7 @@ Rules: no shadows, no gradients, no animation. Title font about 1.25 x body. Tex
 
 ## 3. Components
 
-Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
+Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Extra components of `ui-json.md`: `section` (small-caps group label), `row` (128 px tappable row with detail and chevron), `qr` (QR of one value), `empty` (§3.17); dialogs and toasts are declared per screen (`dialogs`, `toasts`). Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
 
 Common to all components:
 - **E-ink refresh:** a bound-value change repaints only that widget (partial). Push or pop does one full refresh. After 8 partial updates, the next change forces a full refresh. At most 2 updates per second per screen.
@@ -153,7 +153,7 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 
 `{ "list": "$received", "title": "Received", "empty_text": "Nothing yet", "max": 50, "tap": "open" }`
 
-As plan §7.2. Rows are 104 px, primary text left, secondary right. Appends redraw only the new rows. Page-turn keys flip pages (§5.3).
+As plan §7.2. `tap` names an app.json action; a tap runs it and also sends the `tap` event with the row to a running backend. A list keeps the last `max` items. Rows are 104 px, primary text left, secondary right. Appends redraw only the new rows. Page-turn keys flip pages (§5.3).
 
 ### 3.13 Notices and states
 
@@ -266,7 +266,7 @@ Header, QR pairing component (§3.11), caption "Open the address on your phone, 
 
 ## 7. Validation
 
-The `appsctl validate` step (and preview) checks: one primary button per screen; no `secret: true` on tokens; row icons are outline images; strings have `en`; vi strings are within 150 % of English length (warning); step progress interval; at most 8 radio options. Test IDs: KIT-01..14 (plan §9.9) plus the new cases to add in G4: KIT-15 pairing flow, KIT-16 radio list, KIT-17 step progress cadence (at most 1 update per 5 s), KIT-18 page-turn keys (swap setting, ignored in dialogs), KIT-19 notice box and no other grey fill.
+The `appsctl validate` step checks the rules of [ui-json.md](ui-json.md) and `ndpreview` shows the result (`ndpreview serve <app-dir>`, `docs/APPS.md` "Design a native screen"). In short: one primary button per screen; no `secret: true` on tokens; row icons are outline images; strings have `en`; vi strings are within 150 % of English length (warning); step progress interval; at most 8 radio options. Test IDs: KIT-01..14 (plan §9.9) plus the new cases to add in G4: KIT-15 pairing flow, KIT-16 radio list, KIT-17 step progress cadence (at most 1 update per 5 s), KIT-18 page-turn keys (swap setting, ignored in dialogs), KIT-19 notice box and no other grey fill.
 
 ## 8. What changed vs plan v2 wireframes
 

@@ -26,3 +26,6 @@ Once installed, apps and the host tool update over Wi-Fi from a signed GitHub Re
 - `tools/vncheck.py FONT...` — count missing Vietnamese glyphs in fonts (needs `fonttools`).
 - `tools/nfc.py DIR` — check unpacked EPUB HTML for non-NFC text / combining marks.
 - `tools/md2html.py plan.md out.html tools/plan-tpl.html` — render the plan page (needs `markdown`).
+- `go run ./cmd/ndpreview serve apps/localsend --locale vi` — preview a native screen (`ui.json`) at Libra 2 size in the browser on 127.0.0.1; `ndpreview render ... --out screen.png` writes a PNG. See [docs/APPS.md](docs/APPS.md), "Design a native screen".
+- `go run ./cmd/appsctl validate apps/localsend` — also checks `ui.json` ([docs/spec/ui-json.md](docs/spec/ui-json.md)).
+- `make schema` — rewrite `spec/ui.schema.json` from `internal/uikit`.

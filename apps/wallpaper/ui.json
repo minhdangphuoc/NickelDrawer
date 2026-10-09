@@ -1,0 +1,35 @@
+{
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "status": "",
+    "count": "0",
+    "mode": "fill",
+    "rotation": "fixed"
+  },
+  "screens": {
+    "main": {
+      "title": "@ui.title",
+      "status": "$status",
+      "body": [
+        { "text": "@ui.intro" },
+        { "kv": [["@ui.pictures", "$count"]] },
+        {
+          "radio": "@ui.mode",
+          "bind": "mode",
+          "options": [["fill", "@ui.mode_fill"], ["fit", "@ui.mode_fit"]]
+        },
+        {
+          "radio": "@ui.rotation",
+          "bind": "rotation",
+          "options": [["fixed", "@ui.rotation_fixed"], ["random", "@ui.rotation_random"]]
+        },
+        { "notice": "@ui.note" },
+        { "button": "@ui.turn_off", "action": "off", "style": "secondary" }
+      ],
+      "footer": [
+        { "button": "@ui.import", "action": "import", "style": "primary" }
+      ]
+    }
+  }
+}

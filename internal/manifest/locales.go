@@ -15,6 +15,7 @@ import (
 const (
 	LocalesDirName = "locales"
 	messagePrefix  = "msg."
+	screenPrefix   = "ui." // texts referenced as "@ui.key" from ui.json
 	keyName        = "name"
 	keyDescription = "description"
 )
@@ -75,6 +76,11 @@ func CheckLocales(app App) (problems []string, warnings []Warning) {
 	return problems, warnings
 }
 
+// isAppTextKey is true for keys an app defines itself: script messages and ui.json texts.
+func isAppTextKey(key string) bool {
+	return strings.HasPrefix(key, messagePrefix) || strings.HasPrefix(key, screenPrefix)
+}
+
 func hasEnglishFile(files map[string]string) bool {
 	_, found := files[i18n.SourceLocale]
 	return found
@@ -105,7 +111,7 @@ func englishStrings(app App, englishFile i18n.Catalog) i18n.Catalog {
 		english[actionLabelKey(action.ID)] = action.Label
 	}
 	for key, text := range englishFile {
-		if strings.HasPrefix(key, messagePrefix) {
+		if isAppTextKey(key) {
 			english[key] = text
 		}
 	}
@@ -123,12 +129,12 @@ func checkCatalog(locale string, catalog, english i18n.Catalog, app App, hasEngl
 		text := catalog[key]
 		englishText, isKnown := english[key]
 		switch {
-		case !isKnown && !(strings.HasPrefix(key, messagePrefix) && !hasEnglish):
+		case !isKnown && !(isAppTextKey(key) && !hasEnglish):
 			warnings = append(warnings, Warning(fmt.Sprintf("%s: unknown key %q ignored", where, key)))
 		case isKnown && locale != i18n.SourceLocale:
 			problems = append(problems, checkTranslation(where, key, englishText, text)...)
 		}
-		if strings.HasPrefix(key, messagePrefix) && !hasEnglish {
+		if isAppTextKey(key) && !hasEnglish {
 			problems = append(problems, fmt.Sprintf("%s: key %q needs the English text in %s/en.json", where, key, LocalesDirName))
 		}
 	}

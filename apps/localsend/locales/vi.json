@@ -10,5 +10,12 @@
   "actions.sort.label": "Sắp xếp tệp cũ",
   "msg.sort_started": "Đang sắp xếp tệp cũ trong nền.\nBấm lại 'Sắp xếp tệp cũ' để xem kết quả.",
   "msg.sort_running": "Vẫn đang sắp xếp tệp cũ.\nLát nữa bấm lại.",
-  "msg.sort_nothing": "Không có tệp cũ để sắp xếp."
+  "msg.sort_nothing": "Không có tệp cũ để sắp xếp.",
+  "ui.pin_hint": "Nhập mã PIN này trên điện thoại",
+  "ui.device": "Thiết bị",
+  "ui.ip": "IP",
+  "ui.keep_awake": "Giữ máy Kobo thức khi đang nhận tệp.",
+  "ui.received": "Đã nhận",
+  "ui.nothing_yet": "Chưa có gì",
+  "ui.stop_and_update": "Dừng và cập nhật thư viện"
 }

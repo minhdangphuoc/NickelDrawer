@@ -61,7 +61,7 @@ Apps run as **root** on a device that holds the user's library. So:
 
 ### v1 menu app or v2 native screen (`ui.json`)
 
-The native drawer and `ui.json` are not built yet (Phase 3 and 4); the format is in [spec/ui-kit.md](spec/ui-kit.md) and may still change. v1 apps keep working unchanged: the drawer runs the same actions.
+The native drawer is not built yet (Phase 3 and 4), but the `ui.json` format is fixed for kit 1: [spec/ui-json.md](spec/ui-json.md) is the schema, [spec/ui-kit.md](spec/ui-kit.md) the design. `appsctl validate` checks it and `ndpreview` previews it on your computer. v1 apps keep working unchanged: the drawer runs the same actions.
 
 | | v1 menu app (today) | v2 native screen (`ui.json`, later) |
 |---|---|---|
@@ -78,9 +78,25 @@ The native drawer and `ui.json` are not built yet (Phase 3 and 4); the format is
 
 Start with v1. Add a `ui.json` when your app needs lists you tap, short text input, or live status.
 
+### Design a native screen
+
+A native screen is a `ui.json` next to `app.json` (optionally more screens in `screens/<id>.json`). You can write and check one without a Kobo:
+
+1. **Write it.** Start from `examples/todo/ui.json` (texts as `{en, vi}` maps) or `apps/localsend/ui.json` (texts as `"@ui.key"` references into `locales/*.json`). Declare every variable a screen uses in `vars`, give buttons the id of an action from `app.json`, keep one primary button per screen, and keep labels free of `:`.
+2. **Validate it.** `go run ./cmd/appsctl validate apps/myapp` (or `build/appsctl-host`) checks `app.json`, the locales and the `ui.json`. Each problem is printed as `path: [code] message`; the codes are listed in [spec/ui-json.md](spec/ui-json.md) section 7.
+3. **Preview it.** `go run ./cmd/ndpreview serve apps/myapp --locale vi` (or `build/ndpreview-host`) prints `http://127.0.0.1:8790/`. The page draws the screen at the Libra 2 size (1264 x 1680, shown at 50 %, a link switches to 100 %) in black, white and greys with the same row, button and header sizes as the kit, and no animation. It re-reads your files on every reload, so edit, save, refresh.
+   - The sidebar picks the screen and language, switches to 16 grey levels, and edits the variables (the `vars` of `ui.json`, or a file you give with `--state state.json`). Use it to try long lists, long Vietnamese strings and empty states.
+   - Long screens and lists page. The left and right arrow keys, or the on-screen arrows, stand in for the page-turn buttons.
+   - Tap a button, row or toggle: the sidebar shows the JSON line the host would send to the backend and the app.json action that would run. A button with `confirm` opens the confirm dialog first. Screens can declare `dialogs` and `toasts`; the sidebar has links to show them.
+   - `--exec` also runs the action script, with `sh`, inside a temporary folder that stands in for the Kobo (`KOBO_ROOT`, `HOME`, `ND_DATA_DIR`, `ND_EVENT`). Scripts that read `/mnt/onboard` paths fail on a computer and say so in the output; give your scripts path overrides as in "Test on the Mac".
+   - The server listens on `127.0.0.1` only and refuses other `Host` headers. The QR code is a placeholder that shows the layout; it does not encode the address.
+4. **Render a picture.** `go run ./cmd/ndpreview render apps/myapp --out screen.png --screen main --locale vi [--state state.json] [--grey 16] [--font /path/font.ttf]` writes a 1264 x 1680 PNG for reviews and bug reports. Text needs a TrueType or OpenType font: without `--font` the tool tries common system fonts (Arial Unicode, DejaVu, Georgia) and otherwise draws the shapes only and prints a warning. Pick a font that has Vietnamese letters.
+
+The preview is a layout check, not Nickel: real fonts and the real refresh behaviour differ. Test on the device after the native drawer ships (plan gates G1 and G4).
+
 ### Worked examples
 
-- [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a preview `ui.json`.
+- [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a `ui.json` you can preview with `ndpreview`.
 - [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, with a Go helper for what BusyBox lacks.
 
 ## 1. Folder layout
@@ -269,4 +285,4 @@ Do not include Kobo binaries or firmware files in a package.
 
 ## Coming later: native UI
 
-Phase 3 adds a native drawer and an optional `ui.json` file that describes screens (lists, forms, buttons). Your v1 manifest stays valid: the drawer will run the same actions. `ui.json` will be optional.
+Phase 3 adds a native drawer that shows the `ui.json` screens (lists, forms, buttons). Your v1 manifest stays valid: the drawer will run the same actions. `ui.json` stays optional; see "Design a native screen" above to write and preview one today.

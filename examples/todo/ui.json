@@ -1,13 +1,11 @@
 {
-  "_preview": "PREVIEW ONLY: ui.json is not supported until the native drawer ships (Phase 3-4). Today the v1 menu actions in app.json are what runs. Component names follow docs/spec/ui-kit.md and may still change.",
+  "_preview": "Preview: the native drawer that shows ui.json ships in Phase 3-4. Until then the menu actions in app.json are what runs. Check this screen on a Mac with: ndpreview serve examples/todo",
   "kit": 1,
   "start": "main",
   "vars": {
     "status": "",
     "items": [],
-    "newItem": "",
-    "hideDone": false,
-    "canAdd": false
+    "hideDone": false
   },
   "screens": {
     "main": {
@@ -20,24 +18,31 @@
           "title": { "en": "Items", "vi": "Danh sách" },
           "empty_text": { "en": "Nothing to do yet", "vi": "Chưa có việc nào" },
           "max": 50,
-          "tap": "toggle-item",
           "menu": [
             { "id": "remove", "label": { "en": "Remove...", "vi": "Xóa..." }, "confirm": true }
           ]
         },
         {
-          "field": { "en": "New item", "vi": "Việc mới" },
-          "bind": "newItem",
-          "keyboard": "text",
-          "placeholder": { "en": "Buy milk", "vi": "Mua sữa" }
+          "button": { "en": "Mark next done", "vi": "Xong việc kế tiếp" },
+          "action": "done-next",
+          "style": "secondary"
+        },
+        {
+          "button": { "en": "Clear done items", "vi": "Xóa việc đã xong" },
+          "action": "clear-done",
+          "style": "secondary",
+          "confirm": {
+            "text": { "en": "Remove every item that is marked done?", "vi": "Xóa mọi việc đã đánh dấu xong?" },
+            "ok": { "en": "Remove", "vi": "Xóa" },
+            "cancel": { "en": "Cancel", "vi": "Hủy" }
+          }
         }
       ],
       "footer": [
         {
-          "button": { "en": "Add item", "vi": "Thêm việc" },
-          "action": "add-item",
-          "style": "primary",
-          "enabled": "$canAdd"
+          "button": { "en": "Add from file", "vi": "Thêm từ tệp" },
+          "action": "add-from-file",
+          "style": "primary"
         }
       ]
     }

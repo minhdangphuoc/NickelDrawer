@@ -5,5 +5,12 @@
   "msg.stopped": "LocalSend stopped.\nUpdating the library...",
   "msg.sort_started": "Sorting old files in the background.\nTap 'Sort old files' again to see the result.",
   "msg.sort_running": "Still sorting old files.\nTap again in a moment.",
-  "msg.sort_nothing": "No old files to sort."
+  "msg.sort_nothing": "No old files to sort.",
+  "ui.pin_hint": "Enter this PIN on your phone",
+  "ui.device": "Device",
+  "ui.ip": "IP",
+  "ui.keep_awake": "Keep the Kobo awake while files arrive.",
+  "ui.received": "Received",
+  "ui.nothing_yet": "Nothing yet",
+  "ui.stop_and_update": "Stop and update library"
 }

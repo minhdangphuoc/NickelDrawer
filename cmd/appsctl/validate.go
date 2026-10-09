@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"koboapps/internal/manifest"
+	"koboapps/internal/uikit"
 )
 
 func runValidate(args []string, stdout, stderr io.Writer) int {
@@ -32,17 +33,28 @@ func reportDirs(dirs []string, stdout io.Writer) int {
 			exitCode = exitInvalid
 			continue
 		}
-		if !reportLocales(stdout, app) {
+		if !reportApp(stdout, app) {
 			exitCode = exitInvalid
-			continue
 		}
-		if !reportLocales(stdout, app) {
-			exitCode = exitInvalid
-			continue
-		}
-		fmt.Fprintf(stdout, "ok      %s (%d actions)\n", app.ID, len(app.Actions))
 	}
 	return exitCode
+}
+
+// reportApp prints the result for one loaded app: locales, then ui.json when present.
+func reportApp(out io.Writer, app manifest.App) bool {
+	if !reportLocales(out, app) {
+		return false
+	}
+	hasUI, isUIValid := reportUI(out, app)
+	if !isUIValid {
+		return false
+	}
+	suffix := ""
+	if hasUI {
+		suffix = ", " + uikit.FileName
+	}
+	fmt.Fprintf(out, "ok      %s (%d actions%s)\n", app.ID, len(app.Actions), suffix)
+	return true
 }
 
 func reportScan(appsDir string, stdout, stderr io.Writer) int {
@@ -56,11 +68,9 @@ func reportScan(appsDir string, stdout, stderr io.Writer) int {
 	}
 	exitCode := exitOK
 	for _, app := range scan.Apps {
-		if !reportLocales(stdout, app) {
+		if !reportApp(stdout, app) {
 			exitCode = exitInvalid
-			continue
 		}
-		fmt.Fprintf(stdout, "ok      %s (%d actions)\n", app.ID, len(app.Actions))
 	}
 	for _, failure := range scan.Failures {
 		fmt.Fprintf(stdout, "INVALID %s: %v\n", failure.AppID, failure.Err)

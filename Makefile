@@ -9,13 +9,17 @@ DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 APPS_DIR = $(DIST_ONBOARD)/.adds/apps
 
-.PHONY: check build dist release sync-embedded clean
+.PHONY: check build dist release sync-embedded schema clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
 sync-embedded:
 	@cmp -s host/locales/en.json cmd/appsctl/embedded/en.json || cp host/locales/en.json cmd/appsctl/embedded/en.json
 	@cmp -s spec/release-ed25519.pub internal/release/release-ed25519.pub || cp spec/release-ed25519.pub internal/release/release-ed25519.pub
+
+# Rewrites spec/ui.schema.json from the component registry in internal/uikit.
+schema:
+	go test ./internal/uikit -run TestSchemaFileIsCurrent -update
 
 check: sync-embedded
 	@unformatted=$$(gofmt -l cmd internal); \
@@ -32,6 +36,7 @@ build: sync-embedded
 	go build -ldflags='-X main.version=$(VERSION)' -o build/appsctl-host ./cmd/appsctl
 	go build -o build/nmstrip-host ./cmd/nmstrip
 	go build -o build/ndrelease-host ./cmd/ndrelease
+	go build -o build/ndpreview-host ./cmd/ndpreview
 
 # dist/.stamp is what tools/install-to-kobo.sh compares against the sources.
 dist: build
@@ -42,7 +47,7 @@ dist: build
 	cp host/bin/*.sh $(HOST_DIR)/bin/
 	cp host/locales/*.json $(HOST_DIR)/locales/
 	cp host/config/routing.json $(HOST_DIR)/config/routing.json
-	cp apps/localsend/app.json $(APPS_DIR)/localsend/app.json
+	cp apps/localsend/app.json apps/localsend/ui.json $(APPS_DIR)/localsend/
 	cp apps/localsend/bin/*.sh $(APPS_DIR)/localsend/bin/
 	mkdir -p $(APPS_DIR)/localsend/locales && cp apps/localsend/locales/*.json $(APPS_DIR)/localsend/locales/
 	cp build/localgo-linux-armv7 $(APPS_DIR)/localsend/bin/localgo
@@ -51,12 +56,12 @@ dist: build
 	mkdir -p $(APPS_DIR)/ghsync/locales && cp apps/ghsync/locales/*.json $(APPS_DIR)/ghsync/locales/
 	cp build/ghsync-linux-armv7 $(APPS_DIR)/ghsync/bin/ghsync
 	cp apps/ghsync/data/config.example.json $(APPS_DIR)/ghsync/data/config.example.json
-	cp apps/wallpaper/app.json $(APPS_DIR)/wallpaper/app.json
+	cp apps/wallpaper/app.json apps/wallpaper/ui.json $(APPS_DIR)/wallpaper/
 	cp apps/wallpaper/bin/*.sh $(APPS_DIR)/wallpaper/bin/
 	cp apps/wallpaper/locales/*.json $(APPS_DIR)/wallpaper/locales/
 	cp build/wallpaper-linux-armv7 $(APPS_DIR)/wallpaper/bin/wallpaper
 	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/*
-	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/ghsync/data/config.example.json
+	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/ghsync/data/config.example.json
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp
 

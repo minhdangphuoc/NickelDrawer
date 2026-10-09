@@ -7,7 +7,6 @@
   "actions.rotation.label": "Cố định / Ngẫu nhiên",
   "actions.off.label": "Tắt hình nền",
   "actions.status.label": "Trạng thái",
-
   "msg.usage": "Cách dùng: wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status [--app-dir DIR]",
   "msg.unknown_command": "Lệnh không có: {command}",
   "msg.error": "Lỗi: {message}",
@@ -48,5 +47,17 @@
   "msg.err_decode": "Không mở được ảnh: {cause}",
   "msg.err_too_large": "Ảnh quá lớn ({width}x{height}).",
   "msg.err_encode": "Không lưu được ảnh đã chuyển đổi: {cause}",
-  "msg.err_no_pictures": "Chưa có ảnh. Chép file PNG hoặc JPEG vào thư mục Pictures, rồi bấm Nhập ảnh."
+  "msg.err_no_pictures": "Chưa có ảnh. Chép file PNG hoặc JPEG vào thư mục Pictures, rồi bấm Nhập ảnh.",
+  "ui.title": "Hình nền",
+  "ui.intro": "Chép ảnh PNG hoặc JPEG vào thư mục Pictures, rồi nhấn Nhập ảnh.",
+  "ui.pictures": "Ảnh",
+  "ui.mode": "Kích thước ảnh",
+  "ui.mode_fill": "Lấp đầy",
+  "ui.mode_fit": "Vừa khít",
+  "ui.rotation": "Ảnh hiển thị",
+  "ui.rotation_fixed": "Cố định",
+  "ui.rotation_random": "Ngẫu nhiên",
+  "ui.note": "Thay đổi có tác dụng ở lần nhập ảnh kế tiếp.",
+  "ui.turn_off": "Tắt",
+  "ui.import": "Nhập ảnh"
 }

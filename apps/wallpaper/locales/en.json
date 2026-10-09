@@ -39,5 +39,17 @@
   "msg.err_decode": "Cannot open the picture: {cause}",
   "msg.err_too_large": "Picture is too large ({width}x{height}).",
   "msg.err_encode": "Cannot save the converted picture: {cause}",
-  "msg.err_no_pictures": "No pictures yet. Copy PNG or JPEG files to Pictures, then Import pictures."
+  "msg.err_no_pictures": "No pictures yet. Copy PNG or JPEG files to Pictures, then Import pictures.",
+  "ui.title": "Wallpaper",
+  "ui.intro": "Copy PNG or JPEG pictures to the Pictures folder, then tap Import pictures.",
+  "ui.pictures": "Pictures",
+  "ui.mode": "Picture size",
+  "ui.mode_fill": "Fill",
+  "ui.mode_fit": "Fit",
+  "ui.rotation": "Which picture",
+  "ui.rotation_fixed": "Fixed",
+  "ui.rotation_random": "Random",
+  "ui.note": "Changes apply the next time you import pictures.",
+  "ui.turn_off": "Turn off",
+  "ui.import": "Import pictures"
 }
