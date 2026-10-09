@@ -13,7 +13,8 @@
 // unchanged; page-turn keys, which Nickel sends to the drawer view, are taken
 // by an event filter on it while the screen is open.
 //
-// Rendering only: it paints the ScreenLayout primitives and reports taps;
+// Rendering only: it paints the ScreenLayout primitives and reports taps
+// (the pressed target is inverted, the back arrow shows Nickel's pressed arrow);
 // ScreenSession decides what they do. E-ink: a new screen or page flashes once
 // (full refresh); a changed value repaints only the changed primitives
 // (partial), and every 9th partial update in a row is a full one.
@@ -40,10 +41,10 @@ signals:
 protected:
     bool eventFilter(QObject *watched, QEvent *event);
     void paintEvent(QPaintEvent *event);
+    PressFeedback feedbackAt(const QPoint &position) const;
 
 private slots:
     void onTapped();
-    void handleTap();
     void flashNow();
 
 private:
@@ -55,6 +56,7 @@ private:
     bool handlePageKey(int key);
     void goToPage(int index);
     void paintItem(QPainter *painter, const PaintItem &item);
+    const TapTarget *targetAt(const QPoint &position) const;
 
     QWidget *host;
     ScreenModel model;
@@ -64,8 +66,6 @@ private:
     int pageIndex;
     DrawerLogic::RefreshPolicy refreshPolicy;
     bool isInputBlocked;
-    bool isTapPending;
-    QPoint pendingTapPosition;
     QElapsedTimer sinceLastTap;
 };
 

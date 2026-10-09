@@ -7,6 +7,8 @@
 
 #include <QString>
 
+#include "page_header.h"
+
 class QPixmap;
 class QWidget;
 class AbstractController;
@@ -24,6 +26,10 @@ extern void (*IconLeftButton_setText)(void *button, QString const &text);
 // Data symbol: the Qt::GestureType Nickel's TapGestureRecognizer registered
 // (0 until Nickel registers it at startup, after our init).
 extern int *TapGestureRecognizer_gestureType;
+extern void (*TextHeader_construct)(void *header, QWidget *parent);
+extern void (*TextHeader_setText)(void *header, QString const &text);
+extern void (*TextHeaderBase_setDeselectedPixmap)(void *header, QPixmap const &pixmap);
+extern void (*TextHeaderBase_setSelectedPixmap)(void *header, QPixmap const &pixmap);
 // Original MoreView::MoreView(QWidget*), returned by the NickelHook PLT hook.
 extern void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }
@@ -37,6 +43,9 @@ bool hasViewPush();       // route B: pushView/popView a bare widget
 
 // Nickel's tap gesture type, read live; 0 when missing or not registered yet.
 int tapGestureType();
+
+// Nickel's TextHeader for the page header (entries NULL when missing).
+NickelTextHeaderApi textHeaderApi();
 
 // Nickel's main window controller, or NULL (logged) when unavailable.
 void *mainWindow();

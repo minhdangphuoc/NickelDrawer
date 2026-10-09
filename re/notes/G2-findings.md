@@ -542,3 +542,77 @@ destroyed. The drawer host also logs "screen placed".
 6. Same steps with `KoboRoot-nickeldrawer.tgz` (uninstall `nddrawer` first), plus one app screen (`screens`
    flag): its header must also start below the bar. Check the footer/page indicator is not clipped in list view
    (128 px less height for 7 rows; the geometry lines give the numbers).
+
+---
+
+## Native header and press feedback (2026-10-09, 23828 decompiled, both mods, not run on device)
+
+**Device feedback.** Nickel's Wishlist/Instapaper pages: a "←" arrow icon, title in the sans at Nickel's header
+size, a thin divider; pressing the arrow shows a black circle with a white arrow at once, then the page pops. Our
+"‹" header and every widget of ours gave no pressed state.
+
+**Which class draws Nickel's header (23828, static).** `Ui_WishlistView::setupUi` builds a `TextHeader` (0x90
+bytes) named `backLabel`, `setProperty("deselectedPixmap", QPixmap(":/images/reading/back_arrow.png"))`,
+`TextHeader::setText`. `TextHeaderBase` (`Ui_TextHeaderBase::setupUi`) holds a `TouchLabel` `#image`, a
+`QVBoxLayout` `header` with `TextHeader`'s `N3ButtonLabel` `#label` and a `QLabel` `#separator` (empty, a
+background image only, so 0 px high), and a `ReversibleLabel` `#arrow` (drop-down, hidden). Look, from the QSS
+(`~/.cache/nickeldrawer/qss/`): `N3ButtonLabel` is Georgia italic, Storm class 34 px, 80 px high;
+`WishlistView.qss` turns `#backLabel #label` into Avenir upright and draws the divider as `border-bottom: 1px
+solid #666666` on `#label`, `#image` and `#numBooks`. Back: `TextHeaderBase::tapped()` → `WishlistController::back()`
+= `MainWindowController::pop(this)`. N3Dialog's back button pairs `back_arrow.png` with
+`":/images/reading/back_arrow_hit.png"` (`TouchLabel::setDeselectedPixmap` / `setSelectedPixmap`); both images
+live in the `nickel` binary's Qt resources (names found as UTF-16), so `QPixmap(":/images/...")` loads them in-process.
+
+**How Nickel shows a press.** `TextHeaderBase::tapGesture`: gesture started → emits `mouseDown()`, then
+`reverseColors()` (the `TouchLabel` shows its selected pixmap, or with none renders itself and inverts with
+`CompositionMode_Difference` + white); finished → `tapped()`, then `defaultColors()` only when `setAutoInvert(true)`
+(Wishlist leaves it pressed until the pop); canceled → `defaultColors()`. A disabled header ignores the gesture.
+`IconButtonBase::tapGesture` (More rows): started → invert the whole widget (render + Difference white) and
+**`setAttribute(0x80)` + `repaint()` + clear 0x80**; finished → plain `update()` back to normal, then `tapped()`.
+`AddToCollectionDialog::flashWidget` does the same invert / 0x80 repaint / restore. `TouchLabel::reverseColors`
+with its "repaint" flag adds 0x88 (`ReversibleBase::lowQualityWfMode()`, a static), 0x8f and 0x97 around the same
+0x80 repaint. So 0x80 is Nickel's "push this repaint to the panel now" hint used for press highlights, not a
+full-screen flash as Q4 read it; whether `NickelBridge::requestFullRefresh` (0x80 on page changes) really flashes
+is an open question for the device run.
+
+**Symbols (all optional, 5/5 builds, mangled and demangled dumps; both check-symbols.sh pass).**
+`_ZN10TextHeaderC1EP7QWidget`, `_ZN10TextHeader7setTextERK7QString`,
+`_ZN14TextHeaderBase19setDeselectedPixmapERK7QPixmap`, `_ZN14TextHeaderBase17setSelectedPixmapERK7QPixmap`;
+signals by name `_ZN14TextHeaderBase6tappedEv`, `_ZN14TextHeaderBase9mouseDownEv`. The prototype's
+check-symbols.sh now also checks `signal-symbol:` comments (it had not checked `IconButtonBase::tapped()`).
+
+**Implementation (`mod/common/page_header.{h,cc}`, `press_area.{h,cc}`).**
+
+- `PageHeader`: Nickel's `TextHeader` (256 zeroed bytes, our `PageHeader` as parent; nothing of ours is parented
+  to it) with `back_arrow.png` / `back_arrow_hit.png`, our title, family Nickel's UI sans upright (Vietnamese; size
+  and height stay Nickel's QSS), a 1 px #666666 divider painted under the whole row, the drawer's list/grid toggles
+  at the right. `tapped()` is a **queued** connection: Nickel emits it inside `tapGesture`, which touches the
+  header afterwards, and our slot pops and deletes the page. Input blocked → `setEnabled(false)`. Fallback when a
+  symbol, the arrow image or the connect is missing: our `BackArrowButton` (120 px target, Nickel's two images,
+  else a painted "←" / black circle with white arrow) and a sans 34 px title.
+- `PressArea` (all our tappables): finger down → pressed state at once, pushed with 0x80 + `repaint()` as
+  `IconButtonBase`; rows, tiles and dialog buttons invert (snapshot on white, Difference white, laid over the area
+  in a child overlay transparent for input); footer arrows and view toggles show the inverted icon in a circle;
+  the screen view inverts only the pressed target, and its back arrow (new `PaintItem::SHAPE_BACK_ARROW`; the Mac
+  preview still draws "‹") shows Nickel's pressed image. Release inside → action from the event loop, then the
+  normal look with a plain update; long press keeps it until the menu handler returned; a drag beyond 24 px of the
+  target, a cancel, blocked input or hiding clears it. `ScreenView` now handles the tap in PressArea's deferred
+  slot directly (the second 0 ms hop is gone), so the pressed target clears after its action.
+- Debug log: "pressed via <path>", "pressed state shown (inverted|circle|self-painted, rect, repaint now)",
+  "moved out", "press canceled", "released …", "pressed state cleared (after tap action | after long-press
+  action | released outside | input blocked | area hidden)"; header: "constructing Nickel TextHeader", "Nickel
+  TextHeader …, pressed arrow hit image", or "own copy (arrow …)", the two image sizes, "Nickel back pressed",
+  "Nickel back tapped" / "own back tapped".
+
+Not changed: screen headers keep the preview's layout (serif 60 px title, 168 px); matching them to Nickel's
+needs the same change in `cmd/ndpreview`.
+
+**Validation (next device session, after the G1 drill, `debug` flag on).**
+
+1. Prototype C, then the drawer: header shows Nickel's "←", sans title, thin divider; log says "Nickel TextHeader".
+2. Press and hold the arrow: black circle, white arrow at once; release: page pops, tab bar kept.
+3. Press a row / tile / page arrow / toggle / dialog button: inverted (circle for icons) at once; release: action,
+   then normal. Drag off a row: pressed state goes, no action. Long-press a row: stays inverted until the menu.
+4. While a dialog is pending, the header arrow does nothing.
+5. App screen: back arrow and targets show their pressed state; page keys still page.
+6. Note in `debug.log` whether the page-change "full refresh" (0x80) flashes; copy the log to `backups/<date>/`.

@@ -15,7 +15,8 @@
 #include "screen_model.h"
 
 struct PaintItem {
-    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR };
+    // SHAPE_BACK_ARROW: Nickel's back arrow (page_header.h); the preview draws "‹" there.
+    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR, SHAPE_BACK_ARROW };
     enum Align { ALIGN_START, ALIGN_CENTER, ALIGN_END };
 
     Shape shape = SHAPE_RECT;

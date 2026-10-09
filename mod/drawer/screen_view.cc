@@ -12,6 +12,7 @@
 #include "fallback_strings.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
+#include "page_header.h"
 #include "status_bar_inset.h"
 
 using namespace ScreenLogic;
@@ -46,8 +47,7 @@ static int qtAlignment(PaintItem::Align align)
 }
 
 ScreenView::ScreenView(QWidget *drawerView)
-    : PressArea(drawerView), host(drawerView), hasScreen(false), pageIndex(0), isInputBlocked(false),
-      isTapPending(false)
+    : PressArea(drawerView), host(drawerView), hasScreen(false), pageIndex(0), isInputBlocked(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerScreen"));
@@ -240,49 +240,63 @@ void ScreenView::goToPage(int index)
     applyPage(index, true);
 }
 
-void ScreenView::onTapped()
+// The topmost target under position (later targets lie over earlier ones), or NULL.
+const TapTarget *ScreenView::targetAt(const QPoint &position) const
 {
-    if (isInputBlocked || isTapPending) {
-        return;
+    for (int i = page.targets.size() - 1; i >= 0; i--) {
+        if (page.targets[i].rect.contains(position)) {
+            return &page.targets[i];
+        }
     }
-    pendingTapPosition = pressPosition();
-    isTapPending = true;
-    // Handled from the event loop, after the touch handler returned (re/notes/protoA-crash.md).
-    QTimer::singleShot(RUN_FROM_EVENT_LOOP, this, SLOT(handleTap()));
+    return NULL;
 }
 
-void ScreenView::handleTap()
+// Only the pressed target shows the pressed state: the back arrow as Nickel's
+// pressed arrow, any other target inverted.
+PressArea::PressFeedback ScreenView::feedbackAt(const QPoint &position) const
 {
-    isTapPending = false;
+    PressFeedback feedback;
+    feedback.highlight = HIGHLIGHT_NONE;
+    const TapTarget *target = isInputBlocked ? NULL : targetAt(position);
+    if (target) {
+        feedback.rect = target->rect;
+        feedback.highlight = target->kind == TapTarget::TAP_BACK ? HIGHLIGHT_SELF_PAINTED : HIGHLIGHT_INVERT;
+    }
+    return feedback;
+}
+
+// PressArea emits tapped() from the event loop, after the touch handler
+// returned (re/notes/protoA-crash.md), and clears the pressed state after this.
+void ScreenView::onTapped()
+{
     if (isInputBlocked) {
         return;
     }
     if (sinceLastTap.isValid() && sinceLastTap.elapsed() < TAP_DEBOUNCE_MILLISECONDS) {
         return;
     }
-    for (int i = page.targets.size() - 1; i >= 0; i--) {
-        const TapTarget &target = page.targets[i];
-        if (!target.rect.contains(pendingTapPosition)) {
-            continue;
-        }
-        sinceLastTap.start();
-        switch (target.kind) {
-        case TapTarget::TAP_BACK:
-            emit backRequested();
-            return;
-        case TapTarget::TAP_HEADER_ACTION:
-            emit headerActionTapped();
-            return;
-        case TapTarget::TAP_PREVIOUS_PAGE:
-            goToPage(qMax(0, pageIndex - 1));
-            return;
-        case TapTarget::TAP_NEXT_PAGE:
-            goToPage(qMin(layout.pageCount() - 1, pageIndex + 1));
-            return;
-        case TapTarget::TAP_COMPONENT:
-            emit componentTapped(target.component, target.value);
-            return;
-        }
+    const TapTarget *found = targetAt(pressPosition());
+    if (!found) {
+        return;
+    }
+    TapTarget target = *found; // the action may relayout the page
+    sinceLastTap.start();
+    switch (target.kind) {
+    case TapTarget::TAP_BACK:
+        emit backRequested();
+        return;
+    case TapTarget::TAP_HEADER_ACTION:
+        emit headerActionTapped();
+        return;
+    case TapTarget::TAP_PREVIOUS_PAGE:
+        goToPage(qMax(0, pageIndex - 1));
+        return;
+    case TapTarget::TAP_NEXT_PAGE:
+        goToPage(qMin(layout.pageCount() - 1, pageIndex + 1));
+        return;
+    case TapTarget::TAP_COMPONENT:
+        emit componentTapped(target.component, target.value);
+        return;
     }
 }
 
@@ -403,6 +417,9 @@ void ScreenView::paintItem(QPainter *painter, const PaintItem &item)
         break;
     case PaintItem::SHAPE_QR:
         paintQr(painter, item);
+        break;
+    case PaintItem::SHAPE_BACK_ARROW:
+        BackArrowIcon::paint(painter, item.rect, isPressedStateShown() && pressedStateRect().contains(item.rect.center()));
         break;
     }
 }

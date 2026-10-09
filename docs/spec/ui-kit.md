@@ -39,6 +39,7 @@ Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new
 
 Common to all components:
 - **E-ink refresh:** a bound-value change repaints only that widget (partial). Push or pop does one full refresh. After 8 partial updates, the next change forces a full refresh. At most 2 updates per second per screen.
+- **Press feedback:** every tappable widget shows its pressed state on finger down, as Nickel does: rows, tiles and buttons invert; icon buttons (back, toggles, page arrows) show a black circle with the icon in white. It is pushed to the panel at once (Kobo's "repaint now" hint); the action runs on release, then the normal look returns. A long press keeps the pressed state until the menu is open; a drag out cancels it.
 - **Accessibility:** every tappable row or button is at least 120 px high. State is never shown by colour alone (use text, underline or a check mark). Text follows Nickel's size setting. Dark mode inverts through the stylesheet.
 - **i18n:** all text is a string or `{en, vi}` map. Host strings come from `res/strings_<lang>.json`. Layout never depends on string length (see §8).
 
@@ -50,7 +51,7 @@ Purpose: title, back, one status text, one optional action.
 "main": { "title": "LocalSend", "status": "$status", "action": { "label": "Settings", "push": "settings" } }
 ```
 
-- Parts: back chevron (left), serif title, status text at the right. **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
+- Parts: Nickel's back arrow "←" (left), title, status text at the right. **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
 - Events: `action` (when `action.action` is set); back pops locally.
 - States: status empty (hidden), status long (elided at the end, one line).
 - Refresh: status change repaints the header text only.
@@ -206,7 +207,7 @@ Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. 
 
 Default is **list**. The choice is remembered (written on change, small file in `.adds/koboapps/data/`).
 
-**Header:** back chevron, serif title ("Apps" / "Ứng dụng"), then two small view-toggle icons (list, grid). The active one is underlined. Tap a toggle to switch; no animation.
+**Header:** Nickel's own page header (its `TextHeader`, as on Wishlist: back arrow "←", title in Nickel's UI sans at Nickel's header size, 1 px divider; pressed arrow = black circle, white arrow), then two small view-toggle icons (list, grid). Without the symbol the drawer draws the same header itself. The active one is underlined. Tap a toggle to switch; no animation.
 
 **List view**
 - Sections **INSTALLED** (vi "ĐÃ CÀI") and **SYSTEM** (vi "HỆ THỐNG"), small caps label.

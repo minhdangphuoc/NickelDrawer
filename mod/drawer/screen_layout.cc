@@ -6,7 +6,6 @@
 
 using namespace ScreenLogic;
 
-static const char *const BACK_GLYPH = "\xE2\x80\xB9";    // ‹
 static const char *const CHEVRON_GLYPH = "\xE2\x80\xBA"; // ›
 static const int HEADER_LINE_Y = 52;
 static const int HEADER_LINE_HEIGHT = 44;
@@ -441,8 +440,10 @@ ScreenPage ScreenLayout::page(int index) const
 
 void ScreenLayout::drawHeader(ScreenPage *page) const
 {
-    page->items.append(textItem(GUTTER, 40, 64, 88, QString::fromUtf8(BACK_GLYPH), HEADER_TITLE_SIZE, FAMILY_SANS,
-                                PaintItem::ALIGN_START));
+    PaintItem arrow;
+    arrow.shape = PaintItem::SHAPE_BACK_ARROW;
+    arrow.rect = QRect(GUTTER, 40, 64, 88); // the preview's "‹" box (layout.go)
+    page->items.append(arrow);
     TapTarget back;
     back.kind = TapTarget::TAP_BACK;
     back.rect = QRect(0, 0, BACK_TAP_WIDTH, HEADER_HEIGHT);

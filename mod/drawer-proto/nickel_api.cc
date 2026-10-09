@@ -15,6 +15,10 @@ void (*IconLeftButton_construct)(void *, QWidget *);
 void (*IconLeftButton_setPixmap)(void *, QPixmap const &);
 void (*IconLeftButton_setText)(void *, QString const &);
 int *TapGestureRecognizer_gestureType;
+void (*TextHeader_construct)(void *, QWidget *);
+void (*TextHeader_setText)(void *, QString const &);
+void (*TextHeaderBase_setDeselectedPixmap)(void *, QPixmap const &);
+void (*TextHeaderBase_setSelectedPixmap)(void *, QPixmap const &);
 void (*MoreView_construct_original)(void *, QWidget *);
 }
 
@@ -45,6 +49,13 @@ bool hasViewPush()
 int tapGestureType()
 {
     return TapGestureRecognizer_gestureType ? *TapGestureRecognizer_gestureType : 0;
+}
+
+NickelTextHeaderApi textHeaderApi()
+{
+    NickelTextHeaderApi api = {TextHeader_construct, TextHeader_setText, TextHeaderBase_setDeselectedPixmap,
+                               TextHeaderBase_setSelectedPixmap};
+    return api;
 }
 
 void *mainWindow()

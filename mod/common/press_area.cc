@@ -3,6 +3,10 @@
 #include <QGesture>
 #include <QGestureEvent>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPixmap>
+#include <QPointer>
 #include <QTimer>
 #include <QTouchEvent>
 
@@ -11,6 +15,18 @@
 // Qt registers custom gesture types from Qt::CustomGesture (0x100) up.
 static const int FIRST_CUSTOM_GESTURE_TYPE = Qt::CustomGesture;
 
+// Kobo's patched Qt reads custom widget attributes as e-ink hints. Nickel's
+// buttons push their pressed state to the panel with 0x80 set around a
+// synchronous repaint() (IconButtonBase::tapGesture, AddToCollectionDialog::
+// flashWidget; re/notes/G2-findings.md "Native header and press feedback").
+static const Qt::WidgetAttribute REPAINT_NOW_ATTRIBUTE = static_cast<Qt::WidgetAttribute>(0x80);
+
+// Icon buttons are 120 px tap targets around a ~44-64 px glyph; the circle
+// leaves this margin inside the target, like Nickel's *_hit icons.
+static const int CIRCLE_MARGIN = 16;
+// A finger rolls a few pixels while pressing; only a real drag cancels.
+static const int MOVE_TOLERANCE = 24;
+
 static const char *const SOURCE_GESTURE = "nickel tap gesture";
 static const char *const SOURCE_TOUCH = "touch";
 static const char *const SOURCE_MOUSE = "mouse";
@@ -18,18 +34,95 @@ static const char *const SOURCE_MOUSE = "mouse";
 static PressArea::TapGestureTypeProvider tapGestureTypeProvider = NULL;
 static bool hasLoggedGestureChoice = false;
 
+// The pressed look of an inverted area: a picture laid over it, so child
+// labels need no pressed style of their own. Input passes through to the area.
+class PressOverlay : public QWidget {
+public:
+    explicit PressOverlay(QWidget *parent) : QWidget(parent)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        setFocusPolicy(Qt::NoFocus);
+        hide();
+    }
+
+    void setImage(const QPixmap &pixmap) { image = pixmap; }
+
+protected:
+    void paintEvent(QPaintEvent *)
+    {
+        QPainter painter(this);
+        painter.drawPixmap(0, 0, image);
+    }
+
+private:
+    QPixmap image;
+};
+
+static const char *highlightName(PressArea::PressHighlight highlight)
+{
+    switch (highlight) {
+    case PressArea::HIGHLIGHT_INVERT:
+        return "inverted";
+    case PressArea::HIGHLIGHT_CIRCLE:
+        return "circle";
+    case PressArea::HIGHLIGHT_SELF_PAINTED:
+        return "self-painted";
+    case PressArea::HIGHLIGHT_NONE:
+        break;
+    }
+    return "none";
+}
+
+static void repaintNow(QWidget *widget, const QRect &area)
+{
+    widget->setAttribute(REPAINT_NOW_ATTRIBUTE, true);
+    widget->repaint(area);
+    widget->setAttribute(REPAINT_NOW_ATTRIBUTE, false);
+}
+
+// The area as drawn, colours inverted (Nickel: render, then Difference with
+// white). White underneath, so a widget without its own background still
+// inverts to black.
+static QPixmap invertedSnapshot(QWidget *widget, const QRect &area)
+{
+    QPixmap snapshot(area.size());
+    snapshot.fill(Qt::white);
+    widget->render(&snapshot, QPoint(), QRegion(area), QWidget::DrawWindowBackground | QWidget::DrawChildren);
+    QPainter painter(&snapshot);
+    painter.setCompositionMode(QPainter::CompositionMode_Difference);
+    painter.fillRect(snapshot.rect(), Qt::white);
+    return snapshot;
+}
+
+// Only the centred circle of the inverted snapshot; outside it stays transparent.
+static QPixmap circleOf(const QPixmap &inverted)
+{
+    int side = qMin(inverted.width(), inverted.height());
+    int diameter = side > 3 * CIRCLE_MARGIN ? side - 2 * CIRCLE_MARGIN : side;
+    QRect disc((inverted.width() - diameter) / 2, (inverted.height() - diameter) / 2, diameter, diameter);
+    QPixmap circle(inverted.size());
+    circle.fill(Qt::transparent);
+    QPainter painter(&circle);
+    QPainterPath clip;
+    clip.addEllipse(disc);
+    painter.setClipPath(clip);
+    painter.drawPixmap(0, 0, inverted);
+    return circle;
+}
+
 void PressArea::setTapGestureTypeProvider(TapGestureTypeProvider provider)
 {
     tapGestureTypeProvider = provider;
 }
 
 PressArea::PressArea(QWidget *parent)
-    : QWidget(parent), longPressTimer(new QTimer(this)), tapGestureType(0), isPressed(false), hasFiredLongPress(false),
-      acceptsPresses(true)
+    : QWidget(parent), longPressTimer(new QTimer(this)), overlay(NULL), pressHighlight(HIGHLIGHT_INVERT),
+      tapGestureType(0), isPressed(false), isPressedShown(false), hasFiredLongPress(false), acceptsPresses(true)
 {
     // Qt 5.2's QElapsedTimer is not invalid when default-constructed; without this
     // it holds garbage and every first tap is dropped as "too soon" (seen on device).
     sinceLastTap.invalidate();
+    pressedFeedback.highlight = HIGHLIGHT_NONE;
     setAttribute(Qt::WA_AcceptTouchEvents, true);
     setFocusPolicy(Qt::NoFocus); // page keys must reach the drawer view
     longPressTimer->setSingleShot(true);
@@ -61,6 +154,19 @@ void PressArea::setAcceptsPresses(bool isAccepting)
     }
 }
 
+void PressArea::setPressHighlight(PressHighlight highlight)
+{
+    pressHighlight = highlight;
+}
+
+PressArea::PressFeedback PressArea::feedbackAt(const QPoint &) const
+{
+    PressFeedback feedback;
+    feedback.rect = rect();
+    feedback.highlight = pressHighlight;
+    return feedback;
+}
+
 bool PressArea::event(QEvent *event)
 {
     switch (event->type()) {
@@ -69,6 +175,7 @@ bool PressArea::event(QEvent *event)
     case QEvent::GestureOverride:
         return handleGestureOverride(static_cast<QGestureEvent *>(event));
     case QEvent::TouchBegin:
+    case QEvent::TouchUpdate:
     case QEvent::TouchEnd:
     case QEvent::TouchCancel:
         return handleTouchEvent(event);
@@ -132,6 +239,9 @@ bool PressArea::handleTouchEvent(QEvent *event)
         logEvent(SOURCE_TOUCH, "begin", position);
         beginPress(SOURCE_TOUCH, position);
         break;
+    case QEvent::TouchUpdate:
+        movePress(SOURCE_TOUCH, position); // not logged: one line per finger movement
+        break;
     case QEvent::TouchEnd:
         logEvent(SOURCE_TOUCH, "end", position);
         endPress(SOURCE_TOUCH, !hasPoint || rect().contains(position));
@@ -152,11 +262,23 @@ void PressArea::mousePressEvent(QMouseEvent *event)
     event->accept();
 }
 
+void PressArea::mouseMoveEvent(QMouseEvent *event)
+{
+    movePress(SOURCE_MOUSE, event->pos());
+    event->accept();
+}
+
 void PressArea::mouseReleaseEvent(QMouseEvent *event)
 {
     logEvent(SOURCE_MOUSE, "release", event->pos());
     endPress(SOURCE_MOUSE, rect().contains(event->pos()));
     event->accept();
+}
+
+void PressArea::hideEvent(QHideEvent *event)
+{
+    clearPressedState("area hidden");
+    QWidget::hideEvent(event);
 }
 
 void PressArea::beginPress(const char *source, const QPoint &position)
@@ -173,6 +295,22 @@ void PressArea::beginPress(const char *source, const QPoint &position)
     isPressed = true;
     hasFiredLongPress = false;
     longPressTimer->start();
+    DebugLog::write("press area %p (%s): pressed via %s at %d,%d", static_cast<void *>(this),
+                    metaObject()->className(), source, position.x(), position.y());
+    showPressedState(source);
+}
+
+void PressArea::movePress(const char *source, const QPoint &position)
+{
+    if (!isPressed) {
+        return;
+    }
+    QRect bounds = pressedFeedback.rect.isEmpty() ? rect() : pressedFeedback.rect;
+    if (!bounds.adjusted(-MOVE_TOLERANCE, -MOVE_TOLERANCE, MOVE_TOLERANCE, MOVE_TOLERANCE).contains(position)) {
+        DebugLog::write("press area %p: %s moved out to %d,%d", static_cast<void *>(this), source, position.x(),
+                        position.y());
+        cancelPress(source);
+    }
 }
 
 void PressArea::endPress(const char *source, bool isInside)
@@ -184,11 +322,14 @@ void PressArea::endPress(const char *source, bool isInside)
     isPressed = false;
     longPressTimer->stop();
     if (!isTap) {
+        DebugLog::write("press area %p: released via %s, %s", static_cast<void *>(this), source,
+                        hasFiredLongPress ? "after the long press" : "outside, no tap");
+        clearPressedState(hasFiredLongPress ? "released after long press" : "released outside");
         return;
     }
     sinceLastTap.start();
     DebugLog::write("press area %p (%s): tap via %s", static_cast<void *>(this), metaObject()->className(), source);
-    QTimer::singleShot(0, this, SLOT(emitTapped()));
+    QTimer::singleShot(0, this, SLOT(emitTapped())); // the pressed state stays until the action ran
 }
 
 void PressArea::cancelPress(const char *source)
@@ -198,6 +339,60 @@ void PressArea::cancelPress(const char *source)
     }
     isPressed = false;
     longPressTimer->stop();
+    clearPressedState(source);
+}
+
+void PressArea::showPressedState(const char *source)
+{
+    PressFeedback feedback = feedbackAt(lastPressPosition);
+    feedback.rect &= rect();
+    if (feedback.highlight == HIGHLIGHT_NONE || feedback.rect.isEmpty()) {
+        DebugLog::write("press area %p: no pressed state at %d,%d", static_cast<void *>(this), lastPressPosition.x(),
+                        lastPressPosition.y());
+        return;
+    }
+    pressedFeedback = feedback;
+    isPressedShown = true;
+    if (feedback.highlight == HIGHLIGHT_SELF_PAINTED) {
+        repaintNow(this, feedback.rect);
+    } else {
+        showOverlay(feedback);
+    }
+    DebugLog::write("press area %p (%s): pressed state shown (%s, %dx%d at %d,%d, repaint now, via %s)",
+                    static_cast<void *>(this), metaObject()->className(), highlightName(feedback.highlight),
+                    feedback.rect.width(), feedback.rect.height(), feedback.rect.x(), feedback.rect.y(), source);
+}
+
+void PressArea::showOverlay(const PressFeedback &feedback)
+{
+    if (!overlay) {
+        overlay = new PressOverlay(this);
+    }
+    overlay->hide(); // never part of its own snapshot
+    QPixmap inverted = invertedSnapshot(this, feedback.rect);
+    overlay->setImage(feedback.highlight == HIGHLIGHT_CIRCLE ? circleOf(inverted) : inverted);
+    overlay->setGeometry(feedback.rect);
+    overlay->show();
+    overlay->raise();
+    repaintNow(overlay, overlay->rect());
+}
+
+// Back to the normal look with a plain update, as Nickel's defaultColors().
+void PressArea::clearPressedState(const char *reason)
+{
+    if (!isPressedShown) {
+        return;
+    }
+    isPressedShown = false;
+    if (overlay && overlay->isVisible()) {
+        overlay->hide();
+    } else {
+        update(pressedFeedback.rect);
+    }
+    DebugLog::write("press area %p (%s): pressed state cleared (%s)", static_cast<void *>(this),
+                    metaObject()->className(), reason);
+    pressedFeedback.rect = QRect();
+    pressedFeedback.highlight = HIGHLIGHT_NONE;
 }
 
 void PressArea::onLongPressTimeout()
@@ -210,14 +405,24 @@ void PressArea::onLongPressTimeout()
     QTimer::singleShot(0, this, SLOT(emitLongPressed()));
 }
 
+// The slot may delete this area (a tap that pops the page): only a live area
+// clears its pressed state.
 void PressArea::emitTapped()
 {
+    QPointer<PressArea> alive(this);
     emit tapped();
+    if (alive) {
+        clearPressedState("after tap action");
+    }
 }
 
 void PressArea::emitLongPressed()
 {
+    QPointer<PressArea> alive(this);
     emit longPressed();
+    if (alive) {
+        clearPressedState("after long-press action");
+    }
 }
 
 void PressArea::logEvent(const char *source, const char *phase, const QPoint &position) const

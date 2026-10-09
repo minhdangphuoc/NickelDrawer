@@ -50,6 +50,10 @@ static QObject *(*KeyboardFrame_createKeyboard)(QWidget *frame, int keyboardScri
 static void (*KeyboardReceiver_construct)(void *receiver, QLineEdit *lineEdit, bool unknown);
 static void (*SearchKeyboardController_setReceiver)(QObject *controller, void *receiver, bool unknown);
 static void (*SearchKeyboardController_setGoText)(QObject *controller, QString const &text);
+static void (*TextHeader_construct)(void *header, QWidget *parent);
+static void (*TextHeader_setText)(void *header, QString const &text);
+static void (*TextHeaderBase_setDeselectedPixmap)(void *header, QPixmap const &pixmap);
+static void (*TextHeaderBase_setSelectedPixmap)(void *header, QPixmap const &pixmap);
 // Data symbol: the Qt::GestureType that Nickel's TapGestureRecognizer registered
 // (0 until Nickel registers it at startup, after our init).
 static int *TapGestureRecognizer_gestureType;
@@ -62,6 +66,8 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN14IconButtonBase6tappedEv
 // signal-symbol: _ZN18KeyboardController15commitRequestedEv
 // signal-symbol: _ZN8N3Dialog11closeTappedEv
+// signal-symbol: _ZN14TextHeaderBase6tappedEv
+// signal-symbol: _ZN14TextHeaderBase9mouseDownEv
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
 static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
@@ -149,6 +155,12 @@ struct nh_dlsym symbolTable[] = {
     NICKEL_SYMBOL("_ZN24SearchKeyboardController9setGoTextERK7QString", SearchKeyboardController_setGoText,
                   "field keyboard"),
     NICKEL_SYMBOL("_ZN20TapGestureRecognizer12_gestureTypeE", TapGestureRecognizer_gestureType, "taps"),
+    NICKEL_SYMBOL("_ZN10TextHeaderC1EP7QWidget", TextHeader_construct, "page header"),
+    NICKEL_SYMBOL("_ZN10TextHeader7setTextERK7QString", TextHeader_setText, "page header"),
+    NICKEL_SYMBOL("_ZN14TextHeaderBase19setDeselectedPixmapERK7QPixmap", TextHeaderBase_setDeselectedPixmap,
+                  "page header"),
+    NICKEL_SYMBOL("_ZN14TextHeaderBase17setSelectedPixmapERK7QPixmap", TextHeaderBase_setSelectedPixmap,
+                  "page header"),
     {0},
 };
 
@@ -235,6 +247,18 @@ void setMoreViewCreatedHandler(MoreViewCreatedHandler handler)
 int tapGestureType()
 {
     return isBridgeActive && TapGestureRecognizer_gestureType ? *TapGestureRecognizer_gestureType : 0;
+}
+
+NickelTextHeaderApi textHeaderApi()
+{
+    NickelTextHeaderApi api = {NULL, NULL, NULL, NULL};
+    if (isBridgeActive) {
+        api.construct = TextHeader_construct;
+        api.setText = TextHeader_setText;
+        api.setDeselectedPixmap = TextHeaderBase_setDeselectedPixmap;
+        api.setSelectedPixmap = TextHeaderBase_setSelectedPixmap;
+    }
+    return api;
 }
 
 // ---- More tab ----

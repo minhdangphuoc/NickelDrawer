@@ -1,7 +1,8 @@
 #!/bin/sh
 # Static checks for build/mod/libnddrawer.so (gate-G2 prototypes). Run from anywhere:
 #   mod/drawer-proto/check-symbols.sh
-# 1. Every libnickel symbol the mod hooks or dlsyms is exported by all firmware
+# 1. Every libnickel symbol the mod hooks, dlsyms or connects as a signal
+#    ("signal-symbol:" comments) is exported by all firmware
 #    builds in re/symbols/<fw>/exports.txt (demangled), and by the mangled dumps
 #    in ~/.cache/nickeldrawer/symbols/<fw>/ when those exist.
 # 2. The library is ARM, hard-float, needs only the expected libraries, and
@@ -24,9 +25,11 @@ fail() {
 	failures=$((failures + 1))
 }
 
-# Mangled names from the nh_dlsym (.name) and nh_hook (.sym) tables.
+# Mangled names from the nh_dlsym (.name) and nh_hook (.sym) tables and the
+# "signal-symbol:" comments for SIGNAL() connections.
 list_nickel_symbols() {
-	grep -hoE '\.(name|sym) = "_Z[^"]+"' "$script_dir"/*.cc | sed -E 's/.*"(_Z[^"]+)"/\1/' | sort -u
+	grep -hoE '\.(name|sym) = "_Z[^"]+"|signal-symbol: _Z[A-Za-z0-9_]+' "$script_dir"/*.cc |
+		sed -E 's/^signal-symbol: //; s/.*"(_Z[^"]+)"/\1/' | sort -u
 }
 
 check_firmware_exports() {

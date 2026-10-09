@@ -15,6 +15,8 @@
 
 #include <NickelHook.h>
 
+#include "page_header.h"
+
 class AbstractController;
 class QDialog;
 class QLineEdit;
@@ -38,6 +40,9 @@ const char *firmware();
 // The gesture type of Nickel's tap gesture (TapGestureRecognizer::_gestureType),
 // read live; 0 when the symbol is missing, not yet registered, or the bridge is inert.
 int tapGestureType();
+
+// Nickel's TextHeader for page headers; every entry NULL while inert.
+NickelTextHeaderApi textHeaderApi();
 
 // ---- More tab ----
 typedef void (*MoreViewCreatedHandler)(QWidget *moreView);

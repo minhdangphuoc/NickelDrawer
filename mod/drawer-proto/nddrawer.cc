@@ -82,6 +82,10 @@ static struct nh_hook modHooks[] = {
     {0},
 };
 
+// Signals connected by name (SIGNAL(), no dlsym); check-symbols.sh checks them too.
+// signal-symbol: _ZN14IconButtonBase6tappedEv
+// signal-symbol: _ZN14TextHeaderBase6tappedEv
+// signal-symbol: _ZN14TextHeaderBase9mouseDownEv
 static struct nh_dlsym modSymbols[] = {
     {.name = "_ZN20MainWindowController14sharedInstanceEv",
      .out = nh_symoutptr(MainWindowController_sharedInstance),
@@ -122,6 +126,22 @@ static struct nh_dlsym modSymbols[] = {
     {.name = "_ZN20TapGestureRecognizer12_gestureTypeE",
      .out = nh_symoutptr(TapGestureRecognizer_gestureType),
      .desc = "TapGestureRecognizer::_gestureType (prototype C taps)",
+     .optional = true},
+    {.name = "_ZN10TextHeaderC1EP7QWidget",
+     .out = nh_symoutptr(TextHeader_construct),
+     .desc = "TextHeader::TextHeader (prototype C header)",
+     .optional = true},
+    {.name = "_ZN10TextHeader7setTextERK7QString",
+     .out = nh_symoutptr(TextHeader_setText),
+     .desc = "TextHeader::setText (prototype C header)",
+     .optional = true},
+    {.name = "_ZN14TextHeaderBase19setDeselectedPixmapERK7QPixmap",
+     .out = nh_symoutptr(TextHeaderBase_setDeselectedPixmap),
+     .desc = "TextHeaderBase::setDeselectedPixmap (prototype C header)",
+     .optional = true},
+    {.name = "_ZN14TextHeaderBase17setSelectedPixmapERK7QPixmap",
+     .out = nh_symoutptr(TextHeaderBase_setSelectedPixmap),
+     .desc = "TextHeaderBase::setSelectedPixmap (prototype C header)",
      .optional = true},
     {0},
 };

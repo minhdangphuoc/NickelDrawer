@@ -31,6 +31,7 @@ void UpdateDot::paintEvent(QPaintEvent *)
 ViewToggleIcon::ViewToggleIcon(Shape iconShape, QWidget *parent) : PressArea(parent), shape(iconShape), isActive(false)
 {
     setFixedSize(TOGGLE_SIDE, TOGGLE_SIDE);
+    setPressHighlight(HIGHLIGHT_CIRCLE); // an icon button, like Nickel's *_hit icons
 }
 
 void ViewToggleIcon::setActive(bool active)

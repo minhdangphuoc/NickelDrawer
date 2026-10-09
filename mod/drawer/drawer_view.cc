@@ -13,13 +13,13 @@
 #include "item_widgets.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
+#include "page_header.h"
 #include "painted_marks.h"
 #include "status_bar_inset.h"
 #include "view_settings.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
 static const int SIDE_GUTTER = 72;
-static const int HEADER_HEIGHT = 120;
 static const int FOOTER_BUTTON_SIDE = 120;
 static const int SPACING = 24;
 static const int CONTENT_WIDTH = 1120;
@@ -33,7 +33,6 @@ static const char *const VIEW_STYLE =
     "#drawerHeader { background: white; }"
     "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: black; background: transparent; }"
-    "#drawerTitle { font-family: @TITLE_FAMILY@; font-size: 46px; font-weight: bold; }"
     "#drawerGlyph { font-size: 64px; }"
     "#drawerRow { border-bottom: 2px solid black; background: white; }"
     "#drawerTile { background: white; }"
@@ -55,7 +54,7 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 }
 
 DrawerView::DrawerView()
-    : QWidget(NULL), rootLayout(NULL), header(NULL), titleLabel(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
+    : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
       hintLabel(NULL), pageIndicator(NULL), viewMode(ViewSettings::load()), currentPage(0), isInputBlocked(false),
       hasModel(false), hasLoggedLayout(false)
 {
@@ -97,6 +96,7 @@ PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, 
     PressArea *button = new PressArea(parent);
     button->setObjectName(QString::fromUtf8(glyph));
     button->setFixedSize(FOOTER_BUTTON_SIDE, FOOTER_BUTTON_SIDE);
+    button->setPressHighlight(PressArea::HIGHLIGHT_CIRCLE); // an icon button, like Nickel's *_hit icons
     QLabel *label = createTextLabel(QString::fromUtf8(glyph), "drawerGlyph", button);
     label->setAlignment(Qt::AlignCenter);
     label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
@@ -108,28 +108,23 @@ PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, 
     return button;
 }
 
-QWidget *DrawerView::createHeader()
+// Nickel's own TextHeader (back arrow, title, divider) when the firmware has
+// it, else page_header.h's copy; our list/grid toggles at the right.
+PageHeader *DrawerView::createHeader()
 {
-    QWidget *header = new QWidget(this);
-    header->setObjectName(QStringLiteral("drawerHeader"));
-    header->setAttribute(Qt::WA_StyledBackground, true);
-    header->setFixedHeight(HEADER_HEIGHT);
-    titleLabel = createTextLabel(FallbackStrings::text(FallbackStrings::APPS_TITLE), "drawerTitle", header);
-    listToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_LIST, header);
-    gridToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_GRID, header);
+    PageHeader *pageHeader =
+        new PageHeader(FallbackStrings::text(FallbackStrings::APPS_TITLE), NickelBridge::textHeaderApi(), this);
+    connect(pageHeader, SIGNAL(backTapped()), this, SIGNAL(backRequested()));
+    listToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_LIST, pageHeader);
+    gridToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_GRID, pageHeader);
     connect(listToggle, SIGNAL(tapped()), this, SLOT(onListToggleTapped()));
     connect(gridToggle, SIGNAL(tapped()), this, SLOT(onGridToggleTapped()));
     pressables << listToggle << gridToggle;
-
-    QHBoxLayout *layout = new QHBoxLayout(header);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(0);
-    layout->addWidget(createArrow("‹", SIGNAL(backRequested()), header));
-    layout->addWidget(titleLabel, 1);
-    layout->addWidget(listToggle);
-    layout->addWidget(gridToggle);
-    DebugLog::write("drawer view: header created (back, title, list/grid toggles)");
-    return header;
+    pageHeader->addTrailingWidget(listToggle);
+    pageHeader->addTrailingWidget(gridToggle);
+    DebugLog::write("drawer view: header created (%s back, title, list/grid toggles)",
+                    pageHeader->usesNickelHeader() ? "Nickel's" : "own");
+    return pageHeader;
 }
 
 QWidget *DrawerView::createFooter()
@@ -150,7 +145,7 @@ void DrawerView::setModel(const DrawerModel &model)
 {
     bool isStatusOnlyChange = hasModel && !items.isEmpty() && hasSameItems(model);
     hasModel = true;
-    titleLabel->setText(model.title.isEmpty() ? FallbackStrings::text(FallbackStrings::APPS_TITLE) : model.title);
+    header->setTitle(model.title.isEmpty() ? FallbackStrings::text(FallbackStrings::APPS_TITLE) : model.title);
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
     hintLabel->setText(hint);
     flatten(model);
@@ -205,6 +200,7 @@ void DrawerView::applyLiveStates()
 void DrawerView::setInputBlocked(bool isBlocked)
 {
     isInputBlocked = isBlocked;
+    header->setBackEnabled(!isBlocked);
     for (int i = 0; i < pressables.size(); i++) {
         pressables[i]->setAcceptsPresses(!isBlocked);
     }

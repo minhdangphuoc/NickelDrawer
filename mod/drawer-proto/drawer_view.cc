@@ -1,20 +1,19 @@
 #include "drawer_view.h"
 
-#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "debug_log.h"
+#include "nickel_api.h"
 #include "nickel_fonts.h"
-#include "press_area.h"
+#include "page_header.h"
 #include "status_bar_inset.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
 static const int SIDE_GUTTER = 72;
 static const int HEADER_HEIGHT = 120;
-static const int BACK_BUTTON_SIDE = 120; // minimum tap target (ui-kit §1.5)
 static const int ROW_HEIGHT = 152;
 static const int ROWS_PER_PAGE = 3;
 static const int PAGE_COUNT = 2;
@@ -29,9 +28,6 @@ static const char *const VIEW_STYLE =
     "DrawerView { background: white; }"
     "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: black; background: white; border: none; }"
-    "#drawerHeader { background: white; }"
-    "#drawerTitle { font-family: @TITLE_FAMILY@; font-size: 44px; font-weight: bold; }"
-    "#drawerBackGlyph { font-size: 64px; }"
     "#drawerRow { font-size: 36px; border-bottom: 2px solid #c0c0c0; }"
     "#drawerPageIndicator { font-size: 32px; }";
 
@@ -61,40 +57,15 @@ DrawerView::DrawerView(const QString &title)
     DebugLog::write("drawer view: constructed %p, header %p", static_cast<void *>(this), static_cast<void *>(header));
 }
 
+// Nickel's own TextHeader (back arrow, title, divider) when the firmware has
+// it, else page_header.h's copy.
 QWidget *DrawerView::createHeader(const QString &title)
 {
-    QWidget *header = new QWidget(this);
-    header->setObjectName(QStringLiteral("drawerHeader"));
-    header->setAttribute(Qt::WA_StyledBackground, true);
-    header->setFixedHeight(HEADER_HEIGHT);
-
-    QLabel *titleLabel = new QLabel(title, header);
-    titleLabel->setObjectName(QStringLiteral("drawerTitle"));
-
-    QHBoxLayout *layout = new QHBoxLayout(header);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(createBackButton(header));
-    layout->addWidget(titleLabel, 1);
-    DebugLog::write("drawer view: header created (back + title \"%s\")", qPrintable(title));
-    return header;
-}
-
-// A plain QPushButton never got clicked() on the device (Nickel delivers taps
-// as its own gesture, not as mouse clicks); PressArea takes every path.
-PressArea *DrawerView::createBackButton(QWidget *parent)
-{
-    PressArea *back = new PressArea(parent);
-    back->setObjectName(QStringLiteral("drawerBack"));
-    back->setFixedSize(BACK_BUTTON_SIDE, BACK_BUTTON_SIDE);
-    QLabel *glyph = new QLabel(QString::fromUtf8("‹"), back);
-    glyph->setObjectName(QStringLiteral("drawerBackGlyph"));
-    glyph->setAlignment(Qt::AlignCenter);
-    glyph->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-    QHBoxLayout *layout = new QHBoxLayout(back);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(glyph);
-    connect(back, SIGNAL(tapped()), this, SLOT(onBackTapped()));
-    return back;
+    PageHeader *pageHeader = new PageHeader(title, NickelApi::textHeaderApi(), this);
+    connect(pageHeader, SIGNAL(backTapped()), this, SLOT(onBackTapped()));
+    DebugLog::write("drawer view: header created (%s back + title \"%s\")",
+                    pageHeader->usesNickelHeader() ? "Nickel's" : "own", qPrintable(title));
+    return pageHeader;
 }
 
 void DrawerView::onBackTapped()
