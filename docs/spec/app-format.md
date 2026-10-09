@@ -11,7 +11,8 @@ Phase 1 exposes apps through NickelMenu only. Later phases (native drawer, UI ki
 ├─ app.json        manifest (required)
 ├─ bin/            executables and scripts the actions run
 ├─ data/           app-owned state: config, tokens, logs (never shipped in a release zip)
-└─ icon.svg        optional, unused until Phase 3
+├─ icon.png        drawer icon (see below)
+└─ ui.json         optional native screen, see ui-json.md
 ```
 
 Host files (not an app, not scanned):
@@ -28,6 +29,10 @@ Host files (not an app, not scanned):
 ```
 
 NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the next time a menu opens (verified in NickelMenu `src/config.c`, `nm_config_files_update`), so regenerating `.adds/nm/koboapps` needs no reboot.
+
+## icon.png
+
+Optional `icon.png` next to `app.json`: 96x96 px, monochrome outline (black strokes about 5-6 px with round caps on a transparent background, roughly 10 px inner margin, one stroke weight across all icons). The drawer loads it with `QPixmap` and scales it smoothly (52 px in the list row, larger on a tile); SVG is not supported. `go run ./cmd/iconsgen -repo .` draws the shipped icons, and a test fails when a committed PNG is stale. Host item icons live in `.adds/koboapps/icons/` (`refresh.png`, `updates.png`).
 
 ## app.json
 
@@ -70,6 +75,7 @@ NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the ne
 | `version` | string | semver `MAJOR.MINOR.PATCH` |
 | `description` | string | optional, ≤ 120 chars |
 | `menu` | bool | optional, default `true`; `false` hides the whole app from the menu (see also `actions[].menu`) |
+| `hidden` | bool | optional, default `false`; `true` keeps the app out of NickelMenu and the drawer list. It is still validated and `appsctl run` / `drawer run` still run it by id (use it for a postponed feature) |
 | `storage` | object | optional: `{"reads": [...], "writes": [...]}` with logical folder names; see below |
 | `network` | bool | optional, default `false`; `true` when the app talks to the network |
 | `actions` | array | 1–8 items, `id` unique within the app |

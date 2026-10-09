@@ -13,6 +13,7 @@
 #include "item_widgets.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
+#include "open_popups.h"
 #include "page_header.h"
 #include "painted_marks.h"
 #include "status_bar_inset.h"
@@ -252,6 +253,7 @@ void DrawerView::onNextTapped()
 
 void DrawerView::goToPage(int page)
 {
+    OpenPopups::closeAll("drawer page change");
     currentPage = page;
     renderPage();
     scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy));
@@ -375,6 +377,13 @@ void DrawerView::showEvent(QShowEvent *event)
     scheduleRefresh(DrawerLogic::refreshForOpen(&refreshPolicy));
 }
 
+// Nickel hides the page when it pops it or shows another tab over it.
+void DrawerView::hideEvent(QHideEvent *event)
+{
+    OpenPopups::closeAll("drawer view hidden");
+    QWidget::hideEvent(event);
+}
+
 void DrawerView::applyStatusBarInset()
 {
     int inset = StatusBarInset::topInsetFor(this);
@@ -411,8 +420,9 @@ void DrawerView::onItemTapped()
 void DrawerView::onItemLongPressed()
 {
     const DrawerItem *item = isInputBlocked ? NULL : itemForSender();
-    if (item) {
-        emit itemLongPressed(*item);
+    QWidget *pressed = qobject_cast<QWidget *>(sender());
+    if (item && pressed) {
+        emit itemLongPressed(*item, pressed->mapToGlobal(pressed->rect().center()));
     }
 }
 
@@ -424,8 +434,13 @@ void DrawerView::keyPressEvent(QKeyEvent *event)
         return;
     }
     event->accept();
+    if (OpenPopups::isAnyOpen()) {
+        // The key closes the popup instead of paging under it.
+        OpenPopups::closeAll("page key");
+        return;
+    }
     if (isInputBlocked) {
-        DebugLog::write("drawer: page key ignored while a dialog or action is pending");
+        DebugLog::write("drawer: page key ignored while an action is pending");
         return;
     }
     int perPage = DrawerLogic::itemsPerPage(viewMode);

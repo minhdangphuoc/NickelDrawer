@@ -62,6 +62,7 @@ func TestLoadRejectsInvalidManifests(t *testing.T) {
 		{"bad-rescan", "must be one of none, quick, full"},
 		{"bad-label-colon", "must not contain ':'"},
 		{"bad-json", "not valid JSON"},
+		{"bad-hidden-type", "not valid JSON"},
 		{"bad-storage-unknown", `unknown folder "secrets"`},
 		{"bad-storage-unknown", `unknown folder "/etc"`},
 	}
@@ -113,6 +114,30 @@ func TestLoadAppliesDefaults(t *testing.T) {
 	action := app.Actions[0]
 	if !app.InMenu() || action.Timeout() != DefaultTimeout || action.RescanMode() != RescanNone || action.Wifi {
 		t.Fatalf("defaults not applied: %+v", app)
+	}
+}
+
+func TestHiddenFlagHidesTheAppFromEveryList(t *testing.T) {
+	cases := []struct {
+		folder       string
+		wantHidden   bool
+		wantInMenu   bool
+		wantNoWarned bool
+	}{
+		{"valid-hidden", true, false, true},
+		{"valid-hidden-false", false, true, true},
+		{"valid-defaults", false, true, true},
+	}
+	for _, c := range cases {
+		t.Run(c.folder, func(t *testing.T) {
+			app, warnings, err := Load(stageApp(t, c.folder))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if app.IsHidden() != c.wantHidden || app.InMenu() != c.wantInMenu || (len(warnings) == 0) != c.wantNoWarned {
+				t.Fatalf("hidden=%v inMenu=%v warnings=%v", app.IsHidden(), app.InMenu(), warnings)
+			}
+		})
 	}
 }
 

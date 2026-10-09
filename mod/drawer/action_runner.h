@@ -2,6 +2,7 @@
 #define NICKELDRAWER_ACTION_RUNNER_H
 
 #include <QObject>
+#include <QPoint>
 
 #include "drawer_model.h"
 
@@ -12,7 +13,8 @@ class ModelClient;
 //   tap        → run the first action; needs_wifi → ask, connect, retry once;
 //                show the result (dialog for "show", toast for "background");
 //                rescan the library when the reply asks for it.
-//   long-press → menu: Info, the other actions, Remove… (with confirm).
+//   long-press → menu at the pressed item: Info, the other actions, Remove…
+//                last (with confirm).
 //   screen tap → `drawer event` with the same Wi-Fi, result and rescan rules;
 //                a toast or dialog declared on the screen is shown as such.
 // One thing at a time: while busy, the view ignores input.
@@ -22,7 +24,8 @@ public:
     ActionRunner(ModelClient *client, QObject *parent);
 
     void runPrimary(const DrawerItem &item);
-    void openMenu(const DrawerItem &item);
+    // anchor: the pressed item's centre, global; null: the screen centre.
+    void openMenu(const DrawerItem &item, const QPoint &anchor);
     void runScreenEvent(const DrawerItem &app, const ScreenEvent &event);
     bool isRunning() const { return isBusy; }
 

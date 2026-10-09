@@ -7,71 +7,120 @@
 #include <QPainter>
 #include <QTimer>
 
+#include "debug_log.h"
 #include "drawer_logic.h"
 #include "nickel_fonts.h"
 #include "press_area.h"
 
 static const int DIALOG_WIDTH = 1000;
+static const int MENU_WIDTH = 760;
 static const int PADDING = 48;
+static const int MENU_SIDE_PADDING = 32;
 static const int SPACING = 24;
 static const int BUTTON_HEIGHT = 120;
-static const int BORDER_WIDTH = 2;
+static const int MENU_ROW_HEIGHT = 120;
+static const int DIVIDER_HEIGHT = 1;
 
+// Menu look from Nickel's NickelTouchMenu.qss: 3 px black border, white box,
+// 1 px #666666 separators; the title row bold.
 static const char *const DIALOG_STYLE =
-    "PlainDialog { background: white; }"
     "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: black; background: transparent; }"
+    "#plainDialogBox { background: white; border: 3px solid black; }"
     "#plainDialogTitle { font-family: @TITLE_FAMILY@; font-size: 42px; font-weight: bold; }"
     "#plainDialogText { font-size: 32px; }"
     "#plainDialogButton { border: 2px solid black; background: white; }"
-    "#plainDialogButtonLabel { font-size: 32px; }";
+    "#plainDialogButtonLabel { font-size: 32px; }"
+    "#plainMenuTitle { font-size: 34px; font-weight: bold; }"
+    "#plainMenuRow { background: white; }"
+    "#plainMenuRowLabel { font-size: 34px; }"
+    "#plainMenuDivider { background: #666666; }";
 
-PlainDialog::PlainDialog(const QString &title, const QString &text, const QList<DialogChoice> &choices, Layout layout)
-    : QDialog(NULL, Qt::Dialog | Qt::FramelessWindowHint), hasAnswered(false)
+static QLabel *createLabel(const QString &text, const char *objectName, QWidget *parent)
+{
+    QLabel *label = new QLabel(text, parent);
+    label->setObjectName(QString::fromLatin1(objectName));
+    label->setWordWrap(true); // long vi labels wrap instead of clipping (ui-kit §4)
+    return label;
+}
+
+PlainDialog::PlainDialog(const QString &title, const QString &text, const QList<DialogChoice> &choices, Layout layout,
+                         OutsideTap outsideTap)
+    : QDialog(NULL, Qt::Dialog | Qt::FramelessWindowHint), outsideArea(NULL), box(NULL), boxLayout(NULL),
+      outsideTapRule(outsideTap),
+      hasAnswered(false)
 {
     setAttribute(Qt::WA_DeleteOnClose, true);
     setStyleSheet(NickelFonts::styleSheet(DIALOG_STYLE));
-    setFixedWidth(DIALOG_WIDTH);
 
-    QVBoxLayout *column = new QVBoxLayout(this);
-    column->setContentsMargins(PADDING, PADDING, PADDING, PADDING);
-    column->setSpacing(SPACING);
-    if (!title.isEmpty()) {
-        QLabel *titleLabel = new QLabel(title, this);
-        titleLabel->setObjectName(QStringLiteral("plainDialogTitle"));
-        titleLabel->setWordWrap(true);
-        column->addWidget(titleLabel);
+    // First child, so it lies under the box: every tap outside the box lands here.
+    PressArea *outside = new PressArea(this);
+    outside->setObjectName(QStringLiteral("plainDialogOutside"));
+    outside->setPressHighlight(PressArea::HIGHLIGHT_NONE);
+    connect(outside, SIGNAL(tapped()), this, SLOT(onOutsideTapped()));
+    outsideArea = outside;
+    QVBoxLayout *screenLayout = new QVBoxLayout(this);
+    screenLayout->setContentsMargins(0, 0, 0, 0);
+
+    box = new QWidget(this);
+    box->setObjectName(QStringLiteral("plainDialogBox"));
+    box->setAttribute(Qt::WA_StyledBackground, true);
+    box->setFixedWidth(layout == MENU_ROWS ? MENU_WIDTH : DIALOG_WIDTH);
+    boxLayout = new QVBoxLayout(box);
+    screenLayout->addWidget(box, 0, Qt::AlignCenter);
+    if (layout == MENU_ROWS) {
+        addMenuContent(title, choices);
+    } else {
+        addMessageContent(title, text, choices);
     }
-    if (!text.isEmpty()) {
-        QLabel *textLabel = new QLabel(text, this);
-        textLabel->setObjectName(QStringLiteral("plainDialogText"));
-        textLabel->setWordWrap(true);
-        textLabel->setTextFormat(Qt::PlainText);
-        column->addWidget(textLabel);
-    }
-    QBoxLayout *buttonLayout =
-        new QBoxLayout(layout == BUTTONS_STACKED ? QBoxLayout::TopToBottom : QBoxLayout::LeftToRight);
-    buttonLayout->setSpacing(SPACING);
-    for (int i = 0; i < choices.size(); i++) {
-        buttonLayout->addWidget(createButton(choices[i]));
-    }
-    column->addLayout(buttonLayout);
 
     connect(this, SIGNAL(rejected()), this, SLOT(onDismissed()));
     // ui-kit §3.15: a dialog left alone for 120 s counts as cancel.
     QTimer::singleShot(DrawerLogic::CONFIRM_TIMEOUT_MILLISECONDS, this, SLOT(reject()));
 }
 
+void PlainDialog::addMessageContent(const QString &title, const QString &text, const QList<DialogChoice> &choices)
+{
+    boxLayout->setContentsMargins(PADDING, PADDING, PADDING, PADDING);
+    boxLayout->setSpacing(SPACING);
+    if (!title.isEmpty()) {
+        boxLayout->addWidget(createLabel(title, "plainDialogTitle", box));
+    }
+    if (!text.isEmpty()) {
+        QLabel *textLabel = createLabel(text, "plainDialogText", box);
+        textLabel->setTextFormat(Qt::PlainText);
+        boxLayout->addWidget(textLabel);
+    }
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->setSpacing(SPACING);
+    for (int i = 0; i < choices.size(); i++) {
+        buttonLayout->addWidget(createButton(choices[i]));
+    }
+    boxLayout->addLayout(buttonLayout);
+}
+
+void PlainDialog::addMenuContent(const QString &title, const QList<DialogChoice> &choices)
+{
+    boxLayout->setContentsMargins(3, 3, 3, 3); // inside the 3 px border
+    boxLayout->setSpacing(0);
+    QLabel *titleRow = createLabel(title, "plainMenuTitle", box);
+    titleRow->setFixedHeight(MENU_ROW_HEIGHT);
+    titleRow->setContentsMargins(MENU_SIDE_PADDING, 0, MENU_SIDE_PADDING, 0);
+    boxLayout->addWidget(titleRow);
+    for (int i = 0; i < choices.size(); i++) {
+        boxLayout->addWidget(createDivider());
+        boxLayout->addWidget(createMenuRow(choices[i]));
+    }
+}
+
 QWidget *PlainDialog::createButton(const DialogChoice &choice)
 {
-    PressArea *button = new PressArea(this);
+    PressArea *button = new PressArea(box);
     button->setObjectName(QStringLiteral("plainDialogButton"));
     button->setAttribute(Qt::WA_StyledBackground, true);
     button->setMinimumHeight(BUTTON_HEIGHT);
-    QLabel *label = new QLabel(choice.label, button);
-    label->setObjectName(QStringLiteral("plainDialogButtonLabel"));
+    QLabel *label = createLabel(choice.label, "plainDialogButtonLabel", button);
     label->setAlignment(Qt::AlignCenter);
-    label->setWordWrap(true); // long vi labels wrap instead of clipping (ui-kit §4)
     label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
     QHBoxLayout *layout = new QHBoxLayout(button);
     layout->addWidget(label);
@@ -81,21 +130,74 @@ QWidget *PlainDialog::createButton(const DialogChoice &choice)
     return button;
 }
 
+// A plain text row, no box of its own; pressed, it inverts (PressArea).
+QWidget *PlainDialog::createMenuRow(const DialogChoice &choice)
+{
+    PressArea *row = new PressArea(box);
+    row->setObjectName(QStringLiteral("plainMenuRow"));
+    row->setAttribute(Qt::WA_StyledBackground, true);
+    row->setFixedHeight(MENU_ROW_HEIGHT);
+    QLabel *label = createLabel(choice.label, "plainMenuRowLabel", row);
+    label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    QHBoxLayout *layout = new QHBoxLayout(row);
+    layout->setContentsMargins(MENU_SIDE_PADDING, 0, MENU_SIDE_PADDING, 0);
+    layout->addWidget(label);
+    connect(row, SIGNAL(tapped()), this, SLOT(onChoiceTapped()));
+    buttons.append(row);
+    buttonIds.append(choice.id);
+    return row;
+}
+
+QWidget *PlainDialog::createDivider()
+{
+    QWidget *divider = new QWidget(box);
+    divider->setObjectName(QStringLiteral("plainMenuDivider"));
+    divider->setAttribute(Qt::WA_StyledBackground, true);
+    divider->setFixedHeight(DIVIDER_HEIGHT);
+    return divider;
+}
+
+// The largest visible top-level window (Nickel's main window), as it looks now.
+void PlainDialog::captureBackdrop()
+{
+    QWidget *page = NULL;
+    QList<QWidget *> windows = QApplication::topLevelWidgets();
+    for (int i = 0; i < windows.size(); i++) {
+        QWidget *window = windows[i];
+        if (window == this || !window->isVisible() || window->inherits("QMenu") || window->inherits("QDialog")) {
+            continue;
+        }
+        if (!page || window->width() * window->height() > page->width() * page->height()) {
+            page = window;
+        }
+    }
+    if (page) {
+        backdrop = page->grab();
+    }
+    DebugLog::write("plain dialog: backdrop %s", backdrop.isNull() ? "unavailable, white" : "captured");
+}
+
 void PlainDialog::present()
 {
-    adjustSize();
-    QRect screen = QApplication::desktop()->screenGeometry();
-    move(screen.center() - rect().center());
+    captureBackdrop();
+    setGeometry(QApplication::desktop()->screenGeometry());
     open();
 }
 
-void PlainDialog::paintEvent(QPaintEvent *event)
+void PlainDialog::paintEvent(QPaintEvent *)
 {
-    QDialog::paintEvent(event);
     QPainter painter(this);
-    painter.setPen(QPen(Qt::black, BORDER_WIDTH));
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRect(rect().adjusted(1, 1, -1, -1));
+    if (backdrop.isNull()) {
+        painter.fillRect(rect(), Qt::white);
+    } else {
+        painter.drawPixmap(rect(), backdrop);
+    }
+}
+
+void PlainDialog::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+    outsideArea->setGeometry(rect());
 }
 
 void PlainDialog::onChoiceTapped()
@@ -107,6 +209,16 @@ void PlainDialog::onChoiceTapped()
     hasAnswered = true;
     emit chosen(buttonIds[index]);
     accept();
+}
+
+void PlainDialog::onOutsideTapped()
+{
+    if (outsideTapRule == OUTSIDE_TAP_IGNORED) {
+        DebugLog::write("plain dialog %p: outside tap ignored (destructive question)", static_cast<void *>(this));
+        return;
+    }
+    DebugLog::write("plain dialog %p: outside tap, dismissed", static_cast<void *>(this));
+    reject();
 }
 
 void PlainDialog::onDismissed()

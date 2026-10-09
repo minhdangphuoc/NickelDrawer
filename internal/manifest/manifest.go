@@ -36,7 +36,7 @@ var (
 	actionIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,30}$`)
 	semverPattern   = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
-	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "storage", "network", "actions"}
+	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "hidden", "storage", "network", "actions"}
 	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan", "menu"}
 )
 
@@ -48,6 +48,7 @@ type App struct {
 	Version     string         `json:"version"`
 	Description string         `json:"description"`
 	Menu        *bool          `json:"menu"`
+	Hidden      bool           `json:"hidden"`
 	Storage     *StorageAccess `json:"storage"`
 	Network     bool           `json:"network"`
 	Actions     []Action       `json:"actions"`
@@ -85,9 +86,15 @@ func (e *ValidationError) Error() string {
 	return strings.Join(e.Problems, "; ")
 }
 
-// InMenu reports whether the app appears in the menu (default true).
+// IsHidden reports whether the app is kept out of every list (NickelMenu and the drawer). A
+// hidden app stays validated and runnable by id, e.g. while its feature is postponed.
+func (a App) IsHidden() bool {
+	return a.Hidden
+}
+
+// InMenu reports whether the app appears in the menu (default true; never for a hidden app).
 func (a App) InMenu() bool {
-	return a.Menu == nil || *a.Menu
+	return !a.Hidden && (a.Menu == nil || *a.Menu)
 }
 
 // InMenu reports whether the action appears in NickelMenu (default true). A hidden action stays

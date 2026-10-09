@@ -48,7 +48,7 @@ void ActionRunner::runPrimary(const DrawerItem &item)
         return;
     }
     if (!item.hasPrimaryAction()) {
-        openMenu(item);
+        openMenu(item, QPoint());
         return;
     }
     currentItem = item;
@@ -114,7 +114,8 @@ void ActionRunner::askForWifi()
 {
     ConfirmQuestion *question =
         new ConfirmQuestion(currentItem.name, FallbackStrings::text(FallbackStrings::WIFI_OFF_TEXT),
-                            FallbackStrings::text(FallbackStrings::WIFI_TURN_ON), FallbackStrings::text(FallbackStrings::CANCEL));
+                            FallbackStrings::text(FallbackStrings::WIFI_TURN_ON), FallbackStrings::text(FallbackStrings::CANCEL),
+                            ConfirmQuestion::NOT_DESTRUCTIVE);
     connect(question, SIGNAL(answered(bool)), this, SLOT(onWifiAnswer(bool)));
     question->ask();
 }
@@ -164,7 +165,9 @@ bool ActionRunner::presentScreenSignal(const ActionResult &result)
     if (result.hasDialog) {
         pendingDialog = result.dialog;
         QString cancel = pendingDialog.cancel.isEmpty() ? FallbackStrings::text(FallbackStrings::CANCEL) : pendingDialog.cancel;
-        ConfirmQuestion *question = new ConfirmQuestion(pendingDialog.title, pendingDialog.text, pendingDialog.ok, cancel);
+        // Cancel only skips the declared action, so a tap outside may answer it.
+        ConfirmQuestion *question = new ConfirmQuestion(pendingDialog.title, pendingDialog.text, pendingDialog.ok, cancel,
+                                                        ConfirmQuestion::NOT_DESTRUCTIVE);
         connect(question, SIGNAL(answered(bool)), this, SLOT(onDeclaredDialogAnswer(bool)));
         question->ask();
         return true;
@@ -211,7 +214,7 @@ void ActionRunner::finishAndReload()
 
 // ---- Long-press ----
 
-void ActionRunner::openMenu(const DrawerItem &item)
+void ActionRunner::openMenu(const DrawerItem &item, const QPoint &anchor)
 {
     if (isBusy) {
         return;
@@ -237,9 +240,9 @@ void ActionRunner::openMenu(const DrawerItem &item)
     currentItem = item;
     hasRetriedAfterWifi = false;
     setBusy(true);
-    PlainDialog *menu = createRowMenu(item.name, choices);
+    RowMenu *menu = new RowMenu(item.name, choices);
     connect(menu, SIGNAL(chosen(QString)), this, SLOT(onMenuChoice(QString)));
-    menu->present();
+    menu->popup(anchor);
 }
 
 void ActionRunner::onMenuChoice(const QString &choiceId)
@@ -299,7 +302,8 @@ void ActionRunner::askToRemove()
     question.replace(QStringLiteral("{name}"), currentItem.name);
     ConfirmQuestion *confirm = new ConfirmQuestion(currentItem.name, question,
                                                    FallbackStrings::text(FallbackStrings::REMOVE_BUTTON),
-                                                   FallbackStrings::text(FallbackStrings::CANCEL));
+                                                   FallbackStrings::text(FallbackStrings::CANCEL),
+                                                   ConfirmQuestion::DESTRUCTIVE);
     connect(confirm, SIGNAL(answered(bool)), this, SLOT(onRemoveAnswer(bool)));
     confirm->ask();
 }

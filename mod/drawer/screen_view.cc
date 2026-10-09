@@ -12,6 +12,7 @@
 #include "fallback_strings.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
+#include "open_popups.h"
 #include "page_header.h"
 #include "status_bar_inset.h"
 
@@ -222,8 +223,12 @@ bool ScreenView::handlePageKey(int key)
     if (pageKey == DrawerLogic::PAGE_KEY_NONE) {
         return false;
     }
+    if (OpenPopups::isAnyOpen()) {
+        OpenPopups::closeAll("page key on app screen"); // closes the popup instead of paging under it
+        return true;
+    }
     if (isInputBlocked) {
-        DebugLog::write("screen: page key ignored while a dialog or action is pending");
+        DebugLog::write("screen: page key ignored while an action is pending");
         return true;
     }
     goToPage(DrawerLogic::pageAfterKey(pageIndex, pageKey, layout.pageCount(), ONE_PAGE_PER_STEP));
@@ -235,6 +240,7 @@ void ScreenView::goToPage(int index)
     if (index == pageIndex) {
         return;
     }
+    OpenPopups::closeAll("app screen page change");
     DebugLog::write("screen: page %d -> %d", pageIndex + 1, index + 1);
     pageIndex = index;
     applyPage(index, true);

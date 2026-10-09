@@ -12,6 +12,7 @@
     "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
     "description": { "type": "string", "maxLength": 120 },
     "menu": { "type": "boolean", "default": true },
+    "hidden": { "type": "boolean", "default": false },
     "storage": {
       "type": "object",
       "description": "Logical storage folders (internal/storage) the app reads and writes.",

@@ -29,7 +29,7 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
           "id": "localsend",
           "name": "LocalSend",
           "status": "Đang nhận · PIN 4821",
-          "icon": "/mnt/onboard/.adds/apps/localsend/icon.svg",
+          "icon": "/mnt/onboard/.adds/apps/localsend/icon.png",
           "badge": false,
           "running": true,
           "actions": [
@@ -53,9 +53,9 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
 
 - `kind`: `show` (run, then show the printed result in a native dialog) or `background` (start, show a toast).
 - `primary`: the action run when the row is tapped. Other actions appear in the long-press menu (with Info and Remove).
-- Items with app-level `menu: false` still appear in the drawer (the menu flag only affects NickelMenu); `hidden: true` in the manifest (future) hides them everywhere.
+- Items with app-level `menu: false` still appear in the drawer (the menu flag only affects NickelMenu). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
 - `screen: true` (omitted otherwise) when the app folder has a `ui.json`: with the screens flag on, a tap opens the app screen (`drawer screen`) instead of running the primary action.
-- Ids starting with `_` are host items: `_refresh` (action `refresh`) and `_updates` (action `check`, only when `data/update.json` exists). `drawer run` accepts both. Host items have no `running` field; `icon` is omitted when the app has no `icon.svg`.
+- Ids starting with `_` are host items: `_refresh` (action `refresh`) and `_updates` (action `check`, only when `data/update.json` exists). `drawer run` accepts both. Host items have no `running` field; `icon` is the absolute path of a 96x96 PNG, omitted when the file does not exist: apps use `<app>/icon.png`, host items `<koboapps>/icons/refresh.png` and `updates.png`.
 - `primary` is set on the first action in manifest order (no manifest field). The `status` action stays in `actions`.
 - `running`/`status`: the app's action with id `status` is run (1 s budget). Its first line may be `{"running":true,"line":"…"}`; otherwise the first non-empty line is the text. Non-zero exit or timeout leaves both empty. The cache lives in the temp dir for 30 s and is ignored when the language changes.
 - `errors[].message` is the first validation problem and is English (manifest messages are not localized).

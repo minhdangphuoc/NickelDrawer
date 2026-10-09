@@ -377,7 +377,11 @@ void PressArea::showOverlay(const PressFeedback &feedback)
     repaintNow(overlay, overlay->rect());
 }
 
-// Back to the normal look with a plain update, as Nickel's defaultColors().
+// Back to the normal look exactly as Nickel's defaultColors() does it
+// (IconButtonBase, TextHeaderBase): no e-ink hint, one plain update() of the
+// pressed rect, so Kobo's Qt redraws it with its normal partial waveform and
+// the fast press waveform leaves no ghost. Hiding the overlay alone would
+// leave the repaint of the area under it to Qt's exposure handling.
 void PressArea::clearPressedState(const char *reason)
 {
     if (!isPressedShown) {
@@ -386,11 +390,11 @@ void PressArea::clearPressedState(const char *reason)
     isPressedShown = false;
     if (overlay && overlay->isVisible()) {
         overlay->hide();
-    } else {
-        update(pressedFeedback.rect);
     }
-    DebugLog::write("press area %p (%s): pressed state cleared (%s)", static_cast<void *>(this),
-                    metaObject()->className(), reason);
+    update(pressedFeedback.rect);
+    DebugLog::write("press area %p (%s): pressed state cleared (%s), %dx%d at %d,%d redrawn with a plain update",
+                    static_cast<void *>(this), metaObject()->className(), reason, pressedFeedback.rect.width(),
+                    pressedFeedback.rect.height(), pressedFeedback.rect.x(), pressedFeedback.rect.y());
     pressedFeedback.rect = QRect();
     pressedFeedback.highlight = HIGHLIGHT_NONE;
 }

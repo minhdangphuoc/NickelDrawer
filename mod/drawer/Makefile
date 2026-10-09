@@ -21,12 +21,12 @@ include $(NICKELHOOK_DIR)/NickelHook.mk
 override LIBRARY  := $(LIBRARY_NAME)
 override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc \
-                     painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc \
+                     painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
                      drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc ../common/nickel_fonts.cc \
                      screen_layout.cc screen_view.cc field_editor.cc screen_session.cc
 override MOCS     += nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
-                     dialogs.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
+                     dialogs.h open_popups.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
                      screen_view.h field_editor.h screen_session.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden

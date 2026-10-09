@@ -6,6 +6,8 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QMenu>
+#include <QWidgetAction>
 #include <QLocale>
 #include <QPixmap>
 #include <QTimer>
@@ -27,13 +29,15 @@ static void (*MainWindowController_popView)(void *window, QWidget *view);
 static void (*IconLeftButton_construct)(void *button, QWidget *parent);
 static void (*IconLeftButton_setPixmap)(void *button, QPixmap const &pixmap);
 static void (*IconLeftButton_setText)(void *button, QString const &text);
-static void (*ConfirmationDialogFactory_showOKDialog)(QString const &title, QString const &body);
+// Returns the ConfirmationDialog it opened (re/notes/G2-findings.md "Popups and dialogs").
+static QDialog *(*ConfirmationDialogFactory_showOKDialog)(QString const &title, QString const &body);
 static QDialog *(*ConfirmationDialogFactory_getConfirmationDialog)(QWidget *parent);
 static void (*ConfirmationDialog_setTitle)(QDialog *dialog, QString const &title);
 static void (*ConfirmationDialog_setText)(QDialog *dialog, QString const &text);
 static void (*ConfirmationDialog_setAcceptButtonText)(QDialog *dialog, QString const &text);
 static void (*ConfirmationDialog_setRejectButtonText)(QDialog *dialog, QString const &text);
 static void (*ConfirmationDialog_showCloseButton)(QDialog *dialog, bool isShown);
+static void (*ConfirmationDialog_setRejectOnOutsideTap)(QDialog *dialog, bool isRejecting);
 static void *(*WirelessWorkflowManager_sharedInstance)();
 static bool (*WirelessWorkflowManager_isInternetAccessible)(void *manager);
 static void (*WirelessWorkflowManager_connectWireless)(void *manager, bool, bool);
@@ -54,6 +58,13 @@ static void (*TextHeader_construct)(void *header, QWidget *parent);
 static void (*TextHeader_setText)(void *header, QString const &text);
 static void (*TextHeaderBase_setDeselectedPixmap)(void *header, QPixmap const &pixmap);
 static void (*TextHeaderBase_setSelectedPixmap)(void *header, QPixmap const &pixmap);
+static void (*TextHeaderBase_setInvertImageOnly)(void *header, bool isImageOnly);
+// DecorationPosition is an enum passed in a register; 3 is what NickelMenu passes.
+static void (*NickelTouchMenu_construct)(void *menu, QWidget *parent, int decorationPosition);
+static void (*NickelTouchMenu_showDecoration)(void *menu, bool isShown);
+static void (*MenuTextItem_construct)(void *item, QWidget *parent, bool isCheckable, bool isItalic);
+static void (*MenuTextItem_setText)(void *item, QString const &text);
+static void (*MenuTextItem_registerForTapGestures)(void *item);
 // Data symbol: the Qt::GestureType that Nickel's TapGestureRecognizer registered
 // (0 until Nickel registers it at startup, after our init).
 static int *TapGestureRecognizer_gestureType;
@@ -68,6 +79,7 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN8N3Dialog11closeTappedEv
 // signal-symbol: _ZN14TextHeaderBase6tappedEv
 // signal-symbol: _ZN14TextHeaderBase9mouseDownEv
+// signal-symbol: _ZN12MenuTextItem6tappedEb
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
 static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
@@ -82,6 +94,12 @@ static const bool PUSH_WITHOUT_ANIMATION = false;
 static const size_t ICON_LEFT_BUTTON_ALLOCATION = 256;
 // KeyboardReceiver's size is unknown; NickelHardcover uses 128 bytes, twice that leaves room.
 static const size_t KEYBOARD_RECEIVER_ALLOCATION = 256;
+// NickelMenu's sizes for its NickelTouchMenu and MenuTextItem blocks (about 3x the 15505 classes).
+static const size_t TOUCH_MENU_ALLOCATION = 512;
+static const size_t MENU_TEXT_ITEM_ALLOCATION = 256;
+static const int TOUCH_MENU_DECORATION_POSITION = 3;
+static const bool MENU_ITEM_CHECKABLE = false;
+static const bool MENU_ITEM_ITALIC = true; // NickelMenu's arguments; Nickel's QSS decides the look
 static const int DEFAULT_KEYBOARD_SCRIPT = 0;
 static const bool WITH_KEYBOARD = true;
 // NickelMenu's "autoconnect" arguments: shows Nickel's connect UI when needed.
@@ -134,6 +152,13 @@ struct nh_dlsym symbolTable[] = {
     NICKEL_SYMBOL("_ZN18ConfirmationDialog19setRejectButtonTextERK7QString", ConfirmationDialog_setRejectButtonText,
                   "confirm dialog"),
     NICKEL_SYMBOL("_ZN18ConfirmationDialog15showCloseButtonEb", ConfirmationDialog_showCloseButton, "confirm dialog"),
+    NICKEL_SYMBOL("_ZN18ConfirmationDialog21setRejectOnOutsideTapEb", ConfirmationDialog_setRejectOnOutsideTap,
+                  "dialog outside tap"),
+    NICKEL_SYMBOL("_ZN15NickelTouchMenuC1EP7QWidget18DecorationPosition", NickelTouchMenu_construct, "row menu"),
+    NICKEL_SYMBOL("_ZN15NickelTouchMenu14showDecorationEb", NickelTouchMenu_showDecoration, "row menu"),
+    NICKEL_SYMBOL("_ZN12MenuTextItemC1EP7QWidgetbb", MenuTextItem_construct, "row menu"),
+    NICKEL_SYMBOL("_ZN12MenuTextItem7setTextERK7QString", MenuTextItem_setText, "row menu"),
+    NICKEL_SYMBOL("_ZN12MenuTextItem22registerForTapGesturesEv", MenuTextItem_registerForTapGestures, "row menu"),
     NICKEL_SYMBOL("_ZN23WirelessWorkflowManager14sharedInstanceEv", WirelessWorkflowManager_sharedInstance, "Wi-Fi"),
     NICKEL_SYMBOL("_ZN23WirelessWorkflowManager20isInternetAccessibleEv", WirelessWorkflowManager_isInternetAccessible,
                   "Wi-Fi"),
@@ -161,6 +186,7 @@ struct nh_dlsym symbolTable[] = {
                   "page header"),
     NICKEL_SYMBOL("_ZN14TextHeaderBase17setSelectedPixmapERK7QPixmap", TextHeaderBase_setSelectedPixmap,
                   "page header"),
+    NICKEL_SYMBOL("_ZN14TextHeaderBase18setInvertImageOnlyEb", TextHeaderBase_setInvertImageOnly, "page header"),
     {0},
 };
 
@@ -251,12 +277,13 @@ int tapGestureType()
 
 NickelTextHeaderApi textHeaderApi()
 {
-    NickelTextHeaderApi api = {NULL, NULL, NULL, NULL};
+    NickelTextHeaderApi api = {NULL, NULL, NULL, NULL, NULL};
     if (isBridgeActive) {
         api.construct = TextHeader_construct;
         api.setText = TextHeader_setText;
         api.setDeselectedPixmap = TextHeaderBase_setDeselectedPixmap;
         api.setSelectedPixmap = TextHeaderBase_setSelectedPixmap;
+        api.setInvertImageOnly = TextHeaderBase_setInvertImageOnly;
     }
     return api;
 }
@@ -372,15 +399,32 @@ bool hasMessageDialog()
     return isBridgeActive && ConfirmationDialogFactory_showOKDialog;
 }
 
-bool showMessageDialog(const QString &title, const QString &text)
+// Nickel's ConfirmationDialog::tapGesture rejects a tap outside its frame
+// when the flag is set; without the symbol the dialog keeps Nickel's default.
+static void setRejectOnOutsideTap(QDialog *dialog, bool isRejecting)
+{
+    if (!ConfirmationDialog_setRejectOnOutsideTap) {
+        DebugLog::write("bridge: setRejectOnOutsideTap missing, dialog %p closes by its buttons only",
+                        static_cast<void *>(dialog));
+        return;
+    }
+    ConfirmationDialog_setRejectOnOutsideTap(dialog, isRejecting);
+}
+
+QDialog *showMessageDialog(const QString &title, const QString &text)
 {
     if (!hasMessageDialog()) {
-        return false;
+        return NULL;
     }
     // ConfirmationDialog renders the body as rich text; keep line breaks.
     QString body = text.toHtmlEscaped().replace(QLatin1Char('\n'), QStringLiteral("<br>"));
-    ConfirmationDialogFactory_showOKDialog(title, body);
-    return true;
+    QDialog *dialog = ConfirmationDialogFactory_showOKDialog(title, body);
+    if (!dialog) {
+        nh_log("bridge: showOKDialog returned null");
+        return NULL;
+    }
+    setRejectOnOutsideTap(dialog, true);
+    return dialog;
 }
 
 bool hasConfirmDialog()
@@ -391,7 +435,7 @@ bool hasConfirmDialog()
 }
 
 QDialog *createConfirmDialog(const QString &title, const QString &text, const QString &acceptLabel,
-                             const QString &rejectLabel)
+                             const QString &rejectLabel, bool rejectsOnOutsideTap)
 {
     if (!hasConfirmDialog()) {
         return NULL;
@@ -406,7 +450,67 @@ QDialog *createConfirmDialog(const QString &title, const QString &text, const QS
     ConfirmationDialog_setAcceptButtonText(dialog, acceptLabel);
     ConfirmationDialog_setRejectButtonText(dialog, rejectLabel);
     ConfirmationDialog_showCloseButton(dialog, false);
+    setRejectOnOutsideTap(dialog, rejectsOnOutsideTap);
     return dialog;
+}
+
+// ---- Touch menu (NickelMenu's proven recipe, nickelmenu.cc) ----
+
+bool hasTouchMenu()
+{
+    return isBridgeActive && NickelTouchMenu_construct && MenuTextItem_construct && MenuTextItem_setText &&
+           MenuTextItem_registerForTapGestures;
+}
+
+QMenu *createTouchMenu()
+{
+    if (!hasTouchMenu()) {
+        return NULL;
+    }
+    void *memory = calloc(1, TOUCH_MENU_ALLOCATION);
+    if (!memory) {
+        nh_log("bridge: out of memory for NickelTouchMenu");
+        return NULL;
+    }
+    NickelTouchMenu_construct(memory, NULL, TOUCH_MENU_DECORATION_POSITION);
+    QMenu *menu = reinterpret_cast<QMenu *>(memory);
+    // A plain bordered box: the decoration arrow would point at nothing.
+    if (NickelTouchMenu_showDecoration) {
+        NickelTouchMenu_showDecoration(menu, false);
+    }
+    DebugLog::write("bridge: NickelTouchMenu %p (%s)", memory, menu->metaObject()->className());
+    return menu;
+}
+
+// One MenuTextItem row inside a QWidgetAction, separated from the previous
+// row by the menu's own divider (TouchMenu::separator). A tappable row's
+// tapped(bool) goes to receiver's slot; the title row ignores taps.
+QWidget *addTouchMenuItem(QMenu *menu, const QString &text, bool isFirst, QObject *receiver, const char *tapSlot)
+{
+    void *memory = calloc(1, MENU_TEXT_ITEM_ALLOCATION);
+    if (!memory) {
+        nh_log("bridge: out of memory for MenuTextItem");
+        return NULL;
+    }
+    MenuTextItem_construct(memory, menu, MENU_ITEM_CHECKABLE, MENU_ITEM_ITALIC);
+    QWidget *item = reinterpret_cast<QWidget *>(memory);
+    MenuTextItem_setText(item, text);
+    if (receiver) {
+        MenuTextItem_registerForTapGestures(item); // Nickel's pressed row: inverted while the finger is down
+        if (!QObject::connect(item, SIGNAL(tapped(bool)), receiver, tapSlot)) {
+            DebugLog::write("bridge: cannot connect %s::tapped(bool)", item->metaObject()->className());
+            delete item;
+            return NULL;
+        }
+    }
+    if (!isFirst) {
+        menu->addSeparator();
+    }
+    QWidgetAction *action = new QWidgetAction(menu);
+    action->setDefaultWidget(item);
+    action->setEnabled(true); // a disabled title row would be drawn greyed
+    menu->addAction(action);
+    return item;
 }
 
 // ---- Keyboard ----

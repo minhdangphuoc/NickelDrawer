@@ -105,6 +105,7 @@ install_folder() {
     done
     [ ! -f "$source/app.json" ] || act cp "$source/app.json" "$target/app.json"
     [ ! -f "$source/ui.json" ] || act cp "$source/ui.json" "$target/ui.json"
+    [ ! -f "$source/icon.png" ] || act cp "$source/icon.png" "$target/icon.png"
     act mkdir -p "$target/data"
 }
 
@@ -121,9 +122,9 @@ create_inbox_folders() {
 }
 
 install_host() {
-    install_folder "$DIST_ADDS/koboapps" "$ADDS/koboapps" bin lib locales config
+    install_folder "$DIST_ADDS/koboapps" "$ADDS/koboapps" bin lib locales config icons
     create_inbox_folders
-    note_change "installed .adds/koboapps (bin, lib, locales, config, inbox)"
+    note_change "installed .adds/koboapps (bin, lib, locales, config, icons, inbox)"
 }
 
 install_apps() {

@@ -19,7 +19,7 @@ DrawerSession::DrawerSession(DrawerView *drawerView)
 {
     connect(client, SIGNAL(modelLoaded(DrawerModel)), this, SLOT(onModelLoaded(DrawerModel)));
     connect(view, SIGNAL(itemTapped(DrawerItem)), this, SLOT(onItemTapped(DrawerItem)));
-    connect(view, SIGNAL(itemLongPressed(DrawerItem)), this, SLOT(onItemLongPressed(DrawerItem)));
+    connect(view, SIGNAL(itemLongPressed(DrawerItem, QPoint)), this, SLOT(onItemLongPressed(DrawerItem, QPoint)));
     connect(runner, SIGNAL(busyChanged(bool)), this, SLOT(onBusyChanged(bool)));
     connect(runner, SIGNAL(modelMayHaveChanged()), this, SLOT(reload()));
 }
@@ -92,9 +92,9 @@ void DrawerSession::flashDrawer()
     NickelBridge::requestFullRefresh(view);
 }
 
-void DrawerSession::onItemLongPressed(const DrawerItem &item)
+void DrawerSession::onItemLongPressed(const DrawerItem &item, const QPoint &anchor)
 {
-    runner->openMenu(item);
+    runner->openMenu(item, anchor);
 }
 
 void DrawerSession::onBusyChanged(bool isBusy)

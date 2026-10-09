@@ -19,7 +19,13 @@ class QPainter;
 // pressed state (black circle, white arrow) are Nickel's. Each mod passes the
 // entry points from its symbol table; when one is missing, or Nickel's arrow
 // image is not in the resources, the header draws its own copy instead.
-// Extra widgets (the drawer's list/grid toggles) sit at the right.
+// Extra widgets (the drawer's list/grid toggles) sit at the right, in the same
+// row; the divider is a separate full-width line under the whole row.
+//
+// Layout as Ui_WishlistView's "headerLayout": the TextHeader keeps its size
+// hint (stretch 0) and a stretch fills the rest, so the title sits left, next
+// to the arrow. Given the whole row, TextHeaderBase spreads the extra width
+// over its image and title and the title drifts to the middle.
 
 // libnickel entry points, filled by each mod (NULL when the symbol is missing).
 struct NickelTextHeaderApi {
@@ -27,8 +33,14 @@ struct NickelTextHeaderApi {
     void (*setText)(void *header, const QString &text);
     void (*setDeselectedPixmap)(void *header, const QPixmap &pixmap);
     void (*setSelectedPixmap)(void *header, const QPixmap &pixmap);
+    // Only the arrow shows the pressed state; without it Nickel inverts the
+    // title too (TextHeaderBase::reverseColors), so the own header is used.
+    void (*setInvertImageOnly)(void *header, bool isImageOnly);
 
-    bool isComplete() const { return construct && setText && setDeselectedPixmap && setSelectedPixmap; }
+    bool isComplete() const
+    {
+        return construct && setText && setDeselectedPixmap && setSelectedPixmap && setInvertImageOnly;
+    }
 };
 
 // Nickel's back arrow (":/images/reading/back_arrow.png", pressed:
@@ -51,7 +63,8 @@ protected:
 class PageHeader : public QWidget {
     Q_OBJECT
 public:
-    static const int HEIGHT = 120; // the toggles' tap targets (ui-kit §1.5)
+    static const int ROW_HEIGHT = 120; // the toggles' tap targets (ui-kit §1.5)
+    static const int DIVIDER_HEIGHT = 1; // WishlistView.qss: border-bottom 1px solid #666666
 
     PageHeader(const QString &title, const NickelTextHeaderApi &nickelApi, QWidget *parent);
 
@@ -73,11 +86,12 @@ private slots:
     void onOwnBackTapped();
 
 private:
+    QWidget *createDivider();
     bool createNickelHeader(const QString &title);
     void createOwnHeader(const QString &title);
 
     NickelTextHeaderApi api;
-    QHBoxLayout *layout;
+    QHBoxLayout *rowLayout;
     QWidget *nickelHeader; // Nickel's TextHeader, or NULL
     BackArrowButton *ownBack;
     QLabel *ownTitle;

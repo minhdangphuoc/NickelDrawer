@@ -2,6 +2,7 @@
 #define NICKELDRAWER_DRAWER_SESSION_H
 
 #include <QObject>
+#include <QPoint>
 #include <QPointer>
 
 #include "drawer_model.h"
@@ -24,7 +25,7 @@ private slots:
     void reload();
     void onModelLoaded(const DrawerModel &model);
     void onItemTapped(const DrawerItem &item);
-    void onItemLongPressed(const DrawerItem &item);
+    void onItemLongPressed(const DrawerItem &item, const QPoint &anchor);
     void onBusyChanged(bool isBusy);
     void onScreenClosed();
     void flashDrawer();

@@ -96,6 +96,17 @@ func TestItemCountSkipsHiddenApps(t *testing.T) {
 	}
 }
 
+func TestHiddenAppIsNotInTheMenu(t *testing.T) {
+	hidden := localSend()
+	hidden.Hidden = true
+	if got := ItemCount([]manifest.App{hidden}); got != 0 {
+		t.Fatalf("ItemCount = %d, want 0", got)
+	}
+	if got := Render([]manifest.App{hidden}, 0, Paths{}, englishLabels, true); strings.Contains(got, "LocalSend") {
+		t.Fatalf("hidden app rendered:\n%s", got)
+	}
+}
+
 func TestRenderUsesCustomPaths(t *testing.T) {
 	got := Render([]manifest.App{localSend()}, 0, Paths{AppsRoot: "/tmp/apps", KoboappsRoot: "/tmp/host"}, englishLabels, true)
 	if want := "/tmp/apps/localsend/bin/stop.sh"; !strings.Contains(got, want) {

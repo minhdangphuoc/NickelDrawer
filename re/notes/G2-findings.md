@@ -616,3 +616,57 @@ needs the same change in `cmd/ndpreview`.
 4. While a dialog is pending, the header arrow does nothing.
 5. App screen: back arrow and targets show their pressed state; page keys still page.
 6. Note in `debug.log` whether the page-change "full refresh" (0x80) flashes; copy the log to `backups/<date>/`.
+
+---
+
+## Polish after the first drawer run (2026-10-10, 23828 decompiled, not run on device)
+
+Decompiled with headless Ghidra (`DecompileByName`, output in `~/.cache/nickeldrawer/decomp/popup.c` and
+`header.c`). Every symbol below is exported by all five builds; `check-symbols.sh` passes (50 symbols).
+
+**Header title left, like Wishlist.** `TextHeader::TextHeader` already sets its `N3ButtonLabel` `#label` to
+`AlignLeft|AlignVCenter` (0x81). What keeps Wishlist's title next to the arrow is the layout:
+`Ui_WishlistView::setupUi` adds the TextHeader to `headerLayout` with stretch 0 and gives the stretch to the
+`#numBooks` label after it. `TextHeaderBase` is horizontally Preferred, so when our row gave it stretch 1 its
+inner layout spread the extra width over `#image` and the title, and the title drifted to the middle. Fix: the
+TextHeader at stretch 0, a stretch, then our toggles. The divider is now its own 1 px #666666 widget under the
+whole row (Wishlist draws it as `border-bottom` on `#label`, `#image` and `#numBooks`); borders inside the
+TextHeader are off.
+
+**Press on the arrow only.** `TextHeaderBase::reverseColors`: unless `this[0x66]` is set it inverts the whole
+header with the low-quality waveform hints 0x88/0x8f (`setAttribute` + `repaint`) and sets `hideSeparator` —
+the smeared title on the device. `TextHeaderBase::setInvertImageOnly(bool)` sets that flag; then only the
+`#image` TouchLabel reverses (shows the selected pixmap, `back_arrow_hit.png`). `PageHeader` now calls it and
+falls back to its own header when the symbol is missing.
+
+**Restoring after a press.** `IconButtonBase::defaultColors` and `TextHeaderBase::defaultColors` restore with a
+plain `QWidget::update()` (no e-ink attribute); the press itself is 0x80 + `repaint()`. `PressArea` now always
+issues `update(rect)` of the pressed rect after hiding its overlay.
+
+**Popup menu.** Nickel's popup is `NickelTouchMenu` (a `TouchMenu`/`QMenu`): its constructor loads
+`:/qss/NickelTouchMenu.qss` (3 px black border, white, `TouchMenu::separator` 1 px #666666, `MenuTextItem` 80 px
+rows on Storm) and `paintEvent` draws the border and, if `this[0x78]`, a decoration arrow
+(`showDecoration(bool)`). Rows are `MenuTextItem(QWidget*, bool checkable, bool)`; `MenuTextItem::tapGesture`
+inverts on start (`setInvertOnTapStart`, default on), restores and emits `tapped(bool)` on finish. The drawer
+uses NickelMenu's recipe (calloc 512 / 256, `QWidgetAction`, `addSeparator`, `tapped(bool)` connected, menu
+`deleteLater` on `aboutToHide`), no decoration, a bold MenuTextItem title row, and pops it up at the pressed
+item. A tap outside closes a `QMenu` popup (Qt's popup handling); no Cancel row, as Nickel's own menus.
+Fallback: `PlainDialog` menu rows (120 px, dividers, bold title, pressed row inverts).
+
+**Dialogs close on an outside tap.** `ConfirmationDialog::tapGesture`: on a finished tap, when `this[0x30]` is
+set and the point is outside the frame (and the keyboard frame when shown), it calls the virtual reject.
+`setRejectOnOutsideTap(bool)` sets that flag. `ConfirmationDialogFactory::showOKDialog` returns the dialog it
+opened (`getOKDialog`, `setTitle`, `setText`, open), so info and result dialogs get the flag too. Remove and
+screen-button confirms keep it off (buttons only). The plain fallback dialog covers the screen with a snapshot of
+the page and dismisses on a tap outside its box.
+
+**Never orphaned.** `OpenPopups` tracks every menu and dialog (debug log: opened, closing + reason, closed +
+how). The drawer and app screens close them on a page change, a page key (which then does not page), the view's
+hide (pop, tab switch) and destruction.
+
+**Validation (next device session, `debug` flag on).** 1. Header: title left next to "←", divider under title
+and toggles; pressing the title shows only the arrow's black circle; toggles show the circle. 2. Rows/tiles:
+press inverts, release returns cleanly (no ghost). 3. Long-press: Nickel-style box, bold name, rows with thin
+dividers, "Gỡ…" last; tap outside closes it; page key closes it; tab tap closes it. 4. Info / result dialogs: OK
+visible, tap outside closes. Remove confirm: tap outside does nothing, Cancel works. 5. `debug.log`: "popup: …
+opened/closed" pairs, "Nickel menu hidden", "redrawn with a plain update".

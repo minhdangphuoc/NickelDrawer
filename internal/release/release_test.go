@@ -43,6 +43,8 @@ func sampleDist(t *testing.T) string {
 		".adds/nm/koboapps":                "generated menu",
 		".adds/apps/demo/locales/vi.json":  "{}",
 		".adds/apps/demo/icon.svg":         "outside allowed folders",
+		".adds/apps/demo/icon.png":         "png",
+		".adds/koboapps/icons/refresh.png": "png",
 		".adds/apps/demo/data/log/old.txt": "x",
 	})
 	return root
@@ -57,8 +59,8 @@ func TestBuildManifestListsOnlyUpdatableFiles(t *testing.T) {
 	for _, file := range manifest.Files {
 		paths = append(paths, file.Path)
 	}
-	want := ".adds/apps/demo/app.json,.adds/apps/demo/bin/run.sh,.adds/apps/demo/locales/vi.json," +
-		".adds/koboapps/bin/appsctl,.adds/koboapps/lib/common.sh,.adds/koboapps/locales/en.json"
+	want := ".adds/apps/demo/app.json,.adds/apps/demo/bin/run.sh,.adds/apps/demo/icon.png," +
+		".adds/apps/demo/locales/vi.json,.adds/koboapps/bin/appsctl,.adds/koboapps/icons/refresh.png,.adds/koboapps/lib/common.sh,.adds/koboapps/locales/en.json"
 	if strings.Join(paths, ",") != want {
 		t.Fatalf("paths = %v", paths)
 	}
@@ -74,11 +76,13 @@ func TestCheckPathRefusesUserDataAndEscapes(t *testing.T) {
 	good := []string{
 		".adds/koboapps/bin/appsctl", ".adds/koboapps/lib/common.sh", ".adds/apps/ghsync/app.json",
 		".adds/apps/ghsync/bin/ghsync", ".adds/apps/ghsync/locales/vi.json",
+		".adds/apps/ghsync/icon.png", ".adds/koboapps/icons/updates.png",
 	}
 	bad := []string{
 		"", "/etc/passwd", "../x", ".adds/apps/ghsync/data/token", ".adds/koboapps/data/update.json",
 		".adds/apps/ghsync/bin/../data/token", ".adds/apps/ghsync/app.json/x", ".adds/apps/Bad/app.json",
 		".adds/nm/koboapps", ".kobo/KoboReader.sqlite", ".adds/apps/ghsync/bin", ".adds/koboapps/bin",
+		".adds/apps/ghsync/icon.svg", ".adds/apps/ghsync/icon.png/x", ".adds/koboapps/icons",
 		`.adds\koboapps\bin\x`, ".adds/koboapps//bin/x",
 	}
 	for _, p := range good {

@@ -19,6 +19,7 @@ void (*TextHeader_construct)(void *, QWidget *);
 void (*TextHeader_setText)(void *, QString const &);
 void (*TextHeaderBase_setDeselectedPixmap)(void *, QPixmap const &);
 void (*TextHeaderBase_setSelectedPixmap)(void *, QPixmap const &);
+void (*TextHeaderBase_setInvertImageOnly)(void *, bool);
 void (*MoreView_construct_original)(void *, QWidget *);
 }
 
@@ -54,7 +55,7 @@ int tapGestureType()
 NickelTextHeaderApi textHeaderApi()
 {
     NickelTextHeaderApi api = {TextHeader_construct, TextHeader_setText, TextHeaderBase_setDeselectedPixmap,
-                               TextHeaderBase_setSelectedPixmap};
+                               TextHeaderBase_setSelectedPixmap, TextHeaderBase_setInvertImageOnly};
     return api;
 }
 

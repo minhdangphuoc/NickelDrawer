@@ -30,6 +30,7 @@ extern void (*TextHeader_construct)(void *header, QWidget *parent);
 extern void (*TextHeader_setText)(void *header, QString const &text);
 extern void (*TextHeaderBase_setDeselectedPixmap)(void *header, QPixmap const &pixmap);
 extern void (*TextHeaderBase_setSelectedPixmap)(void *header, QPixmap const &pixmap);
+extern void (*TextHeaderBase_setInvertImageOnly)(void *header, bool isImageOnly);
 // Original MoreView::MoreView(QWidget*), returned by the NickelHook PLT hook.
 extern void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }

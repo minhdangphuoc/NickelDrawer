@@ -30,6 +30,9 @@ func TestRepoAppsAreValid(t *testing.T) {
 			if app.Storage == nil {
 				t.Errorf("%s must declare its storage reads/writes and network use in app.json", app.ID)
 			}
+			if info, err := os.Stat(filepath.Join(dir, "icon.png")); err != nil || !info.Mode().IsRegular() {
+				t.Errorf("%s needs an icon.png (96x96 outline, see docs/spec/app-format.md)", app.ID)
+			}
 			problems, warnings := CheckLocales(app)
 			if len(problems) > 0 || len(warnings) > 0 {
 				t.Fatalf("locale problems=%v warnings=%v", problems, warnings)

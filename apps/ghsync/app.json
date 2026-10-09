@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "description": "Sync books from a private GitHub repo (add-only, never deletes)",
   "menu": false,
+  "hidden": true,
   "storage": { "reads": [], "writes": ["books"] },
   "network": true,
   "actions": [

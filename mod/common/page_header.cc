@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
+#include <QVBoxLayout>
 
 #include "debug_log.h"
 #include "nickel_fonts.h"
@@ -21,15 +22,16 @@ static const size_t TEXT_HEADER_ALLOCATION = 256;
 static const int BACK_BUTTON_SIDE = 120;  // minimum tap target (ui-kit §1.5)
 static const int DRAWN_ARROW_SIDE = 64;   // Nickel's header icon on the Libra 2 class ("headerIconWidth")
 static const int DRAWN_ARROW_STROKE = 5;
-static const int DIVIDER_HEIGHT = 1;      // WishlistView.qss: border-bottom 1px solid #666666
-static const QRgb DIVIDER_COLOUR = 0x666666;
 
 // Nickel's QSS sizes the TextHeader title (N3ButtonLabel, 34 px on the Libra 2
 // class) but makes it Georgia italic; Wishlist turns it into the sans upright
 // (WishlistView.qss "#backLabel #label"). The family is Nickel's own UI sans,
 // which has Vietnamese (nickel_fonts.h). The fallback title copies the size.
+// Borders inside the TextHeader are off: our one divider runs under the row.
 static const char *const HEADER_STYLE =
-    "#nickelDrawerTextHeader #label { font-family: @BODY_FAMILY@; font-style: normal; color: black; }"
+    "#nickelDrawerTextHeader #label { font-family: @BODY_FAMILY@; font-style: normal; color: black; border: none; }"
+    "#nickelDrawerTextHeader #image { border: none; }"
+    "#drawerHeaderDivider { background: #666666; }"
     "#drawerHeaderTitle { font-family: @BODY_FAMILY@; font-size: 34px; font-style: normal; color: black;"
     " background: transparent; }";
 
@@ -118,22 +120,45 @@ void BackArrowButton::paintEvent(QPaintEvent *)
 // ---- Header ----
 
 PageHeader::PageHeader(const QString &title, const NickelTextHeaderApi &nickelApi, QWidget *parent)
-    : QWidget(parent), api(nickelApi), layout(new QHBoxLayout(this)), nickelHeader(NULL), ownBack(NULL),
-      ownTitle(NULL)
+    : QWidget(parent), api(nickelApi), rowLayout(NULL), nickelHeader(NULL), ownBack(NULL), ownTitle(NULL)
 {
     setObjectName(QStringLiteral("drawerHeader"));
-    setFixedHeight(HEIGHT);
+    setFixedHeight(ROW_HEIGHT + DIVIDER_HEIGHT);
     setStyleSheet(NickelFonts::styleSheet(HEADER_STYLE));
-    layout->setContentsMargins(0, 0, 0, DIVIDER_HEIGHT);
-    layout->setSpacing(0);
+
+    QWidget *row = new QWidget(this);
+    row->setFixedHeight(ROW_HEIGHT);
+    rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    rowLayout->setSpacing(0);
+
+    QVBoxLayout *column = new QVBoxLayout(this);
+    column->setContentsMargins(0, 0, 0, 0);
+    column->setSpacing(0);
+    column->addWidget(row);
+    column->addWidget(createDivider());
+
     if (!createNickelHeader(title)) {
         createOwnHeader(title);
     }
 }
 
+// A separate widget, so nothing in the row (toggles included) can cover it.
+QWidget *PageHeader::createDivider()
+{
+    QWidget *divider = new QWidget(this);
+    divider->setObjectName(QStringLiteral("drawerHeaderDivider"));
+    divider->setAttribute(Qt::WA_StyledBackground, true);
+    divider->setFixedHeight(DIVIDER_HEIGHT);
+    return divider;
+}
+
 // Nickel's TextHeader as in Ui_WishlistView::setupUi, with N3Dialog's pressed
-// arrow. Its tapped() is queued: Nickel emits it inside its gesture handler,
-// which still uses the header afterwards, and our slot may delete the page.
+// arrow. Only the arrow shows the press (setInvertImageOnly: reverseColors
+// then swaps the image to the hit image and leaves the title alone; inverting
+// the title smeared it on the panel). Its tapped() is queued: Nickel emits it
+// inside its gesture handler, which still uses the header afterwards, and our
+// slot may delete the page.
 bool PageHeader::createNickelHeader(const QString &title)
 {
     if (!api.isComplete()) {
@@ -151,7 +176,7 @@ bool PageHeader::createNickelHeader(const QString &title)
         return false;
     }
     DebugLog::write("header: constructing Nickel TextHeader at %p, parent %p", memory, static_cast<void *>(this));
-    api.construct(memory, this);
+    api.construct(memory, rowLayout->parentWidget());
     QWidget *header = reinterpret_cast<QWidget *>(memory);
     header->setObjectName(QStringLiteral("nickelDrawerTextHeader"));
     api.setDeselectedPixmap(header, arrow);
@@ -159,6 +184,7 @@ bool PageHeader::createNickelHeader(const QString &title)
     if (!pressedArrow.isNull()) {
         api.setSelectedPixmap(header, pressedArrow);
     }
+    api.setInvertImageOnly(header, true);
     api.setText(header, title);
     if (!connect(header, SIGNAL(tapped()), this, SLOT(onNickelHeaderTapped()), Qt::QueuedConnection)) {
         DebugLog::write("header: cannot connect %s::tapped(), own header", header->metaObject()->className());
@@ -168,10 +194,12 @@ bool PageHeader::createNickelHeader(const QString &title)
     if (!connect(header, SIGNAL(mouseDown()), this, SLOT(onNickelHeaderPressed()))) {
         DebugLog::write("header: no mouseDown() on %s, presses not logged", header->metaObject()->className());
     }
-    layout->addWidget(header, 1, Qt::AlignVCenter);
+    rowLayout->addWidget(header, 0, Qt::AlignVCenter);
+    rowLayout->addStretch(1);
     nickelHeader = header;
-    DebugLog::write("header: Nickel %s %p, title \"%s\", pressed arrow %s", header->metaObject()->className(),
-                    static_cast<void *>(header), qPrintable(title), pressedArrow.isNull() ? "inverted" : "hit image");
+    DebugLog::write("header: Nickel %s %p, title \"%s\" left-aligned, pressed arrow only (%s)",
+                    header->metaObject()->className(), static_cast<void *>(header), qPrintable(title),
+                    pressedArrow.isNull() ? "inverted image" : "hit image");
     return true;
 }
 
@@ -180,9 +208,10 @@ void PageHeader::createOwnHeader(const QString &title)
     ownBack = new BackArrowButton(this);
     ownTitle = new QLabel(title, this);
     ownTitle->setObjectName(QStringLiteral("drawerHeaderTitle"));
+    ownTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     connect(ownBack, SIGNAL(tapped()), this, SLOT(onOwnBackTapped()));
-    layout->addWidget(ownBack, 0, Qt::AlignVCenter);
-    layout->addWidget(ownTitle, 1, Qt::AlignVCenter);
+    rowLayout->addWidget(ownBack, 0, Qt::AlignVCenter);
+    rowLayout->addWidget(ownTitle, 1, Qt::AlignVCenter);
     DebugLog::write("header: own copy (arrow %s), title \"%s\"",
                     BackArrowIcon::pixmap(false).isNull() ? "drawn" : "Nickel's image", qPrintable(title));
 }
@@ -198,7 +227,8 @@ void PageHeader::setTitle(const QString &title)
 
 void PageHeader::addTrailingWidget(QWidget *widget)
 {
-    layout->addWidget(widget, 0, Qt::AlignVCenter);
+    widget->setParent(rowLayout->parentWidget());
+    rowLayout->addWidget(widget, 0, Qt::AlignVCenter);
 }
 
 // A disabled TextHeaderBase ignores its tap gesture (TextHeaderBase::tapGesture).
@@ -232,5 +262,4 @@ void PageHeader::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.fillRect(rect(), Qt::white);
-    painter.fillRect(QRect(0, height() - DIVIDER_HEIGHT, width(), DIVIDER_HEIGHT), QColor(DIVIDER_COLOUR));
 }

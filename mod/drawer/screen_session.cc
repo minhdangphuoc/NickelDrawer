@@ -217,7 +217,9 @@ void ScreenSession::tapButton(const ScreenComponent &button)
     QString title = confirm.title.isEmpty() ? view->screen().title : confirm.title;
     pendingConfirmAction = button.action;
     isConfirmOpen = true;
-    ConfirmQuestion *question = new ConfirmQuestion(title, confirm.text, confirm.ok, cancel);
+    // A screen button asks first because its action changes something: only
+    // its buttons answer, a stray tap outside does not.
+    ConfirmQuestion *question = new ConfirmQuestion(title, confirm.text, confirm.ok, cancel, ConfirmQuestion::DESTRUCTIVE);
     connect(question, SIGNAL(answered(bool)), this, SLOT(onConfirmAnswer(bool)));
     question->ask();
 }

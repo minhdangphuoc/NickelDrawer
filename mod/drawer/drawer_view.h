@@ -2,6 +2,7 @@
 #define NICKELDRAWER_DRAWER_VIEW_H
 
 #include <QList>
+#include <QPoint>
 #include <QStringList>
 #include <QWidget>
 
@@ -21,7 +22,8 @@ class ViewToggleIcon;
 // tiles (3 x 2); hint line; page indicator with on-screen arrows. Page-turn
 // keys arrive as arrow keys (Left/Up back, Right/Down forward). The top margin
 // leaves room for Nickel's status bar, which overlays the page
-// (status_bar_inset.h).
+// (status_bar_inset.h). A page change, a page key, hiding or popping closes
+// any open menu or dialog first (OpenPopups), so none is left orphaned.
 //
 // Rendering only: taps are reported as signals; the session decides.
 class DrawerView : public QWidget {
@@ -38,11 +40,13 @@ public:
 signals:
     void backRequested();
     void itemTapped(const DrawerItem &item);
-    void itemLongPressed(const DrawerItem &item);
+    // anchor: the pressed item's centre, global (where the row menu opens).
+    void itemLongPressed(const DrawerItem &item, const QPoint &anchor);
 
 protected:
     void keyPressEvent(QKeyEvent *event);
     void showEvent(QShowEvent *event);
+    void hideEvent(QHideEvent *event);
 
 private slots:
     void onListToggleTapped();

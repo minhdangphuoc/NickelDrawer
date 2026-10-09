@@ -27,7 +27,7 @@ var (
 	sha256Pattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 	modePattern   = regexp.MustCompile(`^0[0-7]{3}$`)
 
-	hostFolders = []string{"bin", "lib", "locales"}
+	hostFolders = []string{"bin", "lib", "locales", "icons"}
 	appFolders  = []string{"bin", "locales"}
 )
 
@@ -143,8 +143,8 @@ func (file File) ParseMode() (uint32, error) {
 	return uint32(bits), nil
 }
 
-// CheckPath accepts only paths an update may write: host bin/lib/locales and an app's
-// app.json, bin/ and locales/. Everything else, above all any data/ folder, is refused,
+// CheckPath accepts only paths an update may write: host bin/lib/locales/icons and an app's
+// app.json, icon.png, bin/ and locales/. Everything else, above all any data/ folder, is refused,
 // so a signed manifest still cannot make an update touch user data.
 func CheckPath(filePath string) error {
 	if filePath == "" || strings.Contains(filePath, `\`) || path.Clean(filePath) != filePath || path.IsAbs(filePath) {
@@ -154,7 +154,7 @@ func CheckPath(filePath string) error {
 	if isHostPath(parts) || isAppPath(parts) {
 		return nil
 	}
-	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales}, %s/<id>/{app.json,bin,locales})", hostPrefix, appsPrefix)
+	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales,icons}, %s/<id>/{app.json,icon.png,bin,locales})", hostPrefix, appsPrefix)
 }
 
 func isHostPath(parts []string) bool {
@@ -165,7 +165,7 @@ func isAppPath(parts []string) bool {
 	if len(parts) < 4 || parts[0]+"/"+parts[1] != appsPrefix || !appIDPattern.MatchString(parts[2]) {
 		return false
 	}
-	if len(parts) == 4 && parts[3] == "app.json" {
+	if len(parts) == 4 && (parts[3] == "app.json" || parts[3] == "icon.png") {
 		return true
 	}
 	return len(parts) >= 5 && contains(appFolders, parts[3])

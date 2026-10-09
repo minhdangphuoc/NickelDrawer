@@ -39,7 +39,7 @@ Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new
 
 Common to all components:
 - **E-ink refresh:** a bound-value change repaints only that widget (partial). Push or pop does one full refresh. After 8 partial updates, the next change forces a full refresh. At most 2 updates per second per screen.
-- **Press feedback:** every tappable widget shows its pressed state on finger down, as Nickel does: rows, tiles and buttons invert; icon buttons (back, toggles, page arrows) show a black circle with the icon in white. It is pushed to the panel at once (Kobo's "repaint now" hint); the action runs on release, then the normal look returns. A long press keeps the pressed state until the menu is open; a drag out cancels it.
+- **Press feedback:** every tappable widget shows its pressed state on finger down, as Nickel does: rows, tiles and buttons invert; icon buttons (back, toggles, page arrows) show a black circle with the icon in white. It is pushed to the panel at once (Kobo's "repaint now" hint); the action runs on release, then the normal look returns. A long press keeps the pressed state until the menu is open; a drag out cancels it. Back to normal is one plain update of the pressed rect (Nickel's `defaultColors()`), so no ghost stays. The page header shows the press on the arrow only (`TextHeaderBase::setInvertImageOnly`), never on the title.
 - **Accessibility:** every tappable row or button is at least 120 px high. State is never shown by colour alone (use text, underline or a check mark). Text follows Nickel's size setting. Dark mode inverts through the stylesheet.
 - **i18n:** all text is a string or `{en, vi}` map. Host strings come from `res/strings_<lang>.json`. Layout never depends on string length (see §8).
 
@@ -170,7 +170,7 @@ Nickel's `N3Dialog` when available, else `ConfirmationDialog`. Title, text, two 
 
 ### 3.16 Long-press row menu
 
-On a drawer row or a List row with `menu` set. Items: **Info**, **Update**, **Open folder**, **Remove…** (more can be added by the app). Shown in Nickel's own menu style. Remove asks for confirmation (§3.15). Items that do not apply are hidden, not greyed. Page-turn keys are ignored while it is open.
+On a drawer row or a List row with `menu` set. Items: **Info**, **Update**, **Open folder**, **Remove…** (more can be added by the app). Shown with Nickel's own popup menu (`NickelTouchMenu`, as NickelMenu builds it): bordered box, bold title row (the item name), plain text rows with thin dividers, the pressed row inverted, **Remove…** last. No Cancel row, as in Nickel's menus: a tap outside closes it. Fallback without Nickel's menu: the same look drawn by the mod (120 px rows). Remove asks for confirmation (§3.15). Items that do not apply are hidden, not greyed. A page-turn key, a page change, hiding or leaving the page closes it (never left orphaned).
 
 ```json
 { "list": "$items", "menu": [ { "id": "info", "label": "Info" }, { "id": "remove", "label": "Remove…", "confirm": true } ] }
@@ -223,7 +223,8 @@ Default is **list**. The choice is remembered (written on change, small file in 
 ### 5.3 Paging and hard keys
 
 - Page-turn buttons flip pages in the drawer (list 7 rows, grid 3 x 2) and on long app screens (one screen height minus the header).
-- Keys are ignored while a dialog, menu, toast action or keyboard is open.
+- While a menu or dialog is open, a page key closes it instead of paging; keys are ignored while an action or the keyboard is busy.
+- Every dialog has a visible OK or Cancel. A tap outside closes info, result and non-destructive dialogs (Nickel's `ConfirmationDialog::setRejectOnOutsideTap`); a destructive question (Remove, a screen button's confirm) closes only by its buttons.
 - Direction follows Nickel's own page-turn direction setting (Reading settings, "swap page-turn buttons"). Read it at drawer open.
 - Paging is a full-region redraw with one partial refresh; a full refresh every 6th page.
 - Touch paging also works (swipe-less: tap the page indicator zones or use Nickel's scroll bar).

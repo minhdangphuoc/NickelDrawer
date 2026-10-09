@@ -21,7 +21,8 @@ const (
 	HostRefreshAct = "refresh"
 	HostUpdatesAct = "check"
 
-	iconFileName     = "icon.svg"
+	iconFileName     = "icon.png"
+	hostIconsDir     = "icons"
 	updateConfigName = "update.json"
 	updateScript     = "update-apply.sh"
 )
@@ -72,9 +73,10 @@ func (c Config) BuildModel() (Model, error) {
 	if err != nil {
 		return Model{}, newError(CodeIO, "detail", err.Error())
 	}
-	statuses := c.collectStatuses(scan.Apps)
-	items := make([]Item, 0, len(scan.Apps))
-	for _, app := range scan.Apps {
+	shownApps := shownInDrawer(scan.Apps)
+	statuses := c.collectStatuses(shownApps)
+	items := make([]Item, 0, len(shownApps))
+	for _, app := range shownApps {
 		items = append(items, c.appItem(app, statuses[app.ID]))
 	}
 	sortItems(items)
@@ -92,6 +94,16 @@ func (c Config) BuildModel() (Model, error) {
 		},
 		Errors: problems,
 	}, nil
+}
+
+func shownInDrawer(apps []manifest.App) []manifest.App {
+	shown := make([]manifest.App, 0, len(apps))
+	for _, app := range apps {
+		if !app.IsHidden() {
+			shown = append(shown, app)
+		}
+	}
+	return shown
 }
 
 func sortItems(items []Item) {
@@ -114,19 +126,19 @@ func (c Config) appItem(app manifest.App, status Status) Item {
 		ID:      app.ID,
 		Name:    localizedApp.Name,
 		Status:  status.Line,
-		Icon:    iconPath(app),
+		Icon:    existingFile(filepath.Join(app.Dir, iconFileName)),
 		Running: &running,
 		Screen:  uikit.HasUI(app.Dir),
 		Actions: modelActions(localizedApp.Actions),
 	}
 }
 
-func iconPath(app manifest.App) string {
-	icon := filepath.Join(app.Dir, iconFileName)
-	if info, err := os.Stat(icon); err != nil || !info.Mode().IsRegular() {
+// existingFile returns path when it is a regular file, else "" (the drawer then draws no icon).
+func existingFile(path string) string {
+	if info, err := os.Stat(path); err != nil || !info.Mode().IsRegular() {
 		return ""
 	}
-	return icon
+	return path
 }
 
 // modelActions marks the first action primary: manifest order is the author's priority, and
@@ -144,17 +156,18 @@ func modelActions(actions []manifest.Action) []Action {
 }
 
 func (c Config) hostItems() []Item {
-	items := []Item{c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action")}
+	items := []Item{c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action", "refresh.png")}
 	if _, err := os.Stat(filepath.Join(c.HostDir, "data", updateConfigName)); err == nil {
-		items = append(items, c.hostItem(HostUpdatesID, "drawer.updates_name", HostUpdatesAct, "drawer.updates_action"))
+		items = append(items, c.hostItem(HostUpdatesID, "drawer.updates_name", HostUpdatesAct, "drawer.updates_action", "updates.png"))
 	}
 	return items
 }
 
-func (c Config) hostItem(id, nameKey, actionID, labelKey string) Item {
+func (c Config) hostItem(id, nameKey, actionID, labelKey, iconName string) Item {
 	return Item{
 		ID:      id,
 		Name:    c.message(nameKey, nil),
+		Icon:    existingFile(filepath.Join(c.HostDir, hostIconsDir, iconName)),
 		Actions: []Action{{ID: actionID, Label: c.message(labelKey, nil), Kind: KindShow, Primary: true}},
 	}
 }

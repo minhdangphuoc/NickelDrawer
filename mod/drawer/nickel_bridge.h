@@ -20,6 +20,7 @@
 class AbstractController;
 class QDialog;
 class QLineEdit;
+class QMenu;
 class QPixmap;
 class QWidget;
 
@@ -68,14 +69,25 @@ bool hasToast();
 void showToast(const QString &text);
 
 bool hasMessageDialog();
-// Nickel's OK dialog (ConfirmationDialogFactory::showOKDialog). False when missing.
-bool showMessageDialog(const QString &title, const QString &text);
+// Nickel's OK dialog (ConfirmationDialogFactory::showOKDialog), already
+// shown, closing on a tap outside its frame. NULL when missing.
+QDialog *showMessageDialog(const QString &title, const QString &text);
 
 bool hasConfirmDialog();
 // Nickel's ConfirmationDialog (a QDialog: accepted()/rejected()), not yet
-// shown; the caller connects and calls open(). NULL when missing.
+// shown; the caller connects and calls open(). A tap outside its frame
+// rejects it when rejectsOnOutsideTap. NULL when missing.
 QDialog *createConfirmDialog(const QString &title, const QString &text, const QString &acceptLabel,
-                             const QString &rejectLabel);
+                             const QString &rejectLabel, bool rejectsOnOutsideTap);
+
+// Nickel's popup menu (NickelTouchMenu, a QMenu: bordered box, rows with thin
+// dividers, pressed row inverted, closes on a tap outside), as NickelMenu
+// builds it. The caller adds rows, pops it up and deletes it when hidden.
+bool hasTouchMenu();
+QMenu *createTouchMenu();
+// Adds a MenuTextItem row; receiver NULL: a row that ignores taps (title).
+// Returns the row widget (the sender of tapSlot), or NULL (logged).
+QWidget *addTouchMenuItem(QMenu *menu, const QString &text, bool isFirst, QObject *receiver, const char *tapSlot);
 
 // Property set on views the drawer pushes over itself (the keyboard dialog);
 // route B's stack watcher must not close the drawer when one becomes current.

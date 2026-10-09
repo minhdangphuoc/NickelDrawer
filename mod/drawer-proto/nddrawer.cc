@@ -143,6 +143,10 @@ static struct nh_dlsym modSymbols[] = {
      .out = nh_symoutptr(TextHeaderBase_setSelectedPixmap),
      .desc = "TextHeaderBase::setSelectedPixmap (prototype C header)",
      .optional = true},
+    {.name = "_ZN14TextHeaderBase18setInvertImageOnlyEb",
+     .out = nh_symoutptr(TextHeaderBase_setInvertImageOnly),
+     .desc = "TextHeaderBase::setInvertImageOnly (prototype C header: arrow-only press)",
+     .optional = true},
     {0},
 };
 
