@@ -116,6 +116,8 @@ More (Nickel) → Apps drawer → your app's main screen → sub-screen → (det
 - **No cycles.** A sub-screen never pushes its own parent again (A → B → A). Use "←" instead.
 - **Each screen has its own short title** (≤ 24 characters, no app-name prefix) and its status, if any, on the right of the header.
 - **Leaving a screen never cancels work.** Background jobs keep running; when the user comes back, the screen shows the current status.
+- **A bottom-tab tap clears the stack.** The drawer drops every stacked screen and its cached state; reopening Apps starts fresh at the drawer's first page. Only preferences (list/grid) survive. Don't rely on screen state surviving a tab tap: keep anything important in your app's `data/` and return it from your `state` action.
+- **Define the flow up front.** Your screens and their `push` links *are* the flow. `appsctl validate` checks it when you build and install: a `main` screen must exist, every screen must be reachable from `main`, at most two levels below it, no cycles and no push to a missing screen. Sketch the flow first (main → which sub-screens → which details), then write the screens.
 
 **Which container to use**
 
