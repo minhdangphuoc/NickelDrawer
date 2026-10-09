@@ -64,21 +64,43 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 
 ## What Nickel does (libnickel 4.38.23828, Ghidra headless)
 
-- The string `/mnt/onboard/.kobo/screensaver` (30 chars) is used by `PowerViewController::updateCover`. Logic seen in the decompilation:
-  1. open `QDir` on that folder; if it exists (and an internal flag at `this+0x1e` is set) the info panel of the full-screen power view is hidden;
-  2. build name filters `*.<ext>` from `QImageReader::supportedImageFormats()` (so every format Qt can read is listed, not only PNG/JPEG);
-  3. `QDir::entryList` with those filters, then pick a random entry (`qrand() % count`) and read it with `QImageReader::read()`; up to 5 attempts while the image is null (a broken file is retried with another random pick);
-  4. if no image was loaded, fall back to the cover of the current book (`VolumePixmapView::getCoverImage`) or the SD-card cover.
-  So the folder has priority over the book cover whenever step 1 holds, selection is random (no ordering by name), and several files are chosen from at random.
-- The regex `(\.kobo|koboExtStorage)/screensaver` is used in `SyncFileSystemCommand::findFilesToParse`, the file scan; it appears to keep the screensaver folder out of book import, so our pictures do not become library entries (verify on device).
-- `PowerSettings::getShowCover` is read by `N3PowerWorkflowManager::show` (decides whether the latest book is passed to the power view) and by `N3SettingsPowerController::loadView` (the settings toggle for showing the current book cover).
+Details and addresses: `re/notes/screensaver.md`.
+
+**The folder is read only on the full-screen book-cover sleep screen.** It is not a separate "custom screensaver" feature, and no hidden key turns it on. All three must hold:
+
+1. **Show current read** is on (`[PowerOptions] ShowBookCover=true`). `N3PowerWorkflowManager::show` only hands the most recently opened book (`getLatestVolume`) to `PowerViewController::setVolume` when `PowerSettings::getShowCover` is true.
+2. **A recently opened book exists** and it is not an Instapaper article. With no book, `PowerViewController::loadView` builds an `IconPowerView`: the stock sleep screen with the retailer logo (FNAC) and "Sleeping". The folder is never read on that path.
+3. **Full-screen covers** is on (`[PowerOptions] FullscreenCoverStretch=true`, default false; the checkbox under Show current read in Settings → Energy saving and privacy). `loadView` sets the flag at `this+0x1e` to true only when this setting is on and the book is not Instapaper, and then builds a `FullScreenDragonPowerView`. When the setting is off it builds a `FramedDragonPowerView` (cover with info) and clears the flag.
+
+When the flag is set, `PowerViewController::updateCover`:
+
+- opens `/mnt/onboard/.kobo/screensaver`; if the folder is missing, it shows the book cover;
+- hides the info panel (`FullScreenDragonPowerView::setInfoPanelVisible(false)`), which overrides `FullscreenCoverInfoPanel`;
+- lists `*.<fmt>` for every format in `QImageReader::supportedImageFormats()` (lowercase; case-sensitive on Linux; hidden files skipped). Any name works, no prefix needed, no size check;
+- picks `qrand() % count`; up to 5 random tries while the decoded image is null;
+- if no image loads, falls back to the book cover (`VolumePixmapView::getCoverImage` "N3_FULL", then "N3_LIBRARY_FULL"; SD books use `getSdCoverPowerImage`).
+
+The retailer (FNAC) logo never overrides the folder: it only appears on the no-book path. The sleep reason (power button, timer or SleepCover) makes no difference: every path goes through `N3PowerWorkflowManager::show`. The power-off screen uses the same controller, so the same rules apply there.
+
+Other notes:
+
+- The regex `(\.kobo|koboExtStorage)/screensaver` in `SyncFileSystemCommand::findFilesToParse` appears to keep the folder out of the book import (verify on device).
+- `FullScreenDragonPowerView` scales the image when stretching. A 1264 x 1680 picture matches the Libra 2 panel, so the scaling does nothing visible.
+
+### Recipe to show our picture
+
+1. Settings → Energy saving and privacy: tick **Show current read** and the **full-screen cover** checkbox under it (writes `ShowBookCover=true` and `FullscreenCoverStretch=true`).
+2. Open any book once, so a recent book exists.
+3. Keep `.kobo/screensaver` in place (NickelMenu Screensaver toggle on), with at least one `nd-wallpaper-*.png` in it.
+4. Sleep the device.
+
+No hidden key is needed. Editing the conf by hand is possible, but only with Nickel stopped (Nickel rewrites the conf), so the Settings UI is the safe route.
 
 ## Verify on device
 
-- Whether a Settings toggle (sleep screen / "show current book cover") must be on or off for the folder to be used, and what the flag at `this+0x1e` means.
-- Whether a book cover ever wins over a picture in the folder.
+- The recipe above shows our picture and no info panel (the panel stays hidden even with `FullscreenCoverInfoPanel=true`).
+- With Full-screen covers off, the cover with info is shown, not our picture (expected).
 - That a 1264 x 1680 gray PNG is shown without extra scaling or margins, and that the dither looks right after the sleep-screen update.
-- Case sensitivity of the `*.png` filter (we write lowercase `.png`).
 - That the pictures do not appear in the library after a rescan.
 - That Nickel does not delete or rewrite files in `.kobo/screensaver`.
 - The NickelMenu "Screensaver" toggle that moves `.kobo/screensaver` away and back must be ON for pictures to show; Turn off here does not rename the folder.
