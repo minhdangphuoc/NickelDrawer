@@ -9,7 +9,7 @@
   "ui.pin_hint": "Enter this PIN on your phone",
   "ui.device": "Device",
   "ui.ip": "IP",
-  "ui.keep_awake": "Keep the Kobo awake while files arrive.",
+  "ui.keep_awake": "Keep this screen open while files arrive.",
   "ui.received": "Received",
   "ui.nothing_yet": "Nothing yet",
   "ui.stop_and_update": "Stop and update library"

@@ -14,7 +14,7 @@
   "ui.pin_hint": "Nhập mã PIN này trên điện thoại",
   "ui.device": "Thiết bị",
   "ui.ip": "IP",
-  "ui.keep_awake": "Giữ máy Kobo thức khi đang nhận tệp.",
+  "ui.keep_awake": "Để màn hình này mở khi đang nhận tệp.",
   "ui.received": "Đã nhận",
   "ui.nothing_yet": "Chưa có gì",
   "ui.stop_and_update": "Dừng và cập nhật thư viện"
