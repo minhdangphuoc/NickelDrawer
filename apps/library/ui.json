@@ -18,7 +18,10 @@
     "has_pages": false,
     "has_selection": false,
     "selected": "",
-    "duplicates": []
+    "duplicates": [],
+    "can_normalize": false,
+    "can_restore": false,
+    "can_stop": false
   },
   "screens": {
     "main": {
@@ -27,21 +30,65 @@
       "body": [
         {
           "kv": [
-            ["@ui.books", "$books"],
-            ["@ui.wrong", "$wrong"],
-            ["@ui.not_nfc", "$not_nfc"],
-            ["@ui.groups", "$groups"],
-            ["@ui.last_scan", "$last_scan"]
+            [
+              "@ui.books",
+              "$books"
+            ],
+            [
+              "@ui.wrong",
+              "$wrong"
+            ],
+            [
+              "@ui.not_nfc",
+              "$not_nfc"
+            ],
+            [
+              "@ui.groups",
+              "$groups"
+            ],
+            [
+              "@ui.last_scan",
+              "$last_scan"
+            ]
           ]
         },
-        { "steps": { "label": "$phase", "done": "$done", "total": "$total", "detail": "$detail" } },
+        {
+          "steps": {
+            "label": "$phase",
+            "done": "$done",
+            "total": "$total",
+            "detail": "$detail"
+          }
+        },
+        {
+          "button": "@ui.stop",
+          "action": "cancel",
+          "style": "secondary",
+          "enabled": "$can_stop"
+        },
         {
           "button": "@ui.fix",
           "action": "fix",
           "style": "secondary",
           "enabled": "$can_fix",
           "async": true,
-          "confirm": { "text": "@ui.fix_confirm", "ok": "@ui.fix_ok", "cancel": "@ui.cancel" }
+          "confirm": {
+            "text": "@ui.fix_confirm",
+            "ok": "@ui.fix_ok",
+            "cancel": "@ui.cancel"
+          }
+        },
+        {
+          "button": "@ui.nfc",
+          "action": "normalize",
+          "style": "secondary",
+          "enabled": "$can_normalize",
+          "async": true,
+          "confirm": {
+            "text": "@ui.nfc_confirm",
+            "ok": "@ui.nfc_ok",
+            "cancel": "@ui.cancel"
+          }
         },
         {
           "button": "@ui.undo",
@@ -49,7 +96,11 @@
           "style": "secondary",
           "enabled": "$can_undo",
           "async": true,
-          "confirm": { "text": "@ui.undo_confirm", "ok": "@ui.undo_ok", "cancel": "@ui.cancel" }
+          "confirm": {
+            "text": "@ui.undo_confirm",
+            "ok": "@ui.undo_ok",
+            "cancel": "@ui.cancel"
+          }
         },
         {
           "list": "$duplicates",
@@ -58,25 +109,58 @@
           "tap": "pick",
           "max": 30
         },
-        { "button": "@ui.next_page", "action": "page", "style": "secondary", "enabled": "$has_pages" },
-        { "text": "$selected", "style": "caption" },
+        {
+          "button": "@ui.next_page",
+          "action": "page",
+          "style": "secondary",
+          "enabled": "$has_pages"
+        },
+        {
+          "text": "$selected",
+          "style": "caption"
+        },
         {
           "button": "@ui.trash",
           "action": "trash",
           "style": "secondary",
           "enabled": "$has_selection",
-          "confirm": { "text": "@ui.trash_confirm", "ok": "@ui.trash_ok", "cancel": "@ui.cancel" }
+          "confirm": {
+            "text": "@ui.trash_confirm",
+            "ok": "@ui.trash_ok",
+            "cancel": "@ui.cancel"
+          }
         },
-        { "notice": "@ui.note" }
+        {
+          "button": "@ui.restore",
+          "action": "restore",
+          "style": "secondary",
+          "enabled": "$can_restore",
+          "confirm": {
+            "text": "@ui.restore_confirm",
+            "ok": "@ui.restore_ok",
+            "cancel": "@ui.cancel"
+          }
+        },
+        {
+          "notice": "@ui.note"
+        }
       ],
       "footer": [
-        { "button": "@ui.scan", "action": "scan", "style": "primary", "enabled": "!$running", "async": true }
+        {
+          "button": "@ui.scan",
+          "action": "scan",
+          "style": "primary",
+          "enabled": "!$running",
+          "async": true
+        }
       ],
       "toasts": {
         "started": "@ui.toast_started",
         "busy": "@ui.toast_busy",
         "trashed": "@ui.toast_trashed",
-        "failed": "@ui.toast_failed"
+        "failed": "@ui.toast_failed",
+        "stopping": "@ui.toast_stopping",
+        "restored": "@ui.toast_restored"
       }
     }
   }

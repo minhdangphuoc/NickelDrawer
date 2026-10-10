@@ -34,6 +34,8 @@ type Model struct {
 	Hint     string       `json:"hint"`
 	Sections []Section    `json:"sections"`
 	Errors   []AppProblem `json:"errors"`
+	// UpdateAvailable is true when a checked update is waiting (the mod may mark the More row).
+	UpdateAvailable bool `json:"update_available"`
 }
 
 type Section struct {
@@ -92,8 +94,14 @@ func (c Config) BuildModel() (Model, error) {
 			{ID: SectionInstalled, Title: c.message("drawer.section.installed", nil), Items: items},
 			{ID: SectionSystem, Title: c.message("drawer.section.system", nil), Items: c.hostItems()},
 		},
-		Errors: problems,
+		Errors:          problems,
+		UpdateAvailable: c.hasPendingUpdate(),
 	}, nil
+}
+
+func (c Config) hasPendingUpdate() bool {
+	_, hasPending := c.pendingUpdate()
+	return hasPending
 }
 
 func shownInDrawer(apps []manifest.App) []manifest.App {
@@ -125,12 +133,20 @@ func (c Config) appItem(app manifest.App, status Status) Item {
 	return Item{
 		ID:      app.ID,
 		Name:    localizedApp.Name,
-		Status:  status.Line,
+		Status:  c.appStatusLine(app, status),
 		Icon:    existingFile(filepath.Join(app.Dir, iconFileName)),
 		Running: &running,
 		Screen:  uikit.HasUI(app.Dir),
 		Actions: modelActions(localizedApp.Actions),
 	}
+}
+
+// appStatusLine says why an app cannot work on this host; otherwise the app's own status line.
+func (c Config) appStatusLine(app manifest.App, status Status) string {
+	if app.NeedsNewerHost(c.Version) {
+		return c.message("drawer.needs_newer", nil)
+	}
+	return status.Line
 }
 
 // existingFile returns path when it is a regular file, else "" (the drawer then draws no icon).
@@ -158,7 +174,7 @@ func modelActions(actions []manifest.Action) []Action {
 func (c Config) hostItems() []Item {
 	items := []Item{c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action", "refresh.png")}
 	if _, err := os.Stat(filepath.Join(c.HostDir, "data", updateConfigName)); err == nil {
-		items = append(items, c.hostItem(HostUpdatesID, "drawer.updates_name", HostUpdatesAct, "drawer.updates_action", "updates.png"))
+		items = append(items, c.updatesItem())
 	}
 	return items
 }
@@ -193,6 +209,9 @@ type InfoStorage struct {
 
 // AppInfo describes one installed app in the device language.
 func (c Config) AppInfo(appID string) (Info, error) {
+	if IsHostID(appID) {
+		return Info{}, newError(CodeHostItem, "app", appID)
+	}
 	app, err := c.loadApp(appID)
 	if err != nil {
 		return Info{}, err
@@ -214,7 +233,7 @@ func (c Config) AppInfo(appID string) (Info, error) {
 // loadApp validates the id before it touches the file system, then loads the manifest.
 func (c Config) loadApp(appID string) (manifest.App, error) {
 	if IsHostID(appID) {
-		return manifest.App{}, newError(CodeHostItem, "app", appID)
+		return c.hostApp(appID)
 	}
 	if !isPlainName(appID) {
 		return manifest.App{}, newError(CodeUnknownApp, "app", appID)

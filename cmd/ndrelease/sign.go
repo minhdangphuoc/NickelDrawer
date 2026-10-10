@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"koboapps/internal/release"
@@ -19,6 +20,7 @@ type signOptions struct {
 	keyPath    string
 	publicPath string
 	minAppsctl string
+	notesPath  string
 }
 
 func runSign(args []string, stdout, stderr io.Writer) int {
@@ -31,6 +33,7 @@ func runSign(args []string, stdout, stderr io.Writer) int {
 	flags.StringVar(&options.keyPath, "key", defaultPrivateKeyPath(), "private key file")
 	flags.StringVar(&options.publicPath, "pub", defaultPublicKey, "public key that appsctl embeds; the private key must match it")
 	flags.StringVar(&options.minAppsctl, "min-appsctl", "0.1.0", "oldest appsctl allowed to apply this release")
+	flags.StringVar(&options.notesPath, "notes-file", "", "text file with the changelog summary the drawer's update screen shows (optional)")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
 	}
@@ -56,6 +59,12 @@ func sign(options signOptions) error {
 	if err != nil {
 		return err
 	}
+	if manifest.Notes, err = readNotes(options.notesPath); err != nil {
+		return err
+	}
+	if err := manifest.Validate(); err != nil {
+		return fmt.Errorf("release notes are invalid: %w", err)
+	}
 	manifestBytes, err := manifest.Marshal()
 	if err != nil {
 		return err
@@ -64,6 +73,18 @@ func sign(options signOptions) error {
 		return err
 	}
 	return verifyReleaseDir(options.outDir, options.publicPath)
+}
+
+// readNotes returns the trimmed notes file, or "" when no file is given.
+func readNotes(notesPath string) (string, error) {
+	if notesPath == "" {
+		return "", nil
+	}
+	text, err := os.ReadFile(notesPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot read %s: %w", notesPath, err)
+	}
+	return strings.TrimSpace(string(text)), nil
 }
 
 func loadPrivateKey(keyPath string) (ed25519.PrivateKey, error) {

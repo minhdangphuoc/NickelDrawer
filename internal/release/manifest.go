@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 const (
@@ -19,6 +20,12 @@ const (
 
 	hostPrefix = ".adds/koboapps"
 	appsPrefix = ".adds/apps"
+
+	// ModPath is where a release carries the NickelHook mod. The updater never installs it
+	// itself: it copies it to .kobo/KoboRoot.tgz so Nickel installs it at the next reboot.
+	ModPath = hostPrefix + "/mod/KoboRoot-nickeldrawer.tgz"
+
+	maxNotesRunes = 600
 )
 
 var (
@@ -27,7 +34,7 @@ var (
 	sha256Pattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 	modePattern   = regexp.MustCompile(`^0[0-7]{3}$`)
 
-	hostFolders = []string{"bin", "lib", "locales", "icons"}
+	hostFolders = []string{"bin", "lib", "locales", "icons", "mod", "screens"}
 	appFolders  = []string{"bin", "locales"}
 )
 
@@ -53,6 +60,8 @@ type Manifest struct {
 	Files      []File       `json:"files"`
 	Apps       []AppVersion `json:"apps"`
 	MinAppsctl string       `json:"min_appsctl"`
+	// Notes is the changelog summary the drawer's update screen shows (optional, plain text).
+	Notes string `json:"notes,omitempty"`
 }
 
 // Parse decodes and validates release.json bytes.
@@ -80,6 +89,9 @@ func (manifest *Manifest) Validate() error {
 	}
 	if _, err := time.Parse(time.RFC3339, manifest.Created); err != nil {
 		return fmt.Errorf("created %q must be an RFC3339 timestamp: %w", manifest.Created, err)
+	}
+	if utf8.RuneCountInString(manifest.Notes) > maxNotesRunes {
+		return fmt.Errorf("notes must be at most %d characters", maxNotesRunes)
 	}
 	if len(manifest.Files) == 0 {
 		return fmt.Errorf("files must not be empty")
@@ -154,11 +166,14 @@ func CheckPath(filePath string) error {
 	if isHostPath(parts) || isAppPath(parts) {
 		return nil
 	}
-	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales,icons}, %s/<id>/{app.json,icon.png,bin,locales})", hostPrefix, appsPrefix)
+	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales,icons,screens} and the mod file %s, %s/<id>/{app.json,icon.png,bin,locales})", hostPrefix, ModPath, appsPrefix)
 }
 
 func isHostPath(parts []string) bool {
-	return len(parts) >= 4 && parts[0]+"/"+parts[1] == hostPrefix && contains(hostFolders, parts[2])
+	if len(parts) < 4 || parts[0]+"/"+parts[1] != hostPrefix || !contains(hostFolders, parts[2]) {
+		return false
+	}
+	return parts[2] != "mod" || strings.Join(parts, "/") == ModPath // the mod folder holds one file only
 }
 
 func isAppPath(parts []string) bool {

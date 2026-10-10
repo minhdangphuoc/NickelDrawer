@@ -8,7 +8,8 @@
     "device": "",
     "ip": "",
     "summary": "",
-    "received": []
+    "received": [],
+    "note": ""
   },
   "screens": {
     "main": {
@@ -38,6 +39,13 @@
         },
         {
           "notice": "@ui.keep_awake"
+        },
+        {
+          "text": "@ui.idle_stop",
+          "style": "caption"
+        },
+        {
+          "notice": "$note"
         },
         {
           "text": "$summary",

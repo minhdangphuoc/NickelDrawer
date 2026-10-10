@@ -1,5 +1,5 @@
 #!/bin/sh
-# Background worker (not a menu action). Builds <Images>/Albums/<name>.cbz for every folder that
+# Background worker (not an action). Builds <Images>/Albums/<name>.cbz for every folder that
 # holds png/jpg files and skips albums that are newer than all their images.
 
 . "$(dirname "$0")/lib.sh"
@@ -35,5 +35,8 @@ list_album_folders >"$folder_list"
 while read -r folder; do
     folder_has_images "$folder" && build_album_for "$folder"
 done <"$folder_list"
-rm -f "$folder_list" "$PID_FILE"
-say msg.status_result made="$made" skipped="$skipped" failed="$failed" >"$RESULT_FILE"
+rm -f "$folder_list"
+echo "made=$made skipped=$skipped failed=$failed" >"$RESULT_FILE"
+# New albums are only visible to Nickel after a rescan; the state action asks the host for it.
+[ "$made" -eq 0 ] || : >"$RESCAN_FILE"
+rm -f "$PID_FILE"

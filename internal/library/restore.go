@@ -47,9 +47,34 @@ func (service *Service) Undo(date string) (restored int, err error) {
 	if err := validateDate(date); err != nil {
 		return 0, err
 	}
+	renames, err := service.readRenames(date)
+	if err != nil {
+		return 0, err
+	}
+	copied := service.copiedBefore(date, renames)
 	restored, err = service.restoreTree(filepath.Join(service.Paths.Backups(), date), true)
-	service.Logger.Printf("undo %s: restored %d", date, restored)
-	return restored, err
+	renamed, renameErr := service.undoRenames(renames, copied)
+	if len(renames) > 0 && renameErr == nil {
+		_ = os.Remove(service.Paths.RenameJournal(date))
+	}
+	service.Logger.Printf("undo %s: restored %d, renamed back %d", date, restored, renamed)
+	if err == nil {
+		err = renameErr
+	}
+	if restored+renamed > 0 {
+		service.queueRescan()
+	}
+	return restored + renamed, err
+}
+
+// copiedBefore finds which renamed books have a backup copy of their content. It must run
+// before the copies are moved back.
+func (service *Service) copiedBefore(date string, renames []renameEntry) map[string]bool {
+	copied := make(map[string]bool, len(renames))
+	for _, entry := range renames {
+		copied[entry.From] = service.hasBackupCopy(date, entry.From)
+	}
+	return copied
 }
 
 // RestoreTrash puts the duplicates trashed on one day back; a file is never overwritten.
@@ -65,8 +90,14 @@ func (service *Service) RestoreTrash(date string) (restored int, err error) {
 	}
 	restored, err = service.restoreTree(filepath.Join(service.Paths.Trash(), date), false)
 	service.Logger.Printf("restore-trash %s: restored %d", date, restored)
+	if restored > 0 {
+		service.queueRescan()
+	}
 	return restored, err
 }
+
+// HasTrash is true when at least one day of trashed duplicates can be restored.
+func (service *Service) HasTrash() bool { return latestDate(service.Paths.Trash()) != "" }
 
 // restoreTree moves every file below source (a dated folder) back to the same relative path
 // below the storage root. Targets are checked to stay inside a library folder.

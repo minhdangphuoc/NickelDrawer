@@ -56,11 +56,16 @@ type publishedRelease struct {
 // buildRelease signs a release made from dist; zipSource, when set, supplies the zip
 // content instead (to simulate a tampered download).
 func buildRelease(t *testing.T, dist, version string, signer ed25519.PrivateKey, zipSource string) publishedRelease {
+	return buildReleaseWithNotes(t, dist, version, signer, zipSource, "")
+}
+
+func buildReleaseWithNotes(t *testing.T, dist, version string, signer ed25519.PrivateKey, zipSource, notes string) publishedRelease {
 	t.Helper()
 	parsed, err := release.BuildManifest(dist, version, "0.1.0", time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
+	parsed.Notes = notes
 	manifestBytes, err := parsed.Marshal()
 	if err != nil {
 		t.Fatal(err)
@@ -151,8 +156,6 @@ type fixture struct {
 	github     *fakeGitHub
 	publicKey  ed25519.PublicKey
 	privateKey ed25519.PrivateKey
-	menuCalls  int
-	menuError  error
 }
 
 func newFixture(t *testing.T, installedVersion string) *fixture {
@@ -180,7 +183,6 @@ func (f *fixture) updater(currentVersion string) *Updater {
 		OnboardRoot: f.root, APIBase: f.github.server.URL, TempDir: f.t.TempDir(),
 		CurrentVersion: currentVersion,
 		PublicKey:      func() (ed25519.PublicKey, error) { return f.publicKey, nil },
-		RegenerateMenu: func() error { f.menuCalls++; return f.menuError },
 	})
 }
 
@@ -270,9 +272,6 @@ func TestValidUpdateIsApplied(t *testing.T) {
 	got := snapshot(t, f.root, ".adds/koboapps/data/", ".adds/apps/demo/data/")
 	sameSnapshot(t, "installed files", got, snapshot(t, want))
 	sameSnapshot(t, "app data", appDataSnapshot(t, f.root), dataBefore)
-	if f.menuCalls != 1 {
-		t.Fatalf("menu regenerated %d times, want 1", f.menuCalls)
-	}
 	if _, err := os.Stat(filepath.Join(f.root, ".adds/koboapps/data/rollback/1.0.0/journal.json")); err != nil {
 		t.Fatalf("no backup journal: %v", err)
 	}
@@ -302,9 +301,6 @@ func TestBadSignatureChangesNothing(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping), before)
-	if f.menuCalls != 0 {
-		t.Fatal("menu regenerated for a rejected update")
-	}
 }
 
 func TestShaMismatchChangesNothing(t *testing.T) {
@@ -370,9 +366,6 @@ func TestFailedSelfCheckRestoresEverything(t *testing.T) {
 	}
 	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping), before)
 	sameSnapshot(t, "app data", appDataSnapshot(t, f.root), dataBefore)
-	if f.menuCalls != 2 {
-		t.Fatalf("menu regenerated %d times, want 2 (after swap and after restore)", f.menuCalls)
-	}
 	if _, statErr := os.Stat(filepath.Join(f.root, ".adds/koboapps/data/rollback/1.0.0")); !os.IsNotExist(statErr) {
 		t.Fatal("restored backup should be dropped")
 	}
@@ -380,19 +373,6 @@ func TestFailedSelfCheckRestoresEverything(t *testing.T) {
 	if status.State != StateFailed || status.Report.Key != "update.failed_restored" {
 		t.Fatalf("status = %+v", status)
 	}
-}
-
-func TestFailedMenuGenerationRestoresEverything(t *testing.T) {
-	f := newFixture(t, "1.0.0")
-	f.publishVersion("1.1.0", "1.1.0")
-	f.menuError = errors.New("disk full")
-	before := snapshot(t, f.root, bookkeeping)
-
-	_, err := f.updater("1.0.0").Apply(context.Background())
-	if messageKey(err) != "update.restore_failed" { // the restore's own menu rebuild also fails
-		t.Fatalf("err = %v", err)
-	}
-	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping, ".adds/koboapps/data/rollback/"), before)
 }
 
 func withoutPrefix(files map[string]string, prefix string) map[string]string {
@@ -412,16 +392,12 @@ func TestSecondApplyOfTheSameVersionIsANoOp(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := snapshot(t, f.root, bookkeeping)
-	menuCalls := f.menuCalls
 
 	result, err := f.updater("1.1.0").Apply(context.Background())
 	if err != nil || result.Key != "update.up_to_date" {
 		t.Fatalf("result=%+v err=%v", result, err)
 	}
 	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping), before)
-	if f.menuCalls != menuCalls {
-		t.Fatal("no-op regenerated the menu")
-	}
 }
 
 func TestRollbackRestoresFilesAndKeepsData(t *testing.T) {
@@ -528,8 +504,9 @@ func TestEveryUpdateMessageKeyExistsInBothLocales(t *testing.T) {
 		"update.bad_public_key", "update.network", "update.no_release", "update.missing_asset", "update.bad_signature",
 		"update.bad_manifest", "update.file_mismatch", "update.downgrade", "update.needs_newer_appsctl",
 		"update.up_to_date", "update.available", "update.applied", "update.failed_restored", "update.restore_failed",
-		"update.menu_failed", "update.already_running", "update.no_rollback", "update.rolled_back", "update.running",
-		"update.interrupted", "update.failed", "update.status_never", "update.status_version", "update.started", "update.wifi_missing",
+		"update.checking", "update.applied_reboot", "update.mod_busy", "update.bad_mod", "update.mod_stage_failed",
+		"update.already_running", "update.no_rollback", "update.rolled_back", "update.running",
+		"update.interrupted", "update.failed", "update.status_never", "update.status_version",
 	}
 	for _, locale := range []string{"en", "vi"} {
 		catalog, err := i18n.LoadCatalog(filepath.Join("..", "..", "host", "locales", locale+".json"))
@@ -547,7 +524,7 @@ func TestEveryUpdateMessageKeyExistsInBothLocales(t *testing.T) {
 func TestCheckReportsAvailableAndUpToDate(t *testing.T) {
 	f := newFixture(t, "1.0.0")
 	f.publishVersion("1.1.0", "1.1.0")
-	before := snapshot(t, f.root)
+	before := snapshot(t, f.root, bookkeeping)
 	result, err := f.updater("1.0.0").Check(context.Background())
 	if err != nil || result.Key != "update.available" || result.Params["version"] != "1.1.0" {
 		t.Fatalf("result=%+v err=%v", result, err)
@@ -555,7 +532,7 @@ func TestCheckReportsAvailableAndUpToDate(t *testing.T) {
 	if result, err = f.updater("1.1.0").Check(context.Background()); err != nil || result.Key != "update.up_to_date" {
 		t.Fatalf("result=%+v err=%v", result, err)
 	}
-	sameSnapshot(t, "tree", snapshot(t, f.root), before)
+	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping), before)
 }
 
 func TestMinimumAppsctlIsEnforced(t *testing.T) {

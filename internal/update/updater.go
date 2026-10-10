@@ -30,8 +30,6 @@ type Options struct {
 	HTTPClient     *http.Client
 	// PublicKey returns the trusted release key; ErrNoPublicKey refuses every update.
 	PublicKey func() (ed25519.PublicKey, error)
-	// RegenerateMenu rewrites the NickelMenu config after files changed.
-	RegenerateMenu func() error
 }
 
 // Updater applies signed releases to one onboard root.
@@ -56,8 +54,15 @@ func New(options Options) *Updater {
 	}
 }
 
-// Check reports whether a newer release exists. It downloads and verifies only release.json.
-func (updater *Updater) Check(ctx context.Context) (Report, error) {
+// Check reports whether a newer release exists. It downloads and verifies only release.json
+// (signature first) and installs nothing; the result is cached for the drawer
+// (data/update/available.json).
+func (updater *Updater) Check(ctx context.Context) (result Report, err error) {
+	previous, hadPrevious, err := updater.beginCheck()
+	if err != nil {
+		return Report{}, err
+	}
+	defer func() { updater.finishCheck(previous, hadPrevious, result, err) }()
 	signed, err := updater.fetchSignedManifest(ctx)
 	if err != nil {
 		return Report{}, err
@@ -66,7 +71,11 @@ func (updater *Updater) Check(ctx context.Context) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
-	if order <= 0 {
+	isAvailable := order > 0
+	if err := writeAvailability(updater.layout, availabilityOf(signed.manifest, updater.options.CurrentVersion, isAvailable)); err != nil {
+		return Report{}, fmt.Errorf("cannot save the check result: %w", err)
+	}
+	if !isAvailable {
 		return report("update.up_to_date", "version", updater.options.CurrentVersion), nil
 	}
 	return report("update.available", "version", signed.manifest.Version, "current", updater.options.CurrentVersion), nil
@@ -95,10 +104,24 @@ func (updater *Updater) Apply(ctx context.Context) (result Report, err error) {
 	if err != nil {
 		return Report{}, err
 	}
-	if err := updater.install(signed.manifest, zipPath); err != nil {
+	isModStaged, err := updater.install(signed.manifest, zipPath)
+	if err != nil {
 		return Report{}, err
 	}
-	return report("update.applied", "version", signed.manifest.Version, "previous", updater.options.CurrentVersion), nil
+	updater.forgetAvailability()
+	key := "update.applied"
+	if isModStaged {
+		key = "update.applied_reboot"
+	}
+	return report(key, "version", signed.manifest.Version, "previous", updater.options.CurrentVersion), nil
+}
+
+// forgetAvailability drops the cached check result after an install; it only says "1 update"
+// for a version that is now installed, and a stale cache is also ignored by the readers.
+func (updater *Updater) forgetAvailability() {
+	if err := os.Remove(updater.layout.availableFile()); err != nil && !os.IsNotExist(err) {
+		fmt.Fprintln(os.Stderr, "warning: cannot remove the cached check result:", err)
+	}
 }
 
 type signedRelease struct {
@@ -204,31 +227,44 @@ func (updater *Updater) downloadVerifiedZip(ctx context.Context, signed signedRe
 }
 
 // install stages the changed files, backs up what they replace, swaps them in and checks
-// the result. Everything before the swap leaves the device untouched on failure.
-func (updater *Updater) install(parsed *release.Manifest, zipPath string) error {
+// the result. Everything before the swap leaves the device untouched on failure. When the
+// release carries a changed Nickel mod, it is staged last as .kobo/KoboRoot.tgz and the
+// result says a reboot installs it.
+func (updater *Updater) install(parsed *release.Manifest, zipPath string) (isModStaged bool, err error) {
 	changed, err := updater.changedFiles(parsed)
 	if err != nil {
-		return err
+		return false, err
+	}
+	mod, hasMod := findFile(changed, release.ModPath)
+	if hasMod {
+		if err := updater.layout.ensureModSlotFree(mod); err != nil {
+			return false, err
+		}
 	}
 	appsBefore := updater.invalidAppIDs()
 	if err := updater.stage(parsed, zipPath, changed); err != nil {
-		return err
+		return false, err
 	}
 	defer os.RemoveAll(updater.layout.stagingDir())
 	backupDir, err := updater.layout.createBackup(updater.options.CurrentVersion, parsed.Version, changed)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if err := updater.swap(changed); err != nil {
-		return updater.undo(backupDir, err)
+		return false, updater.undo(backupDir, err)
 	}
 	if err := updater.selfCheck(parsed, changed, appsBefore); err != nil {
-		return updater.undo(backupDir, err)
+		return false, updater.undo(backupDir, err)
+	}
+	if hasMod {
+		if err := updater.layout.stageMod(); err != nil {
+			return false, updater.undo(backupDir, err)
+		}
 	}
 	if err := updater.layout.pruneBackups(); err != nil {
-		return fmt.Errorf("update applied, but old backups could not be pruned: %w", err)
+		return hasMod, fmt.Errorf("update applied, but old backups could not be pruned: %w", err)
 	}
-	return nil
+	return hasMod, nil
 }
 
 // changedFiles keeps the manifest files whose installed copy is missing or different.
@@ -261,6 +297,12 @@ func (updater *Updater) stage(parsed *release.Manifest, zipPath string, changed 
 		if err == nil {
 			err = setMode(staged, os.FileMode(mode))
 		}
+		if err == nil && file.Path == release.ModPath {
+			err = checkModArchive(staged)
+			if err != nil {
+				err = i18n.NewError("update.bad_mod").WithCause(err)
+			}
+		}
 		if err != nil {
 			os.RemoveAll(stagingDir)
 			return err
@@ -283,12 +325,9 @@ func (updater *Updater) swap(changed []release.File) error {
 	return nil
 }
 
-// selfCheck proves the new files work: the menu regenerates, no app became invalid, every
-// app the release lists is present at its version, and a replaced appsctl runs.
+// selfCheck proves the new files work: no app became invalid, every app the release lists is
+// present at its version, and a replaced appsctl runs.
 func (updater *Updater) selfCheck(parsed *release.Manifest, changed []release.File, appsBefore map[string]bool) error {
-	if err := updater.regenerateMenu(); err != nil {
-		return fmt.Errorf("menu generation failed: %w", err)
-	}
 	if err := updater.checkApps(parsed, appsBefore); err != nil {
 		return err
 	}
@@ -296,13 +335,6 @@ func (updater *Updater) selfCheck(parsed *release.Manifest, changed []release.Fi
 		return nil
 	}
 	return updater.checkAppsctlVersion(parsed.Version)
-}
-
-func (updater *Updater) regenerateMenu() error {
-	if updater.options.RegenerateMenu == nil {
-		return nil
-	}
-	return updater.options.RegenerateMenu()
 }
 
 func replacedAppsctl(changed []release.File) bool {
@@ -365,10 +397,8 @@ func (updater *Updater) checkAppsctlVersion(wantVersion string) error {
 
 // undo restores the backup after a failed swap or self-check and reports why the update failed.
 func (updater *Updater) undo(backupDir string, cause error) error {
-	restoreErr := updater.layout.restore(backupDir)
-	menuErr := updater.regenerateMenu()
-	if restoreErr != nil || menuErr != nil {
-		return i18n.NewError("update.restore_failed", "dir", backupDir).WithCause(errors.Join(cause, restoreErr, menuErr))
+	if restoreErr := updater.layout.restore(backupDir); restoreErr != nil {
+		return i18n.NewError("update.restore_failed", "dir", backupDir).WithCause(errors.Join(cause, restoreErr))
 	}
 	os.RemoveAll(backupDir) // restored, so it is no longer a rollback point
 	return i18n.NewError("update.failed_restored").WithCause(cause)
@@ -387,6 +417,31 @@ func (updater *Updater) finishRun(result Report, err error) {
 	status := Status{State: StateDone, Report: result}
 	if err != nil {
 		status = Status{State: StateFailed, Report: reportOfError(err)}
+	}
+	if writeErr := writeStatus(updater.layout, status); writeErr != nil {
+		fmt.Fprintln(os.Stderr, "warning: cannot write update status:", writeErr)
+	}
+}
+
+// beginCheck refuses a check while an update runs and shows "working" in the status until it
+// ends. It returns the earlier status so a successful check can put it back.
+func (updater *Updater) beginCheck() (previous Status, hadPrevious bool, err error) {
+	previous, hadPrevious, err = ReadStatus(updater.layout)
+	if err == nil && hadPrevious && previous.State == StateRunning && previous.PID != os.Getpid() {
+		return Status{}, false, i18n.NewError("update.already_running")
+	}
+	return previous, hadPrevious, writeStatus(updater.layout, Status{State: StateRunning, PID: os.Getpid(), Report: report("update.checking")})
+}
+
+// finishCheck records a failed check. A successful one restores the earlier status, so
+// "Updated to 1.1.0, restart to finish" is not replaced by "up to date" before the reboot.
+func (updater *Updater) finishCheck(previous Status, hadPrevious bool, result Report, err error) {
+	status := previous
+	switch {
+	case err != nil:
+		status = Status{State: StateFailed, Report: reportOfError(err)}
+	case !hadPrevious:
+		status = Status{State: StateDone, Report: result}
 	}
 	if writeErr := writeStatus(updater.layout, status); writeErr != nil {
 		fmt.Fprintln(os.Stderr, "warning: cannot write update status:", writeErr)

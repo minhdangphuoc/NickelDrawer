@@ -16,6 +16,9 @@ fail() {
     exit 1
 }
 
+# shellcheck source=lib/kobo-staging.sh
+. "$REPO_ROOT/tools/lib/kobo-staging.sh"
+
 requireKobo() {
     [ -d "$KOBO_ROOT/.kobo" ] ||
         fail "no Kobo at $KOBO_ROOT (missing .kobo). Plug in the Kobo, tap Connect, and try again."
@@ -68,28 +71,15 @@ commandStatus() {
     [ "$found" = 1 ] || echo "  (none)"
 }
 
-assertOnlyModLibraries() {
-    local tgz=$1 entry
-    while IFS= read -r entry; do
-        entry=${entry#./}
-        entry=${entry%/}
-        case "$entry" in
-        "" | usr | usr/local | usr/local/Kobo | usr/local/Kobo/imageformats) ;;
-        usr/local/Kobo/imageformats/*.so) ;;
-        *) fail "$tgz contains '$entry'. Only usr/local/Kobo/imageformats/*.so is allowed. Not staging." ;;
-        esac
-    done < <(tar tzf "$tgz")
-}
-
 commandStage() {
     local tgz=${1:-}
     [ -n "$tgz" ] || fail "usage: stage <KoboRoot-*.tgz>"
     [ -f "$tgz" ] || fail "no such file: $tgz"
     [ ! -e "$STAGED_TGZ" ] ||
         fail "a KoboRoot.tgz is already staged. Only one can be installed per reboot; reboot the Kobo first or remove it by hand."
-    assertOnlyModLibraries "$tgz"
+    assert_only_mod_libraries "$tgz"
     backupDeviceState
-    cp "$tgz" "$STAGED_TGZ"
+    stage_mod_archive "$tgz"
     echo "staged $tgz. Eject, unplug, and wait for the Kobo to install and reboot."
 }
 

@@ -1,16 +1,11 @@
 package library
 
 import (
-	"archive/zip"
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
-	"strings"
 )
 
 const (
@@ -39,6 +34,7 @@ type FixResult struct {
 	Fixed      int
 	Skipped    int // too large to rewrite
 	Failed     int
+	Cancelled  bool     // the user stopped the run before the last book
 	Paths      []string // relative paths that were (or with dry-run would be) fixed
 }
 
@@ -53,7 +49,12 @@ func (service *Service) FixLanguage(dryRun bool) (FixResult, error) {
 	defer progress.clear()
 	candidates := service.languageCandidates(discovery.Files, progress)
 	result.Candidates = len(candidates)
+	result.Cancelled = service.Cancelled()
 	for index, book := range candidates {
+		if service.Cancelled() {
+			result.Cancelled = true
+			break
+		}
 		progress.update(index, len(candidates), book.Path)
 		if err := service.fixOne(book, dryRun, result.Date); err != nil {
 			service.recordFailure(&result, book.Path, err)
@@ -66,7 +67,8 @@ func (service *Service) FixLanguage(dryRun bool) (FixResult, error) {
 	service.Logger.Printf("fix-language dryRun=%v: %d candidates, %d fixed, %d skipped, %d failed",
 		dryRun, result.Candidates, result.Fixed, result.Skipped, result.Failed)
 	if !dryRun && result.Fixed > 0 {
-		service.refreshReport(result.Paths)
+		service.refreshReport(unchangedPaths(result.Paths))
+		service.queueRescan()
 	}
 	return result, nil
 }
@@ -90,6 +92,9 @@ func (err errTooLarge) Error() string {
 func (service *Service) languageCandidates(files []Found, progress *progressWriter) []Book {
 	var candidates []Book
 	for index, file := range files {
+		if service.Cancelled() {
+			return candidates
+		}
 		progress.update(index, len(files), file.Relative)
 		if book := Analyze(file); book.NeedsLanguageFix() {
 			candidates = append(candidates, book)
@@ -119,7 +124,7 @@ func (service *Service) fixOne(book Book, dryRun bool, date string) error {
 	if err := service.backup(book.Path, absolute, date); err != nil {
 		return err
 	}
-	return rewriteLanguage(absolute)
+	return rewriteEpubInPlace(absolute, languageRewrite)
 }
 
 // backup copies the original to data/backups/<date>/<relative>. An existing backup of the same
@@ -132,97 +137,19 @@ func (service *Service) backup(relative, absolute, date string) error {
 	return copyFileAtomic(absolute, target)
 }
 
-// rewriteLanguage replaces the file with a copy whose language is "vi", after checking the copy.
-func rewriteLanguage(absolute string) error {
-	return writeAtomic(absolute, func(temp *os.File) error {
-		if err := writeFixedEpub(absolute, temp); err != nil {
-			return err
+// languageRewrite sets the language of a book to "vi" in the package document and in the
+// language attributes of the content documents.
+var languageRewrite = epubRewrite{
+	packageDocument: setPackageLanguage,
+	contentDocument: func(content []byte) []byte {
+		return langAttribute.ReplaceAll(content, []byte("${1}"+targetLanguage+"${2}"))
+	},
+	verify: func(pkg packageXML) error {
+		if languageBase(firstText(pkg.Languages)) != targetLanguage {
+			return errors.New("rewritten package document does not say vi")
 		}
-		if _, err := temp.Seek(0, io.SeekStart); err != nil {
-			return err
-		}
-		return verifyFixedEpub(temp)
-	})
-}
-
-// writeFixedEpub copies every entry untouched (raw, still compressed) except the package
-// document and content documents, which get the new language. mimetype goes first, stored.
-func writeFixedEpub(source string, output io.Writer) error {
-	archive, err := zip.OpenReader(source)
-	if err != nil {
-		return err
-	}
-	defer archive.Close()
-	info, err := ReadEpub(source)
-	if err != nil {
-		return err
-	}
-	writer := zip.NewWriter(output)
-	for _, file := range orderedEntries(archive.File) {
-		if err := copyEntry(writer, file, file.Name == info.OPFPath); err != nil {
-			return fmt.Errorf("%s: %w", file.Name, err)
-		}
-	}
-	return writer.Close()
-}
-
-// orderedEntries puts the stored mimetype entry first, as the EPUB container format requires.
-func orderedEntries(files []*zip.File) []*zip.File {
-	ordered := make([]*zip.File, 0, len(files))
-	for _, file := range files {
-		if file.Name == "mimetype" {
-			ordered = append(ordered, file)
-		}
-	}
-	for _, file := range files {
-		if file.Name != "mimetype" {
-			ordered = append(ordered, file)
-		}
-	}
-	return ordered
-}
-
-func copyEntry(writer *zip.Writer, file *zip.File, isPackage bool) error {
-	extension := strings.ToLower(path.Ext(file.Name))
-	rewrite := isPackage || rewritableExtensions[extension]
-	if !rewrite || file.UncompressedSize64 > maxRewriteBytes {
-		return writer.Copy(file)
-	}
-	content, err := readFile(file)
-	if err != nil {
-		return err
-	}
-	var changed []byte
-	if isPackage {
-		changed, err = setPackageLanguage(content)
-		if err != nil {
-			return err
-		}
-	} else {
-		changed = langAttribute.ReplaceAll(content, []byte("${1}"+targetLanguage+"${2}"))
-	}
-	if bytes.Equal(changed, content) {
-		return writer.Copy(file)
-	}
-	header := zip.FileHeader{Name: file.Name, Method: file.Method, Modified: file.Modified}
-	if file.Name == "mimetype" {
-		header.Method = zip.Store
-	}
-	entry, err := writer.CreateHeader(&header)
-	if err != nil {
-		return err
-	}
-	_, err = entry.Write(changed)
-	return err
-}
-
-func readFile(file *zip.File) ([]byte, error) {
-	reader, err := file.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-	return io.ReadAll(io.LimitReader(reader, maxRewriteBytes+1))
+		return nil
+	},
 }
 
 // setPackageLanguage rewrites dc:language and any language attribute in the package document,
@@ -241,79 +168,47 @@ func setPackageLanguage(content []byte) ([]byte, error) {
 	return append(append(append([]byte{}, changed[:end[0]]...), element...), changed[end[0]:]...), nil
 }
 
-// verifyFixedEpub re-reads the finished copy: every entry must decompress, mimetype must be
-// first and stored, and the language must now read "vi".
-func verifyFixedEpub(file *os.File) error {
-	info, err := file.Stat()
-	if err != nil {
-		return err
+// unchangedPaths maps each path to itself: a fix that does not rename its books.
+func unchangedPaths(paths []string) map[string]string {
+	changes := make(map[string]string, len(paths))
+	for _, relative := range paths {
+		changes[relative] = relative
 	}
-	archive, err := zip.NewReader(file, info.Size())
-	if err != nil {
-		return fmt.Errorf("rewritten file is not a zip: %w", err)
-	}
-	if len(archive.File) == 0 || archive.File[0].Name != "mimetype" || archive.File[0].Method != zip.Store {
-		return errors.New("rewritten file lacks a stored mimetype entry first")
-	}
-	for _, entry := range archive.File {
-		if err := drain(entry); err != nil {
-			return fmt.Errorf("rewritten entry %s: %w", entry.Name, err)
-		}
-	}
-	return verifyLanguage(archive)
+	return changes
 }
 
-func drain(entry *zip.File) error {
-	reader, err := entry.Open()
-	if err != nil {
-		return err
-	}
-	defer reader.Close()
-	_, err = io.Copy(io.Discard, reader)
-	return err
-}
-
-func verifyLanguage(archive *zip.Reader) error {
-	entries := indexEntries(archive.File)
-	opfPath, err := findOPFPath(entries)
-	if err != nil {
-		return err
-	}
-	var pkg packageXML
-	if err := decodeEntry(entries, opfPath, maxOPFSize, &pkg); err != nil {
-		return err
-	}
-	if languageBase(firstText(pkg.Languages)) != targetLanguage {
-		return errors.New("rewritten package document does not say vi")
-	}
-	return nil
-}
-
-// refreshReport re-analyzes the fixed books and updates their rows, so the screen counts
-// drop without a new scan.
-func (service *Service) refreshReport(relatives []string) {
+// refreshReport re-analyzes the changed books and updates their rows, so the screen counts
+// drop without a new scan. changes maps a book's old path to its path now.
+func (service *Service) refreshReport(changes map[string]string) {
 	report, ok, err := LoadReport(service.Paths)
 	if err != nil || !ok {
 		return
 	}
-	fixed := make(map[string]bool, len(relatives))
-	for _, relative := range relatives {
-		fixed[relative] = true
-	}
 	for index, book := range report.Books {
-		if !fixed[book.Path] {
+		current, isChanged := changes[book.Path]
+		if !isChanged {
 			continue
 		}
-		reread := Analyze(Found{Path: absoluteOf(book.Path), Relative: book.Path, Size: book.Size})
-		reread.SHA256 = ""
-		if info, err := os.Lstat(absoluteOf(book.Path)); err == nil {
-			reread.Size = info.Size()
-		}
-		report.Books[index] = reread
+		report.Books[index] = reanalyze(book, current)
 	}
 	report.Duplicates = FindDuplicates(report.Books)
 	report.refreshCounts()
 	if err := SaveReport(service.Paths, report); err != nil {
-		service.Logger.Printf("cannot update report after fix: %v", err)
+		service.Logger.Printf("cannot update report after a change: %v", err)
 	}
+}
+
+// reanalyze reads a changed book again; a file that was hashed before is hashed again, so a
+// group of identical copies stays identical only while it really is.
+func reanalyze(previous Book, current string) Book {
+	reread := Analyze(Found{Path: absoluteOf(current), Relative: current, Size: previous.Size})
+	if info, err := os.Lstat(absoluteOf(current)); err == nil {
+		reread.Size = info.Size()
+	}
+	if previous.SHA256 != "" {
+		if sum, err := hashFile(absoluteOf(current)); err == nil {
+			reread.SHA256 = sum
+		}
+	}
+	return reread
 }

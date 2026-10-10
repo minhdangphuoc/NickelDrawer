@@ -8,7 +8,6 @@ import (
 
 	"koboapps/internal/drawer"
 	"koboapps/internal/i18n"
-	"koboapps/internal/manifest"
 )
 
 // drawerOptions are the flags shared by the drawer subcommands; the defaults are the device
@@ -20,6 +19,8 @@ type drawerOptions struct {
 	confirm  bool
 	screenID string
 	value    optionalValue
+	list     string
+	index    int
 }
 
 // optionalValue is a string flag that remembers whether it was given, because an empty
@@ -50,6 +51,8 @@ func (o *drawerOptions) register(flags *flag.FlagSet) {
 	flags.StringVar(&o.cacheDir, "cache-dir", "", "folder for the status cache (default: the system temp folder)")
 	flags.BoolVar(&o.confirm, "confirm", false, "confirm a destructive command (remove)")
 	flags.StringVar(&o.screenID, "screen", "", "screen id (screen, event; default: the start screen)")
+	flags.StringVar(&o.list, "list", "", "bound variable of the list whose row menu was used (event)")
+	flags.IntVar(&o.index, "index", 0, "zero-based row of that list (event, with --list)")
 	flags.Var(&o.value, "value", "value of a toggle, radio option, field or list row (event)")
 }
 
@@ -114,7 +117,7 @@ func newDrawerSession(name string, args []string, stdout, stderr io.Writer) (dra
 	session.positions = positions
 	session.config = drawer.Config{
 		AppsDir: session.options.appsDir, HostDir: session.options.hostDir,
-		Locale: session.options.effectiveLocale(), Bundle: bundle, CacheDir: session.options.cacheDir,
+		Locale: session.options.effectiveLocale(), Version: version, Bundle: bundle, CacheDir: session.options.cacheDir,
 		DebugLog: stderr,
 	}
 	drawerHooks(&session.config)
@@ -177,10 +180,8 @@ func runHostItem(session drawerSession, itemID, actionID string) (any, error) {
 	switch {
 	case itemID == drawer.HostRefreshID && actionID == drawer.HostRefreshAct:
 		return refreshHostItem(session)
-	case itemID == drawer.HostUpdatesID && actionID == drawer.HostUpdatesAct:
-		return session.config.RunAction(session.options.hostDir, manifest.Action{
-			ID: actionID, Label: actionID, Run: "bin/update-apply.sh", Output: manifest.OutputShow, Wifi: true,
-		})
+	case itemID == drawer.HostUpdatesID:
+		return session.config.Run(itemID, actionID)
 	}
 	return nil, &drawer.Error{Code: drawer.CodeUnknownAction, Params: map[string]string{"app": itemID, "action": actionID}}
 }
@@ -199,6 +200,7 @@ func drawerEvent(session drawerSession) (any, error) {
 	return session.config.RunEvent(drawer.Event{
 		AppID: session.positions[0], ActionID: session.positions[1],
 		Value: session.options.value.pointer(), ScreenID: session.options.screenID,
+		List: session.options.list, Index: session.options.index,
 	})
 }
 

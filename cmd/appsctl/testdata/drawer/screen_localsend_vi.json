@@ -35,6 +35,11 @@
     },
     {
       "type": "text",
+      "text": "Tự dừng sau 15 phút không có tệp. Hẹn giờ ngủ của Kobo vẫn áp dụng.",
+      "style": "caption"
+    },
+    {
+      "type": "text",
       "text": "Books 2 · Rejected 1",
       "style": "caption"
     },

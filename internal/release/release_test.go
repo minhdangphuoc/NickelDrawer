@@ -76,7 +76,8 @@ func TestCheckPathRefusesUserDataAndEscapes(t *testing.T) {
 	good := []string{
 		".adds/koboapps/bin/appsctl", ".adds/koboapps/lib/common.sh", ".adds/apps/ghsync/app.json",
 		".adds/apps/ghsync/bin/ghsync", ".adds/apps/ghsync/locales/vi.json",
-		".adds/apps/ghsync/icon.png", ".adds/koboapps/icons/updates.png",
+		".adds/apps/ghsync/icon.png", ".adds/koboapps/icons/updates.png", ModPath,
+		".adds/koboapps/screens/updates/ui.json", ".adds/koboapps/screens/updates/locales/vi.json",
 	}
 	bad := []string{
 		"", "/etc/passwd", "../x", ".adds/apps/ghsync/data/token", ".adds/koboapps/data/update.json",
@@ -84,6 +85,7 @@ func TestCheckPathRefusesUserDataAndEscapes(t *testing.T) {
 		".adds/nm/koboapps", ".kobo/KoboReader.sqlite", ".adds/apps/ghsync/bin", ".adds/koboapps/bin",
 		".adds/apps/ghsync/icon.svg", ".adds/apps/ghsync/icon.png/x", ".adds/koboapps/icons",
 		`.adds\koboapps\bin\x`, ".adds/koboapps//bin/x",
+		".adds/koboapps/mod/other.tgz", ".adds/koboapps/mod/KoboRoot-nickeldrawer.tgz/x", ".kobo/KoboRoot.tgz",
 	}
 	for _, p := range good {
 		if err := CheckPath(p); err != nil {
@@ -115,6 +117,7 @@ func TestParseRejectsBadManifests(t *testing.T) {
 		"sha":       func(m *Manifest) { m.Files[0].SHA256 = "abc" },
 		"mode":      func(m *Manifest) { m.Files[0].Mode = "755" },
 		"duplicate": func(m *Manifest) { m.Files = append(m.Files, m.Files[0]) },
+		"notes":     func(m *Manifest) { m.Notes = strings.Repeat("x", maxNotesRunes+1) },
 	}
 	for name, mutate := range broken {
 		copyOf := *manifest

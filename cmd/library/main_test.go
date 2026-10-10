@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 const sampleSentence = "Tôi yêu tiếng Việt vì nó có nhiều dấu thanh và những âm điệu đẹp đẽ. "
@@ -67,7 +69,7 @@ func TestScanFixUndoAndStateThroughTheCommandLine(t *testing.T) {
 		t.Fatalf("dry run (%d): %s", code, out)
 	}
 	out, code := run(t, root, appDir, "fix-language")
-	if code != 0 || !strings.Contains(out, "Fixed 1 of 1") || !strings.Contains(out, "Library Reload") {
+	if code != 0 || !strings.Contains(out, "Fixed 1 of 1") || !strings.Contains(out, "Rescan the library") {
 		t.Fatalf("fix (%d): %s", code, out)
 	}
 
@@ -120,5 +122,36 @@ func TestUnknownCommandAndBusyLock(t *testing.T) {
 	out, code := run(t, root, appDir, "scan")
 	if code == 0 || !strings.Contains(out, "Still working") {
 		t.Errorf("a second run must be refused (%d): %s", code, out)
+	}
+}
+
+func TestNormalizeNFCAndCancelThroughTheCommandLine(t *testing.T) {
+	root, appDir := setup(t)
+	writeEpub(t, filepath.Join(root, "Books", norm.NFD.String("Truyện.epub")), "vi")
+	run(t, root, appDir, "scan")
+
+	if out, code := run(t, root, appDir, "normalize-nfc", "--dry-run"); code != 0 || !strings.Contains(out, "Would fix 1 item(s)") {
+		t.Fatalf("dry run (%d): %s", code, out)
+	}
+	if out, code := run(t, root, appDir, "normalize-nfc"); code != 0 || !strings.Contains(out, "Fixed 1 of 1") {
+		t.Fatalf("normalize (%d): %s", code, out)
+	}
+	if out, code := run(t, root, appDir, "cancel"); code != 0 || !strings.Contains(out, "Nothing is running") {
+		t.Fatalf("cancel with nothing running (%d): %s", code, out)
+	}
+	var state map[string]any
+	out, _ := run(t, root, appDir, "state")
+	if err := json.Unmarshal([]byte(out), &state); err != nil || state["not_nfc"] != "0" || state["can_undo"] != true {
+		t.Fatalf("state: %v %s", err, out)
+	}
+	requests, _ := state["requests"].([]any)
+	if len(requests) != 1 {
+		t.Fatalf("the state must hand over the rescan request once: %v", state["requests"])
+	}
+	out, _ = run(t, root, appDir, "state")
+	state = nil
+	_ = json.Unmarshal([]byte(out), &state)
+	if _, again := state["requests"]; again {
+		t.Fatal("the request was handed over twice")
 	}
 }

@@ -37,6 +37,9 @@ type ScreenReply struct {
 	Live    bool                    `json:"live"`            // the app has a state action: refresh while open
 	Value   *string                 `json:"value,omitempty"` // echo of --value, the screen's value (a picture id)
 	Stale   bool                    `json:"stale,omitempty"` // the state action failed: keep the previous model
+	// Services a finished background job asks the mod for, from the state's "requests" array;
+	// the state script emits each one once (docs/spec/drawer-protocol.md).
+	Requests []Request `json:"requests,omitempty"`
 }
 
 // HeaderAction is the optional link at the right of the header: another screen or an action.
@@ -93,14 +96,14 @@ type ScreenComponent struct {
 	Button        string        `json:"button,omitempty"`
 
 	// gallery and viewer (screen_gallery.go)
-	Columns       int            `json:"columns,omitempty"`
-	Tiles         any            `json:"tiles,omitempty"` // []GalleryTile or []ViewerTile
-	Pending       *int           `json:"pending,omitempty"`
-	Menu          []TileMenuItem `json:"menu,omitempty"`
-	Empty         *GalleryEmpty  `json:"empty,omitempty"`
-	CurrentStatus string         `json:"current_status,omitempty"`
-	Primary       *ViewerButton  `json:"primary,omitempty"`
-	Secondary     *ViewerButton  `json:"secondary,omitempty"`
+	Columns       int           `json:"columns,omitempty"`
+	Tiles         any           `json:"tiles,omitempty"` // []GalleryTile or []ViewerTile
+	Pending       *int          `json:"pending,omitempty"`
+	Menu          any           `json:"menu,omitempty"` // gallery: []TileMenuItem; list: []ListMenuItem
+	Empty         *GalleryEmpty `json:"empty,omitempty"`
+	CurrentStatus string        `json:"current_status,omitempty"`
+	Primary       *ViewerButton `json:"primary,omitempty"`
+	Secondary     *ViewerButton `json:"secondary,omitempty"`
 }
 
 // screenContext resolves texts and bindings of one screen.
@@ -143,7 +146,7 @@ func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, erro
 		return ScreenReply{}, newError(CodeInvalidApp, "app", appID, "detail", "no screen '"+screenID+"' in ui.json")
 	}
 	_, isLive := findAction(app, stateActionID)
-	vars, isStale := c.withValue(value).screenVars(app, doc)
+	vars, requests, isStale := c.withValue(value).screenVars(app, doc)
 	if value != nil {
 		setSelected(vars, *value)
 	}
@@ -153,6 +156,7 @@ func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, erro
 	}
 	reply := context.reply(appID, screen, isLive)
 	reply.Stale = isStale
+	reply.Requests = requests
 	reply.Value = value
 	return reply, nil
 }
@@ -225,7 +229,7 @@ func screenLocale(appDir, locale string) string {
 // screenVars starts from the declared defaults and overlays the state action's values for
 // declared variables only (a binding can only name a declared variable). isStale is true when
 // the app has a state action that failed, so the mod keeps its previous model.
-func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[string]any, isStale bool) {
+func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[string]any, requests []Request, isStale bool) {
 	vars = make(map[string]any, len(doc.Vars))
 	for name, value := range doc.Vars {
 		vars[name] = value
@@ -237,12 +241,15 @@ func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[stri
 		}
 	}
 	_, isLive := findAction(app, stateActionID)
-	return vars, isLive && !hasState
+	return vars, c.acceptedRequests(app, stateRequests(state)), isLive && !hasState
 }
 
 // readState runs the optional "state" action with the status budget. A missing action returns
 // no state and true; a slow, failing or malformed state returns false.
 func (c Config) readState(app manifest.App) (state map[string]any, isOK bool) {
+	if IsHostID(app.ID) {
+		return c.hostState(app.ID), true
+	}
 	action, found := findAction(app, stateActionID)
 	if !found {
 		return nil, true
@@ -491,7 +498,34 @@ func (s screenContext) listComponent(c uikit.Component) ScreenComponent {
 		items = append(items, listItemTexts(item))
 	}
 	return ScreenComponent{Bind: bind, Title: s.text(c.Prop("title")), EmptyText: s.text(c.Prop("empty_text")),
-		Tap: stringOrNil(stringProp(c.Props, "tap")), Items: &items}
+		Tap: stringOrNil(stringProp(c.Props, "tap")), Items: &items, Menu: menuOrNil(s.listMenu(c.Prop("menu")))}
+}
+
+// ListMenuItem is one entry of a list row's long-press menu. The mod runs the app action
+// named ID as a menu event (`drawer event <app> <id> --list <bind> --index <n> --value <row>`).
+type ListMenuItem struct {
+	ID      string `json:"id"`
+	Label   string `json:"label"`
+	Confirm bool   `json:"confirm,omitempty"` // the mod asks before sending the event
+}
+
+func (s screenContext) listMenu(raw any) []ListMenuItem {
+	declared, _ := raw.([]any)
+	var menu []ListMenuItem
+	for _, entry := range declared {
+		if fields, isObject := entry.(map[string]any); isObject {
+			menu = append(menu, ListMenuItem{ID: stringProp(fields, "id"), Label: s.text(fields["label"]), Confirm: fields["confirm"] == true})
+		}
+	}
+	return menu
+}
+
+// menuOrNil keeps an empty menu out of the reply (a typed nil slice in an interface is not nil).
+func menuOrNil[T any](menu []T) any {
+	if len(menu) == 0 {
+		return nil
+	}
+	return menu
 }
 
 // listItemTexts reads a list item: a plain value or [primary, secondary].

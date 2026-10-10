@@ -11,7 +11,7 @@ How the pieces fit, the principles behind them, and how files that arrive on the
 | P3 | **Declare, don't hardcode** | Apps declare actions, strings and the storage they touch in `app.json`. Paths are logical names (`books`, `pictures`) resolved by the host, never literal paths in app code. |
 | P4 | **Least privilege by declaration** | Everything runs as root on a Kobo, so we cannot sandbox. Instead: each app declares what it reads and writes, `appsctl validate` checks it, reviews check the code against it, and the native host will broker file access later. |
 | P5 | **Safe by default** | Allowlists, not blocklists. Content sniffing (magic bytes), size caps, sanitized names, no overwrites, atomic writes, never hold files open on `/mnt/onboard`, never execute received files. |
-| P6 | **Fail soft** | A broken app is skipped and listed; the menu still works. Unknown firmware or a missing symbol turns the native drawer off; NickelMenu stays as the fallback. |
+| P6 | **Fail soft** | A broken app is skipped and listed; the menu still works. Unknown firmware turns the native drawer off (one toast, reason logged); a missing symbol turns off only the feature that needs it. NickelMenu is retired and is not a fallback (DECISIONS.md). |
 | P7 | **Offline and private** | No telemetry. Network only when the user taps something (receive, sync, update). Secrets stay in the app's `data/`. |
 | P8 | **Trust is signed** | Releases are ed25519-signed; the device verifies before installing and rolls back on failure. |
 | P9 | **Any language** | English source strings, translations in `locales/`; Vietnamese maintained first. |
@@ -23,11 +23,10 @@ How the pieces fit, the principles behind them, and how files that arrive on the
 flowchart TB
   subgraph Device["Kobo (stock firmware 4.38)"]
     Nickel["Nickel: stock UI, reader, library, sleep screen"]
-    NM["NickelMenu: menu fallback"]
     Drawer["NickelDrawer mod: native drawer + UI kit (Phase 3-4)"]
   end
   subgraph Host["Host platform (.adds/koboapps)"]
-    appsctl["appsctl: registry, validate, menu, i18n, device, updates"]
+    appsctl["appsctl: registry, validate, drawer protocol, i18n, device, updates"]
     storage["storage: library layout + safe file I/O"]
     router["inbox router: allowlist, sniff, sort, journal"]
   end
@@ -43,7 +42,6 @@ flowchart TB
     comics["/Comics"]
     pics["/Pictures"]
   end
-  NM --> Apps
   Drawer --> Apps
   Apps --> appsctl
   ls -- received files --> router

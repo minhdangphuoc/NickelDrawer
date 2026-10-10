@@ -1,6 +1,6 @@
 # ui.json v1 (normative schema)
 
-This file is the exact contract for an app's `ui.json`. The picture of each component, the sizes and the screen patterns are in [ui-kit.md](ui-kit.md); the backend protocol is plan section 7.7 (JSON lines, `proto: 1`). Where this file and `ui-kit.md` differ on a key name, a limit or a rule, this file wins.
+This file is the exact contract for an app's `ui.json`. The picture of each component, the sizes and the screen patterns are in [ui-kit.md](ui-kit.md); the app-to-host protocol is [drawer-protocol.md](drawer-protocol.md) (action scripts, `state`, JSON signals; the JSON-lines backend of plan §7.7 was dropped). Where this file and `ui-kit.md` differ on a key name, a limit or a rule, this file wins.
 
 Three things are kept equal by tests, so they cannot drift:
 
@@ -90,7 +90,7 @@ The first name of every binding must be declared in `vars`. `bind` props (toggle
 
 A component is one object with one component key; its other keys are properties of that component. `text`, `button` and `title` are also property names of other components (`empty`, `notice`); the component key is the one that is not a property of another key present in the same object.
 
-| Component | Value | Properties | Event to backend |
+| Component | Value | Properties | Event (an action script run by `drawer event`) |
 |---|---|---|---|
 | `text` | text (400) | `style`: `body` / `caption` / `heading`; `align`: `start` / `center` | none |
 | `section` | text (40) | none | none |
@@ -105,7 +105,7 @@ A component is one object with one component key; its other keys are properties 
 | `steps` | object `{label, done, total, detail}`; `label` (40), `done` and `total` (16) required | none | none |
 | `notice` | text (200); a notice whose text resolves to empty is hidden, so bind a variable to show it conditionally | `title` (40) | none |
 | `button` | label text (32, no `:`) | `action` (required), `style`: `primary` / `secondary` (default `secondary`), `enabled`, `confirm`, `async` | `action` |
-| `list` | one binding to an array variable | `title` (40), `empty_text` (60), `max` (1 to 200, default 50), `tap` (action id), `menu` (1 to 6 items) | `tap`, `menu` |
+| `list` | one binding to an array variable | `title` (40), `empty_text` (60), `max` (1 to 200, default 50), `tap` (action id), `menu` (1 to 6 items; `id` is an action id) | `tap`, `menu` |
 | `gallery` | one binding to an array variable of pictures | `columns`, `rows` (1 to 6, default 4 and 3), `on_tap` (`{push \| action}`, exactly one), `on_long_press` (1 to 6 items `{label (32, no `:`), action \| push \| info: true, confirm}`, exactly one of the three), `pending` (binding or literal, 8: dashed placeholder tiles), `empty` (`{title (40, required), text (120), icon: picture, button (32) with action}`; its button is the primary). At most one per screen | `on_tap`, `on_long_press` (the tile id is the value) |
 | `viewer` | one binding to the same array | `selected` (required, a declared variable that receives the screen value), `current_status` (40), `primary` (required `{label (32), label_current (32), action}`, counts as the primary), `secondary` (`{label (32), action, confirm}`). Must be the only body component and the screen has no footer (`ui.viewer_not_alone`). At most one per screen | `primary`, `secondary` (the shown id is the value) |
 | `empty` | heading text (40) | `text` (120), and together `button` (label, 32) with `action`; the button is a primary button | `action` |
@@ -113,8 +113,8 @@ A component is one object with one component key; its other keys are properties 
 Details:
 
 - `button.confirm` is `{ "text": ..., "ok": ..., "cancel": ..., "title": ... }`. `text` (160) and `ok` (24, no `:`) are required. The host shows the confirm dialog first and sends the event only on OK.
-- `list` items are strings or `[primary, secondary]` arrays. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` is free (no action check) and is sent as `{"event":"menu","list":"name","index":n,"id":"remove"}`.
-- `list.tap` names an app.json action. A tap runs that action and also sends `{"event":"tap","list":"name","index":n,"item":...}` to a running backend.
+- `list` items are strings or `[primary, secondary]` arrays. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` names an app.json action (checked); a long-press on a row opens the menu and runs that action as `drawer event <app> <id> --list <bind> --index <n> --value <row text>` (`confirm: true` asks first). See drawer-protocol.md.
+- `list.tap` names an app.json action. A tap runs that action with the row's primary text in `NICKELDRAWER_VALUE`.
 - `gallery` and `viewer` items come from the `state` action, not from `ui.json`: `{ id, thumb, image, label, info, badge }` (`id` matches `^[A-Za-z0-9_-]{1,32}$`, `badge` is `current`). `thumb` and `image` are absolute `.png` paths below the app's `data/`; the drawer drops any other path. Looks and behaviour: [ui-kit.md](ui-kit.md) sections 3.19 and 3.20, contract: [wallpaper-gallery.md](wallpaper-gallery.md).
 - A `text` whose text resolves to empty is left out, like a `notice`, so `"$summary"` hides when the variable is empty.
 - `row` is 128 px high (above the 120 px tap target); `kv` and `list` rows are 104 px; see ui-kit.md section 2.

@@ -28,6 +28,7 @@ type Config struct {
 	AppsDir string // folder with one subfolder per app
 	HostDir string // koboapps folder (bin/, data/)
 	Locale  string // language for app strings, e.g. "vi"
+	Version string // NickelDrawer release (appsctl --version), for min_host and the updates screen
 	Bundle  *i18n.Bundle
 
 	CacheDir      string        // where the status cache lives (default os.TempDir())

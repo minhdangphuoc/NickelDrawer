@@ -25,7 +25,7 @@ Downloads new books from a private GitHub repo into `/mnt/onboard/Books/GitHub` 
 1. Create a **fine-grained personal access token**: Repository access = only the one repo; Permissions = Contents: Read-only (Metadata read-only is added automatically).
 2. Over USB, paste the token into `.adds/apps/ghsync/data/token`.
 3. Copy `data/config.example.json` to `data/config.json` and edit `repo`, `path`, `branch` (empty = default branch).
-4. Tap **GitHub · Sync now**. The download runs in the background (NickelMenu limits commands to under 10 s). Then tap **GitHub · Status** a few minutes later; that action also rescans the library.
+4. Open **GitHub** in the app drawer and tap **Sync now**. The download runs in the background; the screen shows the result when it ends.
 
 **Pair with your phone instead (no typing a token on the Kobo):** tap **GitHub · Pair with phone**. The Kobo shows `http://<ip>:8765` and a one-time 6-digit code, valid for 10 minutes. On a phone on the same Wi-Fi open the address and enter the code, repo, optional branch and folder, and the token. The Kobo tests the token against GitHub before saving it (mode 600). Use it only on your own Wi-Fi: the page is plain HTTP and unencrypted. Five wrong codes close it; stop it manually with `bin/ghsync pair --stop`. Security notes: `docs/spec/ghsync-pairing.md`.
 

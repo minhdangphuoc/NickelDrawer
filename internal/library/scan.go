@@ -35,11 +35,16 @@ func (service *Service) Scan() (Report, error) {
 	discovery := Discover(service.Logger)
 	books := make([]Book, 0, len(discovery.Files))
 	for index, file := range discovery.Files {
+		if service.Cancelled() {
+			return Report{}, ErrCancelled
+		}
 		progress.update(index, len(discovery.Files), file.Relative)
 		books = append(books, Analyze(file))
 	}
 	progress.update(len(discovery.Files), len(discovery.Files), "")
-	HashShared(books, absoluteOf, service.Logger)
+	if !HashShared(books, absoluteOf, service.Logger, service.Cancelled) {
+		return Report{}, ErrCancelled
+	}
 	report := BuildReport(books, discovery.Skipped, service.Now())
 	if err := SaveReport(service.Paths, report); err != nil {
 		return Report{}, err

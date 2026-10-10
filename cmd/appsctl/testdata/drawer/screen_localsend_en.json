@@ -35,6 +35,11 @@
     },
     {
       "type": "text",
+      "text": "Stops by itself after 15 minutes without a file. The Kobo's own sleep timer still applies.",
+      "style": "caption"
+    },
+    {
+      "type": "text",
       "text": "Books 2 · Rejected 1",
       "style": "caption"
     },

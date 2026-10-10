@@ -176,7 +176,8 @@ func (layout Layout) pruneBackups() error {
 	return errors.Join(problems...)
 }
 
-// Rollback restores the newest backup, regenerates the menu and drops that backup.
+// Rollback restores the newest backup and drops that backup. A mod archive that the update
+// staged but Nickel has not installed yet is withdrawn.
 func (updater *Updater) Rollback(ctx context.Context) (result Report, err error) {
 	if err := updater.beginRun(); err != nil {
 		return Report{}, err
@@ -193,14 +194,14 @@ func (updater *Updater) Rollback(ctx context.Context) (result Report, err error)
 	if err != nil {
 		return Report{}, i18n.NewError("update.restore_failed", "dir", dir).WithCause(err)
 	}
+	if err := updater.layout.dropStagedModIfSameAs(updater.layout.installedModPath()); err != nil {
+		return Report{}, i18n.NewError("update.restore_failed", "dir", dir).WithCause(err)
+	}
 	if err := updater.layout.restore(dir); err != nil {
 		return Report{}, i18n.NewError("update.restore_failed", "dir", dir).WithCause(err)
 	}
 	if err := os.RemoveAll(dir); err != nil {
 		return Report{}, fmt.Errorf("restored, but cannot remove backup %s: %w", dir, err)
-	}
-	if err := updater.regenerateMenu(); err != nil {
-		return Report{}, i18n.NewError("update.menu_failed").WithCause(err)
 	}
 	return report("update.rolled_back", "version", entries.FromVersion), nil
 }

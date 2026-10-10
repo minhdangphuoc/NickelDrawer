@@ -1,11 +1,19 @@
 {
-  "msg.started": "Making albums in the background.\nOpen Status in a minute.",
-  "msg.already_running": "Albums are already being made. Open Status in a minute.",
+  "msg.started": "Making albums in the background.",
+  "msg.already_running": "Albums are already being made.",
   "msg.no_images": "No images found. Put png or jpg files in {path} (or in folders inside it).",
   "msg.helper_missing": "bin/mkcbz is missing. Build it (see the README) and copy it to the app's bin folder.",
-  "msg.status_running": "Still making albums...",
-  "msg.status_idle": "Not making albums now.",
-  "msg.status_result": "Last run: {made} new, {skipped} up to date, {failed} failed.",
-  "msg.status_albums": "Albums ready: {count}. Find them in your library.",
-  "msg.status_none": "No albums yet. Tap Make albums."
+  "ui.title": "Image viewer",
+  "ui.albums": "Albums: $albums",
+  "ui.intro": "Packs the photos in the Images folder into albums that Kobo's own reader opens.",
+  "ui.made": "Made last run",
+  "ui.skipped": "Up to date",
+  "ui.failed": "Failed",
+  "ui.hint": "Find the albums in your library under Images, Albums. New albums appear after the library refreshes.",
+  "ui.make": "Make albums",
+  "ui.toast_started": "Making albums...",
+  "ui.toast_running": "Albums are already being made",
+  "ui.toast_no_images": "No images in the Images folder",
+  "ui.toast_helper_missing": "The album packer is missing",
+  "ui.toast_failed": "That did not work. Try again."
 }

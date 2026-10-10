@@ -4,8 +4,8 @@ Worked examples for the [app developer guide](../docs/APPS.md). Each is a comple
 
 | Example | Teaches |
 |---|---|
-| [`todo/`](todo/) | A pure `sh` v1 app: several quick actions, data in `data/`, atomic file rewrites, English + Vietnamese messages, test overrides through environment variables. Also holds a **preview** `ui.json` (not supported until the native drawer ships). |
-| [`imageview/`](imageview/) | The background pattern (start the job, return, report in "Status" + rescan), reusing Kobo's native reader instead of drawing, and a small Go helper (`mkcbz`) cross-compiled for ARMv7 when BusyBox lacks a tool. |
+| [`todo/`](todo/) | A pure `sh` drawer app with a native screen: `toggle`, `field`, `list` with a row menu and `button`s, declared toasts, data in `data/`, atomic file rewrites, English + Vietnamese. |
+| [`imageview/`](imageview/) | The background pattern (start the job, return, follow it through `state`, ask the host for a rescan with a `requests` entry), reusing Kobo's native reader instead of drawing, and a small Go helper (`mkcbz`) cross-compiled for ARMv7 when BusyBox lacks a tool. |
 
 ## Try one
 
@@ -22,5 +22,5 @@ first, and do not leave your shell's working directory on the Kobo volume):
 cp -R examples/todo /Volumes/KOBOeReader/.adds/apps/todo
 ```
 
-Then eject and tap **Apps · Refresh list**. The `imageview` example needs its `bin/mkcbz` built
+Then eject and open the Apps drawer; **Refresh list** (System section) rescans the apps. The `imageview` example needs its `bin/mkcbz` built
 first; see its README. Copy `data/` only if you want to keep an existing list.

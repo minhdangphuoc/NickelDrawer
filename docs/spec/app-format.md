@@ -1,8 +1,8 @@
 # App format v1 (Phase 1)
 
-An app is one folder on the Kobo at `/mnt/onboard/.adds/apps/<id>/`. Copy the folder in to install; delete it to uninstall; then tap **Apps · Refresh list** (shown in the device language).
+An app is one folder on the Kobo at `/mnt/onboard/.adds/apps/<id>/`. Copy the folder in to install; delete it to uninstall; then open the Apps drawer and tap **Refresh list** (System section, shown in the device language).
 
-Phase 1 exposes apps through NickelMenu only. Later phases (native drawer, UI kit) add optional fields; v1 manifests stay valid.
+Apps are reached only through the native drawer and its API ([drawer-protocol.md](drawer-protocol.md)); NickelMenu is retired. New optional fields are additive; v1 manifests stay valid.
 
 ## Folder layout
 
@@ -19,16 +19,15 @@ Host files (not an app, not scanned):
 
 ```
 .adds/koboapps/
-├─ bin/appsctl            host tool (Go, linux/armv7): validates manifests, generates the menu, applies signed updates
-├─ bin/update-apply.sh    menu script: starts `appsctl update apply` in the background
-├─ bin/update-status.sh   menu script: shows the installed version and the last update result
+├─ bin/appsctl            host tool (Go, linux/armv7): validates manifests, serves the drawer protocol, applies signed updates
+├─ bin/update-check.sh    Updates screen action: starts `appsctl update check` in the background
+├─ bin/update-apply.sh    Updates screen action: starts `appsctl update apply` in the background
 ├─ lib/common.sh          shared shell helpers for app scripts
 ├─ locales/               host strings (en.json, vi.json, ...)
-└─ data/                  host state: errors.txt, update.json, update/, rollback/ (never overwritten by updates)
-.adds/nm/koboapps  generated NickelMenu config (do not edit by hand)
+├─ screens/updates/       ui.json and locales of the built-in Updates screen
+├─ mod/                   the Nickel mod archive last staged (a record, see UPDATES.md)
+└─ data/                  host state: update.json, update/, rollback/ (never overwritten by updates)
 ```
-
-NickelMenu re-reads any config file under `.adds/nm/` whose mtime changed the next time a menu opens (verified in NickelMenu `src/config.c`, `nm_config_files_update`), so regenerating `.adds/nm/koboapps` needs no reboot.
 
 ## icon.png
 
@@ -74,19 +73,21 @@ Optional `icon.png` next to `app.json`: 96x96 px, black outline strokes on a tra
 | `name` | string | 1–24 chars, no `:` |
 | `version` | string | semver `MAJOR.MINOR.PATCH` |
 | `description` | string | optional, ≤ 120 chars |
-| `menu` | bool | optional, default `true`; `false` hides the whole app from the menu (see also `actions[].menu`) |
-| `hidden` | bool | optional, default `false`; `true` keeps the app out of NickelMenu and the drawer list. It is still validated and `appsctl run` / `drawer run` still run it by id (use it for a postponed feature) |
+| `menu` | bool | legacy, no effect (it controlled NickelMenu items) |
+| `hidden` | bool | optional, default `false`; `true` keeps the app out of the drawer list. It is still validated and `appsctl run` / `drawer run` still run it by id (use it for a postponed feature) |
 | `storage` | object | optional: `{"reads": [...], "writes": [...]}` with logical folder names; see below |
 | `network` | bool | optional, default `false`; `true` when the app talks to the network |
-| `actions` | array | 1–8 items, `id` unique within the app |
+| `requests` | array | optional: host services scripts may request, from `rescan`, `wifi` (no duplicates); anything else is invalid. See [drawer-protocol.md](drawer-protocol.md) |
+| `min_host` | string | optional, `MAJOR.MINOR.PATCH`: the oldest NickelDrawer the app needs; an older host shows "Needs a newer version" as the row's status line |
+| `actions` | array | 1–12 items, `id` unique within the app |
 | `actions[].id` | string | `^[a-z0-9][a-z0-9-]{0,30}$` |
-| `actions[].label` | string | 1–32 chars, no `:` (NickelMenu field separator) |
+| `actions[].label` | string | 1–32 chars, no `:` (the drawer menus use it as a separator) |
 | `actions[].run` | string | path relative to the app folder, no `..`, no leading `/`; must exist and be executable |
-| `actions[].output` | enum | `show` = NickelMenu `cmd_output`, prints stdout in a dialog (keep under ~12 short lines); `none` = `cmd_spawn:quiet`, runs in background |
-| `actions[].timeout_ms` | int | only with `output: show`; 500–9999 (NickelMenu limit is < 10000); default 5000 |
-| `actions[].wifi` | bool | default `false`; `true` prepends `nickel_wifi:autoconnect` (does not wait; the script must wait for an IP itself, see `wait_for_wifi` in `common.sh`) |
-| `actions[].menu` | bool | optional, default `true`; `false` keeps the action out of NickelMenu (it stays valid and runnable; the native drawer shows it). Keep NickelMenu short: NickelMenu cannot scroll, so a popup taller than the screen cannot be closed |
-| `actions[].rescan` | enum | `none` (default), `quick` = `nickel_misc:rescan_books`, `full` = `nickel_misc:rescan_books_full`; runs only if the action succeeded |
+| `actions[].output` | enum | `show` = run and wait (at most 30 s); only JSON signals on stdout reach the screen; `none` = start detached and return at once |
+| `actions[].timeout_ms` | int | only with `output: show`; 500–9999; default 5000 (kept from the NickelMenu era) |
+| `actions[].wifi` | bool | default `false`; `true` makes the drawer connect Wi-Fi first (no IP: `needs_wifi`, the mod connects and retries once) |
+| `actions[].menu` | bool | legacy, no effect (it kept the action out of NickelMenu) |
+| `actions[].rescan` | enum | `none` (default), `quick` / `full` = the host rescans the library after the action; runs only if the action succeeded |
 
 ### storage and network
 
@@ -127,7 +128,7 @@ Unknown top-level or action fields are ignored with a warning (forward compatibi
 ```
 
 - Keys: `name`, `description`, `actions.<id>.label` for manifest strings; `msg.<key>` for messages printed by the app's scripts or binaries. The English `msg.*` strings live in `locales/en.json` (required if the app prints messages).
-- Placeholders are `{name}`; a translation must use the same set of placeholders as English (validated). `\n` allowed for multi-line `cmd_output` text.
+- Placeholders are `{name}`; a translation must use the same set of placeholders as English (validated). `\n` allowed for multi-line text.
 - Same length and `:` rules as the English fields apply to translated labels.
 - Locale resolution: read `CurrentLocale` from `/mnt/onboard/.kobo/Kobo/Kobo eReader.conf`; try the exact file (`pt_BR.json`), then the language (`pt.json`), then English. Missing keys fall back key by key.
 - Scripts print messages with `appsctl msg --app <id> <key> [name=value ...]`, never literal text.
@@ -145,7 +146,7 @@ NickelDrawer no longer generates NickelMenu items for apps: `appsctl gen-menu`, 
 
 - The drawer runs commands from `/` as root with a minimal environment: scripts must `cd "$(dirname "$0")/.."` (or use absolute paths) and source `/mnt/onboard/.adds/koboapps/lib/common.sh`.
 - Exit code `0` = success (the manifest `rescan` applies), non-zero = failure (the drawer shows a short "did not work" message; details belong in `data/log.txt`).
-- Inside the drawer (`NICKELDRAWER=1`) a script prints nothing for people: only a JSON signal `{"toast":"id"}` or `{"dialog":"id"}` declared on the screen. Any other output is logged and dropped. `common.sh` has the helpers `report`, `report_failure`, `fail_with`, `run_quick_command` and `emit_toast`, which print the signal in the drawer and the localized text on the command line.
-- `output: show` scripts print short status lines through `msg` (never literal text); they must finish before `timeout_ms`. Long work goes to the background with output redirected to `data/log.txt`.
+- Inside the drawer (`NICKELDRAWER=1`) a script prints nothing for people: only JSON signals `{"toast":"id"}` or `{"dialog":"id"}` declared on the screen, and host requests. Any other output is logged and dropped. `common.sh` has the helpers `report`, `report_failure`, `fail_with`, `run_quick_command` and `emit_toast`, which print the signal in the drawer and the localized text on the command line.
+- `output: show` scripts must finish before `timeout_ms` and print nothing but JSON signals in the drawer (`msg` is for the command line). Long work goes to the background (`start_detached`), and the `state` action reports it. A script may also print `{"request":"rescan","mode":"quick"}` or `{"request":"wifi"}` if `app.json` `requests` lists it.
 - Never hold files open under `/mnt/onboard` after the script exits; never write outside the app's own `data/` except the app's declared destination folder (a folder named in `storage.writes`, e.g. `inbox` or `books`; GitHub sync writes to `/mnt/onboard/Books/GitHub`).
 - Secrets live in `data/` only, file mode 600, never printed.

@@ -1,0 +1,14 @@
+{
+  "ui.title": "Cập nhật",
+  "ui.current": "Đang dùng",
+  "ui.latest": "Mới nhất",
+  "ui.notes_title": "Có gì mới",
+  "ui.apply": "Cập nhật",
+  "ui.apply_confirm": "Tải và cài bản cập nhật? Giữ Wi-Fi bật cho đến khi xong.",
+  "ui.apply_ok": "Cập nhật",
+  "ui.cancel": "Hủy",
+  "ui.check": "Kiểm tra cập nhật",
+  "ui.toast_check_started": "Đang kiểm tra cập nhật.",
+  "ui.toast_apply_started": "Đang cập nhật. Giữ Wi-Fi bật.",
+  "ui.toast_failed": "Không được. Hãy thử lại."
+}

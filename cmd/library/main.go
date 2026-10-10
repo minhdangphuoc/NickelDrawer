@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -82,6 +83,8 @@ type command struct {
 var commands = map[string]command{
 	"scan":             {0, true, (*session).scan},
 	"fix-language":     {0, true, (*session).fixLanguage},
+	"normalize-nfc":    {0, true, (*session).normalizeNFC},
+	"cancel":           {0, false, (*session).cancel},
 	"dedupe-list":      {0, false, (*session).dedupeList},
 	"remove-duplicate": {1, true, (*session).removeDuplicate},
 	"undo":             {1, true, (*session).undo},
@@ -102,7 +105,7 @@ func execute(args []string, out io.Writer) int {
 	var common commonFlags
 	common.register(flags)
 	var chosen options
-	flags.BoolVar(&chosen.dryRun, "dry-run", false, "fix-language: list what would change, write nothing")
+	flags.BoolVar(&chosen.dryRun, "dry-run", false, "fix-language, normalize-nfc: list what would change, write nothing")
 	flags.BoolVar(&chosen.confirm, "confirm", false, "remove-duplicate: required")
 	flags.BoolVar(&chosen.selected, "selected", false, "remove-duplicate: use the duplicate picked on the screen")
 	if !known {
@@ -145,6 +148,10 @@ func runLocked(selected command, common commonFlags, messages *i18n.Bundle, out 
 
 func (session *session) scan(_ []string) error {
 	report, err := session.service.Scan()
+	if errors.Is(err, library.ErrCancelled) {
+		session.say("msg.scan_cancelled")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -179,13 +186,60 @@ func (session *session) fixLanguage(_ []string) error {
 		}
 		return nil
 	}
-	session.say("msg.fix_done", "fixed", strconv.Itoa(result.Fixed), "candidates", strconv.Itoa(result.Candidates), "date", result.Date)
+	doneKey := "msg.fix_done"
+	if result.Cancelled {
+		doneKey = "msg.fix_cancelled"
+	}
+	session.say(doneKey, "fixed", strconv.Itoa(result.Fixed), "candidates", strconv.Itoa(result.Candidates), "date", result.Date)
 	if result.Failed+result.Skipped > 0 {
 		session.say("msg.fix_problems", "failed", strconv.Itoa(result.Failed), "skipped", strconv.Itoa(result.Skipped))
 	}
 	if result.Fixed > 0 {
 		session.say("msg.reload_hint")
 	}
+	return nil
+}
+
+func (session *session) normalizeNFC(_ []string) error {
+	result, err := session.service.NormalizeNFC(session.options.dryRun)
+	if err != nil {
+		return err
+	}
+	if session.options.dryRun {
+		session.say("msg.nfc_dry", "count", strconv.Itoa(result.Candidates))
+		for index, path := range result.Paths {
+			if index == shownPaths {
+				break
+			}
+			fmt.Fprintln(session.out, path)
+		}
+		return nil
+	}
+	doneKey := "msg.nfc_done"
+	if result.Cancelled {
+		doneKey = "msg.nfc_cancelled"
+	}
+	session.say(doneKey, "fixed", strconv.Itoa(result.Fixed), "candidates", strconv.Itoa(result.Candidates), "date", result.Date)
+	if result.Failed > 0 {
+		session.say("msg.nfc_problems", "failed", strconv.Itoa(result.Failed))
+	}
+	if result.Fixed > 0 {
+		session.say("msg.reload_hint")
+	}
+	return nil
+}
+
+// cancel asks the running scan or fix to stop after the book it is working on.
+func (session *session) cancel(_ []string) error {
+	wasRunning, err := library.RequestCancel(session.service.Paths)
+	if err != nil {
+		return err
+	}
+	if !wasRunning {
+		session.say("msg.nothing_running")
+		return nil
+	}
+	session.say("msg.cancelling")
 	return nil
 }
 

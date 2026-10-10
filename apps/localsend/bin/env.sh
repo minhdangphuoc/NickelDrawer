@@ -21,6 +21,16 @@ PIDFILE=/tmp/localsend.pid
 # stop.sh appends it to data/log.txt.
 TMP_LOG=/tmp/localsend.log
 MAX_LOG_LINES=500
+# The receiver stops by itself after this many minutes without a received file. Nickel's own
+# sleep timer is not ours to hold off: no script can keep the Kobo awake.
+IDLE_STOP_MINUTES=15
+WATCH_PIDFILE=/tmp/localsend-watch.pid
+# Newest-activity marker the watcher compares against (touched when a file arrives).
+ACTIVITY_MARKER=/tmp/localsend-activity
+# Set by the watcher: tells the state action to show the notice once and to ask for a rescan.
+AUTO_STOP_FLAG=$DATA_DIR/auto-stopped
+RESCAN_FLAG=$DATA_DIR/rescan-pending
+INBOX_JOURNAL=/mnt/onboard/.adds/koboapps/data/inbox-journal.jsonl
 # How long stop.sh lets running hooks finish before it sorts what is left.
 HOOK_WAIT_SECONDS=2
 

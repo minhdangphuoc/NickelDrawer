@@ -1,50 +1,69 @@
 {
-  "_preview": "Preview: the native drawer that shows ui.json ships in Phase 3-4. Until then the menu actions in app.json are what runs. Check this screen on a Mac with: ndpreview serve examples/todo",
   "kit": 1,
   "start": "main",
   "vars": {
-    "status": "",
+    "open": "0",
+    "done": "0",
     "items": [],
-    "hideDone": false
+    "hidedone": false,
+    "newitem": ""
   },
   "screens": {
     "main": {
-      "title": { "en": "To-do", "vi": "Việc cần làm" },
-      "status": "$status",
+      "title": "@ui.title",
+      "status": "@ui.counts",
       "body": [
-        { "toggle": { "en": "Hide done items", "vi": "Ẩn việc đã xong" }, "bind": "hideDone" },
+        {
+          "toggle": "@ui.hide_done",
+          "bind": "hidedone"
+        },
+        {
+          "field": "@ui.new_item",
+          "bind": "newitem",
+          "placeholder": "@ui.new_item_hint",
+          "keyboard": "text"
+        },
         {
           "list": "$items",
-          "title": { "en": "Items", "vi": "Danh sách" },
-          "empty_text": { "en": "Nothing to do yet", "vi": "Chưa có việc nào" },
+          "title": "@ui.items",
+          "empty_text": "@ui.empty",
           "max": 50,
+          "tap": "toggle",
           "menu": [
-            { "id": "remove", "label": { "en": "Remove...", "vi": "Xóa..." }, "confirm": true }
+            {
+              "id": "remove",
+              "label": "@ui.remove",
+              "confirm": true
+            }
           ]
         },
         {
-          "button": { "en": "Mark next done", "vi": "Xong việc kế tiếp" },
-          "action": "done-next",
-          "style": "secondary"
-        },
-        {
-          "button": { "en": "Clear done items", "vi": "Xóa việc đã xong" },
+          "button": "@ui.clear_done",
           "action": "clear-done",
           "style": "secondary",
           "confirm": {
-            "text": { "en": "Remove every item that is marked done?", "vi": "Xóa mọi việc đã đánh dấu xong?" },
-            "ok": { "en": "Remove", "vi": "Xóa" },
-            "cancel": { "en": "Cancel", "vi": "Hủy" }
+            "text": "@ui.clear_confirm",
+            "ok": "@ui.clear_ok",
+            "cancel": "@ui.cancel"
           }
         }
       ],
       "footer": [
         {
-          "button": { "en": "Add from file", "vi": "Thêm từ tệp" },
+          "button": "@ui.add_from_file",
           "action": "add-from-file",
           "style": "primary"
         }
-      ]
+      ],
+      "toasts": {
+        "added": "@ui.toast_added",
+        "removed": "@ui.toast_removed",
+        "cleared": "@ui.toast_cleared",
+        "nothing_done": "@ui.toast_nothing_done",
+        "empty": "@ui.toast_empty",
+        "inbox_empty": "@ui.toast_inbox_empty",
+        "failed": "@ui.toast_failed"
+      }
     }
   }
 }

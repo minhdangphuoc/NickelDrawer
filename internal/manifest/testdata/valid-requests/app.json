@@ -1,0 +1,1 @@
+{"schema": 1, "id": "valid-requests", "name": "Demo", "version": "1.0.0", "actions": [{"id": "go", "label": "Chạy", "run": "bin/run.sh", "output": "show"}], "requests": ["rescan", "wifi"], "min_host": "1.2.0"}

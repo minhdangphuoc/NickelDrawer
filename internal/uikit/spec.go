@@ -130,7 +130,7 @@ var confirmShape = Shape{Kind: KindObject, Fields: []Prop{
 }}
 
 var menuItemShape = Shape{Kind: KindObject, Fields: []Prop{
-	requiredKey("id", Shape{Kind: KindID, MaxLen: 32}),
+	requiredKey("id", actionID), // the action the mod runs for this entry
 	requiredKey("label", menuText(32)),
 	optionalKey("confirm", boolean),
 }}

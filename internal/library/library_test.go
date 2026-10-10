@@ -145,7 +145,7 @@ func TestScanReadsMetadataAndDetectsLanguage(t *testing.T) {
 
 func TestScanDetectsNonNFCText(t *testing.T) {
 	f := newFixture(t)
-	decomposed := vietnameseSpec("Sách", "vi")
+	decomposed := vietnameseSpec(norm.NFD.String("Sách"), "vi")
 	decomposed.text = norm.NFD.String(decomposed.text)
 	f.write(t, "Books/nfd.epub", buildEpub(t, decomposed))
 	f.write(t, "Books/nfc.epub", buildEpub(t, vietnameseSpec("Sách khác", "vi")))

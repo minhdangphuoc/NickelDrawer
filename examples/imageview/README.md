@@ -1,4 +1,4 @@
-# Image viewer (v1 menu app)
+# Image viewer (drawer app: background job + state)
 
 Shows photos by packing them into a `.cbz` comic album and letting **Kobo's own reader** open it.
 It draws no pixels itself.
@@ -20,9 +20,11 @@ app understands, then ask the library to rescan.
 
 1. Copy photos over USB into `/mnt/onboard/Images/` (png, jpg, jpeg). Folders inside it become
    separate albums; loose files become the `Images` album.
-2. Tap **Image viewer · Make albums**. It returns at once; the work runs in the background
-   (building albums can take longer than the 10 s a menu dialog allows).
-3. A minute later tap **Image viewer · Status**. It shows the result and rescans the library.
+2. Open **Image viewer** in the app drawer and tap **Make albums**. The script returns at once
+   with a toast; the work runs in the background.
+3. The screen follows the job (it re-reads `state.sh`): the counts of the last run appear, and
+   when the job ends the state hands the host one `{"request":"rescan","mode":"quick"}` so Kobo
+   lists the new albums by itself (the app declares `"requests": ["rescan"]`).
 4. Open the album from your library (`Images/Albums/<folder>.cbz`).
 
 Albums that are newer than all their images are skipped, so running it again is cheap.
@@ -49,10 +51,11 @@ The binary is gitignored (`examples/.gitignore`); `make-albums` tells you if it 
 ## Files
 
 ```
-app.json                 two actions: make-albums, status
-bin/make-albums.sh       starts the worker, returns at once
+app.json                 two actions: make-albums, state
+ui.json                  the screen: counts, notice, one primary button
+bin/make-albums.sh       starts the worker, answers with a declared toast
 bin/build-albums.sh      background worker (not an action)
-bin/status.sh            result + library rescan
+bin/state.sh             ui.json variables + the one-time rescan request
 bin/lib.sh               shared paths and helpers
 bin/mkcbz                built helper (not committed)
 cmd/mkcbz/               Go source and test
@@ -68,5 +71,6 @@ tmp=$(mktemp -d); go build -o "$tmp/mkcbz" ./examples/imageview/cmd/mkcbz
 mkdir -p "$tmp/Images/Holiday" && cp some.jpg "$tmp/Images/Holiday/"
 export IMAGEVIEW_IMAGES_DIR=$tmp/Images IMAGEVIEW_STATE_DIR=$tmp/state IMAGEVIEW_MKCBZ=$tmp/mkcbz
 export IMAGEVIEW_APPSCTL=$PWD/build/appsctl-host IMAGEVIEW_APPS_DIR=$PWD/examples
-examples/imageview/bin/make-albums.sh; sleep 2; examples/imageview/bin/status.sh
+export IMAGEVIEW_COMMON=$PWD/host/lib/common.sh
+examples/imageview/bin/make-albums.sh; sleep 2; examples/imageview/bin/state.sh
 ```

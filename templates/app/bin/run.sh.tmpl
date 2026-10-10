@@ -1,6 +1,7 @@
 #!/bin/sh
-# TODO: replace this with what your app does. Keep it under 10 seconds; for longer work
-# start a background job and add a Status action (see docs/APPS.md, "Design for e-ink").
+# TODO: replace this with what your app does. Return at once: for longer work start a
+# background job and show its progress through the `state` action (see docs/APPS.md).
+# Inside the drawer a script never prints prose; it answers with a toast declared in ui.json.
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 . /mnt/onboard/.adds/koboapps/lib/common.sh
@@ -9,4 +10,4 @@ APP_ID={{.ID}}
 
 app_log "$APP_DIR" "run"
 {{if .WithUI}}date '+%H:%M' > "$APP_DIR/data/last-run.txt"
-{{end}}msg "$APP_ID" msg.hello
+{{end}}report hello "$APP_ID" msg.hello

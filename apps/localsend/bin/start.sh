@@ -23,6 +23,8 @@ if ! is_running; then
         --pin "$PIN" --no-clipboard --quiet --exec "$ROUTE_HOOK" \
         </dev/null >"$TMP_LOG" 2>&1 &
     echo $! >"$PIDFILE"
+    rm -f "$AUTO_STOP_FLAG"
+    start_detached "$APP_DIR/bin/watch.sh"
     sleep 1
     if ! is_running; then
         app_log "$APP_DIR" "start failed: $(tail -n 3 "$TMP_LOG" 2>/dev/null)"

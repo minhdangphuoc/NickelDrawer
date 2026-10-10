@@ -1,0 +1,57 @@
+{
+  "kit": 1,
+  "start": "main",
+  "vars": {
+    "albums": "0",
+    "made": "0",
+    "skipped": "0",
+    "failed": "0",
+    "working": false
+  },
+  "screens": {
+    "main": {
+      "title": "@ui.title",
+      "status": "@ui.albums",
+      "body": [
+        {
+          "text": "@ui.intro"
+        },
+        {
+          "kv": [
+            [
+              "@ui.made",
+              "$made"
+            ],
+            [
+              "@ui.skipped",
+              "$skipped"
+            ],
+            [
+              "@ui.failed",
+              "$failed"
+            ]
+          ]
+        },
+        {
+          "notice": "@ui.hint"
+        }
+      ],
+      "footer": [
+        {
+          "button": "@ui.make",
+          "action": "make-albums",
+          "style": "primary",
+          "enabled": "!$working",
+          "async": true
+        }
+      ],
+      "toasts": {
+        "started": "@ui.toast_started",
+        "already_running": "@ui.toast_running",
+        "no_images": "@ui.toast_no_images",
+        "helper_missing": "@ui.toast_helper_missing",
+        "failed": "@ui.toast_failed"
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@
 - Vietnamese EPUBs tagged `dc:language` "en" (or nothing) get English hyphenation on Kobo.
 - The same book arrives twice (LocalSend, GitHub sync, USB) and piles up.
 
-Read-only by default: only `fix-language`, `remove-duplicate`, `undo` and `restore` change files, and each keeps the original in `data/`.
+Read-only by default: only `fix-language`, `normalize-nfc`, `remove-duplicate`, `undo` and `restore` change files, and each keeps the original in `data/`.
 
 ## Commands
 
@@ -15,9 +15,11 @@ All commands accept `--app-dir DIR` (default `/mnt/onboard/.adds/apps/library`),
 |---|---|
 | `scan` | Walks the library, writes `data/report.json` and `data/summary.json`, prints "Books / Wrong language / Not NFC / Duplicate groups". Purges old trash first. |
 | `fix-language [--dry-run]` | Re-analyzes the library and fixes every Vietnamese EPUB whose language is not `vi`. `--dry-run` lists what would change and writes nothing. |
+| `normalize-nfc [--dry-run]` | Renames files whose name is not Unicode NFC and rewrites a non-NFC `dc:title` / `dc:creator` in EPUBs. Content changes are backed up like a language fix; every rename is journaled so `undo` renames it back. A rename onto an existing file is refused (counted as failed, nothing overwritten). |
+| `cancel` | Asks the running scan or fix to stop after the book it is working on (`data/cancel`; the run clears it). A stopped scan saves nothing; a stopped fix keeps what it finished (undoable). Prints "Nothing is running" otherwise. |
 | `dedupe-list` | Prints the duplicate groups of the last scan. Never deletes. |
 | `remove-duplicate --confirm <path>` or `--selected --confirm` | Moves one file of a duplicate group to `data/trash/`. |
-| `undo [YYYY-MM-DD]` | Puts the originals of one fix run back (newest run when no date). |
+| `undo [YYYY-MM-DD]` | Puts the originals of one fix or normalisation run back (newest run when no date), including old file names. |
 | `restore [YYYY-MM-DD]` | Puts trashed duplicates of one day back (newest day when no date); never overwrites. |
 | `pick <path>` | Remembers a duplicate tapped on the screen (`data/selected.txt`). |
 | `page` | Next page of the duplicate list (`data/page.txt`). |
@@ -44,7 +46,7 @@ Safe-read rules:
 
 **Wrong language**: Vietnamese text and the primary subtag of `dc:language` is not `vi` (`vi-VN` is fine; a missing tag is wrong).
 
-**Not NFC**: the sample, title or author is not in Unicode NFC (decomposed tone marks display badly in some fonts and break search).
+**Not NFC**: the file name, the title or the author is not in Unicode NFC (decomposed tone marks display badly in some fonts and break search). Body text is not judged: `normalize-nfc` fixes exactly what is counted. Report rows carry `name_not_nfc` and `meta_not_nfc`.
 
 **Duplicates**: files of equal size are hashed with sha256 (other files are never read in full). Groups join files with the same sha256 (kind `identical`) or the same normalized title and author (kind `probable`; case, tone marks and punctuation ignored, `đ` = `d`). A group is `identical` only when every member has the same hash.
 
@@ -66,18 +68,19 @@ For each book: refuse above 100 MB; require free space of `2 x size + 16 MB`; **
 
 What changes: the text of every `dc:language` in the OPF (a `dc:language` is added when there is none), and `lang="en*"` / `xml:lang="en*"` attributes in the OPF, `.xhtml`, `.html`, `.htm` and `.ncx` entries (`hreflang` and `data-lang` are untouched). All other entries are copied raw, byte for byte, still compressed. After the run the report rows of the fixed books are re-read, so the counts drop without a new scan.
 
-**Kobo database**: the app never touches `KoboReader.sqlite`. Nickel reads `dc:language` when it imports a book, so after a fix the user runs **Library Reload** (rescan, in NickelMenu and Kobo's own settings); the command prints that hint. Editing the database from outside Nickel is the riskiest thing a mod can do and is not needed.
+**Kobo database**: the app never touches `KoboReader.sqlite`. Nickel reads `dc:language` when it imports a book, so after a change the library has to be rescanned. The app queues one quick rescan request (`data/requests.json`) after every fix, normalisation, undo, trash and restore that changed files; the `state` action hands it over once, after the job has ended, as `"requests":[{"request":"rescan","mode":"quick"}]` (`app.json` declares `"requests": ["rescan"]`). From a shell the command prints a hint to rescan. Editing the database from outside Nickel is the riskiest thing a mod can do and is not needed.
 
 ## Duplicates and trash
 
-Nothing is deleted automatically and the app never deletes a book. `remove-duplicate` needs `--confirm`, a path that is a member of a group in the last report, and at least one other member that still exists (the last copy is never moved). The file goes to `data/trash/<date>/<relative path>` (rename; copy and remove if on another file system). The report is updated. `restore` puts a day's trash back without overwriting. Trash day-folders older than 30 days are deleted at the start of each `scan`, only below `data/trash/`.
+Nothing is deleted automatically and the app never deletes a book. `remove-duplicate` needs `--confirm`, a path that is a member of a group in the last report, and at least one other member that still exists (the last copy is never moved). The file goes to `data/trash/<date>/<relative path>` (rename; copy and remove if on another file system). The report is updated. `restore` puts a day's trash back without overwriting (the screen's **Restore from trash** button restores the newest day). Trash day-folders older than 30 days are deleted at the start of each `scan`, only below `data/trash/`.
 
 On the screen a duplicate is first selected by tapping its row (`pick`), then removed with a confirmed button (`trash`); a tap alone never removes anything.
 
 ## data/ layout
 
 ```
-data/report.json  summary.json  progress.json  selected.txt  page.txt  lock  log.txt
+data/report.json  summary.json  progress.json  selected.txt  page.txt  lock  cancel  requests.json  log.txt
+data/backups/<date>.renames.json   names changed by normalize-nfc that undo reverses
 data/backups/<date>/Books/...      originals before fix-language (undo)
 data/trash/<date>/Books/...        removed duplicates (restore, purged after 30 days)
 ```
@@ -86,13 +89,16 @@ data/trash/<date>/Books/...        removed duplicates (restore, purged after 30 
 
 ## Actions and screen
 
-`app.json` storage: `reads: [books, documents, comics]`, `writes: [books, documents, comics]` (a fixed or trashed book can live in any of them). Only **Scan** is in NickelMenu (`menu: false` for the rest).
+`app.json` storage: `reads: [books, documents, comics]`, `writes: [books, documents, comics]` (a fixed or trashed book can live in any of them). Declares `requests: ["rescan"]`.
 
 | Action | Script | Runs |
 |---|---|---|
-| `scan` (menu) | `bin/scan.sh` | detached; waits up to 7 s for the result, else "open the Library screen" |
+| `scan` | `bin/scan.sh` | detached; the screen follows it through `state` |
 | `fix` | `bin/fix.sh` | detached, same pattern |
 | `undo` | `bin/undo.sh` | detached, same pattern |
+| `normalize` | `bin/normalize.sh` | detached (`normalize-nfc`) |
+| `restore` | `bin/restore.sh` | foreground; restores the newest trash day |
+| `cancel` | `bin/cancel.sh` | foreground; asks the running job to stop |
 | `pick` | `bin/pick.sh` | foreground; `NICKELDRAWER_VALUE` is the tapped row's path |
 | `page` | `bin/page.sh` | foreground |
 | `trash` | `bin/trash.sh` | foreground; moves the selected duplicate |

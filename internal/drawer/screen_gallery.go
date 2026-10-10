@@ -89,7 +89,7 @@ func (s screenContext) galleryComponent(c uikit.Component) ScreenComponent {
 	pending := s.pendingCount(c.Prop("pending"))
 	resolved := ScreenComponent{
 		Bind: bindName(c), Columns: intProp(c.Props, "columns", defaultGridColumn), Rows: intProp(c.Props, "rows", defaultGridRows),
-		Tiles: s.galleryTiles(c), Menu: s.tileMenu(c.Prop("on_long_press")), Pending: &pending,
+		Tiles: s.galleryTiles(c), Menu: menuOrNil(s.tileMenu(c.Prop("on_long_press"))), Pending: &pending,
 	}
 	if tap, isObject := c.Prop("on_tap").(map[string]any); isObject {
 		resolved.Tap = &TileTarget{Push: stringProp(tap, "push"), Action: stringProp(tap, "action")}

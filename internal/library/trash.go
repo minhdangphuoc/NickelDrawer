@@ -40,6 +40,7 @@ func (service *Service) RemoveDuplicate(relative string, confirmed bool) error {
 	}
 	service.Logger.Printf("trash %s", relative)
 	service.dropFromReport(&report, groupIndex, relative)
+	service.queueRescan()
 	return SaveReport(service.Paths, report)
 }
 

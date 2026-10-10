@@ -29,6 +29,18 @@ else
     ip=""
 fi
 
-printf '{"running":%s,"status":"%s","pin":"%s","device":"%s","ip":"%s",%s\n' \
+# After an automatic stop the screen says why, and the host is asked once to rescan the library
+# (the files that arrived are only listed after a rescan).
+note=""
+requests=""
+if [ "$running" = false ]; then
+    [ -f "$AUTO_STOP_FLAG" ] && note=$(msg "$APP_ID" ui.auto_stopped minutes="$IDLE_STOP_MINUTES")
+    if [ -f "$RESCAN_FLAG" ]; then
+        rm -f "$RESCAN_FLAG"
+        requests='"requests":[{"request":"rescan","mode":"quick"}],'
+    fi
+fi
+
+printf '{"running":%s,"status":"%s","pin":"%s","device":"%s","ip":"%s","note":"%s",%s%s\n' \
     "$running" "$(json_escape "$status")" "$(json_escape "$pin")" "$(json_escape "$(device_name)")" \
-    "$(json_escape "$ip")" "$(inbox_fields)"
+    "$(json_escape "$ip")" "$(json_escape "$note")" "$requests" "$(inbox_fields)"

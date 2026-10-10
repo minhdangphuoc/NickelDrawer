@@ -26,8 +26,9 @@ type DuplicateGroup struct {
 }
 
 // HashShared fills SHA256 for every file whose size equals another file's: files of different
-// sizes cannot be identical, so most of the library is never read in full.
-func HashShared(books []Book, absolute func(relative string) string, logger *Logger) {
+// sizes cannot be identical, so most of the library is never read in full. It returns false
+// when isStopped became true before the last file.
+func HashShared(books []Book, absolute func(relative string) string, logger *Logger, isStopped func() bool) bool {
 	bySize := make(map[int64][]int)
 	for index, book := range books {
 		bySize[book.Size] = append(bySize[book.Size], index)
@@ -37,6 +38,9 @@ func HashShared(books []Book, absolute func(relative string) string, logger *Log
 			continue
 		}
 		for _, index := range indexes {
+			if isStopped() {
+				return false
+			}
 			sum, err := hashFile(absolute(books[index].Path))
 			if err != nil {
 				logger.Printf("cannot hash %s: %v", books[index].Path, err)
@@ -45,6 +49,7 @@ func HashShared(books []Book, absolute func(relative string) string, logger *Log
 			books[index].SHA256 = sum
 		}
 	}
+	return true
 }
 
 func hashFile(path string) (string, error) {

@@ -24,7 +24,11 @@ func Acquire(paths Paths) (release func(), err error) {
 				_ = os.Remove(paths.Lock())
 				return nil, i18n.NewError("msg.err_write", "path", paths.Lock()).WithCause(err)
 			}
-			return func() { _ = os.Remove(paths.Lock()) }, nil
+			_ = os.Remove(paths.Cancel()) // a stop request from before this run does not apply to it
+			return func() {
+				_ = os.Remove(paths.Lock())
+				_ = os.Remove(paths.Cancel())
+			}, nil
 		}
 		if !errors.Is(err, os.ErrExist) {
 			return nil, i18n.NewError("msg.err_write", "path", paths.Lock()).WithCause(err)

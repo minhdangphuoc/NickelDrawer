@@ -195,12 +195,16 @@ func (current *session) remove(arguments []string) error {
 	if err != nil {
 		return err
 	}
-	key := "msg.removed"
+	key, toast := "msg.removed", "removed"
 	switch {
 	case report.OriginalDeleted:
-		key = "msg.removed_original"
+		key, toast = "msg.removed_original", "removed_original"
 	case report.OriginalNotFound:
-		key = "msg.removed_original_kept"
+		key, toast = "msg.removed_original_kept", "removed_original_kept"
+	}
+	if current.flags.signal {
+		fmt.Fprintf(current.out, "{\"toast\":%q}\n", toast)
+		return nil
 	}
 	current.say(key, "id", pictureLabel(report.Entry), "name", report.Entry.Name)
 	return nil

@@ -21,7 +21,7 @@ format_inbox_lines() {
 }
 
 inbox=$(first_filled_inbox) || {
-    say msg.inbox_empty path="${INBOXES%% *}"
+    report inbox_empty "$APP_ID" msg.inbox_empty path="${INBOXES%% *}"
     exit 0
 }
 
@@ -31,10 +31,9 @@ temp_file=$DATA_DIR/todo.txt.tmp
     format_inbox_lines "$inbox"
 } >"$temp_file" || {
     rm -f "$temp_file"
-    say msg.write_failed
-    exit 1
+    fail_with "$APP_DIR" "could not write $temp_file"
 }
 added_count=$(format_inbox_lines "$inbox" | wc -l | tr -d ' ')
 replace_todo_file "$temp_file"
 : >"$inbox"
-say msg.added count="$added_count"
+report added "$APP_ID" msg.added count="$added_count"

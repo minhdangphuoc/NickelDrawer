@@ -11,6 +11,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"koboapps/internal/release"
 	"koboapps/internal/storage"
 )
 
@@ -25,10 +26,15 @@ const (
 	DefaultTimeout  = 5000
 	minTimeout      = 500
 	maxTimeout      = 9999 // NickelMenu rejects cmd_output timeouts of 10000 ms or more.
-	maxActions      = 8
+	maxActions      = 12
 	maxNameLen      = 24
 	maxLabelLen     = 32
 	maxDescriptionN = 120
+
+	// Host services a script may request through the drawer protocol (see
+	// docs/spec/drawer-protocol.md); an app lists the ones it uses in app.json "requests".
+	RequestRescan = "rescan"
+	RequestWifi   = "wifi"
 )
 
 var (
@@ -36,7 +42,7 @@ var (
 	actionIDPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,30}$`)
 	semverPattern   = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
-	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "hidden", "storage", "network", "actions"}
+	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "hidden", "storage", "network", "requests", "min_host", "actions"}
 	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan", "menu"}
 )
 
@@ -51,6 +57,8 @@ type App struct {
 	Hidden      bool           `json:"hidden"`
 	Storage     *StorageAccess `json:"storage"`
 	Network     bool           `json:"network"`
+	Requests    []string       `json:"requests"` // host services scripts may ask for: rescan, wifi
+	MinHost     string         `json:"min_host"` // oldest NickelDrawer the app works with, MAJOR.MINOR.PATCH
 	Actions     []Action       `json:"actions"`
 	Dir         string         `json:"-"` // absolute folder the manifest was loaded from
 }
@@ -166,6 +174,8 @@ func validateApp(app App, dir string) []string {
 		add("description is longer than %d characters; shorten it", maxDescriptionN)
 	}
 	problems = append(problems, validateStorage(app.Storage)...)
+	problems = append(problems, validateRequests(app.Requests)...)
+	problems = append(problems, validateMinHost(app.MinHost)...)
 	problems = append(problems, validateActions(app.Actions, dir)...)
 	return problems
 }
@@ -185,6 +195,43 @@ func validateStorage(access *StorageAccess) []string {
 	}
 	sort.Strings(problems)
 	return problems
+}
+
+func validateRequests(requests []string) []string {
+	var problems []string
+	seen := map[string]bool{}
+	for _, request := range requests {
+		if request != RequestRescan && request != RequestWifi {
+			problems = append(problems, fmt.Sprintf("requests: unknown request %q; use %q or %q", request, RequestRescan, RequestWifi))
+		}
+		if seen[request] {
+			problems = append(problems, fmt.Sprintf("requests: %q is listed twice; remove the duplicate", request))
+		}
+		seen[request] = true
+	}
+	return problems
+}
+
+func validateMinHost(minHost string) []string {
+	if minHost == "" || release.ValidVersion(minHost) {
+		return nil
+	}
+	return []string{fmt.Sprintf("min_host %q must look like MAJOR.MINOR.PATCH, e.g. 1.0.0", minHost)}
+}
+
+// MayRequest reports whether the app declared the host service in "requests".
+func (a App) MayRequest(request string) bool {
+	return contains(a.Requests, request)
+}
+
+// NeedsNewerHost reports whether the app asks for a newer NickelDrawer than hostVersion. A
+// host version that is not a release number (a development build) never blocks an app.
+func (a App) NeedsNewerHost(hostVersion string) bool {
+	if a.MinHost == "" || !release.ValidVersion(hostVersion) {
+		return false
+	}
+	order, err := release.CompareVersions(hostVersion, a.MinHost)
+	return err == nil && order < 0
 }
 
 func knownStorageNames() string {

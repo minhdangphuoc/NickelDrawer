@@ -4,18 +4,19 @@ The user puts PNG or JPEG pictures in `/mnt/onboard/Pictures`. **Wallpaper · Im
 
 ## Actions
 
-The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](wallpaper-gallery.md). `app.json` declares 8 actions:
+The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](wallpaper-gallery.md). `app.json` declares 9 actions:
 
 | Action | Effect |
 |---|---|
 | `import` | converts every new picture (background job with a progress file), writes thumbnails, shows the newest one; pictures the user removed (`data/removed.json`) are skipped |
-| `mode` | fill or fit (value `fill`/`fit`; `toggle` from NickelMenu). The mode is stored at once; the pictures are re-fitted in the background (thumbnails are dropped and regenerated lazily). While a job runs only the mode is stored and that job re-fits again when it ends |
+| `mode` | fill or fit (value `fill`/`fit`; `toggle` from a shell). The mode is stored at once; the pictures are re-fitted in the background (thumbnails are dropped and regenerated lazily). While a job runs only the mode is stored and that job re-fits again when it ends |
 | `rotation` | fixed or random, applied at once (foreground) |
 | `off` | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
 | `status` | running job or last result, picture count, mode, rotation, files on the sleep screen |
 | `state` | the screen variables as one JSON line (below) |
 | `set-current` | value = picture id; makes it the wallpaper and applies; prints `{"toast":"set"}` |
 | `remove` | value = picture id; removes it from Wallpaper (passes `--confirm`, never `--delete-original`); prints `{"toast":"removed"}` |
+| `remove-all` | value = picture id; the long-press menu item "Remove with original..." (own confirm dialog): passes `--confirm --delete-original --signal` and prints `{"toast":"removed_original"}` (original deleted), `{"toast":"removed_original_kept"}` (no identical original found, nothing else deleted) |
 
 Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command.
 
@@ -24,7 +25,7 @@ Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs 
 CLI: `wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status|state [--app-dir DIR] [--locale CODE] [--version-file FILE] [--progress-file FILE]` (flags before positional arguments), plus:
 
 - `wallpaper set-current <id>`: ids are `0003` or `3`.
-- `wallpaper remove [--confirm] [--delete-original] <id>`: without `--confirm` nothing happens and the error says so. Removes our converted copy, its thumbnail, its index entry and our `nd-wallpaper-*` file; records the original's SHA-256 in `data/removed.json`; if it was current, the next picture (else the previous) becomes current. `--delete-original` also deletes the original in Pictures, only when it is a regular direct child (after `EvalSymlinks`, the name itself not a link) whose SHA-256 equals the entry's hash; otherwise it is kept and the message says so.
+- `wallpaper remove [--confirm] [--delete-original] [--signal] <id>` (`--signal` prints the drawer toast id of the outcome instead of a sentence): without `--confirm` nothing happens and the error says so. Removes our converted copy, its thumbnail, its index entry and our `nd-wallpaper-*` file; records the original's SHA-256 in `data/removed.json`; if it was current, the next picture (else the previous) becomes current. `--delete-original` also deletes the original in Pictures, only when it is a regular direct child (after `EvalSymlinks`, the name itself not a link) whose SHA-256 equals the entry's hash; otherwise it is kept and the message says so.
 - `wallpaper mode --save-only <mode>`: only stores the mode (used while a job runs).
 
 ## Safety: what the app reads and writes
@@ -78,7 +79,9 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 - `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`. Every writer changes one field on a fresh copy, so a background job never overwrites a later choice.
 - Progress file (`--progress-file`, default `/tmp/wallpaper-progress.json`): `{"done": 3, "total": 7, "name": "bien-xanh.jpg"}`, plus `"kind": "refit"` for a re-fit; written atomically after each picture, removed at the end. `state` believes it while the pid is alive or the file is under 2 minutes old.
 - Fixed rotation puts exactly the current picture into `.kobo/screensaver`; random puts all of them (Nickel chooses).
-- Import runs detached because converting a large photo on the Kobo can exceed NickelMenu's 10 s limit; output goes to `/tmp/wallpaper-last.txt`.
+- Import runs detached because converting a large photo on the Kobo can take longer than a drawer script may; output goes to `/tmp/wallpaper-last.txt`.
+
+After an import that added pictures the app queues one quick library rescan; `state` hands it over once as `"requests":[{"request":"rescan","mode":"quick"}]` when no job is running (`app.json`: `"requests": ["rescan"]`).
 
 `state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `import_step`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
 

@@ -109,5 +109,12 @@
   "ui.rotation_random": "Ngẫu nhiên",
   "ui.rotation_random_detail": "Ảnh khác mỗi lần máy ngủ",
   "actions.set-current.label": "Đặt làm hình nền",
-  "actions.remove.label": "Xoá ảnh"
+  "actions.remove.label": "Xoá ảnh",
+  "ui.menu_remove_original": "Xoá cả ảnh gốc…",
+  "ui.remove_original_title": "Xoá cả ảnh gốc?",
+  "ui.remove_original_text": "Ảnh rời khỏi Hình nền và ảnh gốc trong thư mục Pictures bị xoá hẳn, nhưng chỉ khi đó đúng là tệp giống hệt.",
+  "ui.remove_original_ok": "Xoá cả hai",
+  "ui.toast_removed_original": "Đã xoá, kể cả ảnh gốc",
+  "ui.toast_removed_original_kept": "Đã xoá. Không thấy ảnh gốc giống hệt nên không xoá gì thêm.",
+  "actions.remove-all.label": "Xoá cả ảnh gốc"
 }

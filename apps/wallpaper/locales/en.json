@@ -101,5 +101,12 @@
   "ui.rotation_fixed_detail": "Always the picture you chose",
   "ui.rotation_random": "Random",
   "ui.rotation_random_detail": "A different picture each time it sleeps",
-  "actions.set-current.label": "Set as wallpaper"
+  "actions.set-current.label": "Set as wallpaper",
+  "ui.menu_remove_original": "Remove with original…",
+  "ui.remove_original_title": "Delete the original too?",
+  "ui.remove_original_text": "The picture leaves Wallpaper and its original in the Pictures folder is deleted for good, but only if it is the identical file.",
+  "ui.remove_original_ok": "Delete both",
+  "ui.toast_removed_original": "Removed, original deleted",
+  "ui.toast_removed_original_kept": "Removed. No identical original, so none was deleted.",
+  "actions.remove-all.label": "Remove with original"
 }

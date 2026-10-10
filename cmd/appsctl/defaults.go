@@ -1,6 +1,10 @@
 package main
 
-import "koboapps/internal/nmconfig"
+// Device locations of the apps and the host; flags and tests override them.
+const (
+	deviceAppsDir     = "/mnt/onboard/.adds/apps"
+	deviceKoboappsDir = "/mnt/onboard/.adds/koboapps"
+)
 
-func defaultAppsDir() string     { return nmconfig.DefaultPaths().AppsRoot }
-func defaultKoboappsDir() string { return nmconfig.DefaultPaths().KoboappsRoot }
+func defaultAppsDir() string     { return deviceAppsDir }
+func defaultKoboappsDir() string { return deviceKoboappsDir }

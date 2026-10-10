@@ -80,7 +80,7 @@ Wraps, never scrolls on its own. Caption uses the muted text colour (still black
 `{ "bigcode": "$pin", "digits": 4 }`
 
 - Monospace, 144 px, centred, for PINs and one-time codes. Letters in a code use an alphabet without 0/O and 1/I/l.
-- No events. Repaints only the code when it changes.
+- No events. Repaints only the code when it changes. (App screens are on by default; see §5.1.)
 - Accessibility: also exposed as spaced digits to Nickel's accessibility text ("4 8 2 1").
 
 ### 3.5 Notice box
@@ -181,7 +181,7 @@ On a drawer row or a List row with `menu` set. Items: **Info**, **Update**, **Op
 { "list": "$items", "menu": [ { "id": "info", "label": "Info" }, { "id": "remove", "label": "Remove…", "confirm": true } ] }
 ```
 
-Event: `{"event":"menu","list":…,"index":n,"id":"remove"}`.
+Event: the mod runs `appsctl drawer event <app> <id> --list <bind> --index <n> --value <row primary text>`; `id` is the app.json action to run, and the script gets `NICKELDRAWER_LIST`, `NICKELDRAWER_INDEX` and `NICKELDRAWER_VALUE`. `confirm: true` makes the mod ask first (§3.15).
 
 ### 3.17 Empty state
 
@@ -227,7 +227,8 @@ Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. 
 - One row in Nickel's **More** tab (vi "Thêm"): **Apps** (vi "Ứng dụng"). **No extra bottom tab.**
 - The row has a second line (status, e.g. "LocalSend receiving · 1 update") and a small black update dot at the right when an update exists.
 - Status text is the join of live app status lines and the update count; empty when nothing to say (row shows only "Apps").
-- If the drawer cannot start (unknown firmware, missing symbol), the row is not added and NickelMenu items remain.
+- If the drawer cannot start (unknown firmware), the row is not added, the mod shows one toast and logs the reason. NickelMenu is not a fallback (DECISIONS.md).
+- App screens (this kit) are on by default; the flag `.adds/nickeldrawer/no-screens` turns them off (a tap then runs the app's primary action). The old `screens` flag is ignored.
 
 ### 5.2 Views
 

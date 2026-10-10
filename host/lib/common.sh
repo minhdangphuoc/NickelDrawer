@@ -68,9 +68,25 @@ emit_toast() {
     printf '{"toast":"%s"}\n' "$1"
 }
 
+# Prints the request that asks the drawer's host for a service the script cannot reach itself.
+# The app must list it in app.json "requests". Usage: emit_request rescan [quick|full] | emit_request wifi
+emit_request() {
+    if [ "$1" = rescan ]; then
+        printf '{"request":"rescan","mode":"%s"}\n' "${2:-quick}"
+    else
+        printf '{"request":"%s"}\n' "$1"
+    fi
+}
+
+# Starts a command detached, with every fd closed, so the drawer does not wait for it.
+# Usage: start_detached <command> [args...]
+start_detached() {
+    "$@" </dev/null >/dev/null 2>&1 &
+}
+
 # Tells the user an outcome, the one way every app does it.
 # Usage: report <toast-id> <app-id> <msg-key> [name=value...]
-# Drawer: the toast signal. Command line (NickelMenu fallback, tests): the localized message.
+# Drawer: the toast signal. Command line (tests, debugging): the localized message.
 report() {
     toast_id=$1
     shift

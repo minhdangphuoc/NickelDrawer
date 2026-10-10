@@ -2,8 +2,11 @@
   "schema": 1,
   "id": "imageview",
   "name": "Image viewer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Packs photos into comic albums for Kobo's own reader",
+  "requests": [
+    "rescan"
+  ],
   "actions": [
     {
       "id": "make-albums",
@@ -13,12 +16,12 @@
       "timeout_ms": 3000
     },
     {
-      "id": "status",
-      "label": "Status",
-      "run": "bin/status.sh",
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
       "output": "show",
-      "timeout_ms": 3000,
-      "rescan": "quick"
+      "timeout_ms": 1000,
+      "menu": false
     }
   ]
 }

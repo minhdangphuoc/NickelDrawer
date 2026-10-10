@@ -4,7 +4,18 @@
   "name": "Library",
   "version": "0.1.0",
   "description": "Fix the language of Vietnamese books and find duplicate books",
-  "storage": { "reads": ["books", "documents", "comics"], "writes": ["books", "documents", "comics"] },
+  "storage": {
+    "reads": [
+      "books",
+      "documents",
+      "comics"
+    ],
+    "writes": [
+      "books",
+      "documents",
+      "comics"
+    ]
+  },
   "network": false,
   "actions": [
     {
@@ -28,6 +39,15 @@
       "id": "undo",
       "label": "Undo last fix",
       "run": "bin/undo.sh",
+      "output": "show",
+      "timeout_ms": 9500,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "normalize",
+      "label": "Fix names (NFC)",
+      "run": "bin/normalize.sh",
       "output": "show",
       "timeout_ms": 9500,
       "rescan": "none",
@@ -61,6 +81,24 @@
       "menu": false
     },
     {
+      "id": "restore",
+      "label": "Restore from trash",
+      "run": "bin/restore.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "cancel",
+      "label": "Stop",
+      "run": "bin/cancel.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
       "id": "state",
       "label": "State",
       "run": "bin/state.sh",
@@ -69,5 +107,8 @@
       "rescan": "none",
       "menu": false
     }
+  ],
+  "requests": [
+    "rescan"
   ]
 }

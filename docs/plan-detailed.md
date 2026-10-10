@@ -39,6 +39,8 @@ Anything marked **verify** was not confirmed first-hand during planning and must
 
 ### 1.1 Goals
 
+> **Superseded by [DECISIONS.md](DECISIONS.md) (2026-10-10):** NickelMenu is retired and is not a fallback. On an unknown firmware the mod turns the drawer off, shows one toast and logs the reason (goal 5 below no longer promises NickelMenu items).
+
 1. An **"Ứng dụng" (Apps) tab** in Nickel's bottom navigation bar that opens a native drawer view listing installed apps, drawn with Nickel's own widgets and stylesheet so it is indistinguishable from a Kobo screen.
 2. A **UI kit renderer** inside the same mod that turns each app's `ui.json` into native Qt widgets (header with back chevron, list rows, toggles, text fields using Kobo's keyboard, buttons, progress, toasts, confirm dialogs).
 3. **App backends as separate processes** (shell, Go, anything) speaking one JSON object per line over stdin/stdout. A crashing backend never takes Nickel down.
@@ -78,6 +80,8 @@ Anything marked **verify** was not confirmed first-hand during planning and must
 ---
 
 ## 2. Architecture recap and fixed decisions
+
+> **Superseded by [DECISIONS.md](DECISIONS.md) (2026-10-10):** the "NickelMenu fallback" bullet below is obsolete (`gen-menu` is gone; the installer removes the old generated file). The mod is `libnickeldrawer.so`, staged by `tools/install-to-kobo.sh` or an OTA update as `.kobo/KoboRoot.tgz`, and removed with the flag `.adds/nickeldrawer/uninstall` (the installer's `--uninstall` writes it).
 
 Taken from `docs/plan-overview.html` and the NickelHook/NickelMenu/NickelDBus sources read during planning.
 
@@ -414,7 +418,7 @@ Machine form `symbols-<fw>.json` is generated from `required.yaml` + the `nm` du
 
 ## 7. UI kit spec v1 and protocol spec
 
-> **Updated 2026-10-08:** the component set, sizes, drawer behaviour (list default + optional grid, More-tab entry row, page-turn keys) and screen patterns are now defined in [`docs/spec/ui-kit.md`](spec/ui-kit.md), which supersedes this section where they differ. The JSON-lines protocol below still applies.
+> **Updated 2026-10-08:** the component set, sizes, drawer behaviour (list default + optional grid, More-tab entry row, page-turn keys) and screen patterns are now defined in [`docs/spec/ui-kit.md`](spec/ui-kit.md), which supersedes this section where they differ. The JSON-lines protocol in §7.7 was **not built**: DECISIONS.md (2026-10-10) replaced it with short action scripts, a `state` action the mod re-reads, and JSON signals; see [`spec/drawer-protocol.md`](spec/drawer-protocol.md).
 
 ### 7.1 Screen file (`ui.json`)
 
@@ -439,6 +443,8 @@ Machine form `symbols-<fw>.json` is generated from `required.yaml` + the `nm` du
 Rules: `kit` is the schema version; unknown component keys are rendered as an error row, not a crash; `vars` gives defaults so a screen renders before the backend answers; strings may be plain or `{ "vi": "...", "en": "..." }`.
 
 ### 7.2 Components
+
+> **Note:** the components, the app-to-host events and the toast/dialog/request signals are specified in [`spec/ui-json.md`](spec/ui-json.md) and [`spec/drawer-protocol.md`](spec/drawer-protocol.md), which win over this table.
 
 | Component | JSON key | Props | Events to backend | Nickel widget (target) | Notes |
 |---|---|---|---|---|---|
@@ -486,6 +492,8 @@ Strings in `ui.json` may be `{ "vi": …, "en": … }`; the host picks the Nicke
 | Wi-Fi request failed | Toast "Không kết nối được Wi-Fi", `{"event":"wifi","ok":false}` to backend |
 
 ### 7.7 JSON-lines protocol v1
+
+> **Not implemented, dropped 2026-10-10** in favour of scripts + state polling + signals ([`spec/drawer-protocol.md`](spec/drawer-protocol.md), DECISIONS.md). Kept below as the original design record only.
 
 Transport: backend stdin (host→backend), stdout (backend→host), UTF-8, one JSON object per `\n`-terminated line, max 64 KB per line, no pretty-printing. stderr is logging only.
 

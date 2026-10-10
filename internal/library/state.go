@@ -33,7 +33,10 @@ func (service *Service) State(messages *i18n.Bundle) map[string]any {
 		"total":         strconv.Itoa(summary.Counts.Files),
 		"detail":        "",
 		"can_fix":       scanned && !running && summary.Counts.WrongLanguage > 0,
+		"can_normalize": scanned && !running && summary.Counts.NotNFC > 0,
 		"can_undo":      !running && service.HasBackups(),
+		"can_restore":   !running && service.HasTrash(),
+		"can_stop":      running && !IsCancelling(service.Paths),
 		"has_pages":     pages > 1,
 		"has_selection": selected != "" && !running,
 		"selected":      selectedText(messages, selected),
@@ -44,8 +47,14 @@ func (service *Service) State(messages *i18n.Bundle) map[string]any {
 	}
 	if running {
 		applyProgress(state, messages, progress, hasProgress)
+	} else if requests := service.takeRequests(); len(requests) > 0 {
+		state["requests"] = requests // handed over once, when the job that asked has ended
 	}
 	return state
+}
+
+var phaseMessages = map[string]string{
+	phaseScan: "msg.phase_scan", phaseFix: "msg.phase_fix", phaseNormalize: "msg.phase_normalize",
 }
 
 func applyProgress(state map[string]any, messages *i18n.Bundle, progress Progress, hasProgress bool) {
@@ -55,9 +64,9 @@ func applyProgress(state map[string]any, messages *i18n.Bundle, progress Progres
 		state["done"], state["total"] = "0", "0"
 		return
 	}
-	key := "msg.phase_scan"
-	if progress.Phase == phaseFix {
-		key = "msg.phase_fix"
+	key := phaseMessages[progress.Phase]
+	if key == "" {
+		key = "msg.phase_scan"
 	}
 	state["phase"] = messages.Message(key, nil)
 	state["done"], state["total"] = strconv.Itoa(progress.Done), strconv.Itoa(progress.Total)

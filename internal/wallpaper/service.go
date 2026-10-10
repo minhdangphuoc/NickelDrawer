@@ -91,7 +91,11 @@ func (service *Service) ImportAndApply() (ImportReport, ApplyReport, error) {
 	if err != nil {
 		return report, ApplyReport{}, err
 	}
-	return service.finishImport(library, report)
+	imported, applied, err := service.finishImport(library, report)
+	if err == nil && imported.Added > 0 {
+		service.QueueRescan()
+	}
+	return imported, applied, err
 }
 
 func (service *Service) finishImport(library *Library, report ImportReport) (ImportReport, ApplyReport, error) {

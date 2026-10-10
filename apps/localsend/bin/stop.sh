@@ -44,6 +44,7 @@ has_legacy_files() {
 if has_legacy_files; then
     "$APPSCTL" inbox sort --source localsend --source-dir "$LEGACY_FOLDER" >/dev/null 2>>"$DATA_DIR/log.txt"
 fi
+rm -f "$WATCH_PIDFILE"
 report stopped "$APP_ID" msg.stopped
 if ! is_drawer; then
     print_inbox_summary

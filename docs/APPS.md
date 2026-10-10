@@ -1,10 +1,12 @@
 # Build your first NickelDrawer app
 
-An app is a folder with a manifest and a few scripts. Copy it to the Kobo and it shows up in the menu. This guide builds a small "Hello" app from start to finish.
+An app is a folder with a manifest, a native screen (`ui.json`) and a few short scripts. Copy it to the Kobo and it shows up in the Apps drawer (More tab, Apps). This guide builds a small "Hello" app from start to finish.
+
+The drawer is built and NickelMenu is retired: apps no longer generate NickelMenu items, and nothing an app prints is shown as a text dialog. See [DECISIONS.md](DECISIONS.md).
 
 The full format rules are in [spec/app-format.md](spec/app-format.md). This guide is the short path.
 
-Skip to [Guidelines](#guidelines) for design rules, or to the two worked examples: [To-do](../examples/todo/README.md) (pure `sh`, several quick actions) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
+Skip to [Guidelines](#guidelines) for design rules, or to the two worked examples: [To-do](../examples/todo/README.md) (pure `sh`: toggle, field, list with a row menu, buttons) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
 
 ## Guidelines
 
@@ -13,15 +15,15 @@ battery powered; a good app is small and quiet.
 
 ### Design for e-ink
 
-- **One job per action.** "Sync now" and "Status" are two actions, not one with options. Max 8 actions, and fewer is better.
+- **One job per action.** "Sync now" and "Status" are two actions, not one with options. Max 12 actions, and fewer is better.
 - **Results in 12 short lines or fewer.** A dialog is not a log. Show the outcome and the one next step; put details in `data/log.txt`.
-- **Never block for more than 10 seconds.** A `show` action must return before its `timeout_ms` (at most 9999). For longer work use the background pattern: start the job detached (`</dev/null >/dev/null 2>&1 &`), write a pid file and a result file in `/tmp`, return a "started" message, and add a "Status" action that reports the result (and rescans, if you made files). See `apps/ghsync/bin/sync.sh` and `examples/imageview`.
-- **No live progress.** A dialog cannot update, and e-ink should not repaint often. Report "started" and "done", not percentages.
-- **Page-turn keys.** In the future native screens the page-turn buttons flip list pages (the host does this for you with a `list`). In v1 keep the output short enough that paging is never needed.
-- **Long or secret input comes from the phone.** The Kobo keyboard is poor for tokens and paths. Use the pairing pattern: a tiny HTTP page on the LAN with a one-time code, as in [spec/ghsync-pairing.md](spec/ghsync-pairing.md). For small text, read a file the user drops in (see the To-do example's inbox) until `ui.json` fields exist.
+- **Return at once.** A script the drawer starts must return quickly (a hard cap of 30 s applies, then the drawer shows a timeout message). For longer work use the background pattern: start the job detached (`start_detached` in `common.sh`, which redirects every fd), write a pid file and a result file in `/tmp` or `data/`, answer with a "started" toast, and let the `state` action report progress and the result. See `apps/library/bin/lib.sh` and `examples/imageview`.
+- **Progress comes from `state`, not from the script.** The screen re-reads your `state` action every 5 seconds while it is open. Report step counts (a `steps` component), not a stream of text, and keep e-ink repaints few.
+- **Page-turn keys.** The page-turn buttons flip list pages; the host does this for you with a `list`. Keep one screen short enough to need little paging.
+- **Long or secret input comes from the phone.** The Kobo keyboard is poor for tokens and paths. Use the pairing pattern: a tiny HTTP page on the LAN with a one-time code, as in [spec/ghsync-pairing.md](spec/ghsync-pairing.md). Short text can use a `field` (Nickel's keyboard); see the To-do example.
 - **Keep your data in `data/`.** Config, state, tokens and logs. Never in the app root, never in `/tmp` if it must survive a reboot.
 - **Hold no files open on `/mnt/onboard`** after the script exits (it blocks USB ejecting). Write to a temp file in the same folder as the target and `mv` it into place, so a power cut never leaves half a file.
-- **Sleep and Wi-Fi are not guaranteed.** The device may sleep and drop Wi-Fi at any time. `wifi: true` only asks for a connection; call `wait_for_wifi` and give a clear message if it fails. Background jobs must tolerate the connection going away, and should stop themselves after a timeout instead of running forever.
+- **Sleep and Wi-Fi are not guaranteed.** The device may sleep and drop Wi-Fi at any time, and no script can keep Nickel awake (the idle timer is Nickel's). `wifi: true` makes the drawer connect Wi-Fi before the action runs (and report `needs_wifi` if it cannot); check again for an IP inside long jobs and give a clear message if it fails. Background jobs must tolerate the connection going away, and should stop themselves after a timeout instead of running forever.
 - **Battery.** No polling loops, no busy waits. Do the work, then exit. Prefer `sleep` over spinning, short bursts over long ones, and no work at all when nothing changed (skip files that are already up to date).
 
 ### Localization (i18n)
@@ -46,13 +48,13 @@ Apps run as **root** on a device that holds the user's library. So:
 
 ### Running inside the drawer
 
-Every script the native drawer starts (actions, events, the `state` read) has `NICKELDRAWER=1` in its environment. In that case return at once (no waiting loops) and print only a JSON signal (`{"toast":"id"}`, `{"dialog":"id"}`) or nothing; never print prose meant for a dialog (`appsctl` logs and drops it). Declare the toast or dialog in `ui.json` instead. In `common.sh`, `report <toast-id> <app> <msg-key>` prints the signal in the drawer and the localized text on the command line; `report_failure`, `fail_with` and `run_quick_command` do the same for failures and quick commands. Declare a `failed` toast on every screen.
+Every script the native drawer starts (actions, events, the `state` read) has `NICKELDRAWER=1` in its environment. In that case return at once (no waiting loops) and print only JSON signals (`{"toast":"id"}`, `{"dialog":"id"}`, `{"request":"rescan"}`) or nothing; never print prose meant for a dialog (`appsctl` logs and drops it). Declare the toast or dialog in `ui.json` instead. In `common.sh`, `report <toast-id> <app> <msg-key>` prints the signal in the drawer and the localized text on the command line (tests, debugging); `report_failure`, `fail_with` and `run_quick_command` do the same for failures and quick commands; `emit_request` and `start_detached` are described below. Declare a `failed` toast on every screen.
 
 ### Naming and versioning
 
 - `id`: lowercase, digits, `-`; it equals the folder name and never changes after release (the user's data lives under it).
-- `name` is short (24 chars max) because it prefixes every menu item: "To-do · Show list".
-- Labels are verbs or short noun phrases: "Make albums", "Status". Keep the same label for the same job across apps.
+- `name` is short (24 chars max) because it is the row title in the drawer.
+- Labels are verbs or short noun phrases: "Make albums", "Clear done items". Keep the same label for the same job across apps.
 - Semver: PATCH for fixes, MINOR for new actions or messages, MAJOR when `data/` formats change incompatibly (write a migration or refuse with a clear message). Bump `version` on every release.
 
 ### Testing checklist
@@ -60,27 +62,36 @@ Every script the native drawer starts (actions, events, the `state` read) has `N
 1. **Validate:** `build/appsctl-host validate <app>` or `go run ./cmd/appsctl validate <app>` has no errors or warnings.
 2. **Lint:** `sh -n bin/*.sh` and `shellcheck bin/*.sh`.
 3. **Mac run with temp dirs:** give every script an environment variable for each path it uses (data dir, input folder, `appsctl`), defaulting to the Kobo path. Run the scripts against a temp copy and check output length, exit codes and that nothing is left open or half written. The examples show this (`TODO_DATA_DIR`, `IMAGEVIEW_IMAGES_DIR`).
-4. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir. It also checks that the old generated NickelMenu file is removed and the NickelMenu tab setting is off.
-5. **Device checklist** (user present, backups first): refresh list shows the items; each action finishes within its timeout; output is under 12 lines in English and Vietnamese (switch language, tap refresh); failure paths (no Wi-Fi, empty input, missing file) print a clear message; eject works right after (nothing held open); a rescan shows new files; battery and sleep: let the Kobo sleep during a background job and confirm it ends cleanly.
+4. **Drive it through the protocol:** `appsctl drawer screen <app>` and `appsctl drawer event <app> <action> --value ...` (with `--apps-dir` and a temp copy) print exactly what the mod would get. `cmd/appsctl/examples_test.go` does this for the examples; copy the pattern.
+5. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir and covers the mod staging and `--uninstall`.
+6. **Device checklist** (user present, backups first): refresh list shows the app; each tap answers within a second or two with a toast; texts fit in English and Vietnamese (switch language, refresh); failure paths (no Wi-Fi, empty input, missing file) end in the `failed` toast, never a crash; eject works right after (nothing held open); a rescan shows new files; battery and sleep: let the Kobo sleep during a background job and confirm it ends cleanly.
 
-### v1 menu app or v2 native screen (`ui.json`)
+### How an app talks to the drawer
 
-The native drawer is not built yet (Phase 3 and 4), but the `ui.json` format is fixed for kit 1: [spec/ui-json.md](spec/ui-json.md) is the schema, [spec/ui-kit.md](spec/ui-kit.md) the design. `appsctl validate` checks it and `ndpreview` previews it on your computer. v1 apps keep working unchanged: the drawer runs the same actions.
+The drawer renders; the app decides. The app never draws and never prints text for a dialog. The model is deliberately small:
 
-| | v1 menu app (today) | v2 native screen (`ui.json`, later) |
-|---|---|---|
-| Where it appears | NickelMenu items, one per action | An **Apps** row in the More tab, then your own screens |
-| UI | A dialog with text output | Header, lists, toggles, text fields, buttons, QR pairing |
-| Input | None, except files and the phone | Nickel keyboard for short text, phone pairing for secrets |
-| State on screen | Text printed once | Live values (`$var`), updated with partial refresh |
-| Logic | Shell script or binary run per action | A backend process speaking JSON lines (`proto: 1`) |
-| Long jobs | Start in background, "Status" action | Background task with step text and a Stop button |
-| Page-turn keys | Not used | Flip list pages |
-| Cost to build | A manifest and a script | A manifest, a `ui.json`, and a backend |
-| Failure mode | Error dialog | Error screen, NickelMenu fallback stays |
-| Works today | Yes | No: preview only |
+1. **Short scripts.** Each tap runs one action script (`appsctl drawer event`). It does a quick job or starts a detached background job, then answers with at most a few JSON lines.
+2. **State is re-read.** The screen's values come from the app's `state` action (one JSON object of the `vars` in `ui.json`). The mod re-reads it every 5 seconds while the screen is open, so a background job shows progress by changing files that `state` reads. There is no long-running backend process and no JSON-lines protocol: that design was dropped (DECISIONS.md).
+3. **Signals.** A script answers with `{"toast":"id"}` or `{"dialog":"id"}` naming something declared on the screen, and may add requests for the host (below).
 
-Start with v1. Add a `ui.json` when your app needs lists you tap, short text input, or live status.
+| Signal (one JSON object per line) | Effect |
+|---|---|
+| `{"toast":"id"}` | the host shows the toast declared in `ui.json` `toasts` |
+| `{"dialog":"id"}` | the host shows the declared dialog; OK runs its `action` |
+| `{"request":"rescan","mode":"quick"}` or `"full"` | Nickel rescans the library (`quick` is the default mode) |
+| `{"request":"wifi"}` | Nickel's Wi-Fi connect flow, then the host retries |
+
+**Requests.** A script asks for a host service by printing the request line, or a finished background job puts `"requests":[{"request":"rescan","mode":"quick"}]` in its `state` object (the state script must hand each request over once, for example by deleting a marker file when it prints it; see `apps/library` and `examples/imageview`). The app must list the services it uses in `app.json`:
+
+```json
+"requests": ["rescan", "wifi"]
+```
+
+`appsctl` drops a request the app did not declare (and logs it), then passes the rest to the mod in the reply (`requests`). `common.sh` has `emit_request rescan quick` / `emit_request wifi`. The manifest field `rescan` on an action (run the rescan after a successful action) still works; requests are for the cases where the script or a finished job knows better.
+
+**Newer-host check.** An app that needs a newer NickelDrawer sets `"min_host": "1.2.0"` in `app.json`; on an older host its drawer row reads "Needs a newer version" (a status line only; the app still runs).
+
+Rule of thumb: if you are about to `echo` a sentence, declare it as a toast in `ui.json` instead.
 
 ### Design a native screen
 
@@ -100,8 +111,8 @@ The preview is a layout check, not Nickel: real fonts and the real refresh behav
 
 ### Worked examples
 
-- [To-do](../examples/todo/README.md): a pure `sh` app with four quick actions, data in `data/todo.txt`, an inbox file for input, and a `ui.json` you can preview with `ndpreview`.
-- [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, with a Go helper for what BusyBox lacks.
+- [To-do](../examples/todo/README.md): a pure `sh` app: `toggle`, `field`, a `list` with tap and row menu, `button`s and declared toasts, data in `data/todo.txt`, and a `ui.json` you can preview with `ndpreview`.
+- [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, reports through `state`, asks the host for a rescan, and uses a Go helper for what BusyBox lacks.
 
 ### Nested views and back
 
@@ -158,7 +169,7 @@ Sub-screens read the same `state` action as the main screen, so bindings stay co
 go run ./cmd/appsctl new my-app --name "My App" [--with-ui] [--dir apps]
 ```
 
-This creates `my-app/` from `templates/app`: a valid `app.json`, `bin/run.sh` (uses `msg` from `common.sh`), `locales/en.json` and `vi.json`, and a README that explains how to declare `network` and `storage`. With `--with-ui` it also writes a `ui.json` and a `state` action. It refuses an existing folder, validates the result with `appsctl validate` and prints the next steps (validate, `ndpreview serve`, install). The rest of this guide explains each file.
+This creates `my-app/` from `templates/app`: a valid `app.json`, `bin/run.sh` (answers with a toast through `report` from `common.sh`), `locales/en.json` and `vi.json`, and a README that explains how to declare `network` and `storage`. With `--with-ui` it also writes a `ui.json` (with the declared toast) and a `state` action. It refuses an existing folder, validates the result with `appsctl validate` and prints the next steps (validate, `ndpreview serve`, install). The rest of this guide explains each file.
 
 ## 1. Folder layout
 
@@ -201,11 +212,13 @@ On the Kobo the folder lives at `/mnt/onboard/.adds/apps/<id>/`. The folder name
 - `id` is lowercase letters, digits and `-`, 2 to 31 characters.
 - `name` is 1 to 24 characters. `label` is 1 to 32. Neither may contain `:`.
 - `version` is semver, for example `1.0.0`.
-- An app has 1 to 8 actions. Each action runs one script.
-- `output: "show"` prints the script's stdout in a dialog. Keep it under about 12 short lines. `output: "none"` runs the script in the background and shows nothing.
+- An app has 1 to 12 actions. Each action runs one script.
+- `output: "show"` runs the script and waits for it (at most 30 s); only its JSON signals reach the screen, any other output is dropped. `output: "none"` starts the script detached and returns at once.
 - `timeout_ms` (only with `show`) is 500 to 9999. Default is 5000.
-- `wifi: true` asks Nickel to connect to Wi-Fi first. It does not wait. Your script must wait for an IP itself (see `wait_for_wifi` below).
+- `wifi: true` makes the drawer connect Wi-Fi first: without an IP, `appsctl` answers `needs_wifi` and the mod connects and retries once.
 - `rescan` is `none`, `quick` or `full`. The library rescans only if the script exited with 0.
+- `requests` (optional) lists the host services scripts may ask for: `rescan`, `wifi`.
+- `min_host` (optional) is the oldest NickelDrawer version the app works with.
 - Unknown fields are ignored with a warning.
 
 The `name`, `description` and `label` values are the English source text.
@@ -237,14 +250,14 @@ Scripts never print literal text. They call `appsctl msg`:
 appsctl msg --app hello msg.greeting name="$name" ip="$ip"
 ```
 
-The menu is built in the current language. After you change the Kobo language, tap the refresh item once.
+The drawer answers in the current language (`CurrentLocale`); change it and reopen the drawer.
 
 ## 4. Script contract
 
 - Scripts run as root, from `/`, with a minimal environment. Start with `cd "$(dirname "$0")/.."` or use absolute paths. Source `/mnt/onboard/.adds/koboapps/lib/common.sh`.
-- Exit `0` for success, non-zero for failure. A failure is shown to the user.
-- **10 second limit.** Nickel's `cmd_output` must return in under 10 s. Keep `timeout_ms` at or below 9999.
-- **Long work goes to the background.** Start the job with all file descriptors redirected, return at once, and let a second action ("Status") report the result. `apps/ghsync/bin/sync.sh` is the model: it writes a pid file and output to `/tmp`, starts the job with `</dev/null >/dev/null 2>&1 &`, and the status action reads the result.
+- Exit `0` for success, non-zero for failure. A failed action shows a short "did not work" message; say why with a declared `failed` toast and the reason in `data/log.txt`.
+- **Return at once.** The drawer waits at most 30 s and `timeout_ms` is at most 9999. Keep scripts well under a second where you can.
+- **Long work goes to the background.** Start the job with all file descriptors redirected (`start_detached`), return at once with a "started" toast, and let the `state` action report progress and the result. `apps/library/bin/lib.sh` is the model: it writes a pid file and output to `/tmp`, and `state.sh` reads them.
 - **Hold no files open on `/mnt/onboard`** after the script exits. Write temporary files to `/tmp` and copy them to `data/` at the end. An open file blocks USB ejecting.
 - **Write only to your own `data/` folder** and to the folder your app declares (for example `/mnt/onboard/LocalSend`).
 - **Secrets** (tokens, passwords) live only in `data/`, mode 600. Never print them. Never put them in `log.txt`.
@@ -257,6 +270,10 @@ Helpers from `common.sh`:
 | `current_ip` | prints the first non-loopback IPv4 address |
 | `wait_for_wifi N` | waits up to N seconds for an IP; prints it, returns 0 or 1 |
 | `app_log DIR MSG...` | appends a timestamped line to `DIR/data/log.txt` |
+| `report TOAST APP KEY [k=v...]` | drawer: prints `{"toast":"TOAST"}`; command line: the localized message |
+| `report_failure`, `fail_with`, `run_quick_command` | the same for failures and quick commands |
+| `emit_request rescan [quick\|full]`, `emit_request wifi` | prints a host request (declare it in `requests`) |
+| `start_detached CMD...` | runs CMD in the background with every fd closed |
 
 ## 5. A complete example
 
@@ -283,25 +300,42 @@ Helpers from `common.sh`:
 }
 ```
 
-`hello/bin/hello.sh` (make it executable):
+`hello/ui.json` (the screen; the toast text may use state variables):
+
+```json
+{
+  "kit": 1,
+  "start": "main",
+  "vars": { "ip": "" },
+  "screens": {
+    "main": {
+      "title": "Hello",
+      "body": [ { "kv": [["IP", "$ip"]] } ],
+      "footer": [ { "button": "Say hello", "action": "greet", "style": "primary" } ],
+      "toasts": { "greeted": "Hello, reader! IP: $ip", "no_wifi": "No Wi-Fi", "failed": "That did not work" }
+    }
+  }
+}
+```
+
+`hello/bin/hello.sh` (make it executable) answers with a toast; `hello/bin/state.sh` prints `{"ip":"…"}` with `printf '{"ip":"%s"}\n' "$(current_ip)"` and is declared as the `state` action in `app.json`:
 
 ```sh
 #!/bin/sh
-# Shows a greeting and the current IP. Fast, so it runs in the foreground.
+# Greets the user. Fast, so it runs in the foreground.
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 . /mnt/onboard/.adds/koboapps/lib/common.sh
 
-APPSCTL=/mnt/onboard/.adds/koboapps/bin/appsctl
+APP_ID=hello
 
 ip=$(current_ip)
 if [ -z "$ip" ]; then
-    "$APPSCTL" msg --app hello msg.no_wifi
-    exit 1
+    report_failure no_wifi "$APP_ID" msg.no_wifi
 fi
 
 app_log "$APP_DIR" "greeted from $ip"
-"$APPSCTL" msg --app hello msg.greeting name=reader ip="$ip"
+report greeted "$APP_ID" msg.greeting name=reader ip="$ip"
 ```
 
 ## 6. Validate
@@ -319,18 +353,18 @@ The scripts need `/mnt/onboard`, so test the logic with a fake root:
 
 - Run `shellcheck` and `sh -n bin/*.sh`.
 - Keep real logic in a Go or Python program that you can unit test, and keep the shell script thin.
-- Run `appsctl drawer model --apps-dir <dir>` and read the JSON the drawer would show.
+- Run `appsctl drawer model --apps-dir <dir>`, `appsctl drawer screen <app>` and `appsctl drawer event <app> <action>` and read the JSON the mod would get.
 - `tools/test-install.sh` runs the installer against a fake Kobo in a temp dir. Run it before touching a real device.
 
 ## 8. Test on the device
 
 Read the safety rules in [CONTRIBUTING.md](../CONTRIBUTING.md) first. Short version:
 
-1. Back up `.adds/apps` and `.adds/nm` before you write to the Kobo.
+1. Back up `.adds/apps` before you write to the Kobo.
 2. Copy the `hello` folder to `/mnt/onboard/.adds/apps/hello/`. Do not leave your shell's working directory on the Kobo volume.
 3. Eject the Kobo.
-4. Tap the refresh item in the menu. Your action appears as "Hello · Say hello".
-5. Tap it. If it fails, read `data/log.txt` in the app folder and `.adds/koboapps/data/errors.txt`.
+4. Open More, Apps, and tap **Refresh list** (System section). Your app appears as a row.
+5. Tap it, then tap **Say hello**. If it fails, read `data/log.txt` in the app folder.
 
 ## 9. Package
 
@@ -343,7 +377,3 @@ zip -r hello-1.0.0.zip hello -x 'hello/data/*'
 Do not ship `data/`. It holds the user's tokens and logs. If you need a default config, ship `data/config.example.json` as ghsync does.
 
 Do not include Kobo binaries or firmware files in a package.
-
-## Coming later: native UI
-
-Phase 3 adds a native drawer that shows the `ui.json` screens (lists, forms, buttons). Your v1 manifest stays valid: the drawer will run the same actions. `ui.json` stays optional; see "Design a native screen" above to write and preview one today.

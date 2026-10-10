@@ -71,7 +71,7 @@ func TestInboxRouteMovesAFileAndSaysSoInTheDeviceLanguage(t *testing.T) {
 	if code != exitOK || stderr != "" {
 		t.Fatalf("code %d stderr %q", code, stderr)
 	}
-	if !strings.Contains(stdout, "Sách hay.pdf -> Tài liệu") || !f.exists("Documents", "Sách hay.pdf") {
+	if !strings.Contains(stdout, "Đã chuyển Sách hay.pdf vào Tài liệu") || !f.exists("Documents", "Sách hay.pdf") {
 		t.Errorf("stdout %q, documents holds %v", stdout, f.exists("Documents", "Sách hay.pdf"))
 	}
 	entries, _, _ := inbox.ReadEntries(filepath.Join(f.root, ".adds", "koboapps", "data", "inbox-journal.jsonl"))
@@ -226,7 +226,7 @@ func TestInboxStatusSummarizesTheLastSessionInVietnamese(t *testing.T) {
 	}
 	code, stdout, _ := f.inboxCommand("vi", "status")
 	lines := strings.Split(strings.TrimSpace(stdout), "\n")
-	want := []string{"Tài liệu: 2", "Ảnh: 1", "Bị từ chối: 4", "  loại tệp không được phép: 3", "  nội dung không khớp tên tệp: 1"}
+	want := []string{"Tài liệu: 2", "Ảnh: 1", "Bị từ chối: 4", "  loại tệp không được phép: 3 tệp", "  nội dung không khớp tên tệp: 1 tệp"}
 	if code != exitOK || strings.Join(lines, "|") != strings.Join(want, "|") {
 		t.Errorf("status lines = %q", lines)
 	}

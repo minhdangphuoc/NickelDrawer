@@ -2,6 +2,7 @@ package library
 
 import (
 	"math"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -18,8 +19,10 @@ type Book struct {
 	Language        string  `json:"language,omitempty"`
 	Vietnamese      bool    `json:"vietnamese,omitempty"`
 	VietnameseShare float64 `json:"vietnamese_share,omitempty"`
-	NotNFC          bool    `json:"not_nfc,omitempty"`
-	SHA256          string  `json:"sha256,omitempty"` // only for files whose size matches another file
+	NotNFC          bool    `json:"not_nfc,omitempty"`      // the file name, title or author is not NFC
+	NameNotNFC      bool    `json:"name_not_nfc,omitempty"` // the file name is not NFC
+	MetaNotNFC      bool    `json:"meta_not_nfc,omitempty"` // the title or author is not NFC
+	SHA256          string  `json:"sha256,omitempty"`       // only for files whose size matches another file
 	Error           string  `json:"error,omitempty"`
 }
 
@@ -31,10 +34,18 @@ func (book Book) NeedsLanguageFix() bool {
 	return book.IsEpub() && book.Error == "" && book.Vietnamese && languageBase(book.Language) != "vi"
 }
 
+// NeedsNFCFix is true when a file name, or the title or author of a readable EPUB, is not
+// in Unicode NFC.
+func (book Book) NeedsNFCFix() bool {
+	return book.NameNotNFC || (book.IsEpub() && book.Error == "" && book.MetaNotNFC)
+}
+
 // Analyze reads one found file. A damaged EPUB gets Error set instead of failing the scan.
 func Analyze(file Found) Book {
 	extension := strings.ToLower(filepath.Ext(file.Path))
 	book := Book{Path: file.Relative, Size: file.Size, Format: strings.TrimPrefix(extension, ".")}
+	book.NameNotNFC = !isNFC(path.Base(file.Relative))
+	book.NotNFC = book.NameNotNFC
 	if extension != ".epub" {
 		return book
 	}
@@ -47,7 +58,8 @@ func Analyze(file Found) Book {
 	share, isVietnamese := LooksVietnamese(info.Sample)
 	book.Vietnamese = isVietnamese
 	book.VietnameseShare = math.Round(share*1000) / 1000
-	book.NotNFC = !isNFC(info.Sample, info.Title, info.Author)
+	book.MetaNotNFC = !isNFC(info.Title, info.Author)
+	book.NotNFC = book.NameNotNFC || book.MetaNotNFC
 	return book
 }
 

@@ -48,8 +48,8 @@ func TestLoadRejectsInvalidManifests(t *testing.T) {
 		{"bad-name-colon", "must not contain ':'"},
 		{"bad-name-long", "name must be 1-24"},
 		{"bad-version", "MAJOR.MINOR.PATCH"},
-		{"bad-no-actions", "actions must have 1-8"},
-		{"bad-too-many-actions", "actions must have 1-8"},
+		{"bad-no-actions", "actions must have 1-12"},
+		{"bad-too-many-actions", "actions must have 1-12"},
 		{"bad-dup-action-id", "duplicate action id"},
 		{"bad-run-dotdot", "must be relative"},
 		{"bad-run-absolute", "must be relative"},
@@ -65,6 +65,9 @@ func TestLoadRejectsInvalidManifests(t *testing.T) {
 		{"bad-hidden-type", "not valid JSON"},
 		{"bad-storage-unknown", `unknown folder "secrets"`},
 		{"bad-storage-unknown", `unknown folder "/etc"`},
+		{"bad-requests-unknown", `unknown request "reboot"`},
+		{"bad-requests-duplicate", "listed twice"},
+		{"bad-min-host", "min_host"},
 	}
 	for _, c := range cases {
 		t.Run(c.folder, func(t *testing.T) {
@@ -103,6 +106,21 @@ func TestLoadAcceptsFullManifest(t *testing.T) {
 	}
 	if app.Actions[1].Timeout() != 0 || app.Actions[1].RescanMode() != RescanQuick {
 		t.Fatalf("unexpected second action: %+v", app.Actions[1])
+	}
+}
+
+func TestRequestsAndMinHostAreParsed(t *testing.T) {
+	app, _, err := Load(stageApp(t, "valid-requests"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !app.MayRequest(RequestRescan) || !app.MayRequest(RequestWifi) || app.MayRequest("reboot") {
+		t.Fatalf("requests = %v", app.Requests)
+	}
+	for hostVersion, want := range map[string]bool{"1.1.9": true, "1.2.0": false, "2.0.0": false, "1.2.0-beta.1": true, "dev": false} {
+		if got := app.NeedsNewerHost(hostVersion); got != want {
+			t.Errorf("NeedsNewerHost(%q) = %v, want %v", hostVersion, got, want)
+		}
 	}
 }
 

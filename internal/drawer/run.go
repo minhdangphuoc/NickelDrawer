@@ -20,6 +20,8 @@ type RunResult struct {
 	// Set by drawer event when the script opened a toast or dialog declared on the screen.
 	Toast  string        `json:"toast,omitempty"`
 	Dialog *ScreenDialog `json:"dialog,omitempty"`
+	// Services the script asked the mod for and its app.json allows (rescan, wifi).
+	Requests []Request `json:"requests,omitempty"`
 }
 
 // Run executes an action declared in the app's manifest; nothing else can run. Without a
@@ -37,10 +39,20 @@ func (c Config) run(appID, actionID string) (RunResult, error) {
 	}
 	for _, action := range app.Actions {
 		if action.ID == actionID {
-			return c.runAction(app.Dir, action, true)
+			result, err := c.runAction(app.Dir, action, true)
+			return c.withRequests(app, result), err
 		}
 	}
 	return RunResult{}, newError(CodeUnknownAction, "app", appID, "action", actionID)
+}
+
+// withRequests moves the requests a script printed into the reply, after the app's own
+// allowlist has filtered them.
+func (c Config) withRequests(app manifest.App, result RunResult) RunResult {
+	if signal, isSignal := parseScreenSignal(result.Text); isSignal {
+		result.Requests = c.acceptedRequests(app, signal.Requests)
+	}
+	return result
 }
 
 // RunAction runs one validated action whose script path is relative to baseDir. It is also

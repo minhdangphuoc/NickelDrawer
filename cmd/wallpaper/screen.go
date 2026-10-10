@@ -22,18 +22,19 @@ type pictureJSON struct {
 
 // screenJSON holds the screen's variables; the JSON keys are their names.
 type screenJSON struct {
-	Status           string        `json:"status"`
-	Summary          string        `json:"summary"`
-	Pictures         []pictureJSON `json:"pictures"`
-	CurrentID        string        `json:"current_id"`
-	Count            int           `json:"count"`
-	Mode             string        `json:"mode"`
-	Rotation         string        `json:"rotation"`
-	Busy             bool          `json:"busy"`
-	Pending          int           `json:"pending"`
-	ImportStep       string        `json:"import_step"`
-	SleepScreenReady bool          `json:"sleep_screen_ready"`
-	SleepScreenHint  string        `json:"sleep_screen_hint"`
+	Requests         []wallpaper.HostRequest `json:"requests,omitempty"` // handed over once, when no job runs
+	Status           string                  `json:"status"`
+	Summary          string                  `json:"summary"`
+	Pictures         []pictureJSON           `json:"pictures"`
+	CurrentID        string                  `json:"current_id"`
+	Count            int                     `json:"count"`
+	Mode             string                  `json:"mode"`
+	Rotation         string                  `json:"rotation"`
+	Busy             bool                    `json:"busy"`
+	Pending          int                     `json:"pending"`
+	ImportStep       string                  `json:"import_step"`
+	SleepScreenReady bool                    `json:"sleep_screen_ready"`
+	SleepScreenHint  string                  `json:"sleep_screen_hint"`
 	// SleepScreenNotice is the one-line link on the main screen to the options; empty when ready.
 	SleepScreenNotice string `json:"sleep_screen_notice"`
 	SleepScreenLine   string `json:"sleep_screen_line"`
@@ -47,7 +48,11 @@ func (current *session) state([]string) error {
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(current.out).Encode(current.screenOf(state))
+	screen := current.screenOf(state)
+	if !state.Busy {
+		screen.Requests = current.service.TakeRequests()
+	}
+	return json.NewEncoder(current.out).Encode(screen)
 }
 
 func (current *session) screenOf(state wallpaper.ScreenState) screenJSON {

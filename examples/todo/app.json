@@ -2,23 +2,9 @@
   "schema": 1,
   "id": "todo",
   "name": "To-do",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A small to-do list kept in a text file",
   "actions": [
-    {
-      "id": "show",
-      "label": "Show list",
-      "run": "bin/show.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "done-next",
-      "label": "Mark next done",
-      "run": "bin/done-next.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
     {
       "id": "clear-done",
       "label": "Clear done items",
@@ -32,6 +18,46 @@
       "run": "bin/add-from-file.sh",
       "output": "show",
       "timeout_ms": 3000
+    },
+    {
+      "id": "newitem",
+      "label": "New item",
+      "run": "bin/newitem.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "menu": false
+    },
+    {
+      "id": "toggle",
+      "label": "Toggle done",
+      "run": "bin/toggle.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "menu": false
+    },
+    {
+      "id": "remove",
+      "label": "Remove item",
+      "run": "bin/remove.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "menu": false
+    },
+    {
+      "id": "hidedone",
+      "label": "Hide done items",
+      "run": "bin/hidedone.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "menu": false
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 3000,
+      "menu": false
     }
   ]
 }

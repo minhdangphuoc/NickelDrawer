@@ -36,6 +36,7 @@ type commonFlags struct {
 	confirm        bool
 	deleteOriginal bool
 	saveOnly       bool
+	signal         bool
 }
 
 func (common *commonFlags) register(flags *flag.FlagSet) {
@@ -48,6 +49,7 @@ func (common *commonFlags) register(flags *flag.FlagSet) {
 	flags.StringVar(&common.progressFile, "progress-file", "/tmp/wallpaper-progress.json", "progress of a running import or re-fit (import, mode, state commands)")
 	flags.BoolVar(&common.confirm, "confirm", false, "remove: the user confirmed")
 	flags.BoolVar(&common.deleteOriginal, "delete-original", false, "remove: also delete the original in Pictures when it is the same file")
+	flags.BoolVar(&common.signal, "signal", false, "remove: print the drawer toast id of the outcome instead of a sentence")
 	flags.BoolVar(&common.saveOnly, "save-only", false, "mode: only store the mode, do not re-fit now (a running job re-fits when it ends)")
 }
 

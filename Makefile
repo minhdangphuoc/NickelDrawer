@@ -9,7 +9,7 @@ DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 APPS_DIR = $(DIST_ONBOARD)/.adds/apps
 
-.PHONY: check build dist release sync-embedded schema clean
+.PHONY: check build dist release sync-embedded schema shellcheck clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
@@ -26,6 +26,16 @@ check: sync-embedded
 	if [ -n "$$unformatted" ]; then echo "gofmt needed:"; echo "$$unformatted"; exit 1; fi
 	go vet ./...
 	go test ./...
+	@$(MAKE) --no-print-directory shellcheck
+
+# shellcheck is optional: without it the check says so and moves on.
+SHELL_SOURCES = tools/*.sh tools/lib/*.sh host/bin/*.sh host/lib/common.sh apps/*/bin/*.sh examples/*/bin/*.sh
+shellcheck:
+	@if command -v shellcheck >/dev/null 2>&1; then \
+		shellcheck -x -S warning $(SHELL_SOURCES) && echo "shellcheck: ok"; \
+	else \
+		echo "shellcheck not installed: skipped (brew install shellcheck)"; \
+	fi
 
 build: sync-embedded
 	mkdir -p build
@@ -35,14 +45,13 @@ build: sync-embedded
 	$(ARM_ENV) $(GO_BUILD) -o build/library-linux-armv7 ./cmd/library
 	cd third_party/localgo && $(ARM_ENV) $(GO_BUILD) -o ../../build/localgo-linux-armv7 ./cmd/localgo
 	go build -ldflags='-X main.version=$(VERSION)' -o build/appsctl-host ./cmd/appsctl
-	go build -o build/nmstrip-host ./cmd/nmstrip
 	go build -o build/ndrelease-host ./cmd/ndrelease
 	go build -o build/ndpreview-host ./cmd/ndpreview
 
 # dist/.stamp is what tools/install-to-kobo.sh compares against the sources.
 dist: build
 	rm -rf dist
-	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(HOST_DIR)/config $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales $(APPS_DIR)/library/bin $(APPS_DIR)/library/locales $(HOST_DIR)/icons/ui
+	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(HOST_DIR)/config $(HOST_DIR)/screens $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales $(APPS_DIR)/library/bin $(APPS_DIR)/library/locales $(HOST_DIR)/icons/ui
 	cp build/appsctl-linux-armv7 $(HOST_DIR)/bin/appsctl
 	cp host/lib/common.sh $(HOST_DIR)/lib/common.sh
 	cp host/bin/*.sh $(HOST_DIR)/bin/
@@ -50,6 +59,8 @@ dist: build
 	cp host/config/routing.json $(HOST_DIR)/config/routing.json
 	cp host/icons/*.png $(HOST_DIR)/icons/
 	cp host/icons/ui/*.png $(HOST_DIR)/icons/ui/
+	cp -R host/screens/. $(HOST_DIR)/screens/
+	if [ -f build/mod/KoboRoot-nickeldrawer.tgz ]; then mkdir -p $(HOST_DIR)/mod && cp build/mod/KoboRoot-nickeldrawer.tgz $(HOST_DIR)/mod/; fi
 	for app in localsend ghsync wallpaper library; do cp apps/$$app/icon.png $(APPS_DIR)/$$app/icon.png; done
 	cp apps/localsend/app.json apps/localsend/ui.json $(APPS_DIR)/localsend/
 	cp apps/localsend/bin/*.sh $(APPS_DIR)/localsend/bin/
@@ -69,7 +80,8 @@ dist: build
 	cp apps/library/locales/*.json $(APPS_DIR)/library/locales/
 	cp build/library-linux-armv7 $(APPS_DIR)/library/bin/library
 	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/* $(APPS_DIR)/library/bin/*
-	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/data/config.example.json
+	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(HOST_DIR)/screens/updates/ui.json $(HOST_DIR)/screens/updates/locales/*.json $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/data/config.example.json
+	if [ -d $(HOST_DIR)/mod ]; then chmod 644 $(HOST_DIR)/mod/*; fi
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp
 

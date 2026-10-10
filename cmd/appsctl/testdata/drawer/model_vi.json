@@ -77,6 +77,7 @@
           "name": "Cập nhật",
           "status": "",
           "badge": false,
+          "screen": true,
           "actions": [
             {
               "id": "check",
@@ -94,6 +95,7 @@
       "app": "broken",
       "message": "name must be 1-24 characters (got 0)"
     }
-  ]
+  ],
+  "update_available": false
 }
 

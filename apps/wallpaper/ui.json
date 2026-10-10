@@ -76,6 +76,16 @@
                 "ok": "@ui.remove_ok",
                 "cancel": "@ui.cancel"
               }
+            },
+            {
+              "label": "@ui.menu_remove_original",
+              "action": "remove-all",
+              "confirm": {
+                "title": "@ui.remove_original_title",
+                "text": "@ui.remove_original_text",
+                "ok": "@ui.remove_original_ok",
+                "cancel": "@ui.cancel"
+              }
             }
           ],
           "pending": "$pending",
@@ -93,7 +103,9 @@
         "removed": "@ui.toast_removed",
         "import_started": "@ui.toast_import_started",
         "busy": "@ui.toast_busy",
-        "failed": "@ui.toast_failed"
+        "failed": "@ui.toast_failed",
+        "removed_original": "@ui.toast_removed_original",
+        "removed_original_kept": "@ui.toast_removed_original_kept"
       }
     },
     "viewer": {

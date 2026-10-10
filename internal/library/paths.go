@@ -52,6 +52,15 @@ func (paths Paths) Selection() string { return filepath.Join(paths.Data(), "sele
 func (paths Paths) Page() string      { return filepath.Join(paths.Data(), "page.txt") }
 func (paths Paths) Backups() string   { return filepath.Join(paths.Data(), "backups") }
 func (paths Paths) Trash() string     { return filepath.Join(paths.Data(), "trash") }
+func (paths Paths) Cancel() string    { return filepath.Join(paths.Data(), "cancel") }
+func (paths Paths) Requests() string  { return filepath.Join(paths.Data(), "requests.json") }
+
+// RenameJournal lists the files a normalisation run renamed on one day, so Undo can rename
+// them back. It sits next to the dated backup folder, not inside it, because everything in
+// that folder is restored as a book.
+func (paths Paths) RenameJournal(date string) string {
+	return filepath.Join(paths.Backups(), date+".renames.json")
+}
 
 // relativePath is the report form of a library file: slash-separated, below the storage root.
 func relativePath(absolute string) (string, error) {

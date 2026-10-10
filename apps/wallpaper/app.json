@@ -84,6 +84,18 @@
       "timeout_ms": 5000,
       "rescan": "none",
       "menu": false
+    },
+    {
+      "id": "remove-all",
+      "label": "Remove with original",
+      "run": "bin/remove-all.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none",
+      "menu": false
     }
+  ],
+  "requests": [
+    "rescan"
   ]
 }

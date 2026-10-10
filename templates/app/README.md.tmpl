@@ -9,7 +9,11 @@ appsctl validate .{{if .WithUI}}
 ndpreview serve .          # preview ui.json at Kobo size on 127.0.0.1{{end}}
 ```
 
-Copy the folder to `/mnt/onboard/.adds/apps/{{.ID}}/` (or run `tools/install-to-kobo.sh` from the NickelDrawer repo) and tap **Apps · Refresh list**.
+Copy the folder to `/mnt/onboard/.adds/apps/{{.ID}}/` (or run `tools/install-to-kobo.sh` from the NickelDrawer repo) and open the Apps drawer; **Refresh list** (System section) rescans the apps.
+
+## How the app talks to the user
+
+Inside the drawer a script never prints prose. It answers with a JSON signal such as `{"toast":"hello"}` naming a toast declared in `ui.json` (`report` in `lib/common.sh` does this and prints the localized text instead when you run the script from a shell). Longer work runs in the background and the screen follows it through the `state` action. See `docs/APPS.md`.
 
 ## What it touches
 

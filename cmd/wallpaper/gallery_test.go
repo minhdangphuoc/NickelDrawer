@@ -225,3 +225,41 @@ func TestModeSaveOnlyStoresWithoutRefit(t *testing.T) {
 }
 
 func strconvPid() string { return strconv.Itoa(os.Getpid()) }
+
+func TestRemoveSignalNamesTheOutcomeForTheDrawer(t *testing.T) {
+	g := importedGallery(t)
+	status, output := g.run(t, "remove", "--confirm", "--delete-original", "--signal", "0002")
+	if status != 0 || strings.TrimSpace(output) != `{"toast":"removed_original"}` {
+		t.Fatalf("with a matching original: %d %q", status, output)
+	}
+	if err := os.Remove(filepath.Join(g.root, "Pictures", "c.png")); err != nil {
+		t.Fatal(err)
+	}
+	status, output = g.run(t, "remove", "--confirm", "--delete-original", "--signal", "0003")
+	if status != 0 || strings.TrimSpace(output) != `{"toast":"removed_original_kept"}` {
+		t.Fatalf("without an original: %d %q", status, output)
+	}
+	status, output = g.run(t, "remove", "--confirm", "--signal", "0001")
+	if status != 0 || strings.TrimSpace(output) != `{"toast":"removed"}` {
+		t.Fatalf("plain remove: %d %q", status, output)
+	}
+}
+
+func TestFinishedImportQueuesOneQuickRescanForTheState(t *testing.T) {
+	g := importedGallery(t)
+	var first struct {
+		Requests []map[string]string `json:"requests"`
+	}
+	_, output := g.run(t, "state")
+	if err := json.Unmarshal([]byte(output), &first); err != nil || len(first.Requests) != 1 ||
+		first.Requests[0]["request"] != "rescan" || first.Requests[0]["mode"] != "quick" {
+		t.Fatalf("first state: %v %s", err, output)
+	}
+	var second struct {
+		Requests []map[string]string `json:"requests"`
+	}
+	_, output = g.run(t, "state")
+	if err := json.Unmarshal([]byte(output), &second); err != nil || len(second.Requests) != 0 {
+		t.Fatalf("second state must not repeat the request: %v %s", err, output)
+	}
+}

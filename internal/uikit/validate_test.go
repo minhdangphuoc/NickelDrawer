@@ -41,7 +41,7 @@ func TestValidDocumentsPass(t *testing.T) {
 		"locale key":                 screenJSON(`[{"notice":"@ui.go","title":"@ui.go"}]`, ""),
 		"template":                   screenJSON(`[{"text":"PIN $pin, cost $$5"}]`, ""),
 		"kv and bigcode":             screenJSON(`[{"kv":[["IP","$status"]]},{"bigcode":"$pin","digits":4}]`, ""),
-		"list":                       screenJSON(`[{"list":"$items","max":10,"tap":"stop","menu":[{"id":"remove","label":"Remove","confirm":true}]}]`, ""),
+		"list":                       screenJSON(`[{"list":"$items","max":10,"tap":"stop","menu":[{"id":"stop","label":"Remove","confirm":true}]}]`, ""),
 		"primary button":             screenJSON(`[]`, `[{"button":"Go","action":"start","style":"primary","enabled":"!$on"}]`),
 		"buttons enabled from state": screenJSON(`[]`, `[{"button":"Start","action":"start","enabled":"!$on"},{"button":"Stop","action":"stop","style":"primary","enabled":"$on"}]`),
 		"comment key":                `{"_note":"x","kit":1,"start":"main","screens":{"main":{"title":"Main"}}}`,
