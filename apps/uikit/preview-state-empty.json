@@ -1,10 +1,22 @@
 {
-  "firmware": "4.38.23171",
-  "locale": "vi",
+  "firmware": "-",
+  "locale": "-",
+  "sampleenabled": true,
+  "autorescan": false,
   "shownote": false,
-  "hiddennote": "",
+  "noteText": "",
   "refreshmode": "balanced",
   "searchtext": "",
-  "pagenumber": "1",
-  "pictures": []
+  "pagenumber": "12",
+  "books": [],
+  "pictures": [],
+  "lastEvent": "",
+  "lastValue": "",
+  "labelEvent": "",
+  "labelValue": "",
+  "jobRunning": false,
+  "progressLabel": "",
+  "progressDone": "",
+  "progressTotal": "",
+  "progressDetail": ""
 }

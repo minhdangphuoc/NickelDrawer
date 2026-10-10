@@ -3,6 +3,7 @@
 #include <QFontMetrics>
 #include <QList>
 #include <QString>
+#include <QVector>
 
 namespace {
 
@@ -68,6 +69,22 @@ const ScreenLogic::TextMeter &meter()
 {
     static const ScreenLogic::TextMeter qtMeter = {measureWithQt, 0};
     return qtMeter;
+}
+
+QStringList wrapLines(const QString &text, int width, const ScreenLogic::TextRun &run, int maxLines)
+{
+    QByteArray utf8 = text.toUtf8();
+    QVector<char> out(utf8.size() * 2 + 16);
+    int count = ScreenLogic::wrapText(utf8.constData(), width, run, meter(), maxLines, out.data(), out.size());
+    return count == 0 ? QStringList() : QString::fromUtf8(out.constData()).split(QLatin1Char('\n'));
+}
+
+QString elideLine(const QString &text, int width, const ScreenLogic::TextRun &run, bool isMiddle)
+{
+    QByteArray utf8 = text.toUtf8();
+    QVector<char> out(utf8.size() + 16);
+    ScreenLogic::elideText(utf8.constData(), width, run, meter(), isMiddle, out.data(), out.size());
+    return QString::fromUtf8(out.constData());
 }
 
 } // namespace QtTextMeter

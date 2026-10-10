@@ -23,8 +23,8 @@ protected:
 
 // Fallback chrome of the Tweaks modal when Nickel's N3Dialog cannot be used
 // (re/notes/tweaks-modal.md): a full-screen frameless dialog over a snapshot of
-// the page, a white box with a 1 px black border (N3Dialog.qss "#mainFrame")
-// holding a small centred title, the close button top-right and the content.
+// the page, a white box (dialog tokens: 1040 wide, 3 px black border) holding the
+// centred serif title, the close button top-right and the content.
 // A tap outside the box or on ✕ rejects it. Deletes itself when closed.
 class TweaksOverlay : public QDialog {
     Q_OBJECT

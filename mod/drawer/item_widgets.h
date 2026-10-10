@@ -26,12 +26,16 @@ protected:
 
     QLabel *statusLabel;
     UpdateDot *updateDot;
+    int statusWidth; // the one line the status may take; 0: no status line (grid cells)
 
 private:
     QString id;
 };
 
-// List row, 152 px: icon (64 px, 1:1), name, status line under it, chevron icon, dot.
+// List row, 152 px: icon (64 px, 1:1), name (row token), status line under it (caption, muted),
+// chevron icon, dot. Name and status are one measured line each, elided to
+// DrawerLogic::rowTextWidth, so nothing wraps or overflows the fixed row; a problem row's full
+// message is in the Info dialog.
 class AppRow : public ItemWidget {
 public:
     AppRow(const DrawerItem &item, QWidget *parent);
@@ -53,7 +57,8 @@ private:
     int nameTop;
 };
 
-// Small-caps section label ("INSTALLED", "SYSTEM").
+// Section label: the title uppercased (the host's strings are sentence case), then elided to the
+// content width in the bold section font, over the black 2 px rule.
 QLabel *createSectionLabel(const QString &title, QWidget *parent);
 
 #endif

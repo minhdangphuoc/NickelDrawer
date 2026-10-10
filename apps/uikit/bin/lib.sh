@@ -18,6 +18,7 @@ DATA_DIR=${UIKIT_DATA_DIR:-$APP_DIR/data}
 KOBO_DIR=${UIKIT_KOBO_DIR:-/mnt/onboard/.kobo}
 PICTURES_DIR=${UIKIT_PICTURES_DIR:-/mnt/onboard/Pictures}
 SAMPLES_DIR=$DATA_DIR/samples
+JOB_FILE=$DATA_DIR/job
 APPSCTL=${UIKIT_APPSCTL:-/mnt/onboard/.adds/koboapps/bin/appsctl}
 
 # Replaces common.sh's msg() only to honour the test overrides above.
@@ -48,25 +49,37 @@ stored_value() {
 }
 
 # A switch's stored value as a JSON boolean: anything but "true" reads as false.
-# Usage: stored_flag <name>
+# Usage: stored_flag <name> <default>
 stored_flag() {
-    if [ "$(stored_value "$1" false)" = true ]; then
+    if [ "$(stored_value "$1" "$2")" = true ]; then
         printf true
     else
         printf false
     fi
 }
 
-# Stores NICKELDRAWER_VALUE under the control's name (temp file and rename, so a power cut never
-# leaves half a value) and echoes the control's toast.
-# Usage: remember_value <name>
-remember_value() {
-    name=$1
+# Writes a small file by temp file and rename, so a power cut never leaves half a value.
+# Usage: write_file <name> <text>
+write_file() {
     mkdir -p "$DATA_DIR" || fail_with "$APP_DIR" "cannot create $DATA_DIR"
-    printf '%s\n' "${NICKELDRAWER_VALUE:-}" | tr -d '\r' >"$DATA_DIR/.$name.tmp" ||
-        fail_with "$APP_DIR" "cannot write $DATA_DIR/$name"
-    mv "$DATA_DIR/.$name.tmp" "$DATA_DIR/$name" || fail_with "$APP_DIR" "cannot replace $DATA_DIR/$name"
-    echo_toast "$name"
+    printf '%s\n' "$2" | tr -d '\r' >"$DATA_DIR/.$1.tmp" || fail_with "$APP_DIR" "cannot write $DATA_DIR/$1"
+    mv "$DATA_DIR/.$1.tmp" "$DATA_DIR/$1" || fail_with "$APP_DIR" "cannot replace $DATA_DIR/$1"
+}
+
+# Remembers the last event and its value for the readout of every component page.
+# Usage: record_event <action|toggle|input|tap|menu> <value>
+record_event() {
+    write_file lastEvent "$1"
+    write_file lastValue "$2"
+}
+
+# Stores NICKELDRAWER_VALUE under the control's name, records the event for the readout and
+# echoes the "saved" toast.
+# Usage: remember_value <name> <event>
+remember_value() {
+    write_file "$1" "${NICKELDRAWER_VALUE:-}"
+    record_event "$2" "${NICKELDRAWER_VALUE:-}"
+    echo_toast saved
 }
 
 # Escapes text for a JSON string: backslash, quote, and control characters become spaces.

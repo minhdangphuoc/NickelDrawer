@@ -13,8 +13,6 @@ import (
 
 const (
 	defaultSyncPidFile = "/tmp/ghsync.pid"
-	lastSyncLayout     = "2006-01-02 15:04"
-	expiresLayout      = "15:04"
 
 	// noValue fills a row of the status list that has nothing to show yet.
 	noValue = "—"
@@ -44,7 +42,9 @@ type screenVariables struct {
 	LastError   string `json:"last_error"`
 	Running     bool   `json:"running"`
 	CanSync     bool   `json:"can_sync"`
-	Progress    string `json:"progress"`
+	Progress    string `json:"progress"` // the steps headline: what is happening
+	StepDone    string `json:"step_done"`
+	StepTotal   string `json:"step_total"`
 	StepDetail  string `json:"step_detail"`
 	Pairing     bool   `json:"pairing"`
 	PairRow     string `json:"pair_row"`
@@ -91,7 +91,7 @@ func variablesOf(screen ghsync.ScreenState, messages *i18n.Bundle, now time.Time
 		Repo:       defaulted(screen.Repo, noValue),
 		Branch:     noValue,
 		Folder:     noValue,
-		LastSync:   defaulted(formatTime(screen.LastRun, lastSyncLayout), noValue),
+		LastSync:   defaulted(formatTime(screen.LastRun, messages), noValue),
 		Added:      noValue,
 		Summary:    syncSummary(screen, messages),
 		LastError:  shortened(screen.LastError, maxErrorChars),
@@ -124,8 +124,8 @@ func fillProgress(variables *screenVariables, screen ghsync.ScreenState, message
 		variables.Progress = messages.Message("msg.state_step_preparing", nil)
 		return
 	}
-	variables.Progress = messages.Message("msg.state_step_downloading", i18n.Params(
-		"done", strconv.Itoa(screen.Progress.Done), "total", strconv.Itoa(screen.Progress.Total)))
+	variables.Progress = messages.Message("msg.state_step_downloading", nil)
+	variables.StepDone, variables.StepTotal = strconv.Itoa(screen.Progress.Done), strconv.Itoa(screen.Progress.Total)
 	variables.StepDetail = screen.Progress.File
 }
 
@@ -135,7 +135,7 @@ func fillPairing(variables *screenVariables, screen ghsync.ScreenState, messages
 	variables.PairHint = messages.Message("msg.state_pair_open", nil)
 	variables.PairExpires = messages.Message("msg.state_pair_until", i18n.Params(
 		"minutes", strconv.Itoa(minutesLeft(screen.Pair.Expires, now)),
-		"time", screen.Pair.Expires.Local().Format(expiresLayout)))
+		"time", messages.Clock(screen.Pair.Expires)))
 }
 
 // minutesLeft rounds up, so the last partial minute still reads "1 minute".
@@ -202,11 +202,12 @@ func defaulted(value, fallback string) string {
 	return value
 }
 
-// formatTime shows an RFC 3339 time in local time; text that does not parse is shown as it is.
-func formatTime(text, layout string) string {
+// formatTime shows an RFC 3339 time as the locale writes a date and time, in local time; text
+// that does not parse is shown as it is.
+func formatTime(text string, messages *i18n.Bundle) string {
 	parsed, err := time.Parse(time.RFC3339, text)
 	if err != nil {
 		return text
 	}
-	return parsed.Local().Format(layout)
+	return messages.DateTime(parsed)
 }

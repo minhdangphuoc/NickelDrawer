@@ -225,6 +225,24 @@ static void parsePictureFields(const QJsonObject &object, ScreenComponent *compo
     component->secondary = parseBarButton(object.value(QLatin1String("secondary")).toObject());
 }
 
+static ScreenComponent parseComponent(const QJsonObject &object);
+
+// samples: {"columns": 1..3, "cells": [component + "look" + "caption"]}. A cell without a type is skipped.
+static void parseSamples(const QJsonObject &object, ScreenComponent *component)
+{
+    component->sampleColumns = object.value(QLatin1String("columns")).toInt(1);
+    QJsonArray cells = object.value(QLatin1String("cells")).toArray();
+    for (int i = 0; i < cells.size(); i++) {
+        ScreenComponent cell = parseComponent(cells.at(i).toObject());
+        if (cell.type.isEmpty()) {
+            nh_log("parser: sample cell without type skipped");
+            continue;
+        }
+        cell.look = stringField(cells.at(i).toObject(), "look");
+        component->cells.append(cell);
+    }
+}
+
 static ScreenComponent parseComponent(const QJsonObject &object)
 {
     ScreenComponent component;
@@ -268,6 +286,9 @@ static ScreenComponent parseComponent(const QJsonObject &object)
     component.optionDetails = stringListField(object, "option_details");
     if (component.type == QLatin1String("gallery") || component.type == QLatin1String("viewer")) {
         parsePictureFields(object, &component);
+    }
+    if (component.type == QLatin1String("samples")) {
+        parseSamples(object, &component);
     }
     if (component.type == QLatin1String("list")) {
         component.menu = parseMenu(object.value(QLatin1String("menu")).toArray(), true);

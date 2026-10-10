@@ -2,14 +2,13 @@
   "msg.wifi_missing": "Wi-Fi is not connected.\nWait for Wi-Fi, then tap again.",
   "msg.start_failed": "Could not start LocalSend. See data/log.txt.",
   "msg.started": "LocalSend is receiving books\n\nDevice name: {device}\nIP: {ip}\nPIN: {pin}\n\nIt stops by itself after 15 minutes without a file.\nWhen done, tap 'Stop receiving'.",
-  "msg.stopped": "LocalSend stopped.\nUpdating the library...",
+  "msg.stopped": "LocalSend stopped.\nUpdating the library…",
   "ui.pin_hint": "Enter this PIN on your phone",
   "ui.device": "Device",
   "ui.ip": "IP",
   "ui.keep_awake": "Keep this screen open while files arrive.",
   "ui.received": "Received",
   "ui.nothing_yet": "Nothing yet",
-  "ui.stop_and_update": "Stop and update library",
   "actions.state.label": "Screen state",
   "ui.status_receiving": "Receiving",
   "ui.status_idle": "Not receiving",
@@ -20,5 +19,6 @@
   "ui.toast_start_failed": "Could not start. See data/log.txt.",
   "ui.toast_failed": "That did not work. See data/log.txt.",
   "ui.auto_stopped": "Receiving stopped after {minutes} minutes without a file.",
-  "ui.idle_stop": "Stops by itself after 15 minutes without a file. The Kobo's own sleep timer still applies."
+  "ui.idle_stop": "Stops by itself after 15 minutes without a file. The Kobo's own sleep timer still applies.",
+  "ui.stop": "Stop"
 }

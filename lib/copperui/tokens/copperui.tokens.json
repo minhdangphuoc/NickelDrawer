@@ -1,6 +1,6 @@
 {
   "name": "CopperUI",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "comment": "Source of truth for every CopperUI constant. `make tokens` writes lib/copperui/include/copperui/tokens.h, internal/copperui/tokens.go and docs/copperui-tokens.md from this file; make check fails when one of them is stale. Units: px (device pixels, Kobo Libra 2 panel 1264 x 1680 at 300 ppi), grey (0 black .. 255 white, on the 16-level grid), ms, count, weight (400 regular, 700 bold), text, flag.",
   "groups": [
     {
@@ -219,21 +219,13 @@
       ]
     },
     {
-      "name": "Legacy (pending later batches)",
+      "name": "Tweaks modal",
       "tokens": [
-        {"id": "legacy.drawerQt6NoticeSize", "value": 28, "unit": "px", "doc": "Qt6 warning text; becomes a notice in fix 3.1."},
-        {"id": "legacy.drawerEmptyTextSize", "value": 30, "unit": "px", "doc": "Drawer empty-state text; the empty-state component replaces it in fix 3.1 (F16)."},
-        {"id": "legacy.tweaksBoxWidth", "value": 1140, "unit": "px", "doc": "Tinh chinh modal; dialog tokens in fix 3.2 (F19)."},
-        {"id": "legacy.tweaksBoxBorder", "value": 1, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksCloseSide", "value": 110, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksTitleSize", "value": 30, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksLabelSize", "value": 34, "unit": "px", "doc": "Serif italic label; fix 3.2."},
-        {"id": "legacy.tweaksValueSize", "value": 26, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksMessageSize", "value": 30, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksCellHeight", "value": 128, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksCellPadding", "value": 32, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksMessageHeight", "value": 160, "unit": "px", "doc": "Fix 3.2."},
-        {"id": "legacy.tweaksPageLabelHeight", "value": 64, "unit": "px", "doc": "Fix 3.2."}
+        {"id": "tweaks.cellHeight", "value": 128, "unit": "px", "doc": "A cell of the Tinh chinh modal (A6): wide enough for two 36 px lines."},
+        {"id": "tweaks.cellPadding", "value": 24, "unit": "px", "doc": "Left and right padding inside a cell (rhythm)."},
+        {"id": "tweaks.messageHeight", "value": 160, "unit": "px", "doc": "Height of the Loading / error message line in the modal."},
+        {"id": "tweaks.columns", "value": 2, "unit": "count", "doc": "Cells per row."},
+        {"id": "tweaks.rowsPerPage", "value": 7, "unit": "count", "doc": "Rows per page; the modal is as high as its first page."}
       ]
     }
   ]

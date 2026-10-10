@@ -42,7 +42,7 @@
   "msg.err_report_broken": "Cannot read the scan report {path}: {cause}. Scan again.",
   "msg.err_no_backups": "No backups to restore.",
   "msg.err_no_trash": "The trash is empty.",
-  "msg.err_bad_date": "Not a date (use YYYY-MM-DD): {date}",
+  "msg.err_bad_date": "Not a date (use year-month-day, like 2026-10-31): {date}",
   "msg.err_exists": "{path} already exists. Not overwritten.",
   "msg.err_need_confirm": "Add --confirm to move a duplicate to the trash.",
   "msg.err_last_copy": "{path} is the last copy of this book. Not removed.",
@@ -94,5 +94,8 @@
   "ui.restore_confirm": "Put back the duplicates trashed on the latest day? Files that exist again are not overwritten.",
   "ui.restore_ok": "Restore",
   "ui.toast_stopping": "Stopping after the current book.",
-  "ui.toast_restored": "Restored from the trash."
+  "ui.toast_restored": "Restored from the trash.",
+  "format.date": "dd/MM/yyyy",
+  "format.datetime": "dd/MM/yyyy HH:mm",
+  "format.time": "HH:mm"
 }

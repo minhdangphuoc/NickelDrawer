@@ -146,6 +146,11 @@ enum TextStyle { STYLE_BODY, STYLE_CAPTION, STYLE_HEADING };
 int textSize(TextStyle style);
 int lineHeight(TextStyle style);
 
+// A row's detail that fits the right-hand column (ROW_DETAIL_WIDTH, measured at the row size)
+// stays there as a value; a longer one goes under the label as a muted caption, so it is never
+// cut short. Mirrored by cmd/ndpreview rowDetailIsSubline.
+bool rowDetailIsSubline(int measuredDetailWidth);
+
 // Index of the first list item shown when a list keeps only the last max items.
 int firstKeptItem(int itemCount, int max);
 
@@ -281,7 +286,61 @@ struct ToggleRow {
 // Rectangles of a toggle row whose top is top (screen coordinates).
 ToggleRow toggleRow(int top, bool hasDetail);
 
+// ---- Samples (docs/uikit-plan.md section 5.1) ----
+// A `samples` component is one non-interactive block: cells in a grid, each an inner component
+// drawn in a given look with a caption under it. cmd/ndpreview mirrors these rules:
+//  1. columns is clamped to 1..SAMPLE_MAX_COLUMNS.
+//  2. cell width = (CONTENT_WIDTH - (columns - 1) * SAMPLE_COLUMN_GAP) / columns (integer division).
+//  3. cell column c starts at GUTTER + c * (cell width + SAMPLE_COLUMN_GAP); cells fill rows left to
+//     right, then the next row.
+//  4. a cell is SAMPLE_CAPTION_GAP + CAPTION_LINE_HEIGHT taller than its inner component; the inner
+//     component sits at the top of the cell, the caption (centred, caption style, muted) under it.
+//  5. a row is as high as its tallest cell; rows are SAMPLE_ROW_GAP apart; cells are top-aligned.
+//  6. the block is the sum of its rows and gaps, followed by the usual RHYTHM gap; it never splits
+//     across pages and is not kept with the next block.
+//  7. a button cell is a fixed-size control: one centred line elided to the cell width less
+//     2 * RHYTHM, BUTTON_HEIGHT tall, never BUTTON_TALL_HEIGHT. Any other cell is full width
+//     (the validator allows columns > 1 for buttons only) and is drawn like its normal component.
+static const int SAMPLE_MAX_COLUMNS = 3;
+static const int SAMPLE_COLUMN_GAP = tokens::SPACE_COLUMN;
+static const int SAMPLE_ROW_GAP = RHYTHM;
+static const int SAMPLE_CAPTION_GAP = tokens::SPACE_UNIT;
+
+int sampleColumnCount(int requestedColumns);
+int sampleCellWidth(int columns);
+// Height of a cell whose inner component is innerHeight tall.
+int sampleCellHeight(int innerHeight);
+
+struct SamplePlacement {
+    int x; // absolute, from the page's left edge
+    int y; // relative to the top of the block
+    int width;
+    int innerHeight;
+    int height; // the cell: inner component, caption gap and caption line
+};
+
+// Places count cells (innerHeights[i] is the height of cell i's inner component) and returns the
+// height of the whole block (0 for no cells).
+int placeSamples(const int *innerHeights, int count, int columns, SamplePlacement *placements);
+
+// The pressed look inverts every grey of the cell (what PressArea's invert does on screen); the
+// disabled look turns every grey darker than INK_DIM into INK_DIM.
+int invertedGrey(int grey);
+int dimmedGrey(int grey);
+
+// ---- Steps ----
+// The headline of a `steps` component: "label done / total", or just the label when done and total
+// are both empty (an indeterminate job such as "Checking for updates…"; the muted detail line stays).
+// Writes NUL-terminated UTF-8 into out (truncated to outSize) and returns the byte length.
+int stepsHeadline(const char *label, const char *done, const char *total, char *out, int outSize);
+
 // ---- Live screens ----
+
+// What to do with a request to re-read the screen (a finished event asks for one, the 5 s tick
+// asks for one): events still queued would be undone by a read that raced them, and a read that
+// is already on its way may have been made before the event finished, so one more follows it.
+enum ReloadDecision { RELOAD_NOW, RELOAD_AFTER_QUEUE, RELOAD_AFTER_LOAD };
+ReloadDecision decideReload(bool isQueueIdle, bool isLoading);
 
 // A live screen (state action) is re-read this often while visible and idle;
 // the e-ink budget is at most 2 updates per second, steps at most every 5 s.

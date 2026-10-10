@@ -442,6 +442,11 @@ int lineHeight(TextStyle style)
     return BODY_LINE_HEIGHT;
 }
 
+bool rowDetailIsSubline(int measuredDetailWidth)
+{
+    return measuredDetailWidth > tokens::ROW_DETAIL_WIDTH;
+}
+
 int firstKeptItem(int itemCount, int max)
 {
     if (max <= 0 || itemCount <= max) {
@@ -651,6 +656,93 @@ ToggleRow toggleRow(int top, bool hasDetail)
     row.label = makeRect(GUTTER, labelTop, labelWidth, ROW_LABEL_HEIGHT);
     row.detail = makeRect(GUTTER, top + ROW_DETAIL_TOP, labelWidth, hasDetail ? CAPTION_LINE_HEIGHT : 0);
     return row;
+}
+
+int sampleColumnCount(int requestedColumns)
+{
+    if (requestedColumns < 1) {
+        return 1;
+    }
+    return requestedColumns > SAMPLE_MAX_COLUMNS ? SAMPLE_MAX_COLUMNS : requestedColumns;
+}
+
+int sampleCellWidth(int columns)
+{
+    int count = sampleColumnCount(columns);
+    return (CONTENT_WIDTH - (count - 1) * SAMPLE_COLUMN_GAP) / count;
+}
+
+int sampleCellHeight(int innerHeight)
+{
+    return innerHeight + SAMPLE_CAPTION_GAP + CAPTION_LINE_HEIGHT;
+}
+
+int placeSamples(const int *innerHeights, int count, int columns, SamplePlacement *placements)
+{
+    int columnCount = sampleColumnCount(columns);
+    int width = sampleCellWidth(columnCount);
+    int rowTop = 0;
+    int rowHeight = 0;
+    for (int i = 0; i < count; i++) {
+        int column = i % columnCount;
+        if (column == 0 && i > 0) {
+            rowTop += rowHeight + SAMPLE_ROW_GAP;
+            rowHeight = 0;
+        }
+        SamplePlacement &cell = placements[i];
+        cell.x = GUTTER + column * (width + SAMPLE_COLUMN_GAP);
+        cell.y = rowTop;
+        cell.width = width;
+        cell.innerHeight = innerHeights[i];
+        cell.height = sampleCellHeight(innerHeights[i]);
+        if (cell.height > rowHeight) {
+            rowHeight = cell.height;
+        }
+    }
+    return count == 0 ? 0 : rowTop + rowHeight;
+}
+
+int invertedGrey(int grey)
+{
+    return PAPER_WHITE - grey;
+}
+
+int dimmedGrey(int grey)
+{
+    return grey < INK_DIM ? INK_DIM : grey;
+}
+
+static int appendText(char *out, int outSize, int length, const char *text)
+{
+    for (; *text && length < outSize - 1; text++) {
+        out[length++] = *text;
+    }
+    out[length] = 0;
+    return length;
+}
+
+int stepsHeadline(const char *label, const char *done, const char *total, char *out, int outSize)
+{
+    if (outSize <= 0) {
+        return 0;
+    }
+    out[0] = 0;
+    int length = appendText(out, outSize, 0, label);
+    if (!done[0] && !total[0]) {
+        return length;
+    }
+    length = appendText(out, outSize, length, " ");
+    length = appendText(out, outSize, length, done);
+    length = appendText(out, outSize, length, " / ");
+    return appendText(out, outSize, length, total);
+}
+
+ReloadDecision decideReload(bool isQueueIdle, bool isLoading)
+{
+    if (!isQueueIdle) {
+        return RELOAD_AFTER_QUEUE;
+    }
+    return isLoading ? RELOAD_AFTER_LOAD : RELOAD_NOW;
 }
 
 } // namespace ScreenLogic

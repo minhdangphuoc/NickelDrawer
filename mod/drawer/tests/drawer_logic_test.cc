@@ -22,7 +22,15 @@ static void testPageCount()
 
 static void testPerPage()
 {
-    EXPECT_EQ(7, itemsPerPage(VIEW_LIST, 5)); // rows do not matter in list mode
+    EXPECT_EQ(7, itemsPerPage(VIEW_LIST, 5)); // grid rows do not matter in list mode
+    EXPECT_EQ(5, itemsPerPage(VIEW_LIST, 5, 5)); // list rows that fit do
+    EXPECT_EQ(1, itemsPerPage(VIEW_LIST, 5, 0));
+    // The page area of a plain drawer holds the usual 7 rows and one label; the Qt6 notice
+    // (about 190 px) takes two rows of it.
+    EXPECT_EQ(7, listRowsThatFit(1139));
+    EXPECT_EQ(7, listRowsThatFit(2000));
+    EXPECT_EQ(5, listRowsThatFit(1139 - 190));
+    EXPECT_EQ(1, listRowsThatFit(100));
     EXPECT_EQ(20, itemsPerPage(VIEW_GRID, 5));
     EXPECT_EQ(4, itemsPerPage(VIEW_GRID, 1));
     EXPECT_EQ(4, itemsPerPage(VIEW_GRID, 0)); // at least one row
@@ -262,8 +270,28 @@ static void testMenuCap()
     EXPECT_EQ(false, needsConfirmation(0));
 }
 
+static void testRowTextWidth()
+{
+    // 1120 - dot room (16 + 24) - icon (64 + 24) - chevron (64 + 24)
+    EXPECT_EQ(1120 - 40 - 88 - 88, rowTextWidth(true, true));
+    EXPECT_EQ(1120 - 40 - 88, rowTextWidth(true, false));
+    EXPECT_EQ(1120 - 40, rowTextWidth(false, false)); // a problem row: no icon, no action
+    EXPECT_TRUE(rowTextWidth(true, true) > 0);
+}
+
+static void testEmptyStateOffersTheButtonOnlyWhenThereIsSomethingToDo()
+{
+    EXPECT_TRUE(!emptyStateShowsDetails(false));
+    EXPECT_TRUE(emptyStateShowsDetails(true));
+    EXPECT_TRUE(!emptyStateShowsButton(false, true));  // loading: heading alone
+    EXPECT_TRUE(!emptyStateShowsButton(true, false));  // nothing to refresh with
+    EXPECT_TRUE(emptyStateShowsButton(true, true));
+}
+
 int main()
 {
+    testRowTextWidth();
+    testEmptyStateOffersTheButtonOnlyWhenThereIsSomethingToDo();
     testPageCount();
     testPerPage();
     testPageContents();

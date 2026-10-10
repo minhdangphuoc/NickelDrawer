@@ -17,9 +17,14 @@ go build -o build/ndpreview-host ./cmd/ndpreview
 NDPREVIEW=build/ndpreview-host
 [ -d "$OUT/wallpaper-samples/data" ] || go run ./tools/wallpaper-samples --out "$OUT/wallpaper-samples"
 
-# screens_of APP_DIR: the screen ids of its ui.json, one per line.
+# screens_of APP_DIR: the screen ids of its ui.json and of its screens/*.json files, one per line.
 screens_of() {
-    python3 -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["screens"]))' "$1/ui.json"
+    python3 -c 'import json,os,sys
+ids = list(json.load(open(sys.argv[1] + "/ui.json"))["screens"])
+folder = sys.argv[1] + "/screens"
+if os.path.isdir(folder):
+    ids += sorted(name[:-5] for name in os.listdir(folder) if name.endswith(".json"))
+print("\n".join(ids))' "$1"
 }
 
 # render_pages APP_DIR LOCALE SCREEN STATE_FILE NAME: page 1, then the pages ndpreview says follow.
@@ -54,6 +59,9 @@ for locale in $LOCALES; do
         done
     done
     $NDPREVIEW drawer-list --locale "$locale" --font "$FONT" --out "$OUT/$locale/drawer-list.png"
+    $NDPREVIEW drawer-list --locale "$locale" --count 4 --problems --qt6 --font "$FONT" --out "$OUT/$locale/drawer-list-warning.png"
+    $NDPREVIEW drawer-empty --locale "$locale" --font "$FONT" --out "$OUT/$locale/drawer-empty.png"
+    $NDPREVIEW drawer-empty --locale "$locale" --loading --font "$FONT" --out "$OUT/$locale/drawer-loading.png"
     $NDPREVIEW drawer-grid --locale "$locale" --font "$FONT" --out "$OUT/$locale/drawer-grid.png"
     $NDPREVIEW tweaks --locale "$locale" --font "$FONT" --out "$OUT/$locale/tweaks.png"
 done

@@ -16,7 +16,7 @@ static const char VIEW_PUSH_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/pushv
 // Screens are on by default.
 static const char NO_SCREENS_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/no-screens";
 // Old opt-in flag from before screens were on by default: still read, no longer needed.
-static const char LEGACY_SCREENS_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/screens";
+static const char OBSOLETE_SCREENS_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/screens";
 // Test hook (FI-04): the firmware check fails as if the build were unknown.
 static const char TEST_UNKNOWN_FIRMWARE_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/test-unknown-fw";
 // Test hook (FI-13): the model check fails as if this Kobo were an unsupported model.

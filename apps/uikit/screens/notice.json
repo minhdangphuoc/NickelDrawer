@@ -1,0 +1,63 @@
+{
+  "title": "@ui.lbl_notice",
+  "status": "@ui.pos_notice",
+  "body": [
+    {
+      "text": "@ui.desc_notice"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "notice": "@ui.notice_text",
+          "title": "@ui.notice_title",
+          "caption": "@ui.cap_with_title"
+        },
+        {
+          "notice": "@ui.notice_text",
+          "caption": "@ui.cap_no_title"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "toggle": "@ui.sw_show_note",
+      "bind": "shownote"
+    },
+    {
+      "notice": "$noteText"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_notice",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_notice",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "saved": "@ui.toast_saved"
+  }
+}

@@ -4,7 +4,7 @@
 package copperui
 
 // Version is the CopperUI version the tokens belong to.
-const Version = "0.2.0"
+const Version = "0.3.0"
 
 // Page metrics
 const (
@@ -212,19 +212,11 @@ const (
 	DrawerHostDotInset    = 28  // px: Settings dot inset.
 )
 
-// Legacy (pending later batches)
+// Tweaks modal
 const (
-	LegacyDrawerQt6NoticeSize   = 28   // px: Qt6 warning text; becomes a notice in fix 3.1.
-	LegacyDrawerEmptyTextSize   = 30   // px: Drawer empty-state text; the empty-state component replaces it in fix 3.1 (F16).
-	LegacyTweaksBoxWidth        = 1140 // px: Tinh chinh modal; dialog tokens in fix 3.2 (F19).
-	LegacyTweaksBoxBorder       = 1    // px: Fix 3.2.
-	LegacyTweaksCloseSide       = 110  // px: Fix 3.2.
-	LegacyTweaksTitleSize       = 30   // px: Fix 3.2.
-	LegacyTweaksLabelSize       = 34   // px: Serif italic label; fix 3.2.
-	LegacyTweaksValueSize       = 26   // px: Fix 3.2.
-	LegacyTweaksMessageSize     = 30   // px: Fix 3.2.
-	LegacyTweaksCellHeight      = 128  // px: Fix 3.2.
-	LegacyTweaksCellPadding     = 32   // px: Fix 3.2.
-	LegacyTweaksMessageHeight   = 160  // px: Fix 3.2.
-	LegacyTweaksPageLabelHeight = 64   // px: Fix 3.2.
+	TweaksCellHeight    = 128 // px: A cell of the Tinh chinh modal (A6): wide enough for two 36 px lines.
+	TweaksCellPadding   = 24  // px: Left and right padding inside a cell (rhythm).
+	TweaksMessageHeight = 160 // px: Height of the Loading / error message line in the modal.
+	TweaksColumns       = 2   // count: Cells per row.
+	TweaksRowsPerPage   = 7   // count: Rows per page; the modal is as high as its first page.
 )

@@ -22,11 +22,13 @@ if is_running; then
     status=$(msg "$APP_ID" ui.status_receiving)
     pin=$(cat "$DATA_DIR/pin.txt" 2>/dev/null)
     ip=$(current_ip)
+    keep_awake=$(msg "$APP_ID" ui.keep_awake)
 else
     running=false
     status=$(msg "$APP_ID" ui.status_idle)
     pin=""
     ip=""
+    keep_awake=""
 fi
 
 # After an automatic stop the screen says why, and the host is asked once to rescan the library
@@ -41,6 +43,6 @@ if [ "$running" = false ]; then
     fi
 fi
 
-printf '{"running":%s,"status":"%s","pin":"%s","device":"%s","ip":"%s","note":"%s",%s%s\n' \
+printf '{"running":%s,"status":"%s","pin":"%s","device":"%s","ip":"%s","note":"%s","keep_awake":"%s",%s%s\n' \
     "$running" "$(json_escape "$status")" "$(json_escape "$pin")" "$(json_escape "$(device_name)")" \
-    "$(json_escape "$ip")" "$(json_escape "$note")" "$requests" "$(inbox_fields)"
+    "$(json_escape "$ip")" "$(json_escape "$note")" "$(json_escape "$keep_awake")" "$requests" "$(inbox_fields)"

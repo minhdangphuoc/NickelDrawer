@@ -1,0 +1,78 @@
+{
+  "title": "@ui.lbl_menu",
+  "status": "@ui.pos_menu",
+  "body": [
+    {
+      "text": "@ui.desc_menu"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "row": "@ui.book1",
+          "action": "echo",
+          "caption": "@ui.cap_list_row"
+        },
+        {
+          "row": "@ui.book1",
+          "action": "echo",
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "list": "$books",
+      "max": 4,
+      "empty_text": "@ui.list_empty",
+      "tap": "echo",
+      "menu": [
+        {
+          "id": "echo",
+          "label": "@ui.menu_info"
+        },
+        {
+          "id": "echo",
+          "label": "@ui.menu_open"
+        },
+        {
+          "id": "echo",
+          "label": "@ui.menu_remove",
+          "confirm": true
+        }
+      ]
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_menu",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_menu",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

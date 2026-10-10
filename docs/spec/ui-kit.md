@@ -277,7 +277,7 @@ Header status "Receiving". KeyValue rows (Device, IP). Notice box "Keep the Kobo
 Behaviour:
 - The device stays awake while receiving.
 - Receiving **stops itself after 15 minutes without files**; a toast says so.
-- **Stop and update library always rescans**, even with zero new files.
+- **Stop always rescans**, even with zero new files.
 
 ### 6.4 Pairing
 
@@ -306,7 +306,7 @@ The `appsctl validate` step checks the rules of [ui-json.md](ui-json.md) and `nd
 | Token typed in fields or put in a file | **QR pairing**: phone fills the form, Kobo never shows the secret | Kobo keyboard is poor for long secrets; safer |
 | Many buttons per screen | **One primary** full-width button at the bottom | Clear next step |
 | Switches used for actions | Toggles only for real choices; whole row tappable; **radio lists** | Fewer mistakes |
-| Manual stop and rescan | **Auto behaviours**: stay awake while receiving, stop after 15 min idle, "Stop and update library" always rescans | Fewer steps, no forgotten receiver |
+| Manual stop and rescan | **Auto behaviours**: stay awake while receiving, stop after 15 min idle, "Stop" always rescans | Fewer steps, no forgotten receiver |
 | Page turn not specified | **Hard keys** flip pages; ignored in dialogs; follow Nickel's direction setting | Natural on a device with buttons |
 | No long-press | **Long-press** row menu (Info, Update, Open folder, Remove…) | Per-app actions without extra screens |
 | Header `badge`, `Progress` component | `status`, `steps`; new `notice`, `radio`, `pair`, row `menu` | Matches the above |

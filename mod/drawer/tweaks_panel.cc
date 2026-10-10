@@ -11,41 +11,21 @@
 #include "fallback_strings.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
+#include "screen_logic.h"
+#include "system_icon.h"
+#include "text_meter.h"
 #include "tweaks_logic.h"
 
-// Device pixels (Storm class; Nickel's More rows are 120-130 px). The modal's own metrics are
-// "legacy" tokens until it moves to the dialog tokens (fix 3.2).
-static const int CELL_HEIGHT = copperui::v1::LEGACY_TWEAKS_CELL_HEIGHT;
-static const int DIVIDER_WIDTH = copperui::v1::STROKE_HAIRLINE;
-static const int CELL_SIDE_PADDING = copperui::v1::LEGACY_TWEAKS_CELL_PADDING;
-static const int MESSAGE_HEIGHT = copperui::v1::LEGACY_TWEAKS_MESSAGE_HEIGHT;
-static const int PAGE_LABEL_HEIGHT = copperui::v1::LEGACY_TWEAKS_PAGE_LABEL_HEIGHT;
-
-// Label: Georgia italic like Settings' rows (MenuTextItem[italics=true] in
-// NickelTouchMenu.qss, N3ButtonLabel at 34 px on Storm). Rule and dividers: the row line
-// grey (Nickel's TouchMenu::separator and Wishlist's divider).
+// Rule and dividers: the row line grey (Nickel's TouchMenu::separator and Wishlist's divider).
+// Cells paint themselves; the message is body text and the page label a muted caption.
 static const char *const PANEL_STYLE =
     "#tweaksPanel { background: " COPPERUI_GREY_PAPER_WHITE "; }"
     "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
     "#tweaksRule { background: " COPPERUI_GREY_LINE_ROW "; }"
-    "#tweakLabel { font-family: @TITLE_FAMILY@; font-style: italic; font-size: " COPPERUI_PX_LEGACY_TWEAKS_LABEL_SIZE "; }"
-    "#tweakValue { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_VALUE_SIZE "; }"
-    "#tweaksMessage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_MESSAGE_SIZE "; }"
-    "#tweaksPage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_VALUE_SIZE "; }";
+    "#tweaksMessage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_BODY_SIZE "; }"
+    "#tweaksPage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: "
+    COPPERUI_GREY_INK_MUTED "; }";
 static const QColor DIVIDER_COLOR(copperui::v1::LINE_ROW, copperui::v1::LINE_ROW, copperui::v1::LINE_ROW);
-
-static QString valueText(const TweakItem &item)
-{
-    switch (item.kind) {
-    case TweaksLogic::KIND_TOGGLE:
-        return FallbackStrings::text(item.isOn ? FallbackStrings::SCREEN_ON : FallbackStrings::SCREEN_OFF);
-    case TweaksLogic::KIND_INFO:
-        return item.infoText;
-    case TweaksLogic::KIND_ACTION:
-        break;
-    }
-    return QString();
-}
 
 static QLabel *createLabel(const QString &text, const char *objectName, QWidget *parent)
 {
@@ -58,37 +38,88 @@ static QLabel *createLabel(const QString &text, const char *objectName, QWidget 
 
 // ---- Cell ----
 
-TweakCell::TweakCell(const TweakItem &item, QWidget *parent) : PressArea(parent), id(item.id), valueLabel(NULL)
+static QColor grey(int level)
+{
+    return QColor(level, level, level);
+}
+
+TweakCell::TweakCell(const TweakItem &item, QWidget *parent) : PressArea(parent), shown(item)
 {
     setObjectName(QStringLiteral("tweakCell"));
-    setAttribute(Qt::WA_StyledBackground, true);
-    QLabel *label = createLabel(item.label, "tweakLabel", this);
-    label->setWordWrap(true); // long vi labels take two lines instead of clipping
-    valueLabel = createLabel(QString(), "tweakValue", this);
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(CELL_SIDE_PADDING, 0, CELL_SIDE_PADDING, 0);
-    layout->setSpacing(0);
-    layout->addStretch(1);
-    layout->addWidget(label);
-    layout->addWidget(valueLabel);
-    layout->addStretch(1);
+    cellGeometry = TweaksLogic::CellLayout();
     if (!item.isTappable()) {
         setPressHighlight(HIGHLIGHT_NONE);
         setAcceptsPresses(false);
     }
-    showValue(item);
 }
 
 void TweakCell::showValue(const TweakItem &item)
 {
-    // A cell without a value keeps an empty value line, so every label sits at the same height.
-    static const QChar NO_BREAK_SPACE(0x00A0);
-    QString text = valueText(item);
-    if (text.isEmpty()) {
-        text = NO_BREAK_SPACE;
+    shown.isOn = item.isOn;
+    shown.infoText = item.infoText;
+    measureText();
+    update();
+}
+
+// The shared text-fit rule with the real font: wrapped or elided where the cell's geometry says,
+// so nothing wraps left-aligned or overflows the fixed cell. Needs the cell's size.
+void TweakCell::measureText()
+{
+    if (width() <= 0) {
+        return;
     }
-    if (valueLabel->text() != text) {
-        valueLabel->setText(text);
+    using ScreenLogic::TextRun;
+    TextRun labelRun = {ScreenLogic::ROW_TEXT_SIZE, ScreenLogic::FAMILY_SANS, false};
+    TextRun valueRun = {ScreenLogic::CAPTION_SIZE, ScreenLogic::FAMILY_SANS, false};
+    TextRun stateRun = {ScreenLogic::TOGGLE_STATE_SIZE, ScreenLogic::FAMILY_SANS, false};
+    int labelWidth = TweaksLogic::labelWidth(shown.kind, width());
+    if (shown.kind == TweaksLogic::KIND_INFO) {
+        labelLines = QStringList(QtTextMeter::elideLine(shown.label, labelWidth, labelRun));
+        valueLine = QtTextMeter::elideLine(shown.infoText, labelWidth, valueRun);
+    } else {
+        labelLines = QtTextMeter::wrapLines(shown.label, labelWidth, labelRun, TweaksLogic::maxLabelLines(shown.kind));
+    }
+    if (shown.kind == TweaksLogic::KIND_TOGGLE) {
+        QString word = FallbackStrings::text(shown.isOn ? FallbackStrings::SCREEN_ON : FallbackStrings::SCREEN_OFF);
+        stateWord = QtTextMeter::elideLine(word.toUpper(), TweaksLogic::TOGGLE_COLUMN_WIDTH, stateRun);
+    }
+    cellGeometry = TweaksLogic::cellLayout(shown.kind, width(), height(), labelLines.size());
+}
+
+void TweakCell::resizeEvent(QResizeEvent *event)
+{
+    PressArea::resizeEvent(event);
+    measureText();
+}
+
+static QRect toQRect(const TweaksLogic::Rect &rect)
+{
+    return QRect(rect.x, rect.y, rect.width, rect.height);
+}
+
+void TweakCell::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.fillRect(rect(), grey(ScreenLogic::PAPER_WHITE));
+    painter.setPen(grey(ScreenLogic::INK_BLACK));
+    painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, ScreenLogic::ROW_TEXT_SIZE, false));
+    int labelAlignment = (cellGeometry.isCentred ? Qt::AlignHCenter : Qt::AlignLeft) | Qt::AlignVCenter | Qt::TextSingleLine;
+    QRect label = toQRect(cellGeometry.label);
+    for (int i = 0; i < labelLines.size(); i++) {
+        QRect line(label.x(), label.y() + i * TweaksLogic::LABEL_LINE_HEIGHT, label.width(), TweaksLogic::LABEL_LINE_HEIGHT);
+        painter.drawText(line, labelAlignment, labelLines[i]);
+    }
+    if (shown.kind == TweaksLogic::KIND_INFO) {
+        painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, ScreenLogic::CAPTION_SIZE, false));
+        painter.setPen(grey(ScreenLogic::INK_MUTED));
+        painter.drawText(toQRect(cellGeometry.value), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, valueLine);
+    }
+    if (shown.kind == TweaksLogic::KIND_TOGGLE) {
+        // Nickel's switch image (never drawn by us); without it the state word alone shows the state.
+        SystemIcon::Id image = shown.isOn ? SystemIcon::SWITCH_ON : SystemIcon::SWITCH_OFF;
+        SystemIcon::drawCentred(&painter, toQRect(cellGeometry.switchImage), SystemIcon::icon(image).normal);
+        painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, ScreenLogic::TOGGLE_STATE_SIZE, false));
+        painter.drawText(toQRect(cellGeometry.stateWord), Qt::AlignHCenter | Qt::AlignVCenter | Qt::TextSingleLine, stateWord);
     }
 }
 
@@ -105,16 +136,15 @@ TweaksPanel::TweaksPanel(QWidget *parent)
     QWidget *rule = new QWidget(this);
     rule->setObjectName(QStringLiteral("tweaksRule"));
     rule->setAttribute(Qt::WA_StyledBackground, true);
-    rule->setFixedHeight(DIVIDER_WIDTH);
+    rule->setFixedHeight(TweaksLogic::RULE_HEIGHT);
     grid = new QWidget(this);
     grid->installEventFilter(this);
     messageLabel = createLabel(QString(), "tweaksMessage", this);
     messageLabel->setAlignment(Qt::AlignCenter);
-    messageLabel->setWordWrap(true);
-    messageLabel->setFixedHeight(MESSAGE_HEIGHT);
+    messageLabel->setFixedHeight(TweaksLogic::MESSAGE_HEIGHT);
     pageLabel = createLabel(QString(), "tweaksPage", this);
     pageLabel->setAlignment(Qt::AlignCenter);
-    pageLabel->setFixedHeight(PAGE_LABEL_HEIGHT);
+    pageLabel->setFixedHeight(TweaksLogic::PAGER_LINE_HEIGHT);
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -133,7 +163,10 @@ void TweaksPanel::showMessage(const QString &text)
     allItems.clear();
     grid->hide();
     pageLabel->hide();
-    messageLabel->setText(text);
+    // Wrapped by the shared rule, centred, two lines at most: never clipped or left-aligned.
+    ScreenLogic::TextRun run = {ScreenLogic::BODY_SIZE, ScreenLogic::FAMILY_SANS, false};
+    int width = TweaksLogic::boxInnerWidth() - 2 * TweaksLogic::CELL_PADDING;
+    messageLabel->setText(QtTextMeter::wrapLines(text, width, run, TweaksLogic::LABEL_MAX_LINES).join(QStringLiteral("\n")));
     messageLabel->show();
 }
 
@@ -168,7 +201,7 @@ void TweaksPanel::showPage(int page)
     }
     // Every page as high as the first, so the modal does not jump between pages.
     int itemsOnFirstPage = DrawerLogic::itemCountOnPage(0, allItems.size(), itemsPerPage());
-    grid->setFixedHeight(TweaksLogic::gridHeight(itemsOnFirstPage, CELL_HEIGHT, DIVIDER_WIDTH));
+    grid->setFixedHeight(TweaksLogic::gridHeight(itemsOnFirstPage, TweaksLogic::CELL_HEIGHT, TweaksLogic::DIVIDER_WIDTH));
     placeCells();
     updatePageLabel();
     grid->update();
@@ -177,7 +210,7 @@ void TweaksPanel::showPage(int page)
 void TweaksPanel::placeCells()
 {
     for (int i = 0; i < cells.size(); i++) {
-        TweaksLogic::Rect cell = TweaksLogic::cellRect(i, grid->width(), CELL_HEIGHT, DIVIDER_WIDTH);
+        TweaksLogic::Rect cell = TweaksLogic::cellRect(i, grid->width(), TweaksLogic::CELL_HEIGHT, TweaksLogic::DIVIDER_WIDTH);
         cells[i]->setGeometry(cell.x, cell.y, cell.width, cell.height);
     }
 }
@@ -256,12 +289,12 @@ bool TweaksPanel::eventFilter(QObject *watched, QEvent *event)
         QPainter painter(grid);
         painter.fillRect(grid->rect(), Qt::white);
         for (int row = 0; row < TweaksLogic::rowCount(cells.size()); row++) {
-            TweaksLogic::Rect left = TweaksLogic::cellRect(row * TweaksLogic::COLUMN_COUNT, grid->width(), CELL_HEIGHT,
-                                                           DIVIDER_WIDTH);
+            TweaksLogic::Rect left = TweaksLogic::cellRect(row * TweaksLogic::COLUMN_COUNT, grid->width(),
+                                                           TweaksLogic::CELL_HEIGHT, TweaksLogic::DIVIDER_WIDTH);
             if (TweaksLogic::rowHasRightCell(row, cells.size())) {
-                painter.fillRect(left.x + left.width, left.y, DIVIDER_WIDTH, left.height, DIVIDER_COLOR);
+                painter.fillRect(left.x + left.width, left.y, TweaksLogic::DIVIDER_WIDTH, left.height, DIVIDER_COLOR);
             }
-            painter.fillRect(0, left.y + left.height, grid->width(), DIVIDER_WIDTH, DIVIDER_COLOR);
+            painter.fillRect(0, left.y + left.height, grid->width(), TweaksLogic::DIVIDER_WIDTH, DIVIDER_COLOR);
         }
         return true;
     }

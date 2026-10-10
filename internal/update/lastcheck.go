@@ -106,7 +106,7 @@ func errorKeyOf(messageKey string) string {
 // It is empty when the outcome is out of date: an "update available" for a version that is
 // installed by now.
 func (record CheckRecord) Describe(bundle *i18n.Bundle, current string) string {
-	when := record.localTime()
+	when := record.localTime(bundle)
 	switch record.Result {
 	case CheckUpToDate:
 		return bundle.Message("update.last_up_to_date", i18n.Params("time", when, "version", record.Version))
@@ -126,13 +126,14 @@ func (record CheckRecord) isNewerThan(current string) bool {
 	return err == nil && order > 0
 }
 
-// localTime is HH:MM in the device's time zone; the record itself is UTC.
-func (record CheckRecord) localTime() string {
+// localTime is the date and time of the check as the locale writes them, in the device's time
+// zone; the record itself is UTC.
+func (record CheckRecord) localTime(bundle *i18n.Bundle) string {
 	moment, err := time.Parse(time.RFC3339, record.Time)
 	if err != nil {
-		return "--:--"
+		return "--"
 	}
-	return moment.Local().Format("15:04")
+	return bundle.DateTime(moment)
 }
 
 func (record CheckRecord) reason(bundle *i18n.Bundle) string {

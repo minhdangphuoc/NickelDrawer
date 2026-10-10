@@ -87,7 +87,7 @@ bool PaintItem::operator==(const PaintItem &other) const
            isBold == other.isBold && isUnderlined == other.isUnderlined && align == other.align && ink == other.ink &&
            qrSide == other.qrSide && qrModules == other.qrModules && imagePath == other.imagePath &&
            isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph && isOn == other.isOn &&
-           iconId == other.iconId;
+           iconId == other.iconId && isInverted == other.isInverted;
 }
 
 static PaintItem rectItem(int x, int y, int width, int height, int fill, int border)
@@ -393,7 +393,12 @@ static void addPairBlocks(int component, const ScreenComponent &c, QList<LayoutB
 
 static void addStepsBlocks(int component, const ScreenComponent &c, QList<LayoutBlock> *blocks)
 {
-    QString headline = QStringLiteral("%1 %2 / %3").arg(c.label, c.done, c.total);
+    QByteArray label = c.label.toUtf8();
+    QByteArray done = c.done.toUtf8();
+    QByteArray total = c.total.toUtf8();
+    QVector<char> text(label.size() + done.size() + total.size() + 8);
+    stepsHeadline(label.constData(), done.constData(), total.constData(), text.data(), text.size());
+    QString headline = QString::fromUtf8(text.constData());
     LayoutBlock line = singleLine(component, LayoutBlock::KIND_LINE, headline, STYLE_BODY, FAMILY_SANS, INK_BLACK);
     line.size.gap = c.detail.isEmpty() ? RHYTHM : 0;
     line.size.keepWithNext = !c.detail.isEmpty();
@@ -463,7 +468,11 @@ void ScreenLayout::addGalleryEmptyBlocks(int component, QList<LayoutBlock> *bloc
 
 void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) const
 {
-    const ScreenComponent &c = components[index];
+    addBlocksOf(components[index], index, blocks);
+}
+
+void ScreenLayout::addBlocksOf(const ScreenComponent &c, int index, QList<LayoutBlock> *blocks) const
+{
     const QString &type = c.type;
     if (type == QLatin1String("text")) {
         TextStyle style = styleOf(c.style);
@@ -480,6 +489,7 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         bool isPendingRow = isTappable && c.isPending && !c.isAsync; // A9: label replaced, no target, no chevron
         row.primary = isPendingRow ? hostTexts.pending : c.text;
         row.secondary = isPendingRow ? QString() : c.detail;
+        row.hasSubline = rowDetailIsSubline(widthOf(row.secondary, ROW_TEXT_SIZE, FAMILY_SANS));
         row.isTappable = isTappable && !isPendingRow;
         blocks->append(row);
     } else if (type == QLatin1String("toggle")) {
@@ -512,10 +522,115 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         addEmptyBlocks(index, c, hostTexts, blocks);
     } else if (type == QLatin1String("gallery")) {
         addGalleryEmptyBlocks(index, blocks); // a gallery with pictures is a grid, not blocks
+    } else if (type == QLatin1String("samples")) {
+        addSamplesBlock(index, blocks);
     }
 }
 
+// ---- Samples ----
+
+// A sample button is a fixed-size control: one centred line, elided, BUTTON_HEIGHT tall.
+static LayoutBlock sampleButtonBlock(int component, const ScreenComponent &c, int cellWidth)
+{
+    LayoutBlock result = block(LayoutBlock::KIND_BUTTON, component, BUTTON_HEIGHT, 0);
+    result.lines << elided(c.text, cellWidth - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false, true);
+    result.isOn = c.isPrimaryButton();
+    result.isDimmed = !c.isEnabled;
+    return result;
+}
+
+static int stackedHeight(const QList<LayoutBlock> &blocks)
+{
+    int total = 0;
+    for (int i = 0; i < blocks.size(); i++) {
+        total += blocks[i].size.height + (i + 1 < blocks.size() ? blocks[i].size.gap : 0);
+    }
+    return total;
+}
+
+// The inner blocks of one cell, in the cell's look. A sample is a picture: nothing pends, a row
+// shows its chevron even without an action, and the targets are dropped when it is drawn.
+QList<LayoutBlock> ScreenLayout::sampleInnerBlocks(const ScreenComponent &cell, int component, int cellWidth) const
+{
+    QList<LayoutBlock> inner;
+    if (cell.type == QLatin1String("samples")) {
+        return inner; // samples do not nest
+    }
+    ScreenComponent shown = cell;
+    shown.isPending = false;
+    shown.isEnabled = cell.isEnabled && cell.look != QLatin1String("disabled");
+    if (cell.type == QLatin1String("button")) {
+        inner.append(sampleButtonBlock(component, shown, cellWidth));
+        return inner;
+    }
+    addBlocksOf(shown, component, &inner);
+    if (cell.type == QLatin1String("row") && !inner.isEmpty()) {
+        inner[0].isTappable = true;
+    }
+    return inner;
+}
+
+void ScreenLayout::addSamplesBlock(int index, QList<LayoutBlock> *blocks) const
+{
+    const ScreenComponent &c = components[index];
+    if (c.cells.isEmpty()) {
+        return;
+    }
+    int columns = sampleColumnCount(c.sampleColumns);
+    LayoutBlock result = block(LayoutBlock::KIND_SAMPLES, index, 0, RHYTHM);
+    QVector<int> heights(c.cells.size());
+    for (int i = 0; i < c.cells.size(); i++) {
+        heights[i] = stackedHeight(sampleInnerBlocks(c.cells[i], index, sampleCellWidth(columns)));
+        result.cellInnerHeights.append(heights[i]);
+    }
+    QVector<SamplePlacement> placements(c.cells.size());
+    result.size.height = placeSamples(heights.constData(), heights.size(), columns, placements.data());
+    blocks->append(result);
+}
+
 // ---- Layout ----
+
+// A section label stays with all the blocks under it (until the next section) when that group fits
+// a page of `available` px: it then moves to the next page whole, so it never starts at the bottom
+// of one page and goes on, label-less, on the next. A taller group still flows block by block
+// (copperui/pack.h). Mirrored by cmd/ndpreview keepSectionsTogether.
+static void keepSectionsTogether(QList<LayoutBlock> *blocks, int available)
+{
+    int start = 0;
+    while (start < blocks->size()) {
+        if ((*blocks)[start].kind != LayoutBlock::KIND_SECTION) {
+            start++;
+            continue;
+        }
+        int end = start + 1;
+        while (end < blocks->size() && (*blocks)[end].kind != LayoutBlock::KIND_SECTION) {
+            end++;
+        }
+        QVector<Block> sizes;
+        for (int i = start; i < end; i++) {
+            sizes.append((*blocks)[i].size);
+        }
+        if (blocksHeight(sizes.constData(), 0, sizes.size()) <= available) {
+            for (int i = start; i + 1 < end; i++) {
+                (*blocks)[i].size.keepWithNext = true;
+            }
+        }
+        start = end;
+    }
+}
+
+// Two tappable rows in a row need no gap between them: each draws its own divider, so a run of rows
+// reads as one list (mirrored by cmd/ndpreview joinRowRuns). The last row of a run keeps its gap,
+// except before a section label, which has its own top inset.
+static void joinRowRuns(QList<LayoutBlock> *blocks)
+{
+    for (int i = 0; i + 1 < blocks->size(); i++) {
+        bool isRowNext = (*blocks)[i + 1].kind == LayoutBlock::KIND_TAP_ROW || (*blocks)[i + 1].kind == LayoutBlock::KIND_SECTION;
+        if ((*blocks)[i].kind == LayoutBlock::KIND_TAP_ROW && isRowNext) {
+            (*blocks)[i].size.gap = 0;
+        }
+    }
+}
 
 static QVector<Block> sizesOf(const QList<LayoutBlock> &blocks)
 {
@@ -563,11 +678,15 @@ ScreenLayout::ScreenLayout(const ScreenModel &screenModel, int viewHeight, const
     for (int i = 0; i < bodyEnd && viewerIndex < 0; i++) {
         addComponentBlocks(i, &body);
     }
+    joinRowRuns(&body);
     for (int i = 0; i < model.footer.size(); i++) {
         addComponentBlocks(model.body.size() + i, &footer);
     }
     QVector<Block> footerSizes = sizesOf(footer);
     int footerHeight = blocksHeight(footerSizes.constData(), 0, footerSizes.size());
+    int pagedHeight = height - BOTTOM_MARGIN - (footerHeight > 0 ? footerHeight + RHYTHM : 0) - (HEADER_HEIGHT + RHYTHM) -
+                      (PAGE_BAR_HEIGHT + RHYTHM);
+    keepSectionsTogether(&body, pagedHeight);
     QVector<Block> bodySizes = sizesOf(body);
     QVector<int> pages(bodySizes.size() + 1);
     frame = layoutBody(bodySizes.constData(), bodySizes.size(), footerHeight, height, pages.data());
@@ -748,12 +867,19 @@ static void drawSection(const LayoutBlock &b, int y, ScreenPage *page)
 
 static void drawTapRow(const LayoutBlock &b, int y, ScreenPage *page)
 {
-    int textWidth = CONTENT_WIDTH - TAP_ROW_TEXT_INSET;
-    page->items << textItem(GUTTER, y + TAP_ROW_TEXT_TOP, textWidth, ROW_LABEL_HEIGHT,
+    int textWidth = b.hasSubline ? CONTENT_WIDTH - CHEVRON_SIDE - RHYTHM : CONTENT_WIDTH - TAP_ROW_TEXT_INSET;
+    int labelTop = y + (b.hasSubline ? ROW_LABEL_TOP_WITH_DETAIL : TAP_ROW_TEXT_TOP);
+    page->items << textItem(GUTTER, labelTop, textWidth, ROW_LABEL_HEIGHT,
                             elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE, FAMILY_SANS,
                             PaintItem::ALIGN_START)
                 << separatorItem(y + TAP_ROW_HEIGHT - SEPARATOR);
-    if (!b.secondary.isEmpty()) {
+    if (b.hasSubline) {
+        PaintItem subline = textItem(GUTTER, y + ROW_DETAIL_TOP, textWidth, CAPTION_LINE_HEIGHT,
+                                     elided(b.secondary, textWidth, CAPTION_SIZE, FAMILY_SANS, false), CAPTION_SIZE,
+                                     FAMILY_SANS, PaintItem::ALIGN_START);
+        subline.ink = INK_MUTED;
+        page->items.append(subline);
+    } else if (!b.secondary.isEmpty()) {
         PaintItem detail = textItem(SCREEN_WIDTH - GUTTER - ROW_DETAIL_RIGHT, y + TAP_ROW_TEXT_TOP, ROW_DETAIL_WIDTH,
                                     ROW_LABEL_HEIGHT,
                                     elided(b.secondary, ROW_DETAIL_WIDTH, ROW_TEXT_SIZE, FAMILY_SANS, false),
@@ -923,6 +1049,90 @@ static void drawButton(const LayoutBlock &b, int y, ScreenPage *page)
                 QString(), page);
 }
 
+// ---- Drawing samples ----
+
+static bool isIconShape(const PaintItem &item)
+{
+    return item.shape == PaintItem::SHAPE_ICON || item.shape == PaintItem::SHAPE_SWITCH ||
+           item.shape == PaintItem::SHAPE_BACK_ARROW;
+}
+
+// The disabled look for components that have none of their own: nothing darker than ink.dim.
+static void dimItems(QList<PaintItem> *items)
+{
+    for (int i = 0; i < items->size(); i++) {
+        PaintItem &item = (*items)[i];
+        item.ink = dimmedGrey(item.ink);
+        if (item.fill != NO_FILL) {
+            item.fill = dimmedGrey(item.fill);
+        }
+    }
+}
+
+// The pressed look: every grey inverted on the black backing, as PressArea's HIGHLIGHT_INVERT does
+// on screen. Icons keep their ink (it only sets their opacity) and are drawn white instead.
+static void invertItems(QList<PaintItem> *items)
+{
+    for (int i = 0; i < items->size(); i++) {
+        PaintItem &item = (*items)[i];
+        if (item.fill != NO_FILL) {
+            item.fill = invertedGrey(item.fill);
+        }
+        if (isIconShape(item)) {
+            item.isInverted = true;
+        } else {
+            item.ink = invertedGrey(item.ink);
+        }
+    }
+}
+
+void ScreenLayout::drawSampleCell(const ScreenComponent &cell, int component, const SamplePlacement &place, int blockTop,
+                                  ScreenPage *page) const
+{
+    int cellTop = blockTop + place.y;
+    ScreenPage picture; // its tap targets are dropped: a sample is not interactive
+    QList<LayoutBlock> inner = sampleInnerBlocks(cell, component, place.width);
+    int y = cellTop;
+    for (int i = 0; i < inner.size(); i++) {
+        if (cell.type == QLatin1String("button")) {
+            paintButton(QRect(place.x, y, place.width, inner[i].size.height), inner[i].lines, inner[i].isOn,
+                        inner[i].isDimmed, false, component, QString(), &picture);
+        } else {
+            drawBlock(inner[i], y, &picture);
+        }
+        y += inner[i].size.height + inner[i].size.gap;
+    }
+    if (cell.look == QLatin1String("disabled")) {
+        dimItems(&picture.items);
+    }
+    if (cell.look == QLatin1String("pressed")) {
+        page->items.append(rectItem(place.x, cellTop, place.width, place.innerHeight, INK_BLACK, 0));
+        invertItems(&picture.items);
+    }
+    page->items += picture.items;
+    if (!cell.caption.isEmpty()) {
+        PaintItem caption = textItem(place.x, cellTop + place.innerHeight + SAMPLE_CAPTION_GAP, place.width,
+                                     CAPTION_LINE_HEIGHT, elided(cell.caption, place.width, CAPTION_SIZE, FAMILY_SANS, false),
+                                     CAPTION_SIZE, FAMILY_SANS, PaintItem::ALIGN_CENTER);
+        caption.ink = INK_MUTED;
+        page->items.append(caption);
+    }
+}
+
+void ScreenLayout::drawSamples(const LayoutBlock &b, int y, ScreenPage *page) const
+{
+    const ScreenComponent &samples = components[b.component];
+    QVector<int> heights(b.cellInnerHeights.size());
+    for (int i = 0; i < heights.size(); i++) {
+        heights[i] = b.cellInnerHeights[i];
+    }
+    QVector<SamplePlacement> placements(heights.size());
+    placeSamples(heights.constData(), heights.size(), samples.sampleColumns, placements.data());
+    for (int i = 0; i < heights.size(); i++) {
+        drawSampleCell(samples.cells[i], b.component, placements[i], y, page);
+    }
+}
+
 static void drawLine(const LayoutBlock &b, int y, bool isMiddleElided, ScreenPage *page)
 {
     PaintItem line = textItem(GUTTER, y, CONTENT_WIDTH, b.lineHeight,
@@ -995,6 +1205,9 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
         break;
     case LayoutBlock::KIND_BUTTON:
         drawButton(b, y, page);
+        break;
+    case LayoutBlock::KIND_SAMPLES:
+        drawSamples(b, y, page);
         break;
     case LayoutBlock::KIND_PICTURE_ICON:
         page->items.append(pictureIcon(QRect((SCREEN_WIDTH - GALLERY_EMPTY_ICON_SIDE) / 2, y, GALLERY_EMPTY_ICON_SIDE,

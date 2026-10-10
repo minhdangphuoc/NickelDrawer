@@ -26,6 +26,8 @@ struct PaintItem {
     // SHAPE_BACK_ARROW: the header's back icon in ink inside rect.
     // SHAPE_SWITCH: Nickel's on or off switch image (isOn) centred in rect, never drawn by us;
     //   dimmed to ink when that is not black (a disabled toggle).
+    // isInverted: SHAPE_ICON, SHAPE_SWITCH and SHAPE_BACK_ARROW are drawn as their white version
+    //   (an icon inside a pressed sample cell, on the black backing).
     enum Shape {
         SHAPE_RECT,
         SHAPE_ELLIPSE,
@@ -59,6 +61,7 @@ struct PaintItem {
     bool showsMissingGlyph = true;
     bool isOn = false;            // SHAPE_SWITCH: the on image
     int iconId = -1;              // SHAPE_ICON: a SystemIcon::Id
+    bool isInverted = false;      // icon shapes: the white version
 
     bool operator==(const PaintItem &other) const;
     bool operator!=(const PaintItem &other) const { return !(*this == other); }
@@ -113,7 +116,8 @@ struct LayoutBlock {
         KIND_CENTERED_LINE,
         KIND_NOTICE,
         KIND_BUTTON,
-        KIND_PICTURE_ICON
+        KIND_PICTURE_ICON,
+        KIND_SAMPLES // one block of non-interactive sample cells (screen_logic.h "Samples")
     };
 
     Kind kind = KIND_SPACER;
@@ -133,8 +137,10 @@ struct LayoutBlock {
     bool isDimmed = false; // disabled: label, outline and control at ink.dim
     bool hasCheckMark = false; // list row: the secondary text is the check mark, drawn as an icon
     bool isTappable = false;
+    QList<int> cellInnerHeights; // samples: the height of each cell's inner component
     int listRow = -1; // list rows: index in the list's items, for the row menu
     bool isMiddleElided = false;
+    bool hasSubline = false; // tap row: the detail is a caption under the label
     QString tapValue;
     QByteArray qrModules;
     int qrSide = 0;
@@ -177,6 +183,12 @@ public:
 
 private:
     void addComponentBlocks(int index, QList<LayoutBlock> *blocks) const;
+    void addBlocksOf(const ScreenComponent &c, int index, QList<LayoutBlock> *blocks) const;
+    void addSamplesBlock(int index, QList<LayoutBlock> *blocks) const;
+    QList<LayoutBlock> sampleInnerBlocks(const ScreenComponent &cell, int component, int cellWidth) const;
+    void drawSamples(const LayoutBlock &block, int y, ScreenPage *page) const;
+    void drawSampleCell(const ScreenComponent &cell, int component, const ScreenLogic::SamplePlacement &place, int blockTop,
+                        ScreenPage *page) const;
     void drawBlock(const LayoutBlock &block, int y, ScreenPage *page) const;
     void drawPageBar(int index, ScreenPage *page) const;
     void drawGalleryPage(int index, ScreenPage *page) const;

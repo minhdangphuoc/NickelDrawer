@@ -140,38 +140,38 @@ func TestStatusOfARunningCheckIsTaggedAsCheck(t *testing.T) {
 
 func TestDescribeRendersEveryOutcomeInBothLanguages(t *testing.T) {
 	when := time.Date(2026, 10, 10, 10, 2, 0, 0, time.UTC)
-	clock := when.Local().Format("15:04")
+	clock := i18n.FormatPattern(i18n.DefaultDateTimePattern, when.Local())
 	cases := []struct {
 		record  CheckRecord
 		current string
 		want    map[string]string
 	}{
 		{CheckRecord{Result: CheckUpToDate, Version: "1.0.0"}, "1.0.0", map[string]string{
-			"en": "Checked at " + clock + " · You are on the latest version (1.0.0)",
-			"vi": "Đã kiểm tra lúc " + clock + " · Bạn đang dùng bản mới nhất (1.0.0)"}},
+			"en": "Checked " + clock + " · Up to date (1.0.0)",
+			"vi": "Đã kiểm tra " + clock + " · Đang dùng bản mới nhất (1.0.0)"}},
 		{CheckRecord{Result: CheckAvailable, Version: "1.0.1"}, "1.0.0", map[string]string{
-			"en": "Checked at " + clock + " · New version 1.0.1 available",
-			"vi": "Đã kiểm tra lúc " + clock + " · Có bản mới 1.0.1"}},
+			"en": "Checked " + clock + " · New version 1.0.1 available",
+			"vi": "Đã kiểm tra " + clock + " · Có bản mới 1.0.1"}},
 		{CheckRecord{Result: CheckAvailable, Version: "1.0.0"}, "1.0.0", map[string]string{"en": "", "vi": ""}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorNoNetwork}, "1.0.0", map[string]string{
-			"en": "Could not check at " + clock + ": no Wi-Fi",
-			"vi": "Không kiểm tra được lúc " + clock + ": chưa có Wi-Fi"}},
+			"en": "Could not check " + clock + ": no Wi-Fi",
+			"vi": "Không kiểm tra được " + clock + ": chưa có Wi-Fi"}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorUnreachable}, "1.0.0", map[string]string{
-			"en": "Could not check at " + clock + ": cannot reach GitHub",
-			"vi": "Không kiểm tra được lúc " + clock + ": không kết nối được GitHub"}},
+			"en": "Could not check " + clock + ": cannot reach GitHub",
+			"vi": "Không kiểm tra được " + clock + ": không kết nối được GitHub"}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorRateLimited}, "1.0.0", map[string]string{
-			"en": "Could not check at " + clock + ": GitHub is limiting requests, try later",
-			"vi": "Không kiểm tra được lúc " + clock + ": GitHub đang giới hạn, thử lại sau"}},
+			"en": "Could not check " + clock + ": GitHub is limiting requests, try later",
+			"vi": "Không kiểm tra được " + clock + ": GitHub đang giới hạn, thử lại sau"}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorBadSignature}, "1.0.0", map[string]string{
-			"en": "Could not check at " + clock + ": bad signature, nothing changed",
-			"vi": "Không kiểm tra được lúc " + clock + ": chữ ký sai, không có gì thay đổi"}},
+			"en": "Could not check " + clock + ": bad signature, nothing changed",
+			"vi": "Không kiểm tra được " + clock + ": chữ ký sai, không có gì thay đổi"}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorNoRelease}, "1.0.0", map[string]string{
-			"en": "Could not check at " + clock + ": no release on this channel",
-			"vi": "Không kiểm tra được lúc " + clock + ": kênh này chưa có bản phát hành"}},
+			"en": "Could not check " + clock + ": no release on this channel",
+			"vi": "Không kiểm tra được " + clock + ": kênh này chưa có bản phát hành"}},
 		{CheckRecord{Result: CheckFailed, ErrorKey: ErrorOther, Report: &Report{Key: "update.no_repo", Params: map[string]string{"file": "update.json"}}},
 			"1.0.0", map[string]string{
-				"en": "Could not check at " + clock + ": No update repo set. Put owner/name as \"repo\" in update.json",
-				"vi": "Không kiểm tra được lúc " + clock + ": Chưa đặt kho cập nhật. Ghi chủ/tên vào \"repo\" trong update.json"}},
+				"en": "Could not check " + clock + ": No update repo set. Put owner/name as \"repo\" in update.json",
+				"vi": "Không kiểm tra được " + clock + ": Chưa đặt kho cập nhật. Ghi chủ/tên vào \"repo\" trong update.json"}},
 	}
 	for _, tc := range cases {
 		tc.record.Time = when.Format(time.RFC3339)

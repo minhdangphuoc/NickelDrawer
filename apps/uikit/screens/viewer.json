@@ -1,0 +1,29 @@
+{
+  "title": "@ui.viewer_title",
+  "body": [
+    {
+      "viewer": "$pictures",
+      "selected": "selectedPicture",
+      "current_status": "@ui.viewer_current",
+      "primary": {
+        "label": "@ui.viewer_use",
+        "label_current": "@ui.viewer_in_use",
+        "action": "echo"
+      },
+      "secondary": {
+        "label": "@ui.btn_remove",
+        "action": "echo",
+        "confirm": {
+          "title": "@ui.viewer_remove_title",
+          "text": "@ui.viewer_remove_text",
+          "ok": "@ui.confirm_ok",
+          "cancel": "@ui.cancel"
+        }
+      }
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

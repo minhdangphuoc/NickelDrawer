@@ -101,7 +101,7 @@ func TestStateConfiguredShowsRepoAndLastResultButNeverTheToken(t *testing.T) {
 	if !variables.Configured || !variables.CanSync || variables.Repo != "me/books" || variables.Folder != "epub" || variables.Branch != "Default" {
 		t.Fatalf("state = %+v", variables)
 	}
-	if variables.Summary != "3 new, 120 already here, 1 errors" || variables.LastSync == "" || variables.Status != "Ready" {
+	if variables.Summary != "3 new · 120 already here · 1 errors" || variables.LastSync == "" || variables.Status != "Ready" {
 		t.Fatalf("last sync = %+v", variables)
 	}
 }
@@ -159,7 +159,7 @@ func TestStateShowsTheFailureReasonButNeverTheToken(t *testing.T) {
 	env.configure()
 	env.write("data/state.json", `{"last_run":"2026-10-08T21:14:00Z","last_error":"boom `+secretToken+`","files":{}}`, 0o600)
 	raw, variables := env.state()
-	if strings.Contains(raw, secretToken) || variables.LastError != "boom ***" || variables.Summary != "The last sync failed." {
+	if strings.Contains(raw, secretToken) || variables.LastError != "boom ***" || variables.Summary != "The last sync failed" {
 		t.Fatalf("state = %s", raw)
 	}
 }
@@ -184,7 +184,7 @@ func TestStateShowsDownloadProgressOnlyWhileSyncing(t *testing.T) {
 	}
 	env.write(env.pair("sync.pid"), strconv.Itoa(os.Getpid()), 0o644)
 	_, running := env.state()
-	if running.Progress != "Downloading 2 / 7" || running.StepDetail != "Dế Mèn.epub" {
+	if running.Progress != "Downloading" || running.StepDone != "2" || running.StepTotal != "7" || running.StepDetail != "Dế Mèn.epub" {
 		t.Fatalf("progress = %+v", running)
 	}
 	os.Remove(env.pair("progress.json"))

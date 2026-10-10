@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "uikit",
   "name": "UI Kit",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Every NickelDrawer component with sample content, for developers and testers",
   "hidden": true,
   "storage": {
@@ -20,6 +20,34 @@
       "timeout_ms": 3000
     },
     {
+      "id": "echo",
+      "label": "Echo the event",
+      "run": "bin/echo.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "dialog",
+      "label": "Show the info dialog",
+      "run": "bin/dialog.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "toast",
+      "label": "Show a toast",
+      "run": "bin/toast.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "steps",
+      "label": "Run 3 steps",
+      "run": "bin/steps.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
       "id": "refresh",
       "label": "Rescan pictures",
       "run": "bin/refresh.sh",
@@ -27,15 +55,29 @@
       "timeout_ms": 3000
     },
     {
+      "id": "autorescan",
+      "label": "Auto-update switch",
+      "run": "bin/autorescan.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "sampleenabled",
+      "label": "Enabled switch",
+      "run": "bin/sampleenabled.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
       "id": "shownote",
-      "label": "Show note",
+      "label": "Notice switch",
       "run": "bin/shownote.sh",
       "output": "show",
       "timeout_ms": 3000
     },
     {
       "id": "refreshmode",
-      "label": "Refresh style",
+      "label": "Page refresh option",
       "run": "bin/refreshmode.sh",
       "output": "show",
       "timeout_ms": 3000
@@ -51,48 +93,6 @@
       "id": "pagenumber",
       "label": "Page number",
       "run": "bin/pagenumber.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "primary",
-      "label": "Primary button",
-      "run": "bin/primary.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "tap",
-      "label": "Tap",
-      "run": "bin/tap.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "confirmed",
-      "label": "Confirmed button",
-      "run": "bin/confirmed.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "rowopen",
-      "label": "Open row",
-      "run": "bin/rowopen.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "rowdelete",
-      "label": "Delete row",
-      "run": "bin/rowdelete.sh",
-      "output": "show",
-      "timeout_ms": 3000
-    },
-    {
-      "id": "tilelong",
-      "label": "Picture action",
-      "run": "bin/tilelong.sh",
       "output": "show",
       "timeout_ms": 3000
     }

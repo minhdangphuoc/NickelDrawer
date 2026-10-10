@@ -1,4 +1,4 @@
 #!/bin/sh
-# Stores the control value so the next screen read shows it, then echoes the toast.
+# A switch: stores true or false so the next screen read shows it, and fills the readout.
 . "$(dirname "$0")/lib.sh"
-remember_value shownote
+remember_value shownote toggle

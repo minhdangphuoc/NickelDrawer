@@ -98,16 +98,16 @@
   "msg.state_status_unpaired": "Not paired",
   "msg.state_status_ready": "Ready",
   "msg.state_never": "Never synced",
-  "msg.state_failed": "The last sync failed.",
-  "msg.state_summary": "{new} new, {existing} already here, {errors} errors",
+  "msg.state_failed": "The last sync failed",
+  "msg.state_summary": "{new} new · {existing} already here · {errors} errors",
   "msg.state_default_branch": "Default",
   "msg.state_whole_repo": "Whole repo",
-  "msg.state_pair_idle": "Start pairing to get an address and a code.",
+  "msg.state_pair_idle": "Start pairing to get an address and a code",
   "msg.state_pair_open": "Scan the code or open the address on your phone, then enter the code. Use only on your own Wi-Fi.",
   "msg.state_guide": "Pair with your phone to enter the repo and the token there; nothing is typed on the Kobo.",
   "msg.state_pair_row_open": "Open: show the code",
   "msg.state_step_preparing": "Contacting GitHub…",
-  "msg.state_step_downloading": "Downloading {done} / {total}",
+  "msg.state_step_downloading": "Downloading",
 
   "actions.state.label": "Screen state",
   "ui.title": "GitHub",
@@ -134,5 +134,8 @@
   "ui.toast_pair_stopped": "Pairing stopped.",
   "ui.toast_pair_not_running": "No pairing is open.",
   "ui.toast_wifi_missing": "No Wi-Fi. Connect, then try again.",
-  "ui.toast_failed": "That did not work. See data/log.txt."
+  "ui.toast_failed": "That did not work. See data/log.txt.",
+  "format.date": "dd/MM/yyyy",
+  "format.datetime": "dd/MM/yyyy HH:mm",
+  "format.time": "HH:mm"
 }

@@ -1,0 +1,75 @@
+{
+  "title": "@ui.lbl_toggle",
+  "status": "@ui.pos_toggle",
+  "body": [
+    {
+      "text": "@ui.desc_toggle"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "toggle": "@ui.sw_auto",
+          "caption": "@ui.cap_off"
+        },
+        {
+          "toggle": "@ui.sw_auto",
+          "look": "selected",
+          "caption": "@ui.cap_on"
+        },
+        {
+          "toggle": "@ui.sw_auto",
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        },
+        {
+          "toggle": "@ui.sw_auto",
+          "look": "disabled",
+          "caption": "@ui.cap_disabled"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "toggle": "@ui.sw_auto",
+      "bind": "autorescan",
+      "enabled": "$sampleenabled"
+    },
+    {
+      "toggle": "@ui.sw_enabled",
+      "bind": "sampleenabled"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_toggle",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_toggle",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "saved": "@ui.toast_saved"
+  }
+}

@@ -2,28 +2,39 @@
 #define NICKELDRAWER_TWEAKS_PANEL_H
 
 #include <QList>
+#include <QStringList>
 #include <QWidget>
 
 #include "press_area.h"
+#include "tweaks_logic.h"
 #include "tweaks_model.h"
 
 class QLabel;
 
-// One tweak: the label in Nickel's italic serif (as Settings' rows and
-// MenuTextItem[italics=true]: Georgia italic), and under it On/Off for a
-// toggle or the value of an info item. Toggles and actions invert while
-// pressed; info cells take no presses.
+// One tweak, painted with measured text in Nickel's sans (cell geometry: tweaks_logic.h): an
+// action is its label, centred; a toggle its label at the left and, at the right, Nickel's switch
+// image with the state word under it; an info item its label and, under it, the value as a
+// caption. Toggles and actions invert while pressed; info cells take no presses.
 class TweakCell : public PressArea {
 public:
     TweakCell(const TweakItem &item, QWidget *parent);
 
-    const QString &tweakId() const { return id; }
-    // Changes only the value line, in place (a partial e-ink update).
+    const QString &tweakId() const { return shown.id; }
+    // Changes only the value (state or info text), in place (a partial e-ink update).
     void showValue(const TweakItem &item);
 
+protected:
+    void paintEvent(QPaintEvent *event);
+    void resizeEvent(QResizeEvent *event);
+
 private:
-    QString id;
-    QLabel *valueLabel;
+    void measureText();
+
+    TweakItem shown;
+    QStringList labelLines;
+    QString valueLine;
+    QString stateWord;
+    TweaksLogic::CellLayout cellGeometry;
 };
 
 // The body of the Tweaks modal (docs/spec/tweaks.md, DECISIONS 2026-10-10):

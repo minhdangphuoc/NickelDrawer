@@ -128,7 +128,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>KIT-04 (ô nhập)</td>
 <td><strong>làm trong buổi này</strong> (mục 5b)</td>
-<td>Việc cần làm (TODO-01) và Bộ giao diện (UIK-02) có ô nhập thật.</td>
+<td>Việc cần làm (TODO-01) và Bộ giao diện (UIK-05) có ô nhập thật.</td>
 </tr>
 <tr>
 <td>KIT-05 (trường bí mật)</td>
@@ -445,7 +445,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>LS-01</td>
 <td>Sau khi đã nhận: nhìn màn hình LocalSend</td>
-<td>Mã PIN lớn (BigCode), dòng "Nhập mã PIN này trên điện thoại", Thiết bị, IP, nhãn "Đang nhận". Toast "Đang nhận. Nhập PIN trên điện thoại.". Nút "Bắt đầu nhận" mờ, "Dừng và cập nhật thư viện" sáng. <strong>Không có hộp thoại văn bản</strong> chứa PIN/IP (API-01). Mã PIN không nháy cả màn hình</td>
+<td>Mã PIN lớn (BigCode), dòng "Nhập mã PIN này trên điện thoại", Thiết bị, IP, nhãn "Đang nhận". Toast "Đang nhận. Nhập PIN trên điện thoại.". Nút chính dưới cùng là "Dừng" (nút "Bắt đầu nhận" không còn trên màn hình). <strong>Không có hộp thoại văn bản</strong> chứa PIN/IP (API-01). Mã PIN không nháy cả màn hình</td>
 <td><code>screen: tap on button N, action "start"</code>, <code>queue:</code> hoặc (syslog) <code>action: event start</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -476,8 +476,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>LS-06</td>
-<td>Mở LocalSend lại, bấm "Dừng và cập nhật thư viện"</td>
-<td>Toast "Đã dừng. Đang cập nhật thư viện.". Nhãn thành "Chưa nhận". Sách mới có trong Thư viện (có thể mất 30 giây); mở được</td>
+<td>Mở LocalSend lại, bấm "Dừng"</td>
+<td>Toast "Đã dừng. Đang cập nhật thư viện.". Nhãn thành "Chưa nhận" và nút chính đổi lại thành "Bắt đầu nhận". Sách mới có trong Thư viện (có thể mất 30 giây); mở được</td>
 <td><code>screen: tap on button N, action "stop"</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -928,41 +928,81 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>UIK-01 (KIT-01, KIT-06, KIT-07, KIT-08)</td>
-<td>Mở <strong>Bộ giao diện</strong>. Lật hết các trang của màn chính</td>
-<td>Có đủ: văn bản (tiêu đề, thường, chú thích), khóa-giá trị (phần mềm và ngôn ngữ đọc từ máy), mã lớn 4821, ghi chú có tiêu đề, các bước 2/5, dòng chạm được, dòng sang màn khác, danh sách 4 sách, nút chính ở dưới. Không có ô ghi chú thứ hai khi công tắc ở UIK-02 đang tắt. Tiếng Việt đủ dấu, không cắt chữ</td>
+<td>Mở <strong>Bộ giao diện</strong>. Lật hết 3 trang của màn chính; bấm ← ở một trang con, rồi mở lại</td>
+<td>Danh sách chia nhóm: Thao tác, Lựa chọn, Nhập liệu (trang 1), Phản hồi, Điều hướng (trang 2), Bố cục (trang 3), tổng 18 dòng; mỗi nhóm nằm trọn một trang. Phím lật trang và thanh trang đều lật; ← về đúng trang đã mở. Tiếng Việt đủ dấu</td>
 <td><code>screen: "main" page n/N, ... tap target(s)</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>UIK-02 (KIT-03, KIT-04)</td>
-<td>Bấm dòng "Thêm thành phần". Bật công tắc; chọn hai lựa chọn "Nhanh" rồi "Sạch" thật nhanh; gõ <code>Truyện Kiều</code> vào ô Tìm kiếm; gõ <code>12</code> vào ô Đến trang (bàn phím số). Bấm ←, mở lại</td>
-<td>Công tắc bật làm hiện khung ghi chú và bật nút "Bật nhờ công tắc"; cả hai lựa chọn đều được áp dụng, chỉ vùng radio vẽ lại; ô số hiện bàn phím số; mỗi thay đổi có toast ngắn; mở lại thấy đúng các giá trị đã chọn</td>
-<td><code>queue: shownote ...</code>, <code>queue: refreshmode ...</code>, <code>queue: searchtext ...</code>, <code>queue: pagenumber ...</code></td>
+<td>UIK-02</td>
+<td>Mở lần lượt từng trang thành phần</td>
+<td>Mỗi trang mở dưới 1 giây, có mô tả, bảng <strong>Trạng thái</strong> (<code>samples</code>) ở trang 1, ô <strong>Thử</strong>, và dòng Sự kiện cuối / Giá trị sau lần chạm đầu. Mẫu "Đang nhấn" là đảo màu đúng của mẫu "Bình thường" (nền đen, chữ trắng)</td>
+<td><code>screen: "button" ...</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>UIK-03 (KIT-09)</td>
-<td>Cũng ở "Thêm thành phần": bấm nút "Luôn tắt"; tắt công tắc rồi bấm "Bật nhờ công tắc"; bấm "Nút có xác nhận", Hủy, rồi lại và bấm Chạy; bấm "Nút phụ" và "Liên kết tiêu đề"</td>
-<td>Nút tắt (mờ) không gửi gì, kể cả "Bật nhờ công tắc" khi công tắc tắt; hộp xác nhận kiểu Nickel, Hủy không gửi gì, Chạy gửi và có toast "Đã xác nhận"; nút phụ và liên kết cho toast "Đã chạm". Mã QR và khối ghép nối hiện đủ (QR quét được, mã 4821)</td>
-<td><code>queue: confirmed ...</code> chỉ sau Chạy</td>
+<td>UIK-03</td>
+<td>Trang <strong>Nút</strong>: tắt công tắc "Bật nút chính", bấm nút chính; bật lại và bấm</td>
+<td>Công tắc tắt thì nút chính mờ và không gửi gì; bật thì bấm được. Trong 1 giây dòng "Sự kiện cuối" hiện <code>action</code></td>
+<td><code>queue: echo ...</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>UIK-04 (KIT-10)</td>
-<td>Ở màn chính bấm "Nút chính" 5 lần trong 1 giây</td>
-<td>Tối đa một toast mỗi 2 giây; không treo, không xếp hàng toast</td>
-<td><code>bridge: toast queued</code> ít hơn số lần bấm</td>
+<td>UIK-04</td>
+<td>Trang <strong>Hộp thoại</strong>: bấm "Hỏi một câu", chờ không bấm gì 120 giây; mở lại, bấm Xóa; bấm "Hiện thông tin"</td>
+<td>Hộp xác nhận kiểu Nickel (<code>N3Dialog</code> trong log), Hủy bên trái, Xóa bên phải; phím lật trang không làm gì khi hộp đang mở; sau 120 giây đóng như Hủy; Xóa gửi sự kiện; hộp thông tin có một nút, chạm ngoài là đóng</td>
+<td><code>N3Dialog</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>UIK-05 (KIT-01 thư viện ảnh)</td>
-<td>Chép 1 đến 3 ảnh PNG (dưới 1 MB) vào <code>Pictures</code> qua USB trước. Ở "Thêm thành phần" bấm dòng "Thư viện ảnh". Chạm một ảnh; nhấn giữ một ảnh, chọn Thông tin rồi Phản hồi. Quay về màn chính bấm biểu tượng làm mới sau khi thêm ảnh khác</td>
-<td>Lưới ảnh 3 cột; chạm cho toast "Đã chạm"; menu có Thông tin (hộp tên tệp) và Phản hồi (toast). Khi <code>Pictures</code> không có PNG nào: màn trống "Chưa có ảnh PNG" (không có nút). Biểu tượng làm mới quét lại ảnh (toast "Đã quét lại ảnh")</td>
-<td><code>screen: "pictures" ...</code>, <code>tile menu: ...</code></td>
+<td>UIK-05</td>
+<td>Trang <strong>Ô nhập</strong>: gõ <code>Truyện Kiều</code> vào "Tìm kiếm" (bàn phím Việt), bấm Go; gõ <code>12</code> vào "Đến trang" (bàn phím số)</td>
+<td>Bàn phím gốc của Nickel; Go lưu; trang "Sự kiện cuối" hiện <code>input</code> và giá trị; mở lại trang vẫn thấy giá trị</td>
+<td><code>queue: searchtext ...</code>, <code>queue: pagenumber ...</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>UIK-06</td>
+<td>Trang <strong>Công tắc</strong>: tắt công tắc "Cho phép", rồi chạm công tắc "Tự cập nhật thư viện"</td>
+<td>Công tắc đầu mờ và không phản ứng; bật "Cho phép" lại thì dùng được</td>
+<td><code>queue: sampleenabled ...</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>UIK-07</td>
+<td>Trang <strong>Tiến trình</strong>: bấm "Chạy 3 bước"</td>
+<td>Ba lần cập nhật cách nhau 5 giây ("Đang tải 1 / 3" … "3 / 3"), rồi "Đã đồng bộ 3 sách" kèm một lần làm mới toàn màn; giữa các lần không vẽ lại gì; nút mờ khi đang chạy</td>
+<td><code>screen: ...</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>UIK-08</td>
+<td>Chép 1 đến 3 ảnh PNG (dưới 1 MB) vào <code>Pictures</code>. Trang <strong>Thư viện và xem ảnh</strong>: chạm một ảnh, mở toàn màn, bấm ← ba lần</td>
+<td>Lưới 4 cột; chạm mở trình xem; ← về lưới, ← về trang Bố cục, ← về màn chính; độ sâu không quá 2 (log). Không có PNG: màn trống "Chưa có ảnh PNG"</td>
+<td><code>screen: "gallery" ...</code>, <code>navigator: depth</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>UIK-09</td>
+<td>Xem mọi trang bằng tiếng Việt, kể cả nút 168 px và nhãn mục</td>
+<td>Không bị cắt dấu ở nhãn mục hoặc nút; không chuỗi nào dài quá 150% bản tiếng Anh (validator)</td>
+<td>(xem màn hình)</td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>UIK-10</td>
+<td>(Mac) <code>go run ./cmd/appsctl validate --apps-dir apps</code></td>
+<td><code>uikit</code> báo <code>ok</code>, không cảnh báo</td>
+<td></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
@@ -1181,7 +1221,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td><strong>G4</strong> (UI kit)</td>
-<td>KIT-01..04, 09..12 đạt (làm trên Bộ giao diện: UIK-01..05; ô nhập còn qua TODO-01); S11 ≥ 4 trên 5; golden test và test đơn vị xanh (<code>make golden-test</code>); KIT-05 hoãn (không có ô bí mật), KIT-13 kiểm trên Mac</td>
+<td>KIT-01..04, 09..12 đạt (làm trên Bộ giao diện: UIK-01..08; ô nhập còn qua TODO-01); S11 ≥ 4 trên 5; golden test và test đơn vị xanh (<code>make golden-test</code>); KIT-05 hoãn (không có ô bí mật), KIT-13 kiểm trên Mac</td>
 <td>KIT-<em>, UIK-</em>, TODO-*, FI-02, FI-11</td>
 <td>☐ Đạt ☐ Lỗi</td>
 <td>☐ go ☐ no-go</td>

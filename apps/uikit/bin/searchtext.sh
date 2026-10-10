@@ -1,4 +1,4 @@
 #!/bin/sh
-# Stores the control value so the next screen read shows it, then echoes the toast.
+# A text field: stores what was typed so the next screen read shows it.
 . "$(dirname "$0")/lib.sh"
-remember_value searchtext
+remember_value searchtext input

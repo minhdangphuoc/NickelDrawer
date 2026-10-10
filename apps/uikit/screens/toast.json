@@ -1,0 +1,32 @@
+{
+  "title": "@ui.lbl_toast",
+  "status": "@ui.pos_toast",
+  "body": [
+    {
+      "text": "@ui.desc_toast"
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "button": "@ui.btn_toast",
+      "action": "toast",
+      "style": "secondary"
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_toast",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_toast",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "demo": "@ui.toast_demo",
+    "failed": "@ui.toast_failed"
+  }
+}

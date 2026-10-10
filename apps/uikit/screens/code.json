@@ -1,0 +1,28 @@
+{
+  "title": "@ui.lbl_code",
+  "status": "@ui.pos_code",
+  "body": [
+    {
+      "text": "@ui.desc_code"
+    },
+    {
+      "bigcode": "4821",
+      "digits": 4
+    },
+    {
+      "qr": "https://example.org/nickeldrawer",
+      "caption": "@ui.qr_caption"
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_code",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_code",
+      "style": "caption"
+    }
+  ]
+}

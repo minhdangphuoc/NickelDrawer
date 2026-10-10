@@ -239,7 +239,7 @@ func TestImageviewExampleBuildsAlbumsAndAsksForOneRescan(t *testing.T) {
 	}
 }
 
-func TestUIKitIsHiddenAndItsScreensFollowTheStoredControlsAndPictures(t *testing.T) {
+func TestUIKitIsHiddenAndItsPagesFollowTheStoredControlsTheReadoutAndPictures(t *testing.T) {
 	root := newDrawerRoot(t)
 	copyTree(t, filepath.Join("..", "..", "apps", "uikit"), filepath.Join(root.apps, "uikit"))
 	work := t.TempDir()
@@ -277,13 +277,13 @@ func TestUIKitIsHiddenAndItsScreensFollowTheStoredControlsAndPictures(t *testing
 	}
 
 	value := "true"
-	result, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "shownote", ScreenID: "more", Value: &value})
-	if err != nil || result.Toast != "Note switch changed" {
+	result, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "shownote", ScreenID: "notice", Value: &value})
+	if err != nil || result.Toast != "Saved" {
 		t.Fatalf("shownote: %+v %v", result, err)
 	}
-	reply, err := config.Screen("uikit", "more", nil)
+	reply, err := config.Screen("uikit", "notice", nil)
 	if err != nil || reply.Stale {
-		t.Fatalf("more screen: %v stale=%v", err, reply.Stale)
+		t.Fatalf("notice screen: %v stale=%v", err, reply.Stale)
 	}
 	var hasNote bool
 	for _, component := range reply.Body {
@@ -294,11 +294,65 @@ func TestUIKitIsHiddenAndItsScreensFollowTheStoredControlsAndPictures(t *testing
 	if !hasNote {
 		t.Fatal("the stored switch must show the notice")
 	}
-	gallery, err := config.Screen("uikit", "pictures", nil)
+	assertReadout(t, config, "notice", "toggle", "true")
+
+	if _, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "echo", ScreenID: "button"}); err != nil {
+		t.Fatal(err)
+	}
+	assertReadout(t, config, "button", "action", "—")
+	tap := "Truyện Kiều"
+	if _, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "echo", ScreenID: "list", Value: &tap}); err != nil {
+		t.Fatal(err)
+	}
+	assertReadout(t, config, "list", "tap", tap)
+
+	dialog, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "dialog", ScreenID: "dialog"})
+	if err != nil || dialog.Dialog == nil || dialog.Dialog.OK != "Close" {
+		t.Fatalf("the dialog action must open the declared info dialog: %+v %v", dialog, err)
+	}
+	toast, err := config.RunEvent(drawer.Event{AppID: "uikit", ActionID: "toast", ScreenID: "toast"})
+	if err != nil || toast.Toast != "Pictures rescanned" {
+		t.Fatalf("the toast action must show the declared demo toast: %+v %v", toast, err)
+	}
+
+	gallery, err := config.Screen("uikit", "gallery", nil)
 	if err != nil || len(gallery.Body) < 2 || gallery.Body[1].Type != "gallery" {
 		t.Fatalf("gallery = %+v, %v", gallery.Body, err)
 	}
 	if tiles, isTiles := gallery.Body[1].Tiles.([]drawer.GalleryTile); !isTiles || len(tiles) != 1 {
 		t.Fatalf("one PNG in Pictures must give one tile, got %v", gallery.Body[1].Tiles)
 	}
+	list, err := config.Screen("uikit", "list", nil)
+	if err != nil || len(findListItems(list.Body)) != 4 {
+		t.Fatalf("the list page shows the four sample books: %v", err)
+	}
+}
+
+// assertReadout checks the readout rows of a component page: the last event and its value, as the
+// state action reports them right after the event.
+func assertReadout(t *testing.T, config drawer.Config, screen, wantEvent, wantValue string) {
+	t.Helper()
+	reply, err := config.Screen("uikit", screen, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, component := range reply.Body {
+		if component.Type != "kv" {
+			continue
+		}
+		rows, _ := component.Rows.([][2]string)
+		if len(rows) == 2 && rows[0][1] == wantEvent && rows[1][1] == wantValue {
+			return
+		}
+	}
+	t.Fatalf("%s: no readout row %q / %q in %+v", screen, wantEvent, wantValue, reply.Body)
+}
+
+func findListItems(components []drawer.ScreenComponent) [][2]string {
+	for _, component := range components {
+		if component.Type == "list" && component.Items != nil {
+			return *component.Items
+		}
+	}
+	return nil
 }

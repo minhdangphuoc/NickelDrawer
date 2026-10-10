@@ -359,4 +359,24 @@ Native-first wins every tie: where Nickel's real metrics differ from this docume
 | Big code regular, radio title as a caption | `screen_layout.cc` |
 | `ndpreview` parity: real page area, Tabler PNGs, drawer list and grid, Tinh chỉnh modal, English fixtures | `cmd/ndpreview` |
 
-Still open: the drawer's own surfaces (hint, empty state, Qt6 row, problem status; Batch 3.1) and the Tinh chỉnh modal's tokens (3.2). The `✓` in the Settings key-value rows stays a text value (A13 covers lists).
+Still open after Batch 2 was the drawer's own surfaces (3.1) and the Tinh chỉnh modal (3.2); Batch 3 closes them. The `✓` in the Settings key-value rows stays a text value (A13 covers lists).
+
+## Implemented in Batch 3 (surfaces)
+
+| Item | Where it lives |
+|---|---|
+| Drawer rows: name 36, status caption 32 muted, both **one measured line, elided** (a problem row too: its full message is in the Info dialog); section labels uppercased by the renderer and elided; hint one caption line | `drawer_view.cc`, `item_widgets.cc`, `DrawerLogic::rowTextWidth` |
+| Drawer empty state = the CopperUI empty-state component (96 px apps icon, serif heading, caption, primary). **Decision:** the primary "Find apps" / "Tìm ứng dụng" exists only when there is something to do: the model is loaded and the host offers `_refresh` (it rescans `.adds/apps`). While loading, only the heading "Loading…" shows | `lib/copperui` `empty_state.h`, `drawer_surfaces.cc` |
+| Qt6 upgrade warning is a notice (2 px border, grey fill, body text, 24 px padding); it costs list rows, so the list shows the rows that fit (`DrawerLogic::listRowsThatFit`) | `drawer_surfaces.cc`, `drawer_logic.cc` |
+| Tinh chỉnh modal on the dialog tokens: 1040 wide, 3 px border, 120 px title row (serif title, ✕ in a 120 target), cells sans 36, painted from measured text: **action** cells centred (one line or two centred lines, then elided), **toggle** cells with the label at the left and Nickel's switch image with the state word under it (a 516 px cell has no room for the word beside the switch), **info** cells with the value as a caption | `tweaks_overlay.cc`, `tweaks_panel.cc`, `tweaks_logic.cc`; tokens `tweaks.*` |
+| All "Legacy" tokens removed | `copperui.tokens.json` |
+| `samples` component (states matrix): `look` normal / pressed (the cell inverted, `255 - level`, icons white) / selected / disabled (`ink.dim`), one block that never splits, caption line reserved under each cell | `internal/uikit`, `internal/drawer/screen_samples.go`, `screen_layout.cc`, `cmd/ndpreview/samples.go` |
+| `button` with `push`; `row` with `confirm`; `show` flag on `button` and `row` (hidden while false); several primaries allowed when each has its own `show` flag (A8) | `internal/uikit`, `screen_session.cc`, `ndpreview` |
+| `steps` replace notices as progress (Wallpaper importing, Settings check and update); hidden while the label is empty; no count = label alone | `cmd/wallpaper`, `internal/drawer/settings_state.go`, `ndpreview` |
+| A row's `detail` that does not fit the 280 px value column goes under the label as a caption (never cut short); a run of rows has no gap between them (each draws its own divider), the last keeps its gap except before a section | `screen_layout.cc`, `components.go` |
+| A section label stays with all the blocks under it when the group fits a page: a group never starts at the bottom of one page and goes on label-less on the next | `keepSectionsTogether` in `screen_layout.cc` and `components.go` |
+| Content-style validator rules (warnings): typed capitals, header status > 340 px at 32 px (estimated, calibrated against the preview font), one-line caption with a full stop, section over a single paragraph, a disabled primary next to its opposite action (A8) | `internal/uikit/validate_style.go`, `textstyle.go` |
+| Dates and times from the locale (`format.date`, `format.datetime`, `format.time`), default `dd/MM/yyyy HH:mm` | `internal/i18n/datetime.go` |
+| UI Kit rebuilt per `docs/uikit-plan.md`: grouped home (6 sections, 18 rows, 3 pages on group boundaries), one page per component, live sample with readout | `apps/uikit` |
+
+Deviations from `uikit-plan.md`, all forced by a rule above: the "Use for / Not for" pair is one section "Guidance" with two captions (two sections over one paragraph each would warn); the app has 12 actions, so `primary`, `confirm` and `refresh`-style variants share `echo` and the bound controls are named like their actions; the Menu and List pages do not clear their list; the Toggle page has no "disabled on" sample (a cell has one look).

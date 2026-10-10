@@ -5,13 +5,16 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"koboapps/internal/i18n"
 )
 
 const checkTime = "2026-10-10T10:02:00Z"
 
+// localClock is the check time as the default locale pattern writes it (dd/MM/yyyy HH:mm).
 func localClock() string {
 	moment, _ := time.Parse(time.RFC3339, checkTime)
-	return moment.Local().Format("15:04")
+	return i18n.FormatPattern(i18n.DefaultDateTimePattern, moment.Local())
 }
 
 func writeLastCheck(t *testing.T, config Config, record map[string]any) {
@@ -39,6 +42,17 @@ func statusNotice(t *testing.T, config Config) string {
 	return ""
 }
 
+// statusSteps is the label of the steps block, "" while no update job runs.
+func statusSteps(t *testing.T, config Config) string {
+	t.Helper()
+	for _, component := range settingsBody(t, config).Body {
+		if component.Type == "steps" {
+			return component.Label
+		}
+	}
+	return ""
+}
+
 func TestCheckOutcomeShowsInTheUpdatesSectionInBothLanguages(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -46,30 +60,30 @@ func TestCheckOutcomeShowsInTheUpdatesSectionInBothLanguages(t *testing.T) {
 		want   map[string]string
 	}{
 		{"up to date", map[string]any{"result": "up_to_date", "version": "1.0.0"}, map[string]string{
-			"en": "Checked at " + localClock() + " · You are on the latest version (1.0.0)",
-			"vi": "Đã kiểm tra lúc " + localClock() + " · Bạn đang dùng bản mới nhất (1.0.0)"}},
+			"en": "Checked " + localClock() + " · Up to date (1.0.0)",
+			"vi": "Đã kiểm tra " + localClock() + " · Đang dùng bản mới nhất (1.0.0)"}},
 		{"available", map[string]any{"result": "available", "version": "1.1.0"}, map[string]string{
-			"en": "Checked at " + localClock() + " · New version 1.1.0 available",
-			"vi": "Đã kiểm tra lúc " + localClock() + " · Có bản mới 1.1.0"}},
+			"en": "Checked " + localClock() + " · New version 1.1.0 available",
+			"vi": "Đã kiểm tra " + localClock() + " · Có bản mới 1.1.0"}},
 		{"no wifi", map[string]any{"result": "failed", "error_key": "no_network"}, map[string]string{
-			"en": "Could not check at " + localClock() + ": no Wi-Fi",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": chưa có Wi-Fi"}},
+			"en": "Could not check " + localClock() + ": no Wi-Fi",
+			"vi": "Không kiểm tra được " + localClock() + ": chưa có Wi-Fi"}},
 		{"unreachable", map[string]any{"result": "failed", "error_key": "unreachable"}, map[string]string{
-			"en": "Could not check at " + localClock() + ": cannot reach GitHub",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": không kết nối được GitHub"}},
+			"en": "Could not check " + localClock() + ": cannot reach GitHub",
+			"vi": "Không kiểm tra được " + localClock() + ": không kết nối được GitHub"}},
 		{"rate limited", map[string]any{"result": "failed", "error_key": "rate_limited"}, map[string]string{
-			"en": "Could not check at " + localClock() + ": GitHub is limiting requests, try later",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": GitHub đang giới hạn, thử lại sau"}},
+			"en": "Could not check " + localClock() + ": GitHub is limiting requests, try later",
+			"vi": "Không kiểm tra được " + localClock() + ": GitHub đang giới hạn, thử lại sau"}},
 		{"bad signature", map[string]any{"result": "failed", "error_key": "bad_signature"}, map[string]string{
-			"en": "Could not check at " + localClock() + ": bad signature, nothing changed",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": chữ ký sai, không có gì thay đổi"}},
+			"en": "Could not check " + localClock() + ": bad signature, nothing changed",
+			"vi": "Không kiểm tra được " + localClock() + ": chữ ký sai, không có gì thay đổi"}},
 		{"no release", map[string]any{"result": "failed", "error_key": "no_release_on_channel"}, map[string]string{
-			"en": "Could not check at " + localClock() + ": no release on this channel",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": kênh này chưa có bản phát hành"}},
+			"en": "Could not check " + localClock() + ": no release on this channel",
+			"vi": "Không kiểm tra được " + localClock() + ": kênh này chưa có bản phát hành"}},
 		{"other", map[string]any{"result": "failed", "error_key": "other", "report": map[string]any{"key": "update.bad_channel",
 			"params": map[string]string{"channel": "x", "file": "update.json"}}}, map[string]string{
-			"en": "Could not check at " + localClock() + ": Bad channel 'x' in update.json. Use stable or beta.",
-			"vi": "Không kiểm tra được lúc " + localClock() + ": Kênh 'x' trong update.json sai. Dùng stable hoặc beta."}},
+			"en": "Could not check " + localClock() + ": Bad channel 'x' in update.json. Use stable or beta.",
+			"vi": "Không kiểm tra được " + localClock() + ": Kênh 'x' trong update.json sai. Dùng stable hoặc beta."}},
 	}
 	for _, tc := range cases {
 		for locale, want := range tc.want {
@@ -105,8 +119,11 @@ func TestRunningCheckShowsCheckingStaysLiveAndDisablesCheck(t *testing.T) {
 			"report": map[string]any{"key": "update.checking"}})
 		writeFileIn(t, config.HostDir, "data/update/status.json", string(running))
 		reply := settingsBody(t, config)
-		if got := statusNotice(t, config); got != want {
-			t.Errorf("%s: notice = %q, want %q", locale, got, want)
+		if got := statusSteps(t, config); got != want {
+			t.Errorf("%s: steps = %q, want %q", locale, got, want)
+		}
+		if got := statusNotice(t, config); got != "" {
+			t.Errorf("%s: a running check is progress, not a notice: %q", locale, got)
 		}
 		if !reply.Live {
 			t.Errorf("%s: the screen must stay live so the outcome appears on its own", locale)
@@ -139,7 +156,14 @@ func TestInstallProgressAndResultsShowInBothLanguages(t *testing.T) {
 			}
 			data, _ := json.Marshal(status)
 			writeFileIn(t, config.HostDir, "data/update/status.json", string(data))
-			if got := statusNotice(t, config); got != want {
+			got := statusNotice(t, config)
+			if tc.state == "running" {
+				got = statusSteps(t, config) // progress is a steps block, not a notice
+				if statusNotice(t, config) != "" {
+					t.Errorf("%s/%s: progress must not be a notice", tc.name, locale)
+				}
+			}
+			if got != want {
 				t.Errorf("%s/%s: got %q, want %q", tc.name, locale, got, want)
 			}
 		}
@@ -165,7 +189,7 @@ func TestStatusOfAFinishedCheckIsNotShownTwice(t *testing.T) {
 	data, _ := json.Marshal(map[string]any{"state": "failed", "job": "check", "time": "2026-10-10T11:00:00Z",
 		"report": map[string]any{"key": "update.no_network", "params": map[string]string{"cause": "x"}}})
 	writeFileIn(t, config.HostDir, "data/update/status.json", string(data))
-	if got, want := statusNotice(t, config), "Could not check at "+localClock()+": no Wi-Fi"; got != want {
+	if got, want := statusNotice(t, config), "Could not check "+localClock()+": no Wi-Fi"; got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
 }

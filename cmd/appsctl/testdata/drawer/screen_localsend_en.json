@@ -63,14 +63,7 @@
   "footer": [
     {
       "type": "button",
-      "text": "Start receiving",
-      "style": "secondary",
-      "action": "start",
-      "enabled": false
-    },
-    {
-      "type": "button",
-      "text": "Stop and update library",
+      "text": "Stop",
       "style": "primary",
       "action": "stop",
       "enabled": true

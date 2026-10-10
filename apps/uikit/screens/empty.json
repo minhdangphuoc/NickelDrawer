@@ -1,0 +1,42 @@
+{
+  "title": "@ui.lbl_empty",
+  "status": "@ui.pos_empty",
+  "body": [
+    {
+      "text": "@ui.desc_empty"
+    },
+    {
+      "empty": "@ui.empty_title",
+      "text": "@ui.empty_text",
+      "button": "@ui.btn_sync",
+      "action": "echo"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_empty",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_empty",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

@@ -75,7 +75,7 @@ struct ScreenComponent {
     QString detail;
     QString caption;
     QString action;
-    QString push; // row: screen pushed on tap, instead of an action
+    QString push; // row, button: screen pushed on tap, instead of an action (a button with push has no confirm)
     QString bind;
     QString value;        // radio: the selected option id; field: the shown text
     bool isOn = false;    // toggle value
@@ -115,6 +115,12 @@ struct ScreenComponent {
     QString currentStatus; // viewer: header status while the shown picture is current
     BarButton primary;
     BarButton secondary;
+
+    // samples: the sample's look (normal, pressed, selected, disabled) and its cells. A cell is a resolved
+    // component of its own (type, text, ... as above) with `look` and `caption` (the field above).
+    QString look;
+    int sampleColumns = 1; // samples: the "columns" key, 1 to 3
+    QList<ScreenComponent> cells;
 
     bool isPrimaryButton() const { return type == QLatin1String("button") && style == QLatin1String("primary"); }
 };

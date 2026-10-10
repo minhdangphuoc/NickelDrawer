@@ -104,16 +104,16 @@
   "msg.state_status_unpaired": "Chưa ghép nối",
   "msg.state_status_ready": "Sẵn sàng",
   "msg.state_never": "Chưa đồng bộ lần nào",
-  "msg.state_failed": "Lần đồng bộ cuối bị lỗi.",
-  "msg.state_summary": "{new} mới, {existing} đã có, {errors} lỗi",
+  "msg.state_failed": "Lần đồng bộ cuối bị lỗi",
+  "msg.state_summary": "{new} mới · {existing} đã có · {errors} lỗi",
   "msg.state_default_branch": "Mặc định",
   "msg.state_whole_repo": "Cả repo",
-  "msg.state_pair_idle": "Bắt đầu ghép nối để lấy địa chỉ và mã.",
+  "msg.state_pair_idle": "Bắt đầu ghép nối để lấy địa chỉ và mã",
   "msg.state_pair_open": "Quét mã hoặc mở địa chỉ trên điện thoại rồi nhập mã. Chỉ dùng trên Wi-Fi nhà bạn.",
   "msg.state_guide": "Ghép nối bằng điện thoại để nhập repo và token ở đó; không gõ gì trên Kobo.",
   "msg.state_pair_row_open": "Đang mở: xem mã",
   "msg.state_step_preparing": "Đang kết nối GitHub…",
-  "msg.state_step_downloading": "Đang tải {done} / {total}",
+  "msg.state_step_downloading": "Đang tải",
 
   "actions.state.label": "Trạng thái màn hình",
   "ui.title": "GitHub",
@@ -140,5 +140,8 @@
   "ui.toast_pair_stopped": "Đã dừng ghép nối.",
   "ui.toast_pair_not_running": "Không có phiên ghép nối nào.",
   "ui.toast_wifi_missing": "Chưa có Wi-Fi. Kết nối rồi thử lại.",
-  "ui.toast_failed": "Không thành công. Xem data/log.txt."
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt.",
+  "format.date": "dd/MM/yyyy",
+  "format.datetime": "dd/MM/yyyy HH:mm",
+  "format.time": "HH:mm"
 }

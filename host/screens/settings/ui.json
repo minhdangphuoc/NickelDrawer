@@ -24,41 +24,118 @@
     "project_repo": "",
     "maintainer": "",
     "license": "",
-    "firmware_range": ""
+    "firmware_range": "",
+    "has_update": false,
+    "step_label": "",
+    "step_done": "",
+    "step_total": ""
   },
   "screens": {
     "main": {
       "title": "@ui.title",
       "body": [
-        { "section": "@ui.sec_hidden" },
-        { "toggle": "$hidden_app_name", "bind": "hidden_app", "detail": "$hidden_app_hint" },
-        { "text": "$hidden_none", "style": "caption" },
-        { "text": "@ui.hidden_note", "style": "caption" },
-        { "section": "@ui.sec_updates" },
+        {
+          "section": "@ui.sec_hidden"
+        },
+        {
+          "toggle": "$hidden_app_name",
+          "bind": "hidden_app",
+          "detail": "$hidden_app_hint"
+        },
+        {
+          "text": "$hidden_none",
+          "style": "caption"
+        },
+        {
+          "text": "@ui.hidden_note",
+          "style": "caption"
+        },
+        {
+          "section": "@ui.sec_updates"
+        },
         {
           "kv": [
-            ["@ui.current", "$current"],
-            ["$latest_label", "$latest_value"],
-            ["@ui.source", "$source"]
+            [
+              "@ui.current",
+              "$current"
+            ],
+            [
+              "$latest_label",
+              "$latest_value"
+            ],
+            [
+              "@ui.source",
+              "$source"
+            ]
           ]
         },
-        { "notice": "$message" },
-        { "notice": "$notes", "title": "@ui.notes_title" },
-        { "section": "@ui.sec_debug" },
-        { "toggle": "@ui.debug", "bind": "debug", "detail": "@ui.debug_hint" },
-        { "section": "@ui.sec_about" },
-        { "kv": [["@ui.firmware", "$firmware"]] },
-        { "row": "@ui.about_row", "push": "about" }
+        {
+          "steps": {
+            "label": "$step_label",
+            "done": "$step_done",
+            "total": "$step_total"
+          }
+        },
+        {
+          "notice": "$message"
+        },
+        {
+          "notice": "$notes",
+          "title": "@ui.notes_title"
+        },
+        {
+          "section": "@ui.sec_debug"
+        },
+        {
+          "toggle": "@ui.debug",
+          "bind": "debug",
+          "detail": "@ui.debug_hint"
+        },
+        {
+          "section": "@ui.sec_about"
+        },
+        {
+          "kv": [
+            [
+              "@ui.firmware",
+              "$firmware"
+            ]
+          ]
+        },
+        {
+          "row": "@ui.about_row",
+          "push": "about"
+        }
       ],
       "footer": [
-        { "button": "@ui.check", "action": "check", "style": "secondary", "enabled": "$can_check", "async": true },
+        {
+          "button": "@ui.check",
+          "action": "check",
+          "style": "secondary",
+          "enabled": "$can_check",
+          "show": "$has_update",
+          "async": true
+        },
         {
           "button": "$apply_label",
           "action": "apply",
           "style": "primary",
           "enabled": "$can_update",
+          "show": "$has_update",
           "async": true,
-          "confirm": { "text": "@ui.apply_confirm", "ok": "@ui.apply_ok", "cancel": "@ui.cancel" }
+          "confirm": {
+            "text": "@ui.apply_confirm",
+            "ok": "@ui.apply_ok",
+            "cancel": "@ui.cancel"
+          }
+        },
+        {
+          "button": "@ui.check",
+          "action": "check",
+          "style": "primary",
+          "enabled": "$can_check",
+          "show": "!$has_update",
+          "async": true
         }
       ],
       "toasts": {
@@ -70,32 +147,86 @@
     "about": {
       "title": "@ui.about_title",
       "body": [
-        { "text": "$project_name", "style": "heading", "align": "center" },
-        { "text": "$version_text", "align": "center" },
-        { "text": "@ui.about_desc", "style": "caption", "align": "center" },
-        { "qr": "$project_url", "caption": "@ui.qr_caption" },
-        { "section": "@ui.sec_project" },
+        {
+          "text": "$project_name",
+          "style": "heading",
+          "align": "center"
+        },
+        {
+          "text": "$version_text",
+          "align": "center"
+        },
+        {
+          "text": "@ui.about_desc",
+          "style": "caption",
+          "align": "center"
+        },
+        {
+          "qr": "$project_url",
+          "caption": "@ui.qr_caption"
+        },
+        {
+          "section": "@ui.sec_project"
+        },
         {
           "kv": [
-            ["@ui.maintainer", "$maintainer"],
-            ["@ui.github", "$project_repo"],
-            ["@ui.guide", "@ui.guide_value"],
-            ["@ui.license", "$license"],
-            ["@ui.firmware_supported", "$firmware_range"]
+            [
+              "@ui.maintainer",
+              "$maintainer"
+            ],
+            [
+              "@ui.github",
+              "$project_repo"
+            ],
+            [
+              "@ui.guide",
+              "@ui.guide_value"
+            ],
+            [
+              "@ui.license",
+              "$license"
+            ],
+            [
+              "@ui.firmware_supported",
+              "$firmware_range"
+            ]
           ]
         },
-        { "section": "@ui.sec_credits" },
+        {
+          "section": "@ui.sec_credits"
+        },
         {
           "kv": [
-            ["@ui.credit_nickelhook", "@ui.credit_pgaskin"],
-            ["@ui.credit_nickelmenu", "@ui.credit_pgaskin"],
-            ["@ui.credit_localgo", "@ui.credit_localgo_value"],
-            ["@ui.credit_tabler", "@ui.credit_tabler_value"],
-            ["@ui.credit_oksvg", "@ui.credit_oksvg_value"],
-            ["@ui.credit_viet", "@ui.credit_viet_value"]
+            [
+              "@ui.credit_nickelhook",
+              "@ui.credit_pgaskin"
+            ],
+            [
+              "@ui.credit_nickelmenu",
+              "@ui.credit_pgaskin"
+            ],
+            [
+              "@ui.credit_localgo",
+              "@ui.credit_localgo_value"
+            ],
+            [
+              "@ui.credit_tabler",
+              "@ui.credit_tabler_value"
+            ],
+            [
+              "@ui.credit_oksvg",
+              "@ui.credit_oksvg_value"
+            ],
+            [
+              "@ui.credit_viet",
+              "@ui.credit_viet_value"
+            ]
           ]
         },
-        { "text": "@ui.about_note", "style": "caption" }
+        {
+          "text": "@ui.about_note",
+          "style": "caption"
+        }
       ]
     }
   }

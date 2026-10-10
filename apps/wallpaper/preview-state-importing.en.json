@@ -1,5 +1,5 @@
 {
-  "status": "Importing 5/7",
+  "status": "Importing 5 / 7",
   "summary": "5 pictures · In use: hoa-sen · Fill",
   "pictures": [
     {
@@ -45,10 +45,13 @@
   "rotation": "fixed",
   "busy": true,
   "pending": 2,
-  "import_step": "Converting 5/7 · hoang-hon.png",
   "sleep_screen_ready": false,
   "sleep_screen_hint": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
   "sleep_screen_notice": "Sleep screen is off · See Options",
   "sleep_screen_line": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
-  "last_import": ""
+  "last_import": "",
+  "step_label": "Converting",
+  "step_done": "5",
+  "step_total": "7",
+  "step_detail": "hoang-hon.png"
 }

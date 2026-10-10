@@ -3,6 +3,6 @@
   "done": "0",
   "hasdone": false,
   "newitem": "",
-  "notice": "The saved list was damaged. A copy is in data/todo.json.corrupt and the list starts empty.",
+  "notice": "The saved list was damaged and set aside. The list starts empty.",
   "items": []
 }

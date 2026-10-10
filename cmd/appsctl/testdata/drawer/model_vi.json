@@ -5,7 +5,7 @@
   "sections": [
     {
       "id": "installed",
-      "title": "ĐÃ CÀI",
+      "title": "Đã cài",
       "items": [
         {
           "id": "alpha",
@@ -62,7 +62,7 @@
     },
     {
       "id": "system",
-      "title": "HỆ THỐNG",
+      "title": "Hệ thống",
       "items": [
         {
           "id": "_refresh",

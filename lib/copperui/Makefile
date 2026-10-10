@@ -7,7 +7,7 @@
 REPO_ROOT      := $(abspath $(CURDIR)/../..)
 NICKELTC_IMAGE ?= ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840
 TEST_NAMES     := pack components
-TEST_SOURCES   := src/pack.cc src/pager.cc src/button.cc src/list_row.cc src/divider.cc
+TEST_SOURCES   := src/pack.cc src/pager.cc src/button.cc src/list_row.cc src/divider.cc src/empty_state.cc
 TEST_FLAGS     := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -Iinclude -Itests
 
 .PHONY: docker-test test

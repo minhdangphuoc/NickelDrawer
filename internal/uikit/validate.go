@@ -44,6 +44,15 @@ const (
 	CodeSecretField      = "ui.secret_field"
 	CodeLocaleMissingVi  = "ui.locale_key_untranslated"
 	CodeViewerNotAlone   = "ui.viewer_not_alone"
+	CodeSampleNotStatic  = "ui.sample_not_static"
+
+	// Content-style warnings (docs/design-system.md section 5): they never stop an app loading.
+	CodeUppercaseText        = "ui.uppercase_text"
+	CodeStatusTooWide        = "ui.status_too_wide"
+	CodeCaptionPeriod        = "ui.caption_period"
+	CodeSectionOverParagraph = "ui.section_over_paragraph"
+	CodeSectionEmpty         = "ui.section_empty"
+	CodePrimaryDisabled      = "ui.primary_disabled_while_other_enabled"
 )
 
 const translationLimitPercent = 150
@@ -85,13 +94,14 @@ type Env struct {
 // ParseAndValidate checks raw ui.json bytes (plus extra screens from screens/*.json, keyed by
 // screen id) and returns the document when it has no errors.
 func ParseAndValidate(data []byte, extraScreens map[string][]byte, env Env) (*Document, Report) {
-	validator := &validator{env: env, vars: map[string]any{}}
+	validator := &validator{env: env, vars: map[string]any{}, texts: map[string]map[string]string{}}
 	root, ok := validator.decodeObject("ui.json", data)
 	if !ok {
 		return nil, validator.report
 	}
 	screens := validator.collectScreens(root, extraScreens)
 	validator.checkRoot(root, screens)
+	validator.checkCatalogs()
 	if !validator.report.OK() {
 		return nil, validator.report
 	}
@@ -105,9 +115,12 @@ type validator struct {
 	screens      map[string]*Screen
 	current      *Screen
 	allScreenIDs map[string]bool
-	primary      int
+	primaries    []string // the `show` flag of each primary action of the screen ("" when always shown)
 	galleries    int
 	viewers      int
+	inSample     bool                         // checking the inner component of a samples cell
+	texts        map[string]map[string]string // path -> locale -> resolved text, of the texts checked so far
+	buttons      []buttonRule                 // the buttons of the screen, for the A8 rule
 }
 
 func (v *validator) fail(code, path, format string, args ...any) {
@@ -236,7 +249,7 @@ func (v *validator) checkScreen(id string, raw any) {
 		return
 	}
 	v.current = &Screen{ID: id}
-	v.primary, v.galleries, v.viewers = 0, 0, 0
+	v.primaries, v.buttons, v.galleries, v.viewers = nil, nil, 0, 0
 	v.checkObject(path, ScreenShape.Fields, object)
 	v.checkHeaderActions(path, object)
 	v.current.Title, v.current.Status = object["title"], firstPresent(object["status"], object["badge"])
@@ -244,10 +257,9 @@ func (v *validator) checkScreen(id string, raw any) {
 	v.current.Actions = objectList(object["actions"])
 	v.current.Dialogs = objectMap(object["dialogs"])
 	v.current.Toasts, _ = object["toasts"].(map[string]any)
-	if v.primary > 1 {
-		v.fail(CodeMultiplePrimary, path, "has %d primary buttons; a screen has one primary action, make the others \"style\": \"secondary\"", v.primary)
-	}
+	v.checkPrimaries(path)
 	v.checkViewerAlone(path)
+	v.checkScreenStyle(path)
 	v.screens[id] = v.current
 }
 
@@ -337,7 +349,7 @@ func (v *validator) checkObject(path string, props []Prop, object map[string]any
 		v.checkShape(path+"."+key, prop.Shape, object[key])
 	}
 	for _, prop := range props {
-		if _, present := object[prop.Name]; prop.Required && !present {
+		if _, present := object[prop.Name]; prop.Required && !present && !v.inSample {
 			v.fail(CodeMissingProp, path, "is missing required property %q", prop.Name)
 		}
 	}
@@ -379,6 +391,8 @@ func (v *validator) checkShape(path string, shape Shape, value any) {
 		v.checkMap(path, shape, value)
 	case KindComponents:
 		v.checkComponents(path, value)
+	case KindSamples:
+		v.checkSampleItems(path, shape, value)
 	}
 }
 
@@ -533,6 +547,10 @@ func (v *validator) checkFlag(path string, value any) {
 	switch typed := value.(type) {
 	case bool:
 	case string:
+		if v.inSample {
+			v.fail(CodeBadBinding, path, "a sample is static: use true or false, not %q", typed)
+			return
+		}
 		reference, _, err := ParseFlag(typed)
 		if err != nil {
 			v.fail(CodeBadBinding, path, "%v", err)
@@ -650,11 +668,17 @@ func isPropOfAnother(key string, candidates []ComponentSpec) bool {
 
 func (v *validator) checkComponentRules(path string, component Component) {
 	if component.IsPrimary() {
-		v.primary++
+		v.primaries = append(v.primaries, showFlagOf(component))
 	}
 	switch component.Kind {
 	case "row":
 		v.checkRowTarget(path, component)
+	case "button":
+		v.checkButtonTarget(path, component)
+	case "text":
+		v.checkTextCaption(path, component)
+	case "samples":
+		v.checkSampleColumns(path, component)
 	case "list":
 		v.checkListVar(path, component)
 	case "gallery":
@@ -665,6 +689,7 @@ func (v *validator) checkComponentRules(path string, component Component) {
 		v.checkEmptyButton(path, component)
 	case "field":
 		v.checkSecretField(path, component)
+		v.checkFieldValue(path, component)
 	case "radio":
 		v.checkRadioOptions(path, component)
 	}
@@ -718,6 +743,20 @@ func (v *validator) checkRowTarget(path string, component Component) {
 	if hasAction && hasPush {
 		v.fail(CodeNeedsOne, path, "a row takes \"action\" or \"push\", not both")
 	}
+	if _, hasConfirm := component.Props["confirm"]; hasConfirm && !hasAction {
+		v.fail(CodeNeedsTogether, path, "\"confirm\" asks before the row's \"action\"; a row that only pushes a screen has nothing to confirm")
+	}
+}
+
+// checkButtonTarget: a button runs an action or pushes a screen, exactly one of them.
+func (v *validator) checkButtonTarget(path string, component Component) {
+	v.checkExactlyOne(path, component.Props, "action", "push")
+	if _, hasPush := component.Props["push"]; hasPush {
+		if _, hasConfirm := component.Props["confirm"]; hasConfirm {
+			v.fail(CodeNeedsTogether, path, "a button that pushes a screen asks nothing: remove \"confirm\" or use an \"action\"")
+		}
+	}
+	v.buttons = append(v.buttons, ruleOf(component))
 }
 
 func (v *validator) checkEmptyButton(path string, component Component) {
@@ -725,6 +764,13 @@ func (v *validator) checkEmptyButton(path string, component Component) {
 	_, hasAction := component.Props["action"]
 	if hasButton != hasAction {
 		v.fail(CodeNeedsTogether, path, "\"button\" (label) and \"action\" go together in an empty state")
+	}
+}
+
+// checkFieldValue: `value` is a picture's text; a live field shows its bound variable.
+func (v *validator) checkFieldValue(path string, component Component) {
+	if _, hasValue := component.Props["value"]; hasValue {
+		v.fail(CodeUnknownProp, path+".value", "\"value\" is only for a field inside \"samples\"; a live field shows the variable named by \"bind\"")
 	}
 }
 
@@ -762,6 +808,13 @@ func (v *validator) checkText(path string, shape Shape, value any) {
 		v.checkTemplateText(path, shape, locale, variants[locale])
 	}
 	v.checkTranslationLength(path, variants)
+	v.texts[path] = variants
+	v.checkTextStyle(path, shape, variants, isCatalogReference(value))
+}
+
+func isCatalogReference(value any) bool {
+	text, isString := value.(string)
+	return isString && strings.HasPrefix(text, "@")
 }
 
 // textVariants returns locale -> text for a plain string, an "@key" or a locale map.
@@ -833,6 +886,10 @@ func (v *validator) checkTemplateText(path string, shape Shape, locale, text str
 	references, err := ParseTemplate(text)
 	if err != nil {
 		v.fail(CodeBadBinding, where, "%v", err)
+		return
+	}
+	if v.inSample && len(references) > 0 {
+		v.fail(CodeBadBinding, where, "a sample is static: write the text itself, not a $binding")
 		return
 	}
 	for _, reference := range references {

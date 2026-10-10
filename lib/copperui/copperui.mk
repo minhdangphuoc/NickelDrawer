@@ -9,7 +9,7 @@
 # uses are pulled out of the archive. The sources need no C++ standard library and no libm.
 # `make docker-clean` of the mod removes the objects and the archive (COPPERUI_GENERATED).
 
-COPPERUI_SOURCES  := $(addprefix $(COPPERUI_DIR)/src/,pack.cc pager.cc button.cc list_row.cc divider.cc)
+COPPERUI_SOURCES  := $(addprefix $(COPPERUI_DIR)/src/,pack.cc pager.cc button.cc list_row.cc divider.cc empty_state.cc)
 COPPERUI_OBJECTS  := $(COPPERUI_SOURCES:.cc=.o)
 COPPERUI_ARCHIVE  := $(COPPERUI_DIR)/libcopperui.a
 COPPERUI_GENERATED := $(COPPERUI_OBJECTS) $(COPPERUI_ARCHIVE)

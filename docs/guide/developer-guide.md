@@ -356,20 +356,23 @@ A screen has a header (back arrow, `title`, `status`, and one `action` text link
 | `text` | `{ "text": "Copy books here over USB.", "style": "caption" }` | `style`: `body`, `caption`, `heading`. Hidden when it resolves to empty. |
 | `section` | `{ "section": "Network" }` | Small-caps group label. |
 | `kv` | `{ "kv": [["IP", "$ip"], ["PIN", "$pin"]] }` | 1 to 12 key/value rows. |
-| `row` | `{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }` | Tappable when it has an `action`. |
+| `row` | `{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }` | Tappable with an `action` (optional `confirm`) or a `push` to another screen; `show` hides it while a flag is false. A `detail` too long for the right-hand column goes under the label. |
 | `toggle` | `{ "toggle": "Use Wi-Fi", "bind": "wifi" }` | Runs the action named like the variable with `true`/`false`. |
 | `radio` | `{ "radio": "How it shows", "bind": "mode", "options": [["fill", "Fill the screen", "Edges are cropped"], ["fit", "Fit inside"]] }` | 1 to 8 options, optional sub-line. Sends the option id. |
 | `field` | `{ "field": "New task", "bind": "newitem", "placeholder": "Type and confirm", "keyboard": "text" }` | Opens Nickel's keyboard (`text`, `number`, `url`). Not for secrets: use `pair`. |
 | `bigcode` | `{ "bigcode": "$pin", "digits": 4 }` | Large digits, 3 to 12. |
 | `qr` | `{ "qr": "$url", "caption": "Scan with your phone" }` | QR code of a short value. |
 | `pair` | `{ "pair": { "url": "$url", "code": "$code", "title": "Open on your phone", "hint": "Use only on your own Wi-Fi.", "expires": "$expires" } }` | The phone-pairing block: QR, address, code. |
-| `steps` | `{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }` | Progress of a background job. |
+| `steps` | `{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }` | Progress of a background job, as text (never a notice). Hidden while `label` is empty; with `done` and `total` empty the headline is the label alone. |
+| `samples` | `{ "samples": [{ "button": "Stop", "look": "pressed", "caption": "Pressed" }], "columns": 3 }` | A picture of controls in their states (UI Kit): `look` is `normal`, `pressed`, `selected` or `disabled`; no bindings, no events, never the primary. |
 | `notice` | `{ "notice": "$notice", "title": "Last sync failed" }` | Boxed note. Hidden when the text is empty: bind it to show it conditionally. |
-| `button` | `{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }` | At most one `primary` per screen. `enabled` takes `$var` or `!$var`. |
+| `button` | `{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }` | An `action` or a `push` (one of them). At most one `primary` visible per screen: when the main action depends on the state, give each primary a `show` flag (`"$running"`, `"!$running"`) instead of disabling one (a disabled primary next to the possible action is a warning). `enabled` and `show` take `$var` or `!$var`. |
 | `list` | `{ "list": "$received", "title": "Received", "empty_text": "Nothing yet", "max": 10, "tap": "open-item", "menu": [{ "id": "delete-item", "label": "Delete...", "confirm": true }] }` | Rows from an array; tap and long-press menu (up to 6 entries). |
 | `empty` | `{ "empty": "No pictures yet", "text": "Copy PNG or JPEG pictures to Pictures.", "button": "Import pictures", "action": "import" }` | Empty state; its button counts as the primary. |
 | `gallery` | `{ "gallery": "$pictures", "columns": 4, "rows": 3, "on_tap": { "push": "viewer" }, "on_long_press": [{ "label": "Info", "info": true }] }` | Picture grid. Items come from `state`: `{id, thumb, image, label, info, badge}`; paths must be absolute `.png` below your `data/`. |
 | `viewer` | `{ "viewer": "$pictures", "selected": "selected", "primary": { "label": "Set as wallpaper", "label_current": "In use", "action": "set-current" } }` | One picture at a time. Must be alone on its screen, no footer. |
+
+Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's `format.date`, `format.datetime` and `format.time`, never from a fixed layout.
 
 Two details the validator enforces: a `list` menu's `confirm` may be `true`, but a gallery `on_long_press` or viewer `secondary` `confirm` must be an object (`{"title", "text", "ok", "cancel"}`); and every variable you bind must be declared in `vars`.
 

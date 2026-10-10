@@ -2,7 +2,7 @@ package uikit
 
 import "strings"
 
-// The view flow of an app is derived from the screens' push links (header action, header icon actions, gallery tap and long-press menu); there is no
+// The view flow of an app is derived from the screens' push links (header action, header icon actions, row and button push, gallery tap and long-press menu); there is no
 // separate flow field. Rules (docs/spec/ui-json.md "Navigation"): the root screen is "main"
 // (and "start" names it), every screen is reachable from it, nothing is pushed deeper than
 // MaxPushDepth below it, no push forms a cycle (a screen pushing itself included), and a push
@@ -73,7 +73,9 @@ func componentObjects(lists ...any) []map[string]any {
 }
 
 func componentPushTargets(component map[string]any) []string {
-	if _, isRow := component["row"]; isRow {
+	_, isRow := component["row"]
+	_, isButton := component["button"]
+	if isRow || isButton {
 		return []string{pushOf(component)}
 	}
 	if _, isGallery := component["gallery"]; !isGallery {

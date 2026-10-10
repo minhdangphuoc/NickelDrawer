@@ -49,6 +49,9 @@ const (
 	KindComponents
 	// KindAny accepts any JSON value (the initial values of vars).
 	KindAny
+	// KindSamples is the array of a `samples` component: each item is a sampleable component
+	// plus "look" and "caption" (docs/uikit-plan.md section 5.1).
+	KindSamples
 )
 
 // Shape describes one JSON value. Only the fields that matter for its Kind are set.
@@ -59,6 +62,7 @@ type Shape struct {
 	Max     int
 	MaxLen  int  // longest allowed text in characters (KindText, KindExpr, KindID)
 	NoColon bool // ':' is not allowed, because NickelMenu uses it as a separator
+	Caption bool // a caption-style text: a one-sentence caption has no trailing period (warning)
 	Fields  []Prop
 	Item    *Shape
 	Tuple   []Shape
@@ -108,6 +112,8 @@ func text(maxLen int) Shape { return Shape{Kind: KindText, MaxLen: maxLen} }
 
 func menuText(maxLen int) Shape { return Shape{Kind: KindText, MaxLen: maxLen, NoColon: true} }
 
+func captionText(maxLen int) Shape { return Shape{Kind: KindText, MaxLen: maxLen, Caption: true} }
+
 func expr(maxLen int) Shape { return Shape{Kind: KindExpr, MaxLen: maxLen} }
 
 func enum(values ...string) Shape { return Shape{Kind: KindEnum, Enum: values} }
@@ -136,7 +142,7 @@ var menuItemShape = Shape{Kind: KindObject, Fields: []Prop{
 }}
 
 // optionShape is [value, label] or [value, label, sub-line].
-var optionShape = Shape{Kind: KindTuple, MinLen: 2, Tuple: []Shape{{Kind: KindID, MaxLen: 32}, text(40), text(60)}}
+var optionShape = Shape{Kind: KindTuple, MinLen: 2, Tuple: []Shape{{Kind: KindID, MaxLen: 32}, text(40), captionText(60)}}
 
 var kvRowShape = Shape{Kind: KindTuple, Tuple: []Shape{text(24), expr(60)}}
 
@@ -186,7 +192,7 @@ var galleryMenuItemShape = Shape{Kind: KindObject, Fields: []Prop{
 
 var galleryEmptyShape = Shape{Kind: KindObject, Fields: []Prop{
 	requiredKey("title", text(40)),
-	optionalKey("text", text(120)),
+	optionalKey("text", captionText(120)),
 	optionalKey("icon", enum("picture")),
 	optionalKey("button", menuText(32)),
 	optionalKey("action", actionID),
@@ -233,11 +239,13 @@ var Components = []ComponentSpec{
 		optionalKey("detail", expr(60)),
 		optionalKey("action", actionID),
 		optionalKey("push", Shape{Kind: KindScreenRef}),
+		optionalKey("confirm", confirmShape),
+		optionalKey("show", flagShape),
 	}},
 	{Key: "toggle", Main: text(60), Props: []Prop{
 		requiredKey("bind", varName),
 		optionalKey("enabled", flagShape),
-		optionalKey("detail", text(60)),
+		optionalKey("detail", captionText(60)),
 	}},
 	{Key: "radio", Main: text(60), Props: []Prop{
 		requiredKey("bind", varName),
@@ -250,12 +258,13 @@ var Components = []ComponentSpec{
 		optionalKey("placeholder", text(40)),
 		optionalKey("secret", boolean),
 		optionalKey("enabled", flagShape),
+		optionalKey("value", text(40)), // the shown text of a field inside `samples`; a live field shows its bound variable
 	}},
 	{Key: "bigcode", Main: expr(16), Props: []Prop{
 		optionalKey("digits", Shape{Kind: KindInt, Min: 3, Max: 12}),
 	}},
 	{Key: "qr", Main: expr(200), Props: []Prop{
-		optionalKey("caption", text(60)),
+		optionalKey("caption", captionText(60)),
 	}},
 	{Key: "pair", Main: pairShape},
 	{Key: "steps", Main: stepsShape},
@@ -263,15 +272,17 @@ var Components = []ComponentSpec{
 		optionalKey("title", text(40)),
 	}},
 	{Key: "button", Main: menuText(32), Props: []Prop{
-		requiredKey("action", actionID),
+		optionalKey("action", actionID), // exactly one of action / push (checked by the validator)
+		optionalKey("push", Shape{Kind: KindScreenRef}),
 		optionalKey("style", enum("primary", "secondary")),
 		optionalKey("enabled", flagShape),
+		optionalKey("show", flagShape),
 		optionalKey("confirm", confirmShape),
 		optionalKey("async", boolean),
 	}},
 	{Key: "list", Main: varRef, Props: []Prop{
 		optionalKey("title", text(40)),
-		optionalKey("empty_text", text(60)),
+		optionalKey("empty_text", captionText(60)),
 		optionalKey("max", Shape{Kind: KindInt, Min: 1, Max: 200}),
 		optionalKey("tap", actionID),
 		optionalKey("menu", Shape{Kind: KindArray, Item: &menuItemShape, Min: 1, Max: 6}),
@@ -291,11 +302,35 @@ var Components = []ComponentSpec{
 		optionalKey("secondary", viewerSecondaryShape),
 	}},
 	{Key: "empty", Main: text(40), Props: []Prop{
-		optionalKey("text", text(120)),
+		optionalKey("text", captionText(120)),
 		optionalKey("button", menuText(32)),
 		optionalKey("action", actionID),
 	}},
+	{Key: "samples", Main: Shape{Kind: KindSamples, Min: 1, Max: MaxSamples}, Props: []Prop{
+		optionalKey("columns", Shape{Kind: KindInt, Min: 1, Max: MaxSampleColumns}),
+	}},
 }
+
+// Samples limits (docs/uikit-plan.md section 5.1).
+const (
+	MaxSamples       = 8
+	MaxSampleColumns = 3
+)
+
+// SampleLooks are the states a sample cell can show.
+var SampleLooks = []string{"normal", "pressed", "selected", "disabled"}
+
+// sampleableKeys are the components a `samples` cell may hold: pictures of a control, never a
+// control that needs the device (list, gallery, viewer, pair, qr, bigcode, empty, section).
+var sampleableKeys = []string{"button", "toggle", "radio", "row", "field", "kv", "notice", "steps", "text"}
+
+// onStateKeys are the sampleable components that have an on state ("selected" look).
+var onStateKeys = []string{"toggle", "radio"}
+
+// SampleableKeys lists the components a samples cell may hold.
+func SampleableKeys() []string { return append([]string{}, sampleableKeys...) }
+
+var sampleCaptionShape = captionText(24)
 
 // screenProps are the keys of a screen object. "badge" is the plan v2 name of "status".
 var screenProps = []Prop{

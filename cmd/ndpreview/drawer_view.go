@@ -34,13 +34,23 @@ type drawerItem struct {
 // drawerChrome are the drawer's own texts (host/locales mod.* keys) for the previews.
 type drawerChrome struct {
 	title, hint, section, tweaksTitle string
+	loading, emptyTitle, emptyHint    string
+	findApps, problemsSection         string
+	qt6Notice                         string
+	problemName, problemStatus        string
 	statuses                          []string
 }
 
 var drawerChromes = map[string]drawerChrome{
 	"en": {title: "Apps", hint: "Long-press an app for info or remove", section: "Installed", tweaksTitle: "Tweaks",
+		loading: "Loading…", emptyTitle: "No apps yet", emptyHint: "Copy an app folder to .adds/apps, then tap Find apps",
+		findApps: "Find apps", problemsSection: "Problems", qt6Notice: "Kobo is offering update 5.x — NickelDrawer will stop working",
+		problemName: "broken-app", problemStatus: "Cannot open the app: ui.json is not valid JSON at line 12",
 		statuses: []string{"Receiving", "Last sync 14:20", "", "1 update", "3 tasks", ""}},
 	"vi": {title: "Ứng dụng", hint: "Nhấn giữ một ứng dụng để xem thông tin hoặc gỡ", section: "Đã cài", tweaksTitle: "Tinh chỉnh",
+		loading: "Đang tải…", emptyTitle: "Chưa có ứng dụng", emptyHint: "Chép thư mục ứng dụng vào .adds/apps rồi chạm Tìm ứng dụng",
+		findApps: "Tìm ứng dụng", problemsSection: "Sự cố", qt6Notice: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động",
+		problemName: "ung-dung-loi", problemStatus: "Không mở được ứng dụng: ui.json không phải JSON hợp lệ ở dòng 12",
 		statuses: []string{"Đang nhận", "Đồng bộ lần cuối 14:20", "", "1 bản cập nhật", "3 việc", ""}},
 }
 
@@ -117,6 +127,7 @@ func sampleDrawerItems(appsDir, locale string, count int, fileName string) []dra
 type drawerFlags struct {
 	out, appsDir, locale, font, icons string
 	count                             int
+	loading, problems, qt6Notice      bool
 }
 
 func parseDrawerFlags(name string, args []string, stderr io.Writer, defaultCount int) (drawerFlags, bool) {
@@ -127,6 +138,9 @@ func parseDrawerFlags(name string, args []string, stderr io.Writer, defaultCount
 	flags.StringVar(&parsed.appsDir, "apps", "apps", "folder whose apps' icons fill the sample items")
 	flags.StringVar(&parsed.locale, "locale", "en", "language of the preview (en or vi)")
 	flags.IntVar(&parsed.count, "count", defaultCount, "number of sample items")
+	flags.BoolVar(&parsed.loading, "loading", false, "drawer-empty: the Loading state (heading alone) instead of the empty state")
+	flags.BoolVar(&parsed.problems, "problems", false, "drawer-list: add a Problems section with one problem row")
+	flags.BoolVar(&parsed.qt6Notice, "qt6", false, "drawer-list: show the Qt6 upgrade warning notice under the header")
 	flags.StringVar(&parsed.font, "font", "", "TrueType or OpenType file for text (default: a system font if found)")
 	flags.StringVar(&parsed.icons, "icons", "", "folder with the Tabler PNGs (default: host/icons/ui of the repository)")
 	if _, err := parseInterspersed(flags, args); err != nil {

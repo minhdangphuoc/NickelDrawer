@@ -19,7 +19,8 @@ class ScreenView;
 // with `appsctl drawer screen`, shows it in a ScreenView over the drawer page
 // and turns taps into `drawer event` runs through the drawer's ActionRunner
 // (same Wi-Fi, dialog and rescan rules as a drawer tap).
-//   button / row / empty → its action (button confirm asked first)
+//   button / row / empty → its action (a confirm of the button or row asked first); a button or
+//                          row with `push` opens that screen instead
 //   toggle / radio       → shown at once, then the action named like the
 //                          variable with NICKELDRAWER_VALUE
 //   field                → Nickel's keyboard, else an "edit on your phone" notice
@@ -33,7 +34,7 @@ class ScreenView;
 // event; the queue sends one at a time (event_queue.h).
 // Back pops pushed screens (navigation.h: the parent comes back reloaded at
 // its page), then closes. A live screen (state action) is
-// re-read every 5 s while idle. Child of its view: it ends with the view.
+// re-read once right after each event and then every 5 s while idle. Child of its view: it ends with the view.
 class ScreenSession : public QObject {
     Q_OBJECT
 public:
@@ -75,6 +76,8 @@ private:
     void showPendingIfActionStarted(int index, const ScreenComponent &component, const QString &value);
     void runEvent(const ScreenEvent &event);
     void tapButton(const ScreenComponent &button);
+    void tapRow(const ScreenComponent &row);
+    void runAfterOptionalConfirm(const ScreenComponent &control);
     void tapToggle(int index, const ScreenComponent &toggle);
     void tapRadio(int index, const ScreenComponent &radio, const QString &option);
     void tapField(const ScreenComponent &field);
@@ -104,6 +107,7 @@ private:
     bool isReloading;
     bool isQueuedEventRunning;
     bool needsReloadAfterQueue;
+    bool needsReloadAfterLoad;
     EventQueue::Queue eventQueue;
     // Copies taken when the tile menu opened: the screen may reload under it.
     PictureTile menuTile;

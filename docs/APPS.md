@@ -114,7 +114,7 @@ The preview is a layout check, not Nickel: real fonts and the real refresh behav
 ### Worked examples
 
 - [To-do](../apps/todo/README.md): a shipped app and the model for a small one: a `field` for the Nickel keyboard, a `list` with tap and row menu, a button that is disabled through a `$var`, declared toasts, tasks in `data/todo.json` written atomically by a tiny Go helper, and a `ui.json` you can preview with `ndpreview`.
-- [UI Kit](../apps/uikit/README.md): every `ui.json` component with sample content on three screens; hidden by default. To see it in the drawer, tap the gear (⚙) in the drawer header and turn on **UI Kit** under **Hidden apps**; no file needs editing. Copy its `ui.json` when you need an example of a component.
+- [UI Kit](../apps/uikit/README.md): every `ui.json` component on its own page (a grouped home, a states matrix, a live sample and a readout of the last event, 18 pages and a picture viewer); hidden by default. To see it in the drawer, tap the gear (⚙) in the drawer header and turn on **UI Kit** under **Hidden apps**; no file needs editing. Copy its `ui.json` when you need an example of a component.
 - [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, reports through `state`, asks the host for a rescan, and uses a Go helper for what BusyBox lacks.
 
 ### Nested views and back

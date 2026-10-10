@@ -1,0 +1,43 @@
+{
+  "title": "@ui.lbl_kv",
+  "status": "@ui.pos_kv",
+  "body": [
+    {
+      "text": "@ui.desc_kv"
+    },
+    {
+      "section": "@ui.sec_device"
+    },
+    {
+      "kv": [
+        [
+          "@ui.kv_firmware",
+          "$firmware"
+        ],
+        [
+          "@ui.kv_language",
+          "$locale"
+        ],
+        [
+          "@ui.kv_kit",
+          "1"
+        ],
+        [
+          "@ui.kv_file",
+          "pride-and-prejudice-annotated-edition.epub"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_kv",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_kv",
+      "style": "caption"
+    }
+  ]
+}

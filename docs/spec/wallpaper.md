@@ -85,7 +85,7 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 
 After an import that added pictures the app queues one quick library rescan; `state` hands it over once as `"requests":[{"request":"rescan","mode":"quick"}]` when no job is running (`app.json`: `"requests": ["rescan"]`).
 
-`state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `import_step`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
+`state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `step_label`, `step_done`, `step_total`, `step_detail`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
 
 ## Random rotation
 

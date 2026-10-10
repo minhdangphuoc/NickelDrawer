@@ -290,7 +290,7 @@ install_apps() {
         else
             note_change "installed new app $appId"
         fi
-        install_folder "$appSource" "$ADDS/apps/$appId" bin locales
+        install_folder "$appSource" "$ADDS/apps/$appId" bin locales screens
         install_example_config "$appSource" "$ADDS/apps/$appId"
     done
 }

@@ -539,7 +539,7 @@ func TestVietnameseCoverageCheckFindsGapsInAFontWithoutThem(t *testing.T) {
 func TestDrawerListPageGeometry(t *testing.T) {
 	chrome := chromeFor("en")
 	items := sampleDrawerItems("../../apps", "en", 8, "icon.png")
-	page := drawerListPage(items, chrome, 0)
+	page := drawerListPage(items, chrome, 0, drawerListExtras{})
 	if page.Count != 2 {
 		t.Fatalf("8 apps make %d pages, want 2 (7 rows a page)", page.Count)
 	}
@@ -570,7 +570,7 @@ func TestDrawerListPageGeometry(t *testing.T) {
 }
 
 func TestDrawerPagerShowsOnlyWithMoreThanOnePage(t *testing.T) {
-	one := drawerListPage(sampleDrawerItems("../../apps", "en", 3, "icon.png"), chromeFor("en"), 0)
+	one := drawerListPage(sampleDrawerItems("../../apps", "en", 3, "icon.png"), chromeFor("en"), 0, drawerListExtras{})
 	if one.Count != 1 || countItems(one, func(item Item) bool { return item.Label == "chevron-left" }) != 0 {
 		t.Error("a single page shows no pager in the drawer")
 	}
@@ -615,13 +615,13 @@ func TestDrawerGridRowsFitThePageArea(t *testing.T) {
 func TestTweaksModalIsCentredAndRendersBothLocales(t *testing.T) {
 	for _, locale := range []string{"en", "vi"} {
 		cells := sampleTweaks[locale]
-		page := tweaksPage(cells, chromeFor(locale).tweaksTitle, 0)
+		page := tweaksPage(cells, chromeFor(locale).tweaksTitle, locale, 0)
 		box := page.Items[len(nickelChromeItems())]
-		if box.W != tweaksBoxWidth || box.X != (screenWidth-tweaksBoxWidth)/2 || box.Y != (screenHeight-box.H)/2 {
-			t.Errorf("%s: box %+v not centred", locale, box)
+		if box.W != dialogWidth || box.Border != dialogBorder || box.X != (screenWidth-dialogWidth)/2 || box.Y != (screenHeight-box.H)/2 {
+			t.Errorf("%s: box %+v is not the centred dialog box", locale, box)
 		}
-		if got := countItems(page, func(item Item) bool { return item.Shape == "text" && item.Family == familySerif }); got != len(cells) {
-			t.Errorf("%s: %d serif labels, want %d", locale, got, len(cells))
+		if got := countItems(page, func(item Item) bool { return item.Shape == "text" && item.Family == familySerif }); got != 1 {
+			t.Errorf("%s: %d serif texts, want only the dialog title", locale, got)
 		}
 		if page.Count != 1 {
 			t.Errorf("%s: %d pages", locale, page.Count)

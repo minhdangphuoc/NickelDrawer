@@ -1,0 +1,86 @@
+{
+  "title": "@ui.lbl_steps",
+  "status": "@ui.pos_steps",
+  "body": [
+    {
+      "text": "@ui.desc_steps"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "steps": {
+            "label": "@ui.st_downloading",
+            "done": "2",
+            "total": "3",
+            "detail": "pride-and-prejudice.epub"
+          },
+          "caption": "@ui.cap_running"
+        },
+        {
+          "steps": {
+            "label": "@ui.st_done",
+            "done": "",
+            "total": ""
+          },
+          "caption": "@ui.cap_done"
+        },
+        {
+          "steps": {
+            "label": "@ui.st_failed",
+            "done": "",
+            "total": ""
+          },
+          "caption": "@ui.cap_failed"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "button": "@ui.btn_steps",
+      "action": "steps",
+      "style": "secondary",
+      "enabled": "!$jobRunning"
+    },
+    {
+      "steps": {
+        "label": "$progressLabel",
+        "done": "$progressDone",
+        "total": "$progressTotal",
+        "detail": "$progressDetail"
+      }
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_steps",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_steps",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "started": "@ui.toast_started",
+    "busy": "@ui.toast_busy",
+    "failed": "@ui.toast_failed"
+  }
+}

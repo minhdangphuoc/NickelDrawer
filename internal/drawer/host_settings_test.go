@@ -138,7 +138,7 @@ func TestUpdateRowsShowVersionLatestWithDotAndSource(t *testing.T) {
 		t.Fatalf("title=%q live=%v", reply.Title, reply.Live)
 	}
 	rows := kvRows(t, reply.Body, 0)
-	want := [][2]string{{"Version", "1.0.0"}, {"New version", "● 1.1.0"}, {"Source", "o/r"}}
+	want := [][2]string{{"Version", "1.0.0"}, {"New version", "1.1.0"}, {"Source", "o/r"}}
 	if len(rows) != 3 || rows[0] != want[0] || rows[1] != want[1] || rows[2] != want[2] {
 		t.Fatalf("rows = %v, want %v", rows, want)
 	}
@@ -167,9 +167,11 @@ func TestLatestRowIsHiddenUntilAnUpdateIsWaiting(t *testing.T) {
 	if len(rows) != 2 || rows[0][0] != "Version" || rows[1][0] != "Source" {
 		t.Fatalf("rows = %v", rows)
 	}
-	apply := findComponent(t, reply.Footer, "button", 1)
-	if *apply.Enabled || apply.Text != "Update" {
-		t.Fatalf("nothing to apply before a check: %+v", apply)
+	if len(reply.Footer) != 1 {
+		t.Fatalf("with nothing to install the footer offers Check alone: %+v", reply.Footer)
+	}
+	if check := reply.Footer[0]; check.Action != "check" || check.Style != "primary" || !*check.Enabled {
+		t.Fatalf("Check is the primary action until an update waits (A8): %+v", check)
 	}
 }
 
@@ -181,11 +183,8 @@ func TestSourceReadsOffAndButtonsWaitWhenNoRepoIsSet(t *testing.T) {
 	if rows := kvRows(t, reply.Body, 0); rows[len(rows)-1][1] != "Off" {
 		t.Fatalf("rows = %v", rows)
 	}
-	if check := findComponent(t, reply.Footer, "button", 0); *check.Enabled {
-		t.Fatal("Check needs a source")
-	}
-	if apply := findComponent(t, reply.Footer, "button", 1); *apply.Enabled {
-		t.Fatal("Update needs a source")
+	if len(reply.Footer) != 1 || reply.Footer[0].Action != "check" || *reply.Footer[0].Enabled {
+		t.Fatalf("Check needs a source, and a waiting update without one is not offered: %+v", reply.Footer)
 	}
 }
 
@@ -200,14 +199,9 @@ func TestButtonsWaitWhileARunIsActive(t *testing.T) {
 	if *apply.Enabled || *check.Enabled {
 		t.Fatalf("both buttons wait while a run is active: apply=%v check=%v", *apply.Enabled, *check.Enabled)
 	}
-	var message string
-	for _, component := range reply.Body {
-		if component.Type == "notice" && strings.Contains(component.Text, "Downloading and installing") {
-			message = component.Text
-		}
-	}
-	if message == "" {
-		t.Fatalf("the running state must show: %+v", reply.Body)
+	steps := findComponent(t, reply.Body, "steps", 0)
+	if steps.Label != "Downloading and installing…" || steps.Done != "" || steps.Total != "" {
+		t.Fatalf("the running state is a steps block without a count: %+v", steps)
 	}
 }
 

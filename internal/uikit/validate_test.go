@@ -70,7 +70,7 @@ func TestRulesRejectWithCode(t *testing.T) {
 		{"two components in one object", screenJSON(`[{"text":"a","toggle":"b","bind":"on"}]`, ""), CodeAmbiguous},
 		{"unknown prop", screenJSON(`[{"text":"a","colour":"red"}]`, ""), CodeUnknownProp},
 		{"missing required prop", screenJSON(`[{"toggle":"Wi-Fi"}]`, ""), CodeMissingProp},
-		{"missing button action", screenJSON(`[{"button":"Go"}]`, ""), CodeMissingProp},
+		{"missing button action", screenJSON(`[{"button":"Go"}]`, ""), CodeNeedsOne},
 		{"bad enum", screenJSON(`[{"text":"a","style":"huge"}]`, ""), CodeBadEnum},
 		{"wrong type", screenJSON(`[{"text":5}]`, ""), CodeWrongType},
 		{"bare dollar", screenJSON(`[{"text":"costs $5"}]`, ""), CodeBadBinding},

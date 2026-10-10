@@ -95,6 +95,11 @@ type ScreenComponent struct {
 	Items         *[][2]string  `json:"items,omitempty"`
 	Button        string        `json:"button,omitempty"`
 
+	// samples (docs/uikit-plan.md 5.1): Columns is the grid width, each cell is a resolved
+	// component of its own Type with Look and Caption set. A cell is a picture: no targets.
+	Look  string            `json:"look,omitempty"`
+	Cells []ScreenComponent `json:"cells,omitempty"`
+
 	// gallery and viewer (screen_gallery.go)
 	Columns       int           `json:"columns,omitempty"`
 	Tiles         any           `json:"tiles,omitempty"` // []GalleryTile or []ViewerTile
@@ -328,6 +333,9 @@ func stringProp(object map[string]any, key string) string {
 func (s screenContext) components(components []uikit.Component) []ScreenComponent {
 	resolved := make([]ScreenComponent, 0, len(components))
 	for i := 0; i < len(components); i++ {
+		if s.isHiddenByFlag(components[i]) {
+			continue
+		}
 		if isHiddenAppTemplate(components[i]) {
 			resolved = append(resolved, s.hiddenAppComponents()...)
 			continue
@@ -341,14 +349,24 @@ func (s screenContext) components(components []uikit.Component) []ScreenComponen
 	return resolved
 }
 
-// isEmptyBinding is true for a notice, text, row or kv whose bound variables resolved to
-// nothing: such a component is hidden.
+// isHiddenByFlag is true for a button or row whose `show` flag is false: it is left out and the
+// page packs without it (design-system.md, "Hidden"), so a screen can offer the action that
+// applies instead of a dimmed one.
+func (s screenContext) isHiddenByFlag(c uikit.Component) bool {
+	show, hasShow := c.Props["show"]
+	return hasShow && !uikit.Truthy(show, s.vars)
+}
+
+// isEmptyBinding is true for a notice, text, row, kv or steps (its label) whose bound variables
+// resolved to nothing: such a component is hidden.
 func (c ScreenComponent) isEmptyBinding() bool {
 	switch c.Type {
 	case "notice", "text", "row":
 		return c.Text == ""
 	case "kv":
 		return c.Rows == nil
+	case "steps":
+		return c.Label == ""
 	}
 	return false
 }
@@ -359,7 +377,7 @@ func (s screenContext) component(c uikit.Component) ScreenComponent {
 		"kv": s.kvComponent, "row": s.rowComponent, "toggle": s.toggleComponent, "radio": s.radioComponent,
 		"field": s.fieldComponent, "bigcode": s.bigCodeComponent, "qr": s.qrComponent, "pair": s.pairComponent,
 		"steps": s.stepsComponent, "button": s.buttonComponent, "list": s.listComponent, "empty": s.emptyComponent,
-		"gallery": s.galleryComponent, "viewer": s.viewerComponent,
+		"gallery": s.galleryComponent, "viewer": s.viewerComponent, "samples": s.samplesComponent,
 	}
 	resolved := resolvers[c.Kind](c)
 	resolved.Type = c.Kind
@@ -396,8 +414,13 @@ func (s screenContext) kvComponent(c uikit.Component) ScreenComponent {
 }
 
 func (s screenContext) rowComponent(c uikit.Component) ScreenComponent {
-	return ScreenComponent{Text: s.text(c.Main()), Detail: s.text(c.Prop("detail")), Action: stringProp(c.Props, "action"),
+	resolved := ScreenComponent{Text: s.text(c.Main()), Detail: s.text(c.Prop("detail")), Action: stringProp(c.Props, "action"),
 		Push: stringProp(c.Props, "push")}
+	if confirm, hasConfirm := c.Prop("confirm").(map[string]any); hasConfirm {
+		question := s.dialog(confirm)
+		resolved.Confirm = &question
+	}
+	return resolved
 }
 
 // boundAction is the action an input control runs: the app action named like its variable.
@@ -496,8 +519,8 @@ func (s screenContext) buttonComponent(c uikit.Component) ScreenComponent {
 		style = "secondary"
 	}
 	enabled := uikit.Truthy(c.Prop("enabled"), s.vars)
-	resolved := ScreenComponent{Text: s.text(c.Main()), Action: stringProp(c.Props, "action"), Style: style,
-		Enabled: &enabled, Async: c.Prop("async") == true}
+	resolved := ScreenComponent{Text: s.text(c.Main()), Action: stringProp(c.Props, "action"), Push: stringProp(c.Props, "push"),
+		Style: style, Enabled: &enabled, Async: c.Prop("async") == true}
 	if confirm, hasConfirm := c.Prop("confirm").(map[string]any); hasConfirm {
 		question := s.dialog(confirm)
 		resolved.Confirm = &question

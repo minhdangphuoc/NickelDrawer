@@ -79,7 +79,7 @@ func (g gallery) state(t *testing.T) stateReply {
 func TestStateListsPicturesWithThumbsBadgeAndInfo(t *testing.T) {
 	g := importedGallery(t)
 	reply := g.state(t)
-	if reply.Count != 3 || len(reply.Pictures) != 3 || reply.CurrentID != "0003" || reply.Pending != 0 || reply.ImportStep != "" {
+	if reply.Count != 3 || len(reply.Pictures) != 3 || reply.CurrentID != "0003" || reply.Pending != 0 || reply.StepLabel != "" {
 		t.Fatalf("state = %+v", reply)
 	}
 	for position, want := range []string{"0001", "0002", "0003"} {
@@ -120,11 +120,14 @@ func TestStateShowsImportProgress(t *testing.T) {
 	g := importedGallery(t)
 	write(t, filepath.Join(g.appDir, "progress.json"), []byte(`{"done":3,"total":7,"name":"bien-xanh.jpg"}`))
 	reply := g.state(t)
-	if reply.Status != "Importing 3/7" || reply.ImportStep != "Converting 3/7 · bien-xanh.jpg" || reply.Pending != 4 || !reply.Busy {
+	if reply.Status != "Importing 3 / 7" || reply.Pending != 4 || !reply.Busy {
 		t.Fatalf("state = %+v", reply)
 	}
+	if reply.StepLabel != "Converting" || reply.StepDone != "3" || reply.StepTotal != "7" || reply.StepDetail != "bien-xanh.jpg" {
+		t.Fatalf("steps = %q %q / %q %q", reply.StepLabel, reply.StepDone, reply.StepTotal, reply.StepDetail)
+	}
 	write(t, filepath.Join(g.appDir, "progress.json"), []byte(`{"done":2,"total":7,"name":"x.png","kind":"refit"}`))
-	if reply := g.state(t); reply.Status != "Converting 2/7" || reply.ImportStep != "Re-fitting 2/7 · x.png" {
+	if reply := g.state(t); reply.Status != "Converting 2 / 7" || reply.StepLabel != "Re-fitting" || reply.StepDetail != "x.png" {
 		t.Fatalf("refit state = %+v", reply)
 	}
 }

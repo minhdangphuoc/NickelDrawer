@@ -1,0 +1,107 @@
+{
+  "title": "@ui.lbl_button",
+  "status": "@ui.pos_button",
+  "body": [
+    {
+      "text": "@ui.desc_button"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "button": "@ui.btn_sync",
+          "style": "primary",
+          "caption": "@ui.cap_normal"
+        },
+        {
+          "button": "@ui.btn_sync",
+          "style": "primary",
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        },
+        {
+          "button": "@ui.btn_sync",
+          "style": "primary",
+          "look": "disabled",
+          "caption": "@ui.cap_disabled"
+        },
+        {
+          "button": "@ui.btn_stop",
+          "caption": "@ui.cap_normal"
+        },
+        {
+          "button": "@ui.btn_stop",
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        },
+        {
+          "button": "@ui.btn_stop",
+          "look": "disabled",
+          "caption": "@ui.cap_disabled"
+        }
+      ],
+      "columns": 3
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "button": "@ui.btn_secondary",
+      "action": "echo",
+      "style": "secondary"
+    },
+    {
+      "button": "@ui.btn_remove",
+      "action": "echo",
+      "style": "secondary",
+      "confirm": {
+        "title": "@ui.confirm_title",
+        "text": "@ui.confirm_text",
+        "ok": "@ui.confirm_ok",
+        "cancel": "@ui.cancel"
+      }
+    },
+    {
+      "toggle": "@ui.sw_enable_primary",
+      "bind": "sampleenabled"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_button",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_button",
+      "style": "caption"
+    }
+  ],
+  "footer": [
+    {
+      "button": "@ui.btn_primary",
+      "action": "echo",
+      "style": "primary",
+      "enabled": "$sampleenabled"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "saved": "@ui.toast_saved"
+  }
+}

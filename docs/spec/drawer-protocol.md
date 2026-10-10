@@ -97,7 +97,7 @@ Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the
     {"type": "kv", "rows": [["Device", "Kobo Libra 2"], ["IP", "192.168.1.23"]]},
     {"type": "list", "title": "Received", "bind": "received", "empty_text": "Nothing yet", "items": [["book.epub", ""]]}
   ],
-  "footer": [{"type": "button", "text": "Stop and update library", "style": "primary", "action": "stop", "enabled": true}],
+  "footer": [{"type": "button", "text": "Stop", "style": "primary", "action": "stop", "enabled": true}],
   "dialogs": {"ask": {"title": "…", "text": "…", "ok": "…", "cancel": "…", "action": "…"}},
   "toasts": {"saved": "…"},
   "live": true
@@ -114,7 +114,7 @@ Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the
 | `text` | `text`, `style` (`body`/`caption`/`heading`, missing = body), `align` (`start`/`center`) |
 | `section` | `text` |
 | `kv` | `rows`: `[[key, value], …]` |
-| `row` | `text`, `detail`, `action` |
+| `row` | `text`, `detail`, `action` or `push` (a screen id), `confirm` `{title, text, ok, cancel}` (the mod asks before running `action`) |
 | `toggle` | `text`, `bind`, `value` (bool), `enabled` (bool), `action` |
 | `radio` | `text`, `bind`, `value` (selected option id), `options` `[[id, label], …]`, `option_details` (`[sub-line, …]` parallel to `options`, only when an option has a sub-line; `""` for the others), `enabled`, `action` |
 | `field` | `text`, `bind`, `value`, `placeholder`, `keyboard` (`text`/`number`/`url`), `secret`, `enabled`, `action` |
@@ -123,14 +123,15 @@ Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the
 | `pair` | `url`, `code`, `title`, `hint`, `expires`, `digits` |
 | `steps` | `label`, `done`, `total`, `detail` |
 | `notice` | `text`, `title` |
-| `button` | `text`, `action`, `style` (`primary`/`secondary`), `enabled`, `confirm` `{title, text, ok, cancel}`, `async` |
+| `button` | `text`, `action` or `push` (a screen id: the mod pushes it like a row, no confirm), `style` (`primary`/`secondary`), `enabled`, `confirm` `{title, text, ok, cancel}`, `async` |
 | `list` | `bind`, `title`, `empty_text`, `tap`, `items` `[[primary, secondary], …]` (already cut to the last `max`) |
 | `empty` | `text` (heading), `caption`, `button`, `action` |
 | `gallery` | `bind`, `columns`, `rows` (ints), `tiles` `[{id, thumb, label, info, current}]`, `tap` `{push \| action}`, `menu` `[{label, action \| push \| info: true, confirm {title, text, ok, cancel}}]`, `pending` (int), `empty` `{icon, title, text, button, action}` |
+| `samples` | `columns` (1 to 3), `cells`: resolved components of their own `type` (`button`, `toggle`, `radio`, `row`, `field`, `kv`, `notice`, `steps`, `text`), each with `look` (`normal`/`pressed`/`selected`/`disabled`) and `caption`. A cell is a picture: no target, no event. The reply already carries what a look implies (a `selected` toggle has `value: true`, a `disabled` control `enabled: false`); the mod adds the pressed inversion and, for components without a disabled look, the `ink.dim` recolour. Cell geometry: [ui-json.md](ui-json.md) section 6 and `docs/uikit-plan.md` 5.1 |
 | `viewer` | `bind`, `tiles` `[{id, image, label, current}]`, `value` (the shown id), `current_status`, `primary` `{label, label_current, action}`, `secondary` `{label, action, confirm}` |
 
 - `gallery` / `viewer` tiles come from the bound array of the state: items without a valid id (`^[A-Za-z0-9_-]{1,32}$`) are dropped, at most 500 are sent, `badge: "current"` becomes `current: true`. **Path safety:** `thumb` / `image` are sent only when absolute, already clean (`filepath.Clean(p) == p`), ending in `.png` and below `<app dir>/data/`; otherwise `""` (the mod draws the missing-picture glyph). Viewer `value` is the `--value` when it names a tile, else the first tile's id, else `""`.
-- A `text` that resolves to empty is left out of the reply, like a `notice`.
+- A `text` that resolves to empty is left out of the reply, like a `notice`; so is a `steps` whose `label` is empty (no job is running). A `button` or `row` whose `show` flag is false is left out too: the screen offers only the action that applies. `steps` with `done` and `total` both empty has a headline of the label alone.
 - Input controls (`toggle`, `radio`, `field`) run the app action whose id equals their `bind` variable; `action` names it. Without such an action the control is read-only (`enabled: false`), because nothing could store the change.
 - A `secret` field's value is sent as the same number of `•`; the secret never reaches the mod.
 - `list` rows may have a long-press `menu`: `[{"id":"remove","label":"Remove...","confirm":true}]` (`confirm` omitted when false). `id` is the app.json action the menu runs (the validator checks it exists). The mod shows the menu, asks first when `confirm` is true, then calls `drawer event <app> <id> --list <bind> --index <n> --value <row primary text> [--screen <id>]`. `bind` is the list's `bind` field.

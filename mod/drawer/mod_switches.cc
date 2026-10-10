@@ -57,7 +57,7 @@ void readAtBoot()
     isKillSwitchFlagged = hasFlag(DISABLE_FLAG_PATH);
     isViewPushFlagged = hasFlag(VIEW_PUSH_FLAG_PATH);
     isNoScreensFlagged = hasFlag(NO_SCREENS_FLAG_PATH);
-    isLegacyScreensFlagged = hasFlag(LEGACY_SCREENS_FLAG_PATH);
+    isLegacyScreensFlagged = hasFlag(OBSOLETE_SCREENS_FLAG_PATH);
     isUnknownFirmwareTestFlagged = hasFlag(TEST_UNKNOWN_FIRMWARE_FLAG_PATH);
     isUnknownModelTestFlagged = hasFlag(TEST_UNKNOWN_MODEL_FLAG_PATH);
     isNoKeyboardFlagged = hasFlag(NO_KEYBOARD_FLAG_PATH);

@@ -32,7 +32,10 @@ type screenJSON struct {
 	Rotation         string                  `json:"rotation"`
 	Busy             bool                    `json:"busy"`
 	Pending          int                     `json:"pending"`
-	ImportStep       string                  `json:"import_step"`
+	StepLabel        string                  `json:"step_label"` // the steps block shows only while a job runs
+	StepDone         string                  `json:"step_done"`
+	StepTotal        string                  `json:"step_total"`
+	StepDetail       string                  `json:"step_detail"`
 	SleepScreenReady bool                    `json:"sleep_screen_ready"`
 	SleepScreenHint  string                  `json:"sleep_screen_hint"`
 	// SleepScreenNotice is the one-line link on the main screen to the options; empty when ready.
@@ -75,7 +78,7 @@ func (current *session) screenOf(state wallpaper.ScreenState) screenJSON {
 	}
 	if state.Progress != nil {
 		screen.Pending = max(state.Progress.Total-state.Progress.Done, 0)
-		screen.ImportStep = current.progressStep(*state.Progress)
+		current.fillSteps(&screen, *state.Progress)
 	}
 	return screen
 }
@@ -98,7 +101,7 @@ func (current *session) info(picture wallpaper.Picture) string {
 		lines = append(lines, current.messages.Message("msg.info_size", i18n.Params("width", strconv.Itoa(picture.Width), "height", strconv.Itoa(picture.Height))))
 	}
 	if !picture.Added.IsZero() {
-		lines = append(lines, current.messages.Message("msg.info_added", i18n.Params("date", picture.Added.Local().Format("02/01/2006"))))
+		lines = append(lines, current.messages.Message("msg.info_added", i18n.Params("date", current.messages.Date(picture.Added))))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -135,12 +138,16 @@ func progressParams(progress wallpaper.Progress) map[string]string {
 	return i18n.Params("done", strconv.Itoa(progress.Done), "total", strconv.Itoa(progress.Total), "name", progress.Name)
 }
 
-func (current *session) progressStep(progress wallpaper.Progress) string {
-	key := "msg.import_step"
+// fillSteps is the steps block of a running import or re-fit: "Converting 3 / 7" and the file
+// name under it.
+func (current *session) fillSteps(screen *screenJSON, progress wallpaper.Progress) {
+	key := "msg.step_import"
 	if progress.Kind == wallpaper.ProgressRefit {
-		key = "msg.refit_step"
+		key = "msg.step_refit"
 	}
-	return current.messages.Message(key, progressParams(progress))
+	screen.StepLabel = current.messages.Message(key, nil)
+	screen.StepDone, screen.StepTotal = strconv.Itoa(progress.Done), strconv.Itoa(progress.Total)
+	screen.StepDetail = progress.Name
 }
 
 // sleepScreenHint is empty when ready, so the screen's notice stays hidden.

@@ -16,7 +16,7 @@ import (
 const (
 	localsendDir  = "../../apps/localsend"
 	loopbackAuth  = "127.0.0.1:8790"
-	localsendVars = `{"running":true,"status":"Đang nhận","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23","received":[["Đắc Nhân Tâm.epub","860 KB"]]}`
+	localsendVars = `{"running":true,"status":"Đang nhận","pin":"4821","device":"Kobo Libra 2","ip":"192.168.1.23","keep_awake":"Để màn hình này mở khi đang nhận tệp.","received":[["Đắc Nhân Tâm.epub","860 KB"]]}`
 )
 
 func writeFile(t *testing.T, path, content string) {
@@ -94,7 +94,7 @@ func TestPageRendersLocalsendInVietnamese(t *testing.T) {
 		"kv value":       "Kobo Libra 2",
 		"vi notice":      "Để màn hình này mở khi đang nhận tệp.",
 		"received row":   "Đắc Nhân Tâm.epub",
-		"primary button": "Dừng và cập nhật thư viện",
+		"primary button": "Dừng",
 		"stop action":    `&#34;name&#34;:&#34;stop&#34;`,
 		"device size":    "width:1264px;height:1680px",
 	} {
@@ -102,12 +102,13 @@ func TestPageRendersLocalsendInVietnamese(t *testing.T) {
 			t.Errorf("%s: page lacks %q", name, want)
 		}
 	}
-	if strings.Contains(body, "Stop and update library") {
+	if strings.Contains(body, "Stop receiving") {
 		t.Error("English text leaked into the vi page")
 	}
 }
 
-// localsendButtons lays out the LocalSend screen and returns its two footer buttons' boxes.
+// localsendButtons lays out the LocalSend screen and returns the footer's Start or Stop button
+// (the one whose show flag matches the state; the other is left out).
 func localsendButtons(t *testing.T, isRunning bool) (start, stop Item) {
 	t.Helper()
 	rc := renderContext{doc: mustLoad(t).doc, locale: "en", vars: map[string]any{"running": isRunning}}
@@ -119,29 +120,26 @@ func localsendButtons(t *testing.T, isRunning bool) (start, stop Item) {
 		switch {
 		case item.Shape == "rect" && item.Label == "Start receiving":
 			start = item
-		case item.Shape == "rect" && item.Label == "Stop and update library":
+		case item.Shape == "rect" && item.Label == "Stop":
 			stop = item
 		}
-	}
-	if start.W == 0 || stop.W == 0 {
-		t.Fatalf("buttons not found in %d items", len(page.Items))
 	}
 	return start, stop
 }
 
-// A disabled button is dimmed (outline and label) and has no event: no press, taps ignored.
-func TestLocalsendButtonsFollowRunningState(t *testing.T) {
+// A8: the possible action is the primary one; the other is not on the page at all.
+func TestLocalsendShowsOnlyThePossiblePrimary(t *testing.T) {
 	for _, isRunning := range []bool{true, false} {
 		start, stop := localsendButtons(t, isRunning)
-		enabled, disabled := start, stop
+		shown, hidden := start, stop
 		if isRunning {
-			enabled, disabled = stop, start
+			shown, hidden = stop, start
 		}
-		if enabled.Event == "" || enabled.Ink != inkBlack {
-			t.Errorf("running=%v: enabled button %q has event %q, ink %d", isRunning, enabled.Label, enabled.Event, enabled.Ink)
+		if shown.Event == "" || shown.Fill != inkBlack {
+			t.Errorf("running=%v: %q must be a live primary: event %q, fill %d", isRunning, shown.Label, shown.Event, shown.Fill)
 		}
-		if disabled.Event != "" || disabled.Confirm != "" || disabled.Ink != inkDim || disabled.Fill != noFill {
-			t.Errorf("running=%v: disabled button %q has event %q, ink %d, fill %d", isRunning, disabled.Label, disabled.Event, disabled.Ink, disabled.Fill)
+		if hidden.W != 0 {
+			t.Errorf("running=%v: %q must be left out", isRunning, hidden.Label)
 		}
 	}
 }
@@ -174,7 +172,7 @@ func TestHeaderMatchesNickelPageHeader(t *testing.T) {
 func TestPageUsesEnglishFallbackAndScaleToggle(t *testing.T) {
 	instance := localsendServer(t)
 	english := get(t, instance, "/?locale=en&scale=100").Body.String()
-	if !strings.Contains(english, "Stop and update library") || !strings.Contains(english, "transform:scale(1)") {
+	if !strings.Contains(english, ">Stop<") || !strings.Contains(english, "transform:scale(1)") {
 		t.Error("en page at 100% is wrong")
 	}
 	if half := get(t, instance, "/").Body.String(); !strings.Contains(half, "transform:scale(0.5)") {

@@ -49,7 +49,12 @@ int gridIconTop(int rowHeight);
 int gridNameTop(int rowHeight);
 
 // gridRows is ignored in list mode.
-int itemsPerPage(ViewMode mode, int gridRows);
+// listRows applies to the list view only (the rows that fit the page area, listRowsThatFit).
+int itemsPerPage(ViewMode mode, int gridRows, int listRows = LIST_ROWS_PER_PAGE);
+
+// List rows that fit availableHeight under one section label, at least 1 and at most
+// LIST_ROWS_PER_PAGE: a notice under the header (the Qt6 warning) takes room from the page area.
+int listRowsThatFit(int availableHeight);
 
 // At least 1, so an empty drawer still shows "1 / 1".
 int pageCount(int itemCount, int perPage);
@@ -74,6 +79,20 @@ int pageAfterKey(int currentPage, PageKey key, int itemCount, int perPage);
 // True when this item opens a new section on the page, so the view draws the
 // section label above it.
 bool startsSectionOnPage(int indexOnPage, int sectionOfItem, int sectionOfPreviousItem);
+
+// ---- Row text and empty state (docs/design-system.md A7) ----
+
+// Width the name and the status line of a 152 px list row may take: the content width less the 64 px
+// icon (problem rows have none), the chevron (rows with a primary action) and the room of the
+// update dot, which is always kept so the text does not reflow when the dot appears. Each part is
+// followed by one RHYTHM gap. Both lines are one measured line, elided to this width.
+int rowTextWidth(bool hasIcon, bool hasChevron);
+
+// The empty state shows its icon, caption and "Find apps" button only once the model is loaded
+// (before that it is the "Loading…" heading alone), and the button only when there is something
+// to do: the host's refresh item exists. Tapping it taps that item.
+bool emptyStateShowsDetails(bool hasModel);
+bool emptyStateShowsButton(bool hasModel, bool hasRefreshItem);
 
 // ---- E-ink refresh (docs/spec/ui-kit.md §3 "E-ink refresh") ----
 

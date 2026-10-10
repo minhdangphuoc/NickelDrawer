@@ -13,7 +13,6 @@ import (
 const (
 	checkMark       = "✓"
 	warningMark     = "!"
-	newVersionMark  = "● "
 	versionFileName = "version"
 )
 
@@ -47,13 +46,25 @@ func (c Config) addUpdateState(state map[string]any) {
 	if hasPending {
 		state["latest"] = pending.Version
 		state["latest_label"] = c.message("drawer.settings_latest", nil)
-		state["latest_value"] = newVersionMark + pending.Version
+		state["latest_value"] = pending.Version
 		state["apply_label"] = c.message("drawer.settings_apply_to", map[string]string{"version": pending.Version})
 	}
 	state["notes"] = pending.Notes
-	state["message"] = c.updateMessage(status, hasStatus)
+	state["has_update"] = hasSource && hasPending
 	state["can_update"] = hasSource && hasPending && !isBusy
 	state["can_check"] = hasSource && !isBusy
+	c.addProgressState(state, status, hasStatus)
+}
+
+// addProgressState splits the update line: a run in progress is the label of the screen's steps
+// block (no count: a check or an install has none), an outcome is the notice's text.
+func (c Config) addProgressState(state map[string]any, status update.Status, hasStatus bool) {
+	state["step_label"], state["message"] = "", ""
+	if hasStatus && status.State == update.StateRunning {
+		state["step_label"] = status.Report.Render(c.Bundle)
+		return
+	}
+	state["message"] = c.updateMessage(status, hasStatus)
 }
 
 // updateRepo is the owner/name that data/update.json names; empty switches updates off.
@@ -65,12 +76,10 @@ func (c Config) updateRepo() string {
 	return config.Repo
 }
 
-// updateMessage is the one status line of the Updates section: the run in progress, else the
-// newer of the last install result and the last check outcome. Both stay until the next run.
+// updateMessage is the outcome line of the Updates section: the newer of the last install
+// result and the last check outcome. Both stay until the next run; a run in progress is shown
+// by the steps block instead (addProgressState).
 func (c Config) updateMessage(status update.Status, hasStatus bool) string {
-	if hasStatus && status.State == update.StateRunning {
-		return status.Report.Render(c.Bundle)
-	}
 	check, hasCheck := update.ReadLastCheck(c.updateLayout())
 	isInstallNews := hasStatus && status.Job != update.JobCheck && isInstallResult(status)
 	if isInstallNews && (!hasCheck || status.Time > check.Time) {

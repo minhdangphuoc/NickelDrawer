@@ -204,6 +204,91 @@ static void testGridHeightAndRightCells()
     EXPECT_EQ(14, COLUMN_COUNT * ROWS_PER_PAGE);
 }
 
+static void testGridUsesTheTokens()
+{
+    EXPECT_EQ(2, COLUMN_COUNT);
+    EXPECT_EQ(7, ROWS_PER_PAGE);
+    EXPECT_EQ(128, CELL_HEIGHT);
+    EXPECT_EQ(24, CELL_PADDING);
+    EXPECT_EQ(160, MESSAGE_HEIGHT);
+}
+
+static void testBoxMetricsFollowTheDialogTokens()
+{
+    EXPECT_EQ(1040, BOX_WIDTH);
+    EXPECT_EQ(3, BOX_BORDER);
+    EXPECT_EQ(1034, boxInnerWidth());
+    EXPECT_EQ(120, TITLE_ROW_HEIGHT);
+    // The grid spans the inner width: 516 + 1 + 517.
+    EXPECT_EQ(516, cellRect(0, boxInnerWidth(), CELL_HEIGHT, DIVIDER_WIDTH).width);
+    EXPECT_EQ(517, cellRect(1, boxInnerWidth(), CELL_HEIGHT, DIVIDER_WIDTH).width);
+    EXPECT_EQ(boxInnerWidth(), cellRect(1, boxInnerWidth(), CELL_HEIGHT, DIVIDER_WIDTH).x +
+                                   cellRect(1, boxInnerWidth(), CELL_HEIGHT, DIVIDER_WIDTH).width);
+}
+
+static void testPanelIsAsHighAsItsFirstPage()
+{
+    int fullPage = 7 * (128 + 1);
+    EXPECT_EQ(1 + fullPage + 56, panelHeight(14, 2)); // rule, grid, pager line
+    EXPECT_EQ(1 + fullPage, panelHeight(14, 1));     // a single page shows no pager line
+    EXPECT_EQ(1 + 5 * 129, panelHeight(9, 1));
+    EXPECT_EQ(1 + 160, panelHeight(0, 1));            // the message
+    EXPECT_EQ(6 + 120 + 1 + fullPage + 56, boxHeight(14, 2));
+}
+
+static void testActionCellCentresItsLines()
+{
+    CellLayout one = cellLayout(KIND_ACTION, 516, 128, 1);
+    EXPECT_EQ(1, one.isCentred);
+    EXPECT_EQ(24, one.label.x);
+    EXPECT_EQ(516 - 48, one.label.width);
+    EXPECT_EQ(56, one.label.height);
+    EXPECT_EQ((128 - 56) / 2, one.label.y);
+    EXPECT_EQ(0, one.switchImage.height);
+    CellLayout two = cellLayout(KIND_ACTION, 516, 128, 2);
+    EXPECT_EQ(112, two.label.height);
+    EXPECT_EQ(8, two.label.y);
+    EXPECT_EQ(2, maxLabelLines(KIND_ACTION));
+}
+
+static void testToggleCellPutsTheSwitchAndStateWordAtTheRight()
+{
+    CellLayout toggle = cellLayout(KIND_TOGGLE, 516, 128, 1);
+    EXPECT_EQ(0, toggle.isCentred);
+    EXPECT_EQ(94, toggle.switchImage.width);
+    EXPECT_EQ(56, toggle.switchImage.height);
+    EXPECT_EQ(516 - 24, toggle.switchImage.x + toggle.switchImage.width); // ends at the right padding
+    EXPECT_EQ((128 - 100) / 2, toggle.switchImage.y);                      // 56 + 4 + 40 centred
+    EXPECT_EQ(toggle.switchImage.x, toggle.stateWord.x);
+    EXPECT_EQ(94, toggle.stateWord.width);
+    EXPECT_EQ(toggle.switchImage.y + 56 + 4, toggle.stateWord.y);
+    EXPECT_EQ(40, toggle.stateWord.height);
+    // The label zone: inner - 94 - 24.
+    EXPECT_EQ(516 - 48 - 94 - 24, toggle.label.width);
+    EXPECT_EQ(labelWidth(KIND_TOGGLE, 516), toggle.label.width);
+    EXPECT_EQ(24, toggle.label.x);
+    EXPECT_EQ((128 - 56) / 2, toggle.label.y);
+    EXPECT_EQ(112, cellLayout(KIND_TOGGLE, 516, 128, 2).label.height);
+    // The label never reaches the switch column.
+    EXPECT_EQ(1, toggle.label.x + toggle.label.width + 24 <= toggle.switchImage.x);
+}
+
+static void testInfoCellStacksLabelAndValue()
+{
+    CellLayout info = cellLayout(KIND_INFO, 517, 128, 1);
+    EXPECT_EQ(0, info.isCentred);
+    EXPECT_EQ(1, maxLabelLines(KIND_INFO));
+    EXPECT_EQ(517 - 48, info.label.width);
+    EXPECT_EQ((128 - 56 - 46) / 2, info.label.y);
+    EXPECT_EQ(56, info.label.height);
+    EXPECT_EQ(info.label.y + 56, info.value.y);
+    EXPECT_EQ(46, info.value.height);
+    EXPECT_EQ(info.label.width, info.value.width);
+    EXPECT_EQ(0, info.switchImage.height);
+    // An info label asked for two lines still takes one.
+    EXPECT_EQ(56, cellLayout(KIND_INFO, 517, 128, 2).label.height);
+}
+
 int main()
 {
     testSpecListIsReadInOrder();
@@ -217,5 +302,11 @@ int main()
     testErrorReplies();
     testGridRowsAndCells();
     testGridHeightAndRightCells();
+    testGridUsesTheTokens();
+    testBoxMetricsFollowTheDialogTokens();
+    testPanelIsAsHighAsItsFirstPage();
+    testActionCellCentresItsLines();
+    testToggleCellPutsTheSwitchAndStateWordAtTheRight();
+    testInfoCellStacksLabelAndValue();
     return finishTests("tweaks_logic");
 }

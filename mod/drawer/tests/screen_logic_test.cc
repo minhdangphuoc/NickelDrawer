@@ -8,6 +8,8 @@
 
 using namespace ScreenLogic;
 
+static const int ROW_DETAIL_WIDTH_FOR_TEST = copperui::v1::ROW_DETAIL_WIDTH;
+
 // ---- Text fit: the shared vectors (lib/copperui/tests/text-vectors.json) ----
 
 enum Op { OP_WRAP, OP_WRAP_LIMITED, OP_ELIDE, OP_ELIDE_MIDDLE };
@@ -209,6 +211,9 @@ static void testListAndValues()
     EXPECT_EQ(0, firstKeptItem(10, 50));
     EXPECT_EQ(5, firstKeptItem(55, 50));
     EXPECT_EQ(0, firstKeptItem(3, 0));
+    EXPECT_EQ(false, rowDetailIsSubline(0));
+    EXPECT_EQ(false, rowDetailIsSubline(ROW_DETAIL_WIDTH_FOR_TEST));
+    EXPECT_EQ(true, rowDetailIsSubline(ROW_DETAIL_WIDTH_FOR_TEST + 1));
     EXPECT_EQ(true, looksLikeFileName("book.epub"));
     EXPECT_EQ(false, looksLikeFileName("192.168.1.2:53317"));
     EXPECT_EQ(false, looksLikeFileName("two words."));
@@ -410,8 +415,110 @@ static void testToggleRowDetailStaysAboveTheDivider()
     EXPECT_EQ(row.switchBox.y, row.state.y);
 }
 
+static void testSampleCellWidths()
+{
+    EXPECT_EQ(1120, sampleCellWidth(1));
+    EXPECT_EQ((1120 - 24) / 2, sampleCellWidth(2));
+    EXPECT_EQ((1120 - 48) / 3, sampleCellWidth(3));
+    EXPECT_EQ(1, sampleColumnCount(0));
+    EXPECT_EQ(3, sampleColumnCount(9));
+    EXPECT_EQ(sampleCellWidth(3), sampleCellWidth(7)); // clamped like the column count
+}
+
+static void testSampleCellIsInnerPlusGapPlusCaptionLine()
+{
+    EXPECT_EQ(120 + 8 + CAPTION_LINE_HEIGHT, sampleCellHeight(BUTTON_HEIGHT));
+    EXPECT_EQ(46, CAPTION_LINE_HEIGHT);
+}
+
+static void testSamplesInThreeColumnsAndTwoRows()
+{
+    int inner[6] = {120, 120, 120, 120, 120, 120};
+    SamplePlacement cells[6];
+    int height = placeSamples(inner, 6, 3, cells);
+    int cellHeight = 120 + 8 + 46;
+    int width = (1120 - 48) / 3;
+    EXPECT_EQ(2 * cellHeight + 24, height);
+    EXPECT_EQ(GUTTER, cells[0].x);
+    EXPECT_EQ(GUTTER + width + 24, cells[1].x);
+    EXPECT_EQ(GUTTER + 2 * (width + 24), cells[2].x);
+    EXPECT_EQ(0, cells[2].y);
+    EXPECT_EQ(cellHeight + 24, cells[3].y);
+    EXPECT_EQ(GUTTER, cells[3].x);
+    EXPECT_EQ(width, cells[5].width);
+    EXPECT_EQ(cellHeight, cells[5].height);
+    EXPECT_EQ(120, cells[5].innerHeight);
+}
+
+static void testSamplesRowTakesTheTallestCellAndCellsStayOnTop()
+{
+    int inner[3] = {120, 200, 56};
+    SamplePlacement cells[3];
+    int height = placeSamples(inner, 3, 2, cells);
+    int tallest = sampleCellHeight(200);
+    EXPECT_EQ(tallest + 24 + sampleCellHeight(56), height);
+    EXPECT_EQ(0, cells[0].y);
+    EXPECT_EQ(0, cells[1].y);
+    EXPECT_EQ(tallest + 24, cells[2].y);
+}
+
+static void testSamplesOneColumnStacksFullWidthCells()
+{
+    int inner[2] = {104, 128};
+    SamplePlacement cells[2];
+    int height = placeSamples(inner, 2, 1, cells);
+    EXPECT_EQ(CONTENT_WIDTH, cells[0].width);
+    EXPECT_EQ(GUTTER, cells[1].x);
+    EXPECT_EQ(sampleCellHeight(104) + 24, cells[1].y);
+    EXPECT_EQ(sampleCellHeight(104) + 24 + sampleCellHeight(128), height);
+    EXPECT_EQ(0, placeSamples(inner, 0, 1, cells));
+}
+
+static void testPressedInvertsAndDisabledDimsTheGreys()
+{
+    EXPECT_EQ(255, invertedGrey(0));
+    EXPECT_EQ(0, invertedGrey(255));
+    EXPECT_EQ(255 - INK_MUTED, invertedGrey(INK_MUTED));
+    EXPECT_EQ(INK_DIM, dimmedGrey(INK_BLACK));
+    EXPECT_EQ(INK_DIM, dimmedGrey(LINE_ROW));
+    EXPECT_EQ(INK_DIM, dimmedGrey(INK_DIM));
+    EXPECT_EQ(PAPER_GREY, dimmedGrey(PAPER_GREY));
+    EXPECT_EQ(PAPER_WHITE, dimmedGrey(PAPER_WHITE));
+}
+
+static void testReloadDecision()
+{
+    EXPECT_EQ(RELOAD_NOW, decideReload(true, false));
+    EXPECT_EQ(RELOAD_AFTER_LOAD, decideReload(true, true)); // a read made before the event finished
+    EXPECT_EQ(RELOAD_AFTER_QUEUE, decideReload(false, false));
+    EXPECT_EQ(RELOAD_AFTER_QUEUE, decideReload(false, true));
+}
+
+static void testStepsHeadline()
+{
+    char out[64];
+    stepsHeadline("Downloading", "2", "3", out, sizeof(out));
+    EXPECT_STREQ("Downloading 2 / 3", out);
+    EXPECT_EQ(17, stepsHeadline("Downloading", "2", "3", out, sizeof(out)));
+    stepsHeadline("Checking for updates…", "", "", out, sizeof(out));
+    EXPECT_STREQ("Checking for updates…", out); // indeterminate: no " / ", no numbers
+    stepsHeadline("Copying", "0", "", out, sizeof(out));
+    EXPECT_STREQ("Copying 0 / ", out); // only both-empty is indeterminate
+    char small[8];
+    stepsHeadline("Downloading", "2", "3", small, sizeof(small));
+    EXPECT_STREQ("Downloa", small); // truncated, still terminated
+}
+
 int main()
 {
+    testStepsHeadline();
+    testSampleCellWidths();
+    testSampleCellIsInnerPlusGapPlusCaptionLine();
+    testSamplesInThreeColumnsAndTwoRows();
+    testSamplesRowTakesTheTallestCellAndCellsStayOnTop();
+    testSamplesOneColumnStacksFullWidthCells();
+    testPressedInvertsAndDisabledDimsTheGreys();
+    testReloadDecision();
     testToggleRowWithoutDetail();
     testToggleRowDetailStaysAboveTheDivider();
     testGalleryMetricsMatchTheSpec();

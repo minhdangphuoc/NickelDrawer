@@ -2,7 +2,7 @@
 
 The design system of NickelDrawer and of software built on it: design tokens, the text-fit rule and, as they move here from `mod/drawer`, the Qt 5.2 Widgets components that draw Nickel-native pages on Kobo e-readers. The rules behind the numbers are in [`docs/design-system.md`](../../docs/design-system.md).
 
-Status: 0.2.0. Tokens plus the first pure components. The canvas and widget code (layout blocks, text fit, painters) still live in `mod/drawer` and `mod/common` and move here before 1.0, when this folder becomes its own repository.
+Status: 0.3.0. Tokens plus the first pure components. The canvas and widget code (layout blocks, text fit, painters) still live in `mod/drawer` and `mod/common` and move here before 1.0, when this folder becomes its own repository.
 
 ## Layout
 
@@ -15,6 +15,7 @@ Status: 0.2.0. Tokens plus the first pure components. The canvas and widget code
 | `include/copperui/button.h`, `src/button.cc` | Button presentation: disabled, pending, async. |
 | `include/copperui/list_row.h`, `src/list_row.cc` | List row geometry; the `✓` check mark. |
 | `include/copperui/divider.h`, `src/divider.cc` | Row divider and section rule. |
+| `include/copperui/empty_state.h`, `src/empty_state.cc` | Empty-state stack: icon, heading, caption, primary button. |
 | `include/copperui/geometry.h` | `Rect`. |
 | `copperui.mk`, `Makefile` | `copperui.mk` builds `libcopperui.a` inside the NickelTC build (included by `mod/drawer/Makefile`, linked into the mod); `make -C lib/copperui docker-test` runs the host tests. |
 | `tests/text-vectors.json` | Wrap and elide cases that every implementation of the text-fit rule must reproduce. |

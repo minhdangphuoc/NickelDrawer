@@ -609,11 +609,24 @@ static void paintQr(QPainter *painter, const PaintItem &item)
 
 // Icons come from system_icon.h (Nickel's, else Tabler PNGs); we never draw
 // them. Black icons take a lighter ink as opacity on the white paper.
-static void paintIcon(QPainter *painter, const QRect &box, const QPixmap &image, int ink)
+// An inverted icon (inside a pressed sample cell) is its white version on the black backing.
+static QPixmap whiteVersionOf(const QPixmap &image)
+{
+    static QHash<qint64, QPixmap> versions; // a screen draws a handful of icons
+    QHash<qint64, QPixmap>::const_iterator found = versions.constFind(image.cacheKey());
+    if (found != versions.constEnd()) {
+        return found.value();
+    }
+    QPixmap white = SystemIcon::whiteInk(image);
+    versions.insert(image.cacheKey(), white);
+    return white;
+}
+
+static void paintIcon(QPainter *painter, const QRect &box, const QPixmap &image, int ink, bool isInverted = false)
 {
     painter->save();
     painter->setOpacity(1.0 - ink / 255.0);
-    SystemIcon::drawCentred(painter, box, image);
+    SystemIcon::drawCentred(painter, box, isInverted ? whiteVersionOf(image) : image);
     painter->restore();
 }
 
@@ -640,7 +653,7 @@ static void paintCheck(QPainter *painter, const PaintItem &item)
 
 static void paintBackArrow(QPainter *painter, const PaintItem &item)
 {
-    paintIcon(painter, item.rect, SystemIcon::icon(SystemIcon::BACK).normal, item.ink);
+    paintIcon(painter, item.rect, SystemIcon::icon(SystemIcon::BACK).normal, item.ink, item.isInverted);
 }
 
 // Nickel's switch image at its own size; without it the state word alone shows the state. A
@@ -648,7 +661,7 @@ static void paintBackArrow(QPainter *painter, const PaintItem &item)
 static void paintSwitch(QPainter *painter, const PaintItem &item)
 {
     SystemIcon::Id id = item.isOn ? SystemIcon::SWITCH_ON : SystemIcon::SWITCH_OFF;
-    paintIcon(painter, item.rect, SystemIcon::icon(id).normal, item.ink);
+    paintIcon(painter, item.rect, SystemIcon::icon(id).normal, item.ink, item.isInverted);
 }
 
 // An icon of system_icon.h; the fallback text (a chevron glyph) when it is not installed.
@@ -656,9 +669,11 @@ static void paintIconShape(QPainter *painter, const PaintItem &item)
 {
     const SystemIcon::Icon &icon = SystemIcon::icon(static_cast<SystemIcon::Id>(item.iconId));
     if (!icon.isNull()) {
-        paintIcon(painter, item.rect, icon.normal, item.ink);
+        paintIcon(painter, item.rect, icon.normal, item.ink, item.isInverted);
     } else if (!item.lines.isEmpty() && !item.lines[0].isEmpty()) {
-        paintText(painter, item);
+        PaintItem glyph = item;
+        glyph.ink = item.isInverted ? PAPER_WHITE - item.ink : item.ink; // white on the pressed backing
+        paintText(painter, glyph);
     }
 }
 

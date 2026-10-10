@@ -1,11 +1,31 @@
 {
   "firmware": "4.38.23171",
-  "locale": "en",
+  "locale": "en_US",
+  "sampleenabled": true,
+  "autorescan": false,
   "shownote": true,
-  "hiddennote": "This note shows while the switch is on and hides when the text is empty.",
+  "noteText": "This notice shows while the switch is on and hides when its text is empty",
   "refreshmode": "balanced",
   "searchtext": "Moby Dick",
   "pagenumber": "12",
+  "books": [
+    [
+      "Truyện Kiều",
+      "Nguyễn Du"
+    ],
+    [
+      "Số đỏ",
+      "Vũ Trọng Phụng"
+    ],
+    [
+      "Dế Mèn phiêu lưu ký",
+      "Tô Hoài"
+    ],
+    [
+      "Pride and Prejudice",
+      "Jane Austen"
+    ]
+  ],
   "pictures": [
     {
       "id": "s1",
@@ -42,5 +62,14 @@
       "label": "cau-ngoi.png",
       "info": "cau-ngoi.png"
     }
-  ]
+  ],
+  "lastEvent": "toggle",
+  "lastValue": "true",
+  "labelEvent": "Last event",
+  "labelValue": "Value",
+  "jobRunning": true,
+  "progressLabel": "Downloading",
+  "progressDone": "2",
+  "progressTotal": "3",
+  "progressDetail": "sample-2.epub"
 }

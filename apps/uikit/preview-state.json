@@ -1,11 +1,31 @@
 {
   "firmware": "4.38.23171",
-  "locale": "vi",
+  "locale": "vi_VN",
+  "sampleenabled": true,
+  "autorescan": false,
   "shownote": true,
-  "hiddennote": "Ghi chú này hiện khi công tắc bật và ẩn khi chữ trống.",
+  "noteText": "Ghi chú này hiện khi công tắc bật và ẩn khi chữ trống",
   "refreshmode": "balanced",
-  "searchtext": "Truyện Kiều",
+  "searchtext": "Moby Dick",
   "pagenumber": "12",
+  "books": [
+    [
+      "Truyện Kiều",
+      "Nguyễn Du"
+    ],
+    [
+      "Số đỏ",
+      "Vũ Trọng Phụng"
+    ],
+    [
+      "Dế Mèn phiêu lưu ký",
+      "Tô Hoài"
+    ],
+    [
+      "Pride and Prejudice",
+      "Jane Austen"
+    ]
+  ],
   "pictures": [
     {
       "id": "s1",
@@ -42,5 +62,14 @@
       "label": "cau-ngoi.png",
       "info": "cau-ngoi.png"
     }
-  ]
+  ],
+  "lastEvent": "toggle",
+  "lastValue": "true",
+  "labelEvent": "Sự kiện cuối",
+  "labelValue": "Giá trị",
+  "jobRunning": true,
+  "progressLabel": "Đang tải",
+  "progressDone": "2",
+  "progressTotal": "3",
+  "progressDetail": "sample-2.epub"
 }

@@ -239,7 +239,7 @@ Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện
 | PNG, JPEG, GIF | `Pictures` |
 | loại khác | bị từ chối (xem dưới) |
 
-7. Xong thì bấm **Dừng và cập nhật thư viện**. Kobo dừng nhận và quét lại thư viện để sách mới hiện ra.
+7. Xong thì bấm **Dừng**. Kobo dừng nhận và quét lại thư viện để sách mới hiện ra.
 
 Nên biết:
 
@@ -342,7 +342,7 @@ Kobo chỉ hiện ảnh của NickelDrawer khi màn hình ngủ đang ở kiểu
 4. Mở một cuốn sách bất kỳ một lần, để Kobo có "sách đang đọc".
 5. Trong **Thêm** → **Tinh chỉnh**, để **Màn hình chờ** ở **Bật**.
 
-Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình ngủ chưa bật · Xem Tùy chọn").
+Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình chờ chưa bật · Xem Tùy chọn").
 
 ### Thêm ảnh
 
@@ -383,7 +383,7 @@ Bấm biểu tượng bánh răng trên thanh tiêu đề của lưới.
 |---|---|
 | **Cách hiển thị** | **Lấp đầy màn hình** (cắt bớt mép ảnh) hoặc **Vừa khung** (giữ cả ảnh, có viền trắng). Ảnh được chuyển đổi lại trong nền. |
 | **Đổi ảnh** | **Cố định** (luôn dùng ảnh đã chọn) hoặc **Ngẫu nhiên** (ảnh khác mỗi lần máy ngủ). |
-| **Màn hình ngủ** | **Sẵn sàng ✓**, hoặc cho biết cần bật cài đặt Kobo nào. |
+| **Màn hình chờ** | **Sẵn sàng ✓**, hoặc cho biết cần bật cài đặt Kobo nào. |
 
 ### Xóa ảnh
 
@@ -510,7 +510,7 @@ Bấm **⚙** ở thanh tiêu đề của Ngăn để mở **Cài đặt NickelD
 Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình cài đặt đã thiết lập sẵn. Muốn dùng repo khác, mở `.adds/koboapps/data/update.json` qua USB và đổi `"repo"` thành `owner/name` (`"repo"` rỗng nghĩa là tắt cập nhật, và mục Nguồn ghi **Tắt**). Trình cài đặt không bao giờ ghi đè tệp này, nhưng sẽ điền repo mặc định nếu `"repo"` đang rỗng.
 
 1. Mở **Thêm** → **Ứng dụng** → **⚙**.
-2. Ở phần **Cập nhật**, bấm **Kiểm tra**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút **Kiểm tra** mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra lúc 17:02 · Bạn đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra lúc 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được lúc 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng **Bản mới** hiện kèm chấm, và nút lớn ghi **Cập nhật lên <phiên bản>**.
+2. Ở phần **Cập nhật**, bấm **Kiểm tra**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút **Kiểm tra** mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra 09/10/2026 17:02 · Đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra 09/10/2026 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được 09/10/2026 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng **Bản mới** hiện ra, và nút lớn ghi **Cập nhật lên <phiên bản>** (kèm nút **Kiểm tra** bên cạnh). Khi không có gì để cài, **Kiểm tra** là nút lớn. Lúc đang kiểm tra hay cài, màn hình hiện tiến trình bằng chữ ("Đang kiểm tra cập nhật…") và các nút mờ đi.
 3. Bấm **Cập nhật lên <phiên bản>**, rồi **Cập nhật** để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.
 4. Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (**Tinh chỉnh** → **Khởi động lại**).
 

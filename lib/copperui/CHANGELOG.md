@@ -4,6 +4,17 @@ All notable changes to CopperUI are listed here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+
+- `empty_state.h`: geometry of the empty state (icon, heading, caption, primary button) and its host tests.
+- Tokens `tweaks.cellHeight`, `tweaks.cellPadding`, `tweaks.messageHeight`, `tweaks.columns`, `tweaks.rowsPerPage`.
+
+### Removed
+
+- The whole "Legacy" token group (`legacy.drawer*`, `legacy.tweaks*`): the drawer surfaces and the Tinh chỉnh modal now use the scale and dialog tokens.
+
 ## [0.2.0]
 
 ### Added

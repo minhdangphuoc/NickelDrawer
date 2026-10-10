@@ -7,10 +7,7 @@ import (
 	"koboapps/internal/i18n"
 )
 
-const (
-	groupsPerPage  = 4
-	lastScanLayout = "02/01 15:04"
-)
+const groupsPerPage = 4
 
 // State builds the variable bindings for ui.json (the drawer's `state` action prints them as
 // one JSON object). It only reads small files, so it fits the 1 s budget.
@@ -77,7 +74,7 @@ func lastScanText(messages *i18n.Bundle, scannedAt time.Time, scanned bool) stri
 	if !scanned {
 		return messages.Message("msg.never", nil)
 	}
-	return scannedAt.Local().Format(lastScanLayout)
+	return messages.DateTime(scannedAt)
 }
 
 func selectedText(messages *i18n.Bundle, selected string) string {

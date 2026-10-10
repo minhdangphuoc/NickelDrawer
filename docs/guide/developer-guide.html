@@ -483,7 +483,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>row</code></td>
 <td><code>{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }</code></td>
-<td>Tappable when it has an <code>action</code>.</td>
+<td>Tappable with an <code>action</code> (optional <code>confirm</code>) or a <code>push</code> to another screen; <code>show</code> hides it while a flag is false. A <code>detail</code> too long for the right-hand column goes under the label.</td>
 </tr>
 <tr>
 <td><code>toggle</code></td>
@@ -518,7 +518,12 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>steps</code></td>
 <td><code>{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }</code></td>
-<td>Progress of a background job.</td>
+<td>Progress of a background job, as text (never a notice). Hidden while <code>label</code> is empty; with <code>done</code> and <code>total</code> empty the headline is the label alone.</td>
+</tr>
+<tr>
+<td><code>samples</code></td>
+<td><code>{ "samples": [{ "button": "Stop", "look": "pressed", "caption": "Pressed" }], "columns": 3 }</code></td>
+<td>A picture of controls in their states (UI Kit): <code>look</code> is <code>normal</code>, <code>pressed</code>, <code>selected</code> or <code>disabled</code>; no bindings, no events, never the primary.</td>
 </tr>
 <tr>
 <td><code>notice</code></td>
@@ -528,7 +533,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>button</code></td>
 <td><code>{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }</code></td>
-<td>At most one <code>primary</code> per screen. <code>enabled</code> takes <code>$var</code> or <code>!$var</code>.</td>
+<td>An <code>action</code> or a <code>push</code> (one of them). At most one <code>primary</code> visible per screen: when the main action depends on the state, give each primary a <code>show</code> flag (<code>"$running"</code>, <code>"!$running"</code>) instead of disabling one (a disabled primary next to the possible action is a warning). <code>enabled</code> and <code>show</code> take <code>$var</code> or <code>!$var</code>.</td>
 </tr>
 <tr>
 <td><code>list</code></td>
@@ -552,6 +557,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tr>
 </tbody>
 </table></div>
+<p>Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's <code>format.date</code>, <code>format.datetime</code> and <code>format.time</code>, never from a fixed layout.</p>
 <p>Two details the validator enforces: a <code>list</code> menu's <code>confirm</code> may be <code>true</code>, but a gallery <code>on_long_press</code> or viewer <code>secondary</code> <code>confirm</code> must be an object (<code>{"title", "text", "ok", "cancel"}</code>); and every variable you bind must be declared in <code>vars</code>.</p>
 <p>Dialogs and toasts are per screen:</p>
 <pre><code class="language-json">&quot;dialogs&quot;: { &quot;done&quot;: { &quot;title&quot;: &quot;Synced&quot;, &quot;text&quot;: &quot;$summary&quot;, &quot;ok&quot;: &quot;OK&quot; } },

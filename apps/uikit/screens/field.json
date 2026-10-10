@@ -1,0 +1,73 @@
+{
+  "title": "@ui.lbl_field",
+  "status": "@ui.pos_field",
+  "body": [
+    {
+      "text": "@ui.desc_field"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "field": "@ui.fld_repo",
+          "placeholder": "owner/name",
+          "caption": "@ui.cap_empty"
+        },
+        {
+          "field": "@ui.fld_repo",
+          "value": "@ui.book1",
+          "caption": "@ui.cap_filled"
+        },
+        {
+          "field": "@ui.fld_repo",
+          "look": "disabled",
+          "caption": "@ui.cap_disabled"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "field": "@ui.fld_search",
+      "bind": "searchtext",
+      "placeholder": "@ui.fld_search_hint",
+      "keyboard": "text"
+    },
+    {
+      "field": "@ui.fld_page",
+      "bind": "pagenumber",
+      "keyboard": "number"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_field",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_field",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "saved": "@ui.toast_saved"
+  }
+}

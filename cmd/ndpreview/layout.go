@@ -41,6 +41,8 @@ type block struct {
 	// keepWithNext keeps the block on the page of the next one (section label and its first row,
 	// field caption and box, pair title and QR, radio title and options): see packPages.
 	keepWithNext bool
+	isTapRow     bool // a tappable "row": a run of them is joined (joinRowRuns)
+	isSection    bool // a section label
 	draw         func(y int) []Item
 }
 
@@ -166,7 +168,8 @@ func layoutScreen(rc renderContext, screenID string, pageIndex int, overlay Over
 	body := rc.blocksFor(screen.Body)
 	pages := packPages(body, bodyBottom-bodyTop)
 	if len(pages) > 1 {
-		pages = packPages(body, bodyBottom-bodyTop-pageBarHeight-rhythm)
+		available := bodyBottom - bodyTop - pageBarHeight - rhythm
+		pages = packPages(keepSectionsTogether(body, available), available)
 	}
 	pageIndex = clamp(pageIndex, 0, len(pages)-1)
 

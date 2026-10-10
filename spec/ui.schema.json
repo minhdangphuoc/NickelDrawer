@@ -147,6 +147,126 @@
               "pattern": "^[a-z0-9][a-z0-9-]{0,30}$",
               "type": "string"
             },
+            "confirm": {
+              "additionalProperties": false,
+              "properties": {
+                "cancel": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "ok": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "pattern": "^[^:]+$",
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "pattern": "^[^:]+$",
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "text": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 160,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 40,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "text",
+                "ok"
+              ],
+              "type": "object"
+            },
             "detail": {
               "maxLength": 60,
               "type": "string"
@@ -179,6 +299,17 @@
                     "en"
                   ],
                   "type": "object"
+                }
+              ]
+            },
+            "show": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
                 }
               ]
             }
@@ -472,6 +603,33 @@
             },
             "secret": {
               "type": "boolean"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
             }
           },
           "required": [
@@ -915,6 +1073,21 @@
                 }
               ]
             },
+            "push": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+              "type": "string"
+            },
+            "show": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
             "style": {
               "enum": [
                 "primary",
@@ -923,8 +1096,7 @@
             }
           },
           "required": [
-            "button",
-            "action"
+            "button"
           ],
           "type": "object"
         },
@@ -1745,6 +1917,1262 @@
           },
           "required": [
             "empty"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "columns": {
+              "maximum": 3,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "samples": {
+              "items": {
+                "$ref": "#/$defs/sample"
+              },
+              "maxItems": 8,
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "samples"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "sample": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "align": {
+              "enum": [
+                "start",
+                "center"
+              ]
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "style": {
+              "enum": [
+                "body",
+                "caption",
+                "heading"
+              ]
+            },
+            "text": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 400,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 400,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "kv": {
+              "items": {
+                "items": false,
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "anyOf": [
+                      {
+                        "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                        "type": "string"
+                      },
+                      {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": {
+                          "maxLength": 24,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "propertyNames": {
+                          "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                        },
+                        "required": [
+                          "en"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "maxLength": 60,
+                    "type": "string"
+                  }
+                ],
+                "type": "array"
+              },
+              "maxItems": 12,
+              "minItems": 1,
+              "type": "array"
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            }
+          },
+          "required": [
+            "kv"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,30}$",
+              "type": "string"
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "confirm": {
+              "additionalProperties": false,
+              "properties": {
+                "cancel": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "ok": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "pattern": "^[^:]+$",
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "pattern": "^[^:]+$",
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "text": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 160,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 40,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "text",
+                "ok"
+              ],
+              "type": "object"
+            },
+            "detail": {
+              "maxLength": 60,
+              "type": "string"
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "push": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+              "type": "string"
+            },
+            "row": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 60,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "show": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "row"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bind": {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+              "type": "string"
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "detail": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 60,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "toggle": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 60,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "toggle"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bind": {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+              "type": "string"
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "options": {
+              "items": {
+                "items": false,
+                "maxItems": 3,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+                    "type": "string"
+                  },
+                  {
+                    "anyOf": [
+                      {
+                        "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                        "type": "string"
+                      },
+                      {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": {
+                          "maxLength": 40,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "propertyNames": {
+                          "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                        },
+                        "required": [
+                          "en"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "anyOf": [
+                      {
+                        "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                        "type": "string"
+                      },
+                      {
+                        "maxLength": 60,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": {
+                          "maxLength": 60,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "propertyNames": {
+                          "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                        },
+                        "required": [
+                          "en"
+                        ],
+                        "type": "object"
+                      }
+                    ]
+                  }
+                ],
+                "type": "array"
+              },
+              "maxItems": 8,
+              "minItems": 1,
+              "type": "array"
+            },
+            "radio": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 60,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "radio"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bind": {
+              "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+              "type": "string"
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "field": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "keyboard": {
+              "enum": [
+                "text",
+                "number",
+                "url"
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "placeholder": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "secret": {
+              "type": "boolean"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "field"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "steps": {
+              "additionalProperties": false,
+              "properties": {
+                "detail": {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                "done": {
+                  "maxLength": 16,
+                  "type": "string"
+                },
+                "label": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 40,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "total": {
+                  "maxLength": 16,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "done",
+                "total"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "steps"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "notice": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 40,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 40,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            }
+          },
+          "required": [
+            "notice"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "pattern": "^[a-z0-9][a-z0-9-]{0,30}$",
+              "type": "string"
+            },
+            "async": {
+              "type": "boolean"
+            },
+            "button": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 32,
+                  "minLength": 1,
+                  "pattern": "^[^:]+$",
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 32,
+                    "minLength": 1,
+                    "pattern": "^[^:]+$",
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "caption": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 24,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 24,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "confirm": {
+              "additionalProperties": false,
+              "properties": {
+                "cancel": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "ok": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 24,
+                      "minLength": 1,
+                      "pattern": "^[^:]+$",
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 24,
+                        "minLength": 1,
+                        "pattern": "^[^:]+$",
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "text": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 160,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                      "type": "string"
+                    },
+                    {
+                      "maxLength": 40,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    {
+                      "additionalProperties": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "propertyNames": {
+                        "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                      },
+                      "required": [
+                        "en"
+                      ],
+                      "type": "object"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "text",
+                "ok"
+              ],
+              "type": "object"
+            },
+            "enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "look": {
+              "enum": [
+                "normal",
+                "pressed",
+                "selected",
+                "disabled"
+              ]
+            },
+            "push": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+              "type": "string"
+            },
+            "show": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "pattern": "^!?\\$[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*$",
+                  "type": "string"
+                }
+              ]
+            },
+            "style": {
+              "enum": [
+                "primary",
+                "secondary"
+              ]
+            }
+          },
+          "required": [
+            "button"
           ],
           "type": "object"
         }

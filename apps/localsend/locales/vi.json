@@ -6,14 +6,13 @@
   "msg.wifi_missing": "Chưa kết nối Wi-Fi.\nĐợi Wi-Fi kết nối rồi bấm lại.",
   "msg.start_failed": "Không khởi động được LocalSend. Xem data/log.txt.",
   "msg.started": "LocalSend đang nhận sách\n\nTên máy: {device}\nIP: {ip}\nPIN: {pin}\n\nTự dừng sau 15 phút không có tệp nào.\nXong bấm 'Dừng nhận'.",
-  "msg.stopped": "Đã dừng LocalSend.\nĐang cập nhật thư viện...",
+  "msg.stopped": "Đã dừng LocalSend.\nĐang cập nhật thư viện…",
   "ui.pin_hint": "Nhập mã PIN này trên điện thoại",
   "ui.device": "Thiết bị",
   "ui.ip": "IP",
   "ui.keep_awake": "Để màn hình này mở khi đang nhận tệp.",
   "ui.received": "Đã nhận",
   "ui.nothing_yet": "Chưa có gì",
-  "ui.stop_and_update": "Dừng và cập nhật thư viện",
   "actions.state.label": "Trạng thái màn hình",
   "ui.status_receiving": "Đang nhận",
   "ui.status_idle": "Chưa nhận",
@@ -22,7 +21,8 @@
   "ui.toast_stopped": "Đã dừng. Đang cập nhật thư viện.",
   "ui.toast_wifi_missing": "Chưa có Wi-Fi. Kết nối rồi thử lại.",
   "ui.toast_start_failed": "Không khởi động được. Xem data/log.txt.",
-  "ui.toast_failed": "Không thành công. Xem data/log.txt.",
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt.",
   "ui.auto_stopped": "Đã dừng nhận sau {minutes} phút không có tệp.",
-  "ui.idle_stop": "Tự dừng sau 15 phút không có tệp. Hẹn giờ ngủ của Kobo vẫn áp dụng."
+  "ui.idle_stop": "Tự dừng sau 15 phút không có tệp. Hẹn giờ ngủ của Kobo vẫn áp dụng.",
+  "ui.stop": "Dừng"
 }

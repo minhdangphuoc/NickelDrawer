@@ -34,8 +34,9 @@ commands:
           --font FILE  --font-serif FILE  --font-mono FILE  --icons DIR
 
   drawer-grid  headless PNG of the drawer's grid view with sample apps
-  drawer-list  headless PNG of the drawer's list view with sample apps
-  tweaks       headless PNG of the "Tweaks" modal (as the mod draws it today)
+  drawer-list  headless PNG of the drawer's list view with sample apps (--problems, --qt6)
+  drawer-empty headless PNG of the drawer's empty state (--loading for the Loading state)
+  tweaks       headless PNG of the "Tweaks" modal
           --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --font FILE  --icons DIR
 
 Every command lays out in the real page area (1264x1426 below Nickel's 128 px status bar, a 126 px
@@ -67,6 +68,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runDrawerGrid(args[1:], stdout, stderr)
 	case "drawer-list":
 		return runDrawerList(args[1:], stdout, stderr)
+	case "drawer-empty":
+		return runDrawerEmpty(args[1:], stdout, stderr)
 	case "tweaks":
 		return runTweaks(args[1:], stdout, stderr)
 	case "-h", "--help", "help":

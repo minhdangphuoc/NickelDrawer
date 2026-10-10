@@ -31,7 +31,7 @@
     },
     {
       "type": "notice",
-      "text": "Để màn hình này mở khi đang nhận tệp."
+      "text": "Keep this screen open while files arrive."
     },
     {
       "type": "text",
@@ -63,21 +63,14 @@
   "footer": [
     {
       "type": "button",
-      "text": "Bắt đầu nhận",
-      "style": "secondary",
-      "action": "start",
-      "enabled": false
-    },
-    {
-      "type": "button",
-      "text": "Dừng và cập nhật thư viện",
+      "text": "Dừng",
       "style": "primary",
       "action": "stop",
       "enabled": true
     }
   ],
   "toasts": {
-    "failed": "Không thành công. Xem data/log.txt.",
+    "failed": "Không thực hiện được. Xem data/log.txt.",
     "start_failed": "Không khởi động được. Xem data/log.txt.",
     "started": "Đang nhận. Nhập PIN trên điện thoại.",
     "stopped": "Đã dừng. Đang cập nhật thư viện.",

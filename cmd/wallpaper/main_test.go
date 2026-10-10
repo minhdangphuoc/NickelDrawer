@@ -117,7 +117,10 @@ type stateReply struct {
 	Summary    string        `json:"summary"`
 	Pictures   []pictureItem `json:"pictures"`
 	Pending    int           `json:"pending"`
-	ImportStep string        `json:"import_step"`
+	StepLabel  string        `json:"step_label"`
+	StepDone   string        `json:"step_done"`
+	StepTotal  string        `json:"step_total"`
+	StepDetail string        `json:"step_detail"`
 
 	SleepScreenReady bool   `json:"sleep_screen_ready"`
 	SleepScreenHint  string `json:"sleep_screen_hint"`

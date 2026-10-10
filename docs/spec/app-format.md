@@ -130,6 +130,7 @@ Unknown top-level or action fields are ignored with a warning (forward compatibi
 ```
 
 - Keys: `name`, `description`, `actions.<id>.label` for manifest strings; `msg.<key>` for messages printed by the app's scripts or binaries. The English `msg.*` strings live in `locales/en.json` (required if the app prints messages).
+- `format.date`, `format.datetime` and `format.time` set how the locale writes dates and times of day (tokens `yyyy`, `MM`, `dd`, `HH`, `mm`; defaults `dd/MM/yyyy`, `dd/MM/yyyy HH:mm`, `HH:mm`). Apps that show a date read them through `i18n.Bundle` (`Date`, `DateTime`, `Clock`); they are never formatted with a fixed layout.
 - Placeholders are `{name}`; a translation must use the same set of placeholders as English (validated). `\n` allowed for multi-line text.
 - Same length and `:` rules as the English fields apply to translated labels.
 - Locale resolution: read `CurrentLocale` from `/mnt/onboard/.kobo/Kobo/Kobo eReader.conf`; try the exact file (`pt_BR.json`), then the language (`pt.json`), then English. Missing keys fall back key by key.

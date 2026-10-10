@@ -2,320 +2,142 @@
   "kit": 1,
   "start": "main",
   "vars": {
+    "lastEvent": "",
+    "lastValue": "",
+    "labelEvent": "",
+    "labelValue": "",
     "firmware": "-",
     "locale": "-",
+    "sampleenabled": true,
+    "autorescan": false,
     "shownote": false,
-    "hiddennote": "",
+    "noteText": "",
     "refreshmode": "balanced",
     "searchtext": "",
     "pagenumber": "1",
+    "books": [],
     "pictures": [],
-    "books": [
-      [
-        "Truyện Kiều",
-        "Nguyễn Du"
-      ],
-      [
-        "Pride and Prejudice",
-        "Jane Austen"
-      ],
-      [
-        "Số đỏ",
-        "Vũ Trọng Phụng"
-      ],
-      [
-        "Dế Mèn phiêu lưu ký",
-        "Tô Hoài"
-      ]
-    ],
-    "never": false
+    "selectedPicture": "",
+    "jobRunning": false,
+    "progressLabel": "",
+    "progressDone": "",
+    "progressTotal": "",
+    "progressDetail": ""
   },
   "screens": {
     "main": {
       "title": "@ui.title",
       "status": "@ui.status",
-      "actions": [
-        {
-          "icon": "refresh",
-          "label": "@ui.rescan",
-          "action": "refresh"
-        }
-      ],
       "body": [
         {
-          "section": "@ui.sec_text"
+          "section": "@ui.grp_actions"
         },
         {
-          "text": "@ui.heading",
-          "style": "heading"
+          "row": "@ui.lbl_button",
+          "detail": "@ui.det_button",
+          "push": "button"
         },
         {
-          "text": "@ui.body_text"
+          "row": "@ui.lbl_row",
+          "detail": "@ui.det_row",
+          "push": "row"
         },
         {
-          "text": "@ui.caption_text",
-          "style": "caption"
+          "row": "@ui.lbl_menu",
+          "detail": "@ui.det_menu",
+          "push": "menu"
         },
         {
-          "section": "@ui.sec_kv"
+          "section": "@ui.grp_selection"
         },
         {
-          "kv": [
-            [
-              "@ui.kv_firmware",
-              "$firmware"
-            ],
-            [
-              "@ui.kv_language",
-              "$locale"
-            ],
-            [
-              "@ui.kv_kit",
-              "1"
-            ]
-          ]
+          "row": "@ui.lbl_toggle",
+          "detail": "@ui.det_toggle",
+          "push": "toggle"
         },
         {
-          "section": "@ui.sec_code"
+          "row": "@ui.lbl_radio",
+          "detail": "@ui.det_radio",
+          "push": "radio"
         },
         {
-          "bigcode": "4821",
-          "digits": 4
+          "section": "@ui.grp_input"
         },
         {
-          "section": "@ui.sec_notice"
+          "row": "@ui.lbl_field",
+          "detail": "@ui.det_field",
+          "push": "field"
         },
         {
-          "notice": "@ui.notice_text",
-          "title": "@ui.notice_title"
+          "row": "@ui.lbl_pair",
+          "detail": "@ui.det_pair",
+          "push": "pair"
         },
         {
-          "notice": "$hiddennote"
+          "section": "@ui.grp_feedback"
         },
         {
-          "section": "@ui.sec_steps"
+          "row": "@ui.lbl_toast",
+          "detail": "@ui.det_toast",
+          "push": "toast"
         },
         {
-          "steps": {
-            "label": "@ui.steps_label",
-            "done": "2",
-            "total": "5",
-            "detail": "@ui.steps_detail"
-          }
+          "row": "@ui.lbl_dialog",
+          "detail": "@ui.det_dialog",
+          "push": "dialog"
         },
         {
-          "section": "@ui.sec_rows"
+          "row": "@ui.lbl_notice",
+          "detail": "@ui.det_notice",
+          "push": "notice"
         },
         {
-          "row": "@ui.row_tap",
-          "detail": "@ui.row_tap_detail",
-          "action": "tap"
+          "row": "@ui.lbl_steps",
+          "detail": "@ui.det_steps",
+          "push": "steps"
         },
         {
-          "row": "@ui.row_push",
-          "detail": "@ui.row_push_detail",
-          "push": "more"
+          "row": "@ui.lbl_empty",
+          "detail": "@ui.det_empty",
+          "push": "empty"
         },
         {
-          "list": "$books",
-          "title": "@ui.list_title",
-          "empty_text": "@ui.list_empty",
-          "max": 50,
-          "tap": "tap",
-          "menu": [
-            {
-              "id": "rowopen",
-              "label": "@ui.menu_open"
-            },
-            {
-              "id": "rowdelete",
-              "label": "@ui.menu_delete",
-              "confirm": true
-            }
-          ]
+          "section": "@ui.grp_navigation"
+        },
+        {
+          "row": "@ui.lbl_navigation",
+          "detail": "@ui.det_navigation",
+          "push": "navigation"
+        },
+        {
+          "section": "@ui.grp_containment"
+        },
+        {
+          "row": "@ui.lbl_text",
+          "detail": "@ui.det_text",
+          "push": "text"
+        },
+        {
+          "row": "@ui.lbl_kv",
+          "detail": "@ui.det_kv",
+          "push": "kv"
+        },
+        {
+          "row": "@ui.lbl_code",
+          "detail": "@ui.det_code",
+          "push": "code"
+        },
+        {
+          "row": "@ui.lbl_list",
+          "detail": "@ui.det_list",
+          "push": "list"
+        },
+        {
+          "row": "@ui.lbl_gallery",
+          "detail": "@ui.det_gallery",
+          "push": "gallery"
         }
-      ],
-      "footer": [
-        {
-          "button": "@ui.primary",
-          "action": "primary",
-          "style": "primary"
-        }
-      ],
-      "toasts": {
-        "refresh": "@ui.toast_refresh",
-        "tap": "@ui.toast_tap",
-        "primary": "@ui.toast_primary",
-        "rowopen": "@ui.toast_rowopen",
-        "rowdelete": "@ui.toast_rowdelete",
-        "failed": "@ui.toast_failed"
-      }
-    },
-    "more": {
-      "title": "@ui.more_title",
-      "action": {
-        "label": "@ui.header_link",
-        "action": "tap"
-      },
-      "body": [
-        {
-          "section": "@ui.sec_switch"
-        },
-        {
-          "toggle": "@ui.show_note",
-          "bind": "shownote"
-        },
-        {
-          "notice": "$hiddennote"
-        },
-        {
-          "section": "@ui.sec_radio"
-        },
-        {
-          "radio": "@ui.refresh_style",
-          "bind": "refreshmode",
-          "options": [
-            [
-              "fast",
-              "@ui.opt_fast"
-            ],
-            [
-              "balanced",
-              "@ui.opt_balanced",
-              "@ui.opt_balanced_detail"
-            ],
-            [
-              "clean",
-              "@ui.opt_clean",
-              "@ui.opt_clean_detail"
-            ]
-          ]
-        },
-        {
-          "section": "@ui.sec_fields"
-        },
-        {
-          "field": "@ui.field_search",
-          "bind": "searchtext",
-          "placeholder": "@ui.field_search_hint",
-          "keyboard": "text"
-        },
-        {
-          "field": "@ui.field_page",
-          "bind": "pagenumber",
-          "keyboard": "number"
-        },
-        {
-          "section": "@ui.sec_buttons"
-        },
-        {
-          "button": "@ui.btn_guarded",
-          "action": "tap",
-          "style": "secondary",
-          "enabled": "$shownote"
-        },
-        {
-          "button": "@ui.btn_disabled",
-          "action": "tap",
-          "style": "secondary",
-          "enabled": "$never"
-        },
-        {
-          "button": "@ui.btn_secondary",
-          "action": "tap",
-          "style": "secondary"
-        },
-        {
-          "button": "@ui.btn_confirm",
-          "action": "confirmed",
-          "style": "secondary",
-          "confirm": {
-            "title": "@ui.confirm_title",
-            "text": "@ui.confirm_text",
-            "ok": "@ui.confirm_ok",
-            "cancel": "@ui.cancel"
-          }
-        },
-        {
-          "section": "@ui.sec_qr"
-        },
-        {
-          "qr": "https://example.org/nickeldrawer",
-          "caption": "@ui.qr_caption"
-        },
-        {
-          "section": "@ui.sec_pair"
-        },
-        {
-          "pair": {
-            "url": "http://192.0.2.10:8080",
-            "code": "4821",
-            "title": "@ui.pair_title",
-            "hint": "@ui.pair_hint",
-            "expires": "@ui.pair_expires"
-          }
-        },
-        {
-          "row": "@ui.row_gallery",
-          "detail": "@ui.row_gallery_detail",
-          "push": "pictures"
-        }
-      ],
-      "footer": [
-        {
-          "button": "@ui.primary",
-          "action": "primary",
-          "style": "primary"
-        }
-      ],
-      "toasts": {
-        "tap": "@ui.toast_tap",
-        "primary": "@ui.toast_primary",
-        "confirmed": "@ui.toast_confirmed",
-        "shownote": "@ui.toast_shownote",
-        "refreshmode": "@ui.toast_refreshmode",
-        "searchtext": "@ui.toast_searchtext",
-        "pagenumber": "@ui.toast_pagenumber",
-        "failed": "@ui.toast_failed"
-      }
-    },
-    "pictures": {
-      "title": "@ui.pictures_title",
-      "status": "@ui.pictures_status",
-      "body": [
-        {
-          "text": "@ui.pictures_caption",
-          "style": "caption"
-        },
-        {
-          "gallery": "$pictures",
-          "columns": 3,
-          "rows": 2,
-          "on_tap": {
-            "action": "tap"
-          },
-          "on_long_press": [
-            {
-              "label": "@ui.menu_info",
-              "info": true
-            },
-            {
-              "label": "@ui.menu_echo",
-              "action": "tilelong"
-            }
-          ],
-          "empty": {
-            "icon": "picture",
-            "title": "@ui.gallery_empty_title",
-            "text": "@ui.gallery_empty_text"
-          }
-        }
-      ],
-      "toasts": {
-        "tap": "@ui.toast_tap",
-        "tilelong": "@ui.toast_tilelong",
-        "failed": "@ui.toast_failed"
-      }
+      ]
     }
   }
 }

@@ -39,6 +39,7 @@ func buildSchema() object {
 		"$defs": object{
 			"screen":    shapeSchema(ScreenShape),
 			"component": componentSchema(),
+			"sample":    sampleItemSchema(),
 		},
 	}
 }
@@ -61,6 +62,25 @@ func componentVariantSchema(spec ComponentSpec) object {
 		}
 	}
 	return object{"type": "object", "required": required, "properties": properties, "additionalProperties": false}
+}
+
+// sampleItemSchema is a sampleable component with the cell's "look" and "caption". The inner
+// component's required props are not required (a sample is a picture), and bindings are rejected
+// by the validator, not the schema.
+func sampleItemSchema() object {
+	var variants []any
+	for _, spec := range Components {
+		if !contains(sampleableKeys, spec.Key) {
+			continue
+		}
+		variant := componentVariantSchema(spec)
+		variant["required"] = []string{spec.Key}
+		properties := variant["properties"].(object)
+		properties["look"] = object{"enum": SampleLooks}
+		properties["caption"] = shapeSchema(sampleCaptionShape)
+		variants = append(variants, variant)
+	}
+	return object{"oneOf": variants}
 }
 
 func shapeSchema(shape Shape) object {
@@ -89,6 +109,8 @@ func shapeSchema(shape Shape) object {
 		return object{"type": "string", "pattern": idRegexp}
 	case KindComponents:
 		return object{"type": "array", "items": object{"$ref": "#/$defs/component"}}
+	case KindSamples:
+		return object{"type": "array", "items": object{"$ref": "#/$defs/sample"}, "minItems": shape.Min, "maxItems": shape.Max}
 	case KindAny:
 		return object{}
 	}

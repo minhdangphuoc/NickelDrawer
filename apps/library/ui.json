@@ -61,46 +61,34 @@
           }
         },
         {
-          "button": "@ui.stop",
-          "action": "cancel",
-          "style": "secondary",
-          "enabled": "$can_stop"
-        },
-        {
-          "button": "@ui.fix",
+          "row": "@ui.fix",
           "action": "fix",
-          "style": "secondary",
-          "enabled": "$can_fix",
-          "async": true,
           "confirm": {
             "text": "@ui.fix_confirm",
             "ok": "@ui.fix_ok",
             "cancel": "@ui.cancel"
-          }
+          },
+          "show": "$can_fix"
         },
         {
-          "button": "@ui.nfc",
+          "row": "@ui.nfc",
           "action": "normalize",
-          "style": "secondary",
-          "enabled": "$can_normalize",
-          "async": true,
           "confirm": {
             "text": "@ui.nfc_confirm",
             "ok": "@ui.nfc_ok",
             "cancel": "@ui.cancel"
-          }
+          },
+          "show": "$can_normalize"
         },
         {
-          "button": "@ui.undo",
+          "row": "@ui.undo",
           "action": "undo",
-          "style": "secondary",
-          "enabled": "$can_undo",
-          "async": true,
           "confirm": {
             "text": "@ui.undo_confirm",
             "ok": "@ui.undo_ok",
             "cancel": "@ui.cancel"
-          }
+          },
+          "show": "$can_undo"
         },
         {
           "list": "$duplicates",
@@ -110,36 +98,33 @@
           "max": 30
         },
         {
-          "button": "@ui.next_page",
+          "row": "@ui.next_page",
           "action": "page",
-          "style": "secondary",
-          "enabled": "$has_pages"
+          "show": "$has_pages"
         },
         {
           "text": "$selected",
           "style": "caption"
         },
         {
-          "button": "@ui.trash",
+          "row": "@ui.trash",
           "action": "trash",
-          "style": "secondary",
-          "enabled": "$has_selection",
           "confirm": {
             "text": "@ui.trash_confirm",
             "ok": "@ui.trash_ok",
             "cancel": "@ui.cancel"
-          }
+          },
+          "show": "$has_selection"
         },
         {
-          "button": "@ui.restore",
+          "row": "@ui.restore",
           "action": "restore",
-          "style": "secondary",
-          "enabled": "$can_restore",
           "confirm": {
             "text": "@ui.restore_confirm",
             "ok": "@ui.restore_ok",
             "cancel": "@ui.cancel"
-          }
+          },
+          "show": "$can_restore"
         },
         {
           "notice": "@ui.note"
@@ -150,8 +135,15 @@
           "button": "@ui.scan",
           "action": "scan",
           "style": "primary",
-          "enabled": "!$running",
+          "show": "!$running",
           "async": true
+        },
+        {
+          "button": "@ui.stop",
+          "action": "cancel",
+          "style": "primary",
+          "show": "$running",
+          "enabled": "$can_stop"
         }
       ],
       "toasts": {

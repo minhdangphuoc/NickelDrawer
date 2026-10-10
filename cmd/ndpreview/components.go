@@ -25,10 +25,50 @@ func (rc renderContext) blocksFor(components []uikit.Component) []block {
 	for _, component := range components {
 		blocks = append(blocks, rc.componentBlocks(component)...)
 	}
+	return joinRowRuns(blocks)
+}
+
+// keepSectionsTogether keeps a section label with all the blocks under it (until the next
+// section) when that group fits a page of available px: it then moves to the next page whole, so a
+// group never starts at the bottom of one page and goes on, label-less, on the next. A taller
+// group flows block by block as before (mirrored by ScreenLayout in mod/drawer/screen_layout.cc).
+func keepSectionsTogether(blocks []block, available int) []block {
+	for start := 0; start < len(blocks); {
+		if !blocks[start].isSection {
+			start++
+			continue
+		}
+		end := start + 1
+		for end < len(blocks) && !blocks[end].isSection {
+			end++
+		}
+		if blocksHeight(blocks[start:end]) <= available {
+			for index := start; index+1 < end; index++ {
+				blocks[index].keepWithNext = true
+			}
+		}
+		start = end
+	}
+	return blocks
+}
+
+// joinRowRuns removes the gap between two tappable rows that follow each other: rows are
+// separated by their own divider, so a run of rows reads as one list (mirrored by
+// ScreenLayout in mod/drawer/screen_layout.cc). The last row of a run keeps its gap, except before a
+// section label, which has its own top inset.
+func joinRowRuns(blocks []block) []block {
+	for index := 0; index+1 < len(blocks); index++ {
+		if blocks[index].isTapRow && (blocks[index+1].isTapRow || blocks[index+1].isSection) {
+			blocks[index].gap = 0
+		}
+	}
 	return blocks
 }
 
 func (rc renderContext) componentBlocks(c uikit.Component) []block {
+	if show, hasShow := c.Props["show"]; hasShow && !uikit.Truthy(show, rc.vars) {
+		return nil // a button or row whose `show` flag is false is left out and the page packs without it
+	}
 	switch c.Kind {
 	case "text":
 		if rc.text(c.Main()) == "" {
@@ -66,6 +106,8 @@ func (rc renderContext) componentBlocks(c uikit.Component) []block {
 		return rc.listBlocks(c)
 	case "empty":
 		return rc.emptyBlocks(c)
+	case "samples":
+		return rc.samplesBlocks(c)
 	}
 	return nil
 }
@@ -104,7 +146,7 @@ func paragraphBlock(text string, size, lineH int, family string, bold bool, alig
 }
 
 func (rc renderContext) sectionBlock(label string) block {
-	return block{height: sectionHeight, gap: 0, keepWithNext: true, draw: func(y int) []Item {
+	return block{height: sectionHeight, gap: 0, keepWithNext: true, isSection: true, draw: func(y int) []Item {
 		upper := strings.ToUpper(label) // uppercase first: capitals are wider than the lower case they replace
 		item := textItem(gutter, y+sectionTopInset, contentWidth, sectionLineH, elide(upper, contentWidth, bold(sectionSize, familySans), false), sectionSize, familySans, "start")
 		item.Ink = inkMuted
@@ -161,23 +203,46 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 	label := rc.text(c.Main())
 	detail := rc.text(c.Prop("detail"))
 	event := actionEventFor(map[string]any{"action": c.Prop("action"), "push": c.Prop("push")})
-	return block{height: tapRowHeight, gap: rhythm, draw: func(y int) []Item {
+	confirmPath := ""
+	if c.Prop("confirm") != nil {
+		confirmPath, event = c.Path, "" // the question comes first; OK sends the action
+	}
+	isSubline := rowDetailIsSubline(detail)
+	return block{height: tapRowHeight, gap: rhythm, isTapRow: true, draw: func(y int) []Item {
 		textWidth := contentWidth - rowTapTextInset
+		if isSubline {
+			textWidth = contentWidth - chevronIconSize - rhythm
+		}
+		labelTop := y + rowTextInsetTall
+		if isSubline {
+			labelTop = y + rowLabelWithDetail
+		}
 		items := []Item{
-			textItem(gutter, y+rowTextInsetTall, textWidth, rowLabelHeight, elide(label, textWidth, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start"),
+			textItem(gutter, labelTop, textWidth, rowLabelHeight, elide(label, textWidth, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start"),
 			separator(y + tapRowHeight - separatorPx),
 		}
-		if detail != "" {
+		if isSubline {
+			item := textItem(gutter, y+rowDetailTop, textWidth, captionLineH, elide(detail, textWidth, regular(captionSize, familySans), false), captionSize, familySans, "start")
+			item.Ink = inkMuted
+			items = append(items, item)
+		} else if detail != "" {
 			item := textItem(screenWidth-gutter-rowDetailRight, y+rowTextInsetTall, rowDetailWidth, rowLabelHeight, elide(detail, rowDetailWidth, regular(rowTextSize, familySans), false), rowTextSize, familySans, "end")
 			item.Ink = inkMuted
 			items = append(items, item)
 		}
-		if event != "" {
+		if event != "" || confirmPath != "" {
 			items = append(items, iconCentred("chevron-right", chevronIconSize, screenWidth-gutter-chevronIconSize, y, chevronIconSize, tapRowHeight, inkBlack)...)
-			items = append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: tapRowHeight, Fill: noFill, Event: event, Label: label})
+			items = append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: tapRowHeight, Fill: noFill, Event: event, Confirm: confirmPath, Label: label})
 		}
 		return items
 	}}
+}
+
+// rowDetailIsSubline is the rule for the detail of a row (mirrored by ScreenLogic::rowDetailIsSubline):
+// a value that fits the right-hand column (row.detailWidth) stays there, right-aligned; a longer
+// one goes under the label as a muted caption, like a radio sub-line, so it is never cut short.
+func rowDetailIsSubline(detail string) bool {
+	return detail != "" && textMeter.width(detail, regular(rowTextSize, familySans)) > rowDetailWidth
 }
 
 func (rc renderContext) toggleBlock(c uikit.Component) block {
@@ -424,7 +489,14 @@ func (rc renderContext) pairBlocks(c uikit.Component) []block {
 
 func (rc renderContext) stepsBlocks(c uikit.Component) []block {
 	fields, _ := c.Main().(map[string]any)
-	headline := fmt.Sprintf("%s %s / %s", rc.text(fields["label"]), rc.text(fields["done"]), rc.text(fields["total"]))
+	label, done, total := rc.text(fields["label"]), rc.text(fields["done"]), rc.text(fields["total"])
+	if label == "" {
+		return nil // a steps block whose label resolves to empty is hidden: no job is running
+	}
+	headline := label
+	if done != "" || total != "" { // an indeterminate job ("Checking for updates…") has no numbers
+		headline = fmt.Sprintf("%s %s / %s", label, done, total)
+	}
 	blocks := []block{singleLine(headline, bodySize, familySans, "start", inkBlack, bodyLineH)}
 	blocks[0].gap = 0
 	detail := rc.text(fields["detail"])
@@ -468,20 +540,20 @@ func (rc renderContext) buttonBlock(c uikit.Component) block {
 	action, _ := c.Prop("action").(string)
 	primary := c.Prop("style") == "primary"
 	enabled := uikit.Truthy(c.Prop("enabled"), rc.vars)
-	return rc.button(label, action, primary, enabled, c.Path, c.Prop("confirm") != nil)
+	event := actionEventFor(map[string]any{"action": action, "push": c.Prop("push")})
+	return rc.button(label, event, primary, enabled, c.Path, c.Prop("confirm") != nil)
 }
 
-func (rc renderContext) button(label, action string, primary, enabled bool, path string, hasConfirm bool) block {
+// button lays out a button; event is the protocol line a tap sends (an action or a screen push).
+func (rc renderContext) button(label, event string, primary, enabled bool, path string, hasConfirm bool) block {
 	lines := wrapLimited(label, contentWidth-2*rhythm, bold(bodySize, familySans), buttonLines)
 	height := buttonHeight
 	if len(lines) > 1 {
 		height = buttonTallHt
 	}
-	event, confirmPath := "", ""
+	confirmPath := ""
 	if hasConfirm {
-		confirmPath = path
-	} else if action != "" {
-		event = actionEvent(action)
+		confirmPath, event = path, ""
 	}
 	return block{height: height, gap: rhythm, draw: func(y int) []Item {
 		return buttonItems(buttonLayout{x: gutter, y: y, width: contentWidth, height: height}, lines, primary, enabled, event, confirmPath, label)
@@ -606,7 +678,11 @@ func (rc renderContext) emptyBlocks(c uikit.Component) []block {
 	}
 	if label := rc.text(c.Prop("button")); label != "" {
 		action, _ := c.Prop("action").(string)
-		blocks = append(blocks, rc.button(label, action, true, true, c.Path, false))
+		event := ""
+		if action != "" {
+			event = actionEvent(action)
+		}
+		blocks = append(blocks, rc.button(label, event, true, true, c.Path, false))
 	}
 	return blocks
 }

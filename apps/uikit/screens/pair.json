@@ -1,0 +1,29 @@
+{
+  "title": "@ui.lbl_pair",
+  "status": "@ui.pos_pair",
+  "body": [
+    {
+      "text": "@ui.desc_pair"
+    },
+    {
+      "pair": {
+        "url": "http://192.0.2.10:8080",
+        "code": "4821",
+        "title": "@ui.pair_title",
+        "hint": "@ui.pair_hint",
+        "expires": "@ui.pair_expires"
+      }
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_pair",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_pair",
+      "style": "caption"
+    }
+  ]
+}

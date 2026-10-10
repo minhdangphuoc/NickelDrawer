@@ -1,6 +1,6 @@
 # UI Kit app: redesign plan
 
-Status: proposal for approval (design canvas boards K1–K5, 10 Oct 2026). Applies the catalogue-app research (WinUI Gallery, Compose Material Catalog, UIKitCatalog, Qt Quick Controls Gallery, Carbon) to our constraints: e-ink, no scrolling, at most 2 screens below `main`, no animation. Design tokens and component rules are in `docs/design-system.md`; the `ui.json` contract is `docs/spec/ui-json.md`.
+Status: implemented in Batch 3 (design canvas boards K1–K5, 10 Oct 2026); the deviations are listed at the end of "Implemented in Batch 3" in `docs/design-system.md`. Applies the catalogue-app research (WinUI Gallery, Compose Material Catalog, UIKitCatalog, Qt Quick Controls Gallery, Carbon) to our constraints: e-ink, no scrolling, at most 2 screens below `main`, no animation. Design tokens and component rules are in `docs/design-system.md`; the `ui.json` contract is `docs/spec/ui-json.md`.
 
 ## 1. What is wrong today
 

@@ -53,6 +53,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `view_settings.{h,cc}` | list/grid choice in `.adds/koboapps/data/drawer.ini` (open, write, close; only on change) |
 | `painted_marks.{h,cc}` | update dot, list/grid toggles, header icon buttons, app mark; icons from `../common/system_icon` (Nickel's images, else Tabler PNGs, never drawn) |
 | `item_widgets.{h,cc}` | list row (152 px) and grid cell (icon + 2-line name, no status line); status/dot change in place |
+| `drawer_surfaces.{h,cc}` | the drawer's painted CopperUI surfaces: `NoticeBox` (Qt6 warning), `PrimaryButton`, `EmptyState` (icon, heading, caption, button stacked by `copperui/empty_state.h`) |
 | `drawer_view.{h,cc}` | header, page of rows or grid cells (host items as header buttons: refresh, list, grid, settings gear with the update dot) with section labels, hint, `1 / N` with arrows, page keys |
 | `plain_dialog.{h,cc}` | plain Qt dialog (menu, fallback for Nickel dialogs), 120 s timeout |
 | `dialogs.{h,cc}` | result dialog and confirm question: Nickel's own first, plain fallback |
@@ -67,7 +68,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `tweaks_logic.{h,cc}` | Qt-free: `drawer tweaks` / `drawer tweak` JSON replies, 2-column grid math (unit-tested) |
 | `tweaks_model.h`, `tweaks_parser.{h,cc}` | Qt structs of the tweaks replies, built from tweaks_logic |
 | `tweaks_row.{h,cc}` | the "Tweaks" More row after Apps; tap opens the modal |
-| `tweaks_panel.{h,cc}` | modal body: rule, 2-column cells (italic serif label, On/Off or value), page keys |
+| `tweaks_panel.{h,cc}` | modal body: 1 px rule, 2-column grid of painted cells (sans label wrapped to 2 lines and elided; toggle = Nickel's switch image + state word; info = label + caption value), page label, page keys. Cell geometry: `tweaks_logic.h` |
 | `tweaks_session.{h,cc}` | one open modal: Nickel's N3Dialog as a controller view (else the overlay), confirm, `tweak`, toast, Nickel sleep/reboot/rescan |
 | `tweaks_overlay.{h,cc}` | own modal chrome when Nickel's N3Dialog cannot be used |
 | `wake_rotation.{h,cc}` | random wallpaper: on `N3PowerWorkflowManager::resumedFromSleep()`, if the Wallpaper app's `data/rotate-on-wake` exists, starts `wallpaper next` detached (docs/spec/wallpaper.md "Random rotation") |
@@ -102,6 +103,18 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 - `rescan` `quick` → `PlugWorkflowManager::sync()`; `full` → `onCancelAndConnect()` then `unplugged()` 1 s
   later on a timer (NickelMenu's sequence, without sleeping on the GUI thread).
 - `kind: background` with `ok:true` → toast; everything else with text → Nickel's OK dialog.
+
+### Surfaces (Batch 3)
+
+- Rows: name (row token, bold for problems) and status (caption, muted) are one measured line each, elided to
+  `DrawerLogic::rowTextWidth`; nothing wraps. Tapping a problem row, or Info in its long-press menu, shows the full
+  message in the info dialog. Section labels are uppercased by the renderer, then elided. The hint is one elided line.
+- Empty state: "Loading…" alone until the model is loaded; then icon, caption and the primary **Find apps** button,
+  the button only when the host's `_refresh` item exists (something to do); it taps that item like the header refresh.
+- Qt6 warning: a notice box (2 px border, grey fill, wrapped body text) in place of the hint.
+- Screens: `samples` (non-interactive cells; geometry in `screen_logic.h`), `button` with `push`, `row` with `confirm`.
+  A finished event re-reads the screen at once (a read already in flight is followed by one more), then the 5 s tick.
+- `steps` with `done` and `total` both empty shows the label alone (`ScreenLogic::stepsHeadline`).
 
 ### Refresh
 

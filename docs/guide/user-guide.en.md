@@ -237,7 +237,7 @@ Apps answer with a short message at the bottom of the screen (a "toast"), for ex
 | PNG, JPEG, GIF | `Pictures` |
 | anything else | rejected (see below) |
 
-7. When you are done, tap **Stop and update library**. The Kobo stops receiving and rescans the library so the new books show up.
+7. When you are done, tap **Stop**. The Kobo stops receiving and rescans the library so the new books show up.
 
 Good to know:
 
@@ -506,7 +506,7 @@ Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It ha
 Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open `.adds/koboapps/data/update.json` over USB and change `"repo"` to `owner/name` (an empty `"repo"` turns updates off and the Source reads **Off**). The installer never overwrites that file, but it fills in the default when `"repo"` is empty.
 
 1. Open **More** → **Apps** → **⚙**.
-2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and **Check** is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked at 17:02 · You are on the latest version (1.0.0-beta.1)", "Checked at 17:02 · New version 1.0.0-beta.2 available", or "Could not check at 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the **New version** row appears with a dot, and the big button reads **Update to <version>**.
+2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and **Check** is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked 09/10/2026 17:02 · Up to date (1.0.0-beta.1)", "Checked 09/10/2026 17:02 · New version 1.0.0-beta.2 available", or "Could not check 09/10/2026 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the **New version** row appears, and the big button reads **Update to <version>** (with **Check** beside it). With nothing to install, **Check** is the big button. While a check or an install runs, the screen shows its progress as text ("Checking for updates…") and the buttons are dimmed.
 3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.
 4. If the result says "restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
 

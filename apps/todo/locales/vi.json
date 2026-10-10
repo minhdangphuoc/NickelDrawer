@@ -15,7 +15,7 @@
   "msg.duplicate": "Việc này đã có trong danh sách.",
   "msg.full": "Danh sách đã đầy. Hãy xóa bớt một việc.",
   "msg.missing": "Việc này không còn trong danh sách.",
-  "msg.recovered": "Danh sách đã lưu bị hỏng. Bản sao nằm ở data/todo.json.corrupt và danh sách bắt đầu lại từ trống.",
+  "msg.recovered": "Danh sách đã lưu bị hỏng và đã được cất riêng. Danh sách bắt đầu lại từ trống.",
   "msg.toggled": "Đã cập nhật việc.",
   "ui.title": "Việc cần làm",
   "ui.counts": "Còn $open · xong $done",
@@ -23,7 +23,7 @@
   "ui.new_task_hint": "Gõ rồi xác nhận",
   "ui.tasks": "Danh sách",
   "ui.empty": "Chưa có việc nào",
-  "ui.delete": "Xóa...",
+  "ui.delete": "Xóa…",
   "ui.clear_done": "Xóa việc đã xong",
   "ui.clear_confirm": "Xóa mọi việc đã đánh dấu xong?",
   "ui.clear_ok": "Xóa",
@@ -37,7 +37,7 @@
   "ui.toast_full": "Đầy: hãy xóa bớt một việc",
   "ui.toast_missing": "Không thấy việc này",
   "ui.toast_recovered": "Danh sách hỏng: bắt đầu lại từ trống",
-  "ui.toast_failed": "Không được. Xem data/log.txt.",
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt.",
   "actions.remove.confirm": "Xóa việc này?",
   "actions.clear-done.confirm": "Xóa mọi việc đã xong?"
 }

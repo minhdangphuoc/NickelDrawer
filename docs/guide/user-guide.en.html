@@ -401,7 +401,7 @@ tools/install-to-kobo.sh              # install
 </tbody>
 </table></div>
 <ol start="7">
-<li>When you are done, tap <strong>Stop and update library</strong>. The Kobo stops receiving and rescans the library so the new books show up.</li>
+<li>When you are done, tap <strong>Stop</strong>. The Kobo stops receiving and rescans the library so the new books show up.</li>
 </ol>
 <p>Good to know:</p>
 <ul>
@@ -729,7 +729,7 @@ tools/install-to-kobo.sh              # install
 <p>Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open <code>.adds/koboapps/data/update.json</code> over USB and change <code>"repo"</code> to <code>owner/name</code> (an empty <code>"repo"</code> turns updates off and the Source reads <strong>Off</strong>). The installer never overwrites that file, but it fills in the default when <code>"repo"</code> is empty.</p>
 <ol>
 <li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>⚙</strong>.</li>
-<li>In <strong>Updates</strong>, tap <strong>Check</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and <strong>Check</strong> is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked at 17:02 · You are on the latest version (1.0.0-beta.1)", "Checked at 17:02 · New version 1.0.0-beta.2 available", or "Could not check at 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the <strong>New version</strong> row appears with a dot, and the big button reads <strong>Update to <version></strong>.</li>
+<li>In <strong>Updates</strong>, tap <strong>Check</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and <strong>Check</strong> is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked 09/10/2026 17:02 · Up to date (1.0.0-beta.1)", "Checked 09/10/2026 17:02 · New version 1.0.0-beta.2 available", or "Could not check 09/10/2026 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the <strong>New version</strong> row appears, and the big button reads <strong>Update to <version></strong> (with <strong>Check</strong> beside it). With nothing to install, <strong>Check</strong> is the big button. While a check or an install runs, the screen shows its progress as text ("Checking for updates…") and the buttons are dimmed.</li>
 <li>Tap <strong>Update to <version></strong>, then <strong>Update</strong> to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.</li>
 <li>If the result says "restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
 </ol>

@@ -70,6 +70,12 @@ emit_toast() {
     printf '{"toast":"%s"}\n' "$1"
 }
 
+# Prints the signal that makes the drawer open a dialog declared in the screen's ui.json "dialogs".
+# Usage: emit_dialog <dialog-id>
+emit_dialog() {
+    printf '{"dialog":"%s"}\n' "$1"
+}
+
 # Prints the request that asks the drawer's host for a service the script cannot reach itself.
 # The app must list it in app.json "requests". Usage: emit_request rescan [quick|full] | emit_request wifi
 emit_request() {

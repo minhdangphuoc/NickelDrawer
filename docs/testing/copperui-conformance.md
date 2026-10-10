@@ -66,6 +66,39 @@ F01 and F02 cause about 60 of the ❌ cells.
 **Batch 3 · surfaces**
 3.1 drawer rows, sections, hint, empty, problem and Qt6 rows (F16, F17, F37) M · 3.2 Tinh chỉnh modal (F19) M · 3.3 Settings/About S · 3.4 locale clean-up (F21–F23) S · 3.5 app flows (F25, F26) M · 3.6 notice → steps (F40) S · 3.7 UI Kit rebuild per `uikit-plan.md` L · 3.8 validator rules (ALL CAPS, status width in px, caption period, section over one paragraph) M.
 
+## Status after Batch 3 (10 Oct 2026)
+
+"Fixed" means implemented, covered by host tests and checked in `ndpreview` renders; items that Nickel draws on the device are listed in "Device-only checks" below and stay open until the next device session.
+
+| Finding | Status | Where |
+|---|---|---|
+| F01 greys, F02 dividers, F03 header divider | fixed (Batch 1, 2) | tokens, `divider.h` |
+| F04 serif heading, F05 token source, F06 measured text | fixed (Batch 1, 2) | tokens, `text_meter.cc`, `textfit.go` |
+| F07 line heights ≥ 1.4 × size | fixed in the tokens; Vietnamese clipping still needs the device | tokens |
+| F08 pager, F09 groups split across pages | fixed (Batch 2); F09 also for whole section groups in Batch 3 (`keepSectionsTogether`) | `pager.h`, `pack.h` |
+| F10 disabled controls, F11 pending, F12 list secondary, F13 list primary | fixed (Batch 2) | `screen_layout.cc`, `list_row.h` |
+| F14 shapes and glyphs, F15 row icon, F31 big code, F30 radio title | fixed (Batch 2) | `system_icon.cc`, `screen_layout.cc` |
+| F16 drawer type sizes | **fixed (3.1)**: status 32, section 28 (uppercased by the renderer), hint 32, no legacy sizes | `drawer_view.cc` |
+| F17 drawer empty state | **fixed (3.1)**: icon, serif heading, caption; primary "Find apps" only when the host offers `_refresh` | `drawer_surfaces.cc` |
+| F18 PlainDialog and menu metrics | fixed (Batch 2) | `plain_dialog.cc` |
+| F19 Tinh chỉnh modal | **fixed (3.2)**: dialog tokens, sans cells, switch image and state word, measured one or two lines | `tweaks_*.cc` |
+| F20 hardcoded mod strings | fixed (Batch 1); new keys `mod.find_apps`, `mod.empty_hint`, `mod.problems_section` | `host/locales` |
+| F21 tone marks | fixed (Xóa, Hủy, Tùy everywhere, checked by a test) | locales |
+| F22 typed capitals | **fixed (3.4, 3.8)**: sentence-case keys, validator warning `ui.uppercase_text`, host locale test | locales |
+| F23 header status width | **fixed (3.4)**: Wallpaper "Màn hình chờ: {count}" / "Sleep screen: {count}"; validator warning `ui.status_too_wide`; "5 / 7" spacing | locales |
+| F24 ndpreview parity | fixed (Batch 2); Batch 3 adds samples, drawer empty / loading / warning / problem, the new modal | `cmd/ndpreview` |
+| F25 content style | **fixed (3.3, 3.4, 3.5)**: no trailing periods on captions, dates from the locale (`dd/MM/yyyy HH:mm`), " · " separators, To-do recovered notice without the path, "Bản mới" row without "●", no section over a lone paragraph | apps, host |
+| F26 one-primary rule | **fixed (3.5, 3.8)**: LocalSend Start / Stop, GitHub Pair / Sync and Start / Stop pairing, Library Scan / Stop and a list of rows, Settings Check / Update; `show` flags, validator A8 warning | apps |
+| F28 / F29 switch | fixed (Batch 2: Nickel's image, the pill is the preview fallback) | `screen_layout.cc` |
+| F33 UI Kit gallery 3×2 | fixed: 4×2 | `apps/uikit` |
+| F36 grid name line height | fixed (A2) | tokens |
+| F37 drawer problem status wraps | **fixed (3.1)**: one measured line, details in the Info dialog | `item_widgets.cc`, `action_runner.cc` |
+| F38 underlined header link | open: Nickel draws its own; device check | |
+| F40 notice used as progress | **fixed (3.6)**: Wallpaper importing and Settings check / install are `steps` | apps, host |
+| Text that can wrap left-aligned or overflow | **fixed**: tweak cells, drawer problem rows, hint and empty text are measured and elided or centred | mod |
+
+Remaining: F38 and the device-only checks below. New in Batch 3, device only: the Qt6 notice (it costs list rows, so a 5-row page shows) and the painted Tinh chỉnh cells.
+
 ## Device-only checks
 Nickel TextHeader (title, arrow press, divider) · More-tab rows (icon, dot, press) · N3Dialog (metrics, button order, timeout, page keys) · NickelTouchMenu · Nickel toast and the rate limit · Nickel keyboard (Vietnamese, Go) · switch images 94×56 and the BẬT/TẮT alignment · pressed inversion on every target, no ghost · Vietnamese diacritic clipping (F07) · a long bold-40 label and the 168 px case · drawer list view and Tinh chỉnh modal · refresh counts · dark mode greys · `debug.log` `icon …: Tabler|none` lines.
 

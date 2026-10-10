@@ -1,0 +1,47 @@
+{
+  "title": "@ui.lbl_text",
+  "status": "@ui.pos_text",
+  "body": [
+    {
+      "text": "@ui.desc_text"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "text": "@ui.txt_heading",
+          "style": "heading",
+          "caption": "@ui.cap_heading"
+        },
+        {
+          "text": "@ui.txt_body",
+          "caption": "@ui.cap_body"
+        },
+        {
+          "text": "@ui.txt_caption",
+          "style": "caption",
+          "caption": "@ui.cap_caption"
+        },
+        {
+          "text": "@ui.txt_caption",
+          "style": "caption",
+          "align": "center",
+          "caption": "@ui.cap_centred"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_text",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_text",
+      "style": "caption"
+    }
+  ]
+}

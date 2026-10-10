@@ -51,6 +51,7 @@ private slots:
 
 private:
     void setBusy(bool isBusy);
+    void showProblemText(const DrawerItem &item);
     void runAction(const DrawerAction &action);
     void askToConfirmAction(const DrawerAction &action);
     void runCurrent();

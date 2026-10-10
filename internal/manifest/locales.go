@@ -15,7 +15,8 @@ import (
 const (
 	LocalesDirName = "locales"
 	messagePrefix  = "msg."
-	screenPrefix   = "ui." // texts referenced as "@ui.key" from ui.json
+	screenPrefix   = "ui."     // texts referenced as "@ui.key" from ui.json
+	formatPrefix   = "format." // date and time patterns of the locale (internal/i18n datetime.go)
 	keyName        = "name"
 	keyDescription = "description"
 )
@@ -83,7 +84,7 @@ func CheckLocales(app App) (problems []string, warnings []Warning) {
 
 // isAppTextKey is true for keys an app defines itself: script messages and ui.json texts.
 func isAppTextKey(key string) bool {
-	return strings.HasPrefix(key, messagePrefix) || strings.HasPrefix(key, screenPrefix)
+	return strings.HasPrefix(key, messagePrefix) || strings.HasPrefix(key, screenPrefix) || strings.HasPrefix(key, formatPrefix)
 }
 
 func hasEnglishFile(files map[string]string) bool {

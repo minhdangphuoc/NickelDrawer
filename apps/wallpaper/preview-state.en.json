@@ -59,10 +59,13 @@
   "rotation": "fixed",
   "busy": false,
   "pending": 0,
-  "import_step": "",
   "sleep_screen_ready": false,
   "sleep_screen_hint": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
   "sleep_screen_notice": "Sleep screen is off · See Options",
   "sleep_screen_line": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
-  "last_import": "New pictures: 7. Already there: 0."
+  "last_import": "New pictures: 7. Already there: 0.",
+  "step_label": "",
+  "step_done": "",
+  "step_total": "",
+  "step_detail": ""
 }

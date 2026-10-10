@@ -5,8 +5,6 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
-#include <QVector>
-
 #include "drawer_logic.h"
 #include "nickel_fonts.h"
 #include "painted_marks.h"
@@ -30,8 +28,15 @@ static QLabel *createLabel(const QString &text, const char *objectName, QWidget 
     return label;
 }
 
+// One line for a fixed-size label: the text, or its measured prefix and "…".
+static QString elidedLine(const QString &text, int width, int size, bool isBold)
+{
+    ScreenLogic::TextRun run = {size, ScreenLogic::FAMILY_SANS, isBold};
+    return QtTextMeter::elideLine(text, width, run);
+}
+
 ItemWidget::ItemWidget(const DrawerItem &item, QWidget *parent)
-    : PressArea(parent), statusLabel(NULL), updateDot(NULL), id(item.id)
+    : PressArea(parent), statusLabel(NULL), updateDot(NULL), statusWidth(0), id(item.id)
 {
     setAttribute(Qt::WA_StyledBackground, true);
 }
@@ -54,8 +59,9 @@ bool ItemWidget::applyLiveState(const DrawerItem &item)
         return false;
     }
     if (statusLabel) { // grid cells have no status line
-        if (statusLabel->text() != item.status) {
-            statusLabel->setText(item.status);
+        QString status = elidedLine(item.status, statusWidth, ScreenLogic::CAPTION_SIZE, false);
+        if (statusLabel->text() != status) {
+            statusLabel->setText(status);
         }
         statusLabel->setVisible(!item.status.isEmpty());
     }
@@ -72,10 +78,12 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
     QVBoxLayout *texts = new QVBoxLayout();
     texts->setSpacing(0);
     texts->addStretch(1);
-    texts->addWidget(createLabel(item.name, item.isProblem ? "drawerProblemName" : "drawerItemName", this));
+    int textWidth = DrawerLogic::rowTextWidth(!item.isProblem, item.hasPrimaryAction());
+    statusWidth = textWidth;
+    QString name = elidedLine(item.name, textWidth, ScreenLogic::ROW_TEXT_SIZE, item.isProblem);
+    texts->addWidget(createLabel(name, item.isProblem ? "drawerProblemName" : "drawerItemName", this));
     texts->addWidget(statusLabel);
     texts->addStretch(1);
-    statusLabel->setWordWrap(item.isProblem); // problem messages may need two lines
 
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -95,11 +103,8 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
 // The shared wrap rule (screen_logic.h): at most maxLines lines, the last one elided.
 static QStringList wrapName(const QString &name, int width, int maxLines)
 {
-    QByteArray utf8 = name.toUtf8();
-    QVector<char> out(utf8.size() * 2 + 16);
     ScreenLogic::TextRun run = {TILE_NAME_SIZE, ScreenLogic::FAMILY_SANS, false};
-    int count = ScreenLogic::wrapText(utf8.constData(), width, run, QtTextMeter::meter(), maxLines, out.data(), out.size());
-    return count == 0 ? QStringList() : QString::fromUtf8(out.constData()).split(QLatin1Char('\n'));
+    return QtTextMeter::wrapLines(name, width, run, maxLines);
 }
 
 AppTile::AppTile(const DrawerItem &item, int width, int height, QWidget *parent)
@@ -136,8 +141,10 @@ void AppTile::paintEvent(QPaintEvent *event)
 
 QLabel *createSectionLabel(const QString &title, QWidget *parent)
 {
-    QLabel *label = createLabel(title, "drawerSectionLabel", parent);
+    // Uppercase first: capitals are wider than the lower case they replace.
+    QLabel *label = createLabel(elidedLine(title.toUpper(), ScreenLogic::CONTENT_WIDTH, ScreenLogic::SECTION_TEXT_SIZE, true),
+                                "drawerSectionLabel", parent);
     label->setFixedHeight(SECTION_LABEL_HEIGHT);
-    label->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+    label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     return label;
 }

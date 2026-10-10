@@ -27,7 +27,7 @@ value** (the picture id); see §6.
   Nickel's black circle with the icon in white.
 - Under the divider: a summary line, caption style (small, muted): `12 ảnh · Đang dùng: Núi trắng · Lấp đầy`.
   Hidden when empty (no pictures).
-- The sleep-screen notice: one tappable line (`row` with `push: options`), `Màn hình ngủ chưa bật · Xem Tùy chọn`,
+- The sleep-screen notice: one tappable line (`row` with `push: options`), `Màn hình chờ chưa bật · Xem Tùy chọn`,
   only while the Kobo settings are not ready; the options screen has the full explanation.
 - While importing: header status `Đang nhập 3/7` and a notice `Đang chuyển đổi 3/7 · bien-xanh.jpg`.
 - Grid: **4 columns x 3 rows = 12 per page**. The grid spans the content width (1120 px, the same gutters as the header), gutter 24 px,
@@ -240,7 +240,7 @@ its confirm) sends the shown id.
 - Import progress: `/tmp/wallpaper-progress.json` `{"done": 3, "total": 7, "name": "bien-xanh.jpg"}`
   while running (temp file + rename), removed at the end.
 - `state` prints: `status`, `summary`, `pictures` (§3.2 items, ids `NNNN`), `current_id`, `count`,
-  `mode`, `rotation`, `busy`, `pending`, `import_step`, `sleep_screen_ready`, `sleep_screen_hint`,
+  `mode`, `rotation`, `busy`, `pending`, `step_label`, `step_done`, `step_total`, `step_detail`, `sleep_screen_ready`, `sleep_screen_hint`,
   `sleep_screen_line`, `last_import`.
 - Index entries gain `width`, `height` (original pixels) and `added` (RFC 3339); older entries omit
   them and Info shows what is known.

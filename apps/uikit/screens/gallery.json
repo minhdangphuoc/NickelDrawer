@@ -1,0 +1,44 @@
+{
+  "title": "@ui.lbl_gallery",
+  "status": "@ui.pos_gallery",
+  "body": [
+    {
+      "text": "@ui.desc_gallery"
+    },
+    {
+      "gallery": "$pictures",
+      "columns": 4,
+      "rows": 2,
+      "on_tap": {
+        "push": "viewer"
+      },
+      "on_long_press": [
+        {
+          "label": "@ui.menu_info",
+          "info": true
+        },
+        {
+          "label": "@ui.menu_echo",
+          "action": "echo"
+        }
+      ],
+      "empty": {
+        "icon": "picture",
+        "title": "@ui.gallery_empty_title",
+        "text": "@ui.gallery_empty_text"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "icon": "refresh",
+      "label": "@ui.act_rescan",
+      "action": "refresh"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "refresh": "@ui.toast_refresh"
+  }
+}

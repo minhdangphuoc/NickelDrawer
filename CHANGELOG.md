@@ -17,6 +17,24 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 - List rows are their own component (full-width primary text, muted secondary caption, `✓` as the check icon).
 - `lib/copperui` is built into the mod as a static library; `ndpreview` renders in the real page area (status bar, tab bar), uses the Tabler icons, and has drawer list and Tinh chỉnh renderers and English fixtures.
 
+### Added (surfaces, batch 3)
+
+- **UI Kit rebuilt**: a grouped home (6 sections, 18 rows, 3 pages on group boundaries), one page per component with a description, a states matrix, a working sample, a readout of the last event and guidance, and a picture viewer one level down.
+- `samples` component (a states matrix: normal, pressed, selected, disabled), `push` on `button`, `confirm` and `show` on `row`, `show` on `button`; several primary buttons are allowed when each has its own `show` flag.
+- Drawer: empty state with an icon and a "Find apps" button (only when there is something to do), the Qt6 warning as a notice, problem rows on one line with the full message in Info, section labels in sentence case.
+- Tinh chỉnh modal on the dialog tokens: sans cells, the Nickel switch image with its state word, info cells with a caption value.
+- `steps` show progress of Wallpaper importing and of the update check and install (they were notices); a `steps` block is hidden while its label is empty.
+- Validator warnings for content style: typed capitals, a header status wider than 340 px, a one-line caption with a full stop, a section over a single paragraph, a disabled primary next to its opposite action.
+- `format.date`, `format.datetime` and `format.time` locale keys; GitHub, Library, Wallpaper and the update status write dates as `dd/MM/yyyy HH:mm` by default.
+- `ndpreview`: samples, the new Tweaks modal, `drawer-empty`, `drawer-list --problems --qt6`.
+
+### Changed (surfaces, batch 3)
+
+- LocalSend shows **Start receiving** while idle and **Stop** while receiving (one primary at a time); GitHub shows **Pair with your phone** until paired and then **Sync now**, and **Start pairing** / **Stop pairing**; Library has **Scan** / **Stop** and its actions are rows (shown only when they apply); Settings shows **Check** or **Update** as the primary.
+- A row's detail too long for its column goes under the label; rows follow each other without a gap; a section label stays with its rows when they fit a page.
+- Section labels in locale files are sentence case (the renderer uppercases them); header status strings fit 340 px ("Màn hình chờ: {count}"); "5 / 7" with spaces; " · " between facts; "Bản mới" row without a text bullet; To-do's recovered notice no longer shows a file path; captions have no trailing full stop; Vietnamese wording "màn hình chờ" everywhere.
+- The "Legacy" CopperUI tokens are gone (the modal and the drawer use real tokens): CopperUI 0.3.0.
+
 ### Changed
 
 - Headings use the serif, the big code is regular weight, radio titles are captions, dialogs and menus follow the dialog tokens (1040 wide, 3 px border, 36 px text), the drawer row icon is drawn 1:1 at 64 px (apps may ship `icon-64.png`), chevrons are icons.

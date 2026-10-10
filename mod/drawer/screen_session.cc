@@ -74,7 +74,7 @@ static ScreenModel errorScreen(const DrawerItem &app, const QString &failure)
 ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, ActionRunner *actionRunner)
     : QObject(NULL), app(screenApp), runner(actionRunner), client(NULL), view(new ScreenView(screenApp.name, drawerView)),
       liveTimer(new QTimer(this)), isLoading(false), isEditingField(false), isConfirmOpen(false), isMenuOpen(false),
-      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), menuRow(-1), hasPendingConfirmValue(false),
+      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), needsReloadAfterLoad(false), menuRow(-1), hasPendingConfirmValue(false),
       hasPendingNextValue(false)
 {
     setParent(view);
@@ -125,19 +125,29 @@ void ScreenSession::load(const QString &screenId, const QString &value)
     client->requestScreen(app.id, screenId, value);
 }
 
-// Events still waiting would be undone by a reload that raced them; the last
-// one's reply reloads once the queue is empty.
+// Events still waiting would be undone by a read that raced them: the last one's reply reads
+// again. A read already on its way may have been made before the event finished, so one more
+// follows it at once; that is how a value the user just changed shows without waiting for the
+// 5 s tick (design-system G-12). The tick keeps running, restarted so it does not read twice.
 void ScreenSession::reload()
 {
-    if (!eventQueue.isIdle()) {
+    switch (ScreenLogic::decideReload(eventQueue.isIdle(), isLoading)) {
+    case ScreenLogic::RELOAD_AFTER_QUEUE:
         needsReloadAfterQueue = true;
         DebugLog::write("screen: reload held until %d queued event(s) are sent", eventQueue.waiting());
         return;
+    case ScreenLogic::RELOAD_AFTER_LOAD:
+        needsReloadAfterLoad = true;
+        DebugLog::write("screen: reload held until the read in progress returns");
+        return;
+    case ScreenLogic::RELOAD_NOW:
+        break;
     }
     needsReloadAfterQueue = false;
-    if (!isLoading) {
-        isReloading = true;
-        load(currentScreenId(), currentScreenValue());
+    isReloading = true;
+    load(currentScreenId(), currentScreenValue());
+    if (liveTimer->isActive()) {
+        liveTimer->start();
     }
 }
 
@@ -175,6 +185,10 @@ void ScreenSession::onScreenLoaded(bool isLoaded, const ScreenModel &screen, con
     bool wasReload = isReloading;
     isReloading = false;
     isLoading = false;
+    if (needsReloadAfterLoad) {
+        needsReloadAfterLoad = false;
+        QTimer::singleShot(RUN_FROM_EVENT_LOOP, this, SLOT(reload()));
+    }
     if (isLoaded) {
         // Handed over once by the state script, so a stale reply may carry them too.
         runner->performScreenRequests(screen.requests, app.name);
@@ -384,9 +398,9 @@ void ScreenSession::onComponentTapped(int index, const QString &value)
     DebugLog::write("screen: tap on %s %d, action \"%s\"", qPrintable(type), index, qPrintable(component.action));
     if (type == QLatin1String("button")) {
         tapButton(component);
-    } else if (type == QLatin1String("row") && !component.push.isEmpty()) {
-        pushSubScreen(component.push, QString());
-    } else if (type == QLatin1String("row") || type == QLatin1String("empty")) {
+    } else if (type == QLatin1String("row")) {
+        tapRow(component);
+    } else if (type == QLatin1String("empty")) {
         runAction(component.action);
     } else if (type == QLatin1String("toggle")) {
         tapToggle(index, component);
@@ -487,11 +501,31 @@ void ScreenSession::tapButton(const ScreenComponent &button)
         QMetaObject::invokeMethod(this, "retryLoading", Qt::QueuedConnection);
         return;
     }
-    if (!button.hasConfirm) {
-        runAction(button.action);
+    if (!button.push.isEmpty()) {
+        pushSubScreen(button.push, QString()); // navigation: no confirm, no pending state
         return;
     }
-    askToConfirm(button.confirm, button.action, QString(), QString(), false);
+    runAfterOptionalConfirm(button);
+}
+
+// A row with a push opens that screen; one with an action runs it, after the confirm question when
+// the row declares one.
+void ScreenSession::tapRow(const ScreenComponent &row)
+{
+    if (!row.push.isEmpty()) {
+        pushSubScreen(row.push, QString());
+        return;
+    }
+    runAfterOptionalConfirm(row);
+}
+
+void ScreenSession::runAfterOptionalConfirm(const ScreenComponent &control)
+{
+    if (!control.hasConfirm) {
+        runAction(control.action);
+        return;
+    }
+    askToConfirm(control.confirm, control.action, QString(), QString(), false);
 }
 
 void ScreenSession::retryLoading()

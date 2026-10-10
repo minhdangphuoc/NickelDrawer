@@ -112,7 +112,7 @@ func TestSettingsScreenWithoutHiddenAppsSaysSoAndHasOnlyTheDebugToggle(t *testin
 		if component.Type == "toggle" {
 			toggles++
 		}
-		sawNone = sawNone || component.Text == "No hidden apps installed."
+		sawNone = sawNone || component.Text == "No hidden apps installed"
 	}
 	if toggles != 1 || !sawNone {
 		t.Fatalf("toggles=%d sawNone=%v", toggles, sawNone)

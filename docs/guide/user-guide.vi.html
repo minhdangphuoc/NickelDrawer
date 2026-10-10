@@ -402,7 +402,7 @@ tools/install-to-kobo.sh              # cài
 </tbody>
 </table></div>
 <ol start="7">
-<li>Xong thì bấm <strong>Dừng và cập nhật thư viện</strong>. Kobo dừng nhận và quét lại thư viện để sách mới hiện ra.</li>
+<li>Xong thì bấm <strong>Dừng</strong>. Kobo dừng nhận và quét lại thư viện để sách mới hiện ra.</li>
 </ol>
 <p>Nên biết:</p>
 <ul>
@@ -541,7 +541,7 @@ tools/install-to-kobo.sh              # cài
 <li>Mở một cuốn sách bất kỳ một lần, để Kobo có "sách đang đọc".</li>
 <li>Trong <strong>Thêm</strong> → <strong>Tinh chỉnh</strong>, để <strong>Màn hình chờ</strong> ở <strong>Bật</strong>.</li>
 </ol>
-<p>Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình ngủ chưa bật · Xem Tùy chọn").</p>
+<p>Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình chờ chưa bật · Xem Tùy chọn").</p>
 <h3 id="them-anh">Thêm ảnh</h3>
 <ol>
 <li>Cắm Kobo qua USB và chép ảnh PNG hoặc JPEG thẳng vào thư mục <code>Pictures</code> (không để trong thư mục con). Tối đa 20 MB mỗi ảnh. Bạn cũng có thể gửi bằng LocalSend: ảnh cũng vào <code>Pictures</code>.</li>
@@ -586,7 +586,7 @@ tools/install-to-kobo.sh              # cài
 <td><strong>Cố định</strong> (luôn dùng ảnh đã chọn) hoặc <strong>Ngẫu nhiên</strong> (ảnh khác mỗi lần máy ngủ).</td>
 </tr>
 <tr>
-<td><strong>Màn hình ngủ</strong></td>
+<td><strong>Màn hình chờ</strong></td>
 <td><strong>Sẵn sàng ✓</strong>, hoặc cho biết cần bật cài đặt Kobo nào.</td>
 </tr>
 </tbody>
@@ -731,7 +731,7 @@ tools/install-to-kobo.sh              # cài
 <p>Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình cài đặt đã thiết lập sẵn. Muốn dùng repo khác, mở <code>.adds/koboapps/data/update.json</code> qua USB và đổi <code>"repo"</code> thành <code>owner/name</code> (<code>"repo"</code> rỗng nghĩa là tắt cập nhật, và mục Nguồn ghi <strong>Tắt</strong>). Trình cài đặt không bao giờ ghi đè tệp này, nhưng sẽ điền repo mặc định nếu <code>"repo"</code> đang rỗng.</p>
 <ol>
 <li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>⚙</strong>.</li>
-<li>Ở phần <strong>Cập nhật</strong>, bấm <strong>Kiểm tra</strong>. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút <strong>Kiểm tra</strong> mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra lúc 17:02 · Bạn đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra lúc 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được lúc 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng <strong>Bản mới</strong> hiện kèm chấm, và nút lớn ghi <strong>Cập nhật lên <phiên bản></strong>.</li>
+<li>Ở phần <strong>Cập nhật</strong>, bấm <strong>Kiểm tra</strong>. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút <strong>Kiểm tra</strong> mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra 09/10/2026 17:02 · Đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra 09/10/2026 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được 09/10/2026 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng <strong>Bản mới</strong> hiện ra, và nút lớn ghi <strong>Cập nhật lên <phiên bản></strong> (kèm nút <strong>Kiểm tra</strong> bên cạnh). Khi không có gì để cài, <strong>Kiểm tra</strong> là nút lớn. Lúc đang kiểm tra hay cài, màn hình hiện tiến trình bằng chữ ("Đang kiểm tra cập nhật…") và các nút mờ đi.</li>
 <li>Bấm <strong>Cập nhật lên <phiên bản></strong>, rồi <strong>Cập nhật</strong> để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.</li>
 <li>Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (<strong>Tinh chỉnh</strong> → <strong>Khởi động lại</strong>).</li>
 </ol>

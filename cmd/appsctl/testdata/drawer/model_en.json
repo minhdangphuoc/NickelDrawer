@@ -5,7 +5,7 @@
   "sections": [
     {
       "id": "installed",
-      "title": "INSTALLED",
+      "title": "Installed",
       "items": [
         {
           "id": "alpha",
@@ -62,7 +62,7 @@
     },
     {
       "id": "system",
-      "title": "SYSTEM",
+      "title": "System",
       "items": [
         {
           "id": "_refresh",

@@ -1,0 +1,62 @@
+{
+  "title": "@ui.lbl_dialog",
+  "status": "@ui.pos_dialog",
+  "body": [
+    {
+      "text": "@ui.desc_dialog"
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "button": "@ui.btn_ask",
+      "action": "echo",
+      "style": "secondary",
+      "confirm": {
+        "title": "@ui.confirm_title",
+        "text": "@ui.confirm_text",
+        "ok": "@ui.confirm_ok",
+        "cancel": "@ui.cancel"
+      }
+    },
+    {
+      "button": "@ui.btn_info",
+      "action": "dialog",
+      "style": "secondary"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_dialog",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_dialog",
+      "style": "caption"
+    }
+  ],
+  "dialogs": {
+    "info": {
+      "title": "@ui.dlg_title",
+      "text": "@ui.dlg_text",
+      "ok": "@ui.dlg_ok"
+    }
+  },
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

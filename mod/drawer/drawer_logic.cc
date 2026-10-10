@@ -26,10 +26,19 @@ static const int REMOVE_TIMEOUT_MILLISECONDS = 10000;
 static const int EXIT_CODE_OK = 0;
 static const int EXIT_CODE_PROTOCOL_ERROR = 2;
 
-int itemsPerPage(ViewMode mode, int gridRows)
+int listRowsThatFit(int availableHeight)
+{
+    int rows = (availableHeight - copperui::v1::SECTION_HEIGHT) / copperui::v1::ROW_DRAWER;
+    if (rows > LIST_ROWS_PER_PAGE) {
+        return LIST_ROWS_PER_PAGE;
+    }
+    return rows < 1 ? 1 : rows;
+}
+
+int itemsPerPage(ViewMode mode, int gridRows, int listRows)
 {
     if (mode != VIEW_GRID) {
-        return LIST_ROWS_PER_PAGE;
+        return listRows < 1 ? 1 : listRows;
     }
     return GRID_COLUMNS * (gridRows < 1 ? 1 : gridRows);
 }
@@ -73,6 +82,29 @@ int gridIconTop(int rowHeight)
 int gridNameTop(int rowHeight)
 {
     return gridIconTop(rowHeight) + GRID_ICON_SIDE + GRID_ICON_NAME_GAP;
+}
+
+int rowTextWidth(bool hasIcon, bool hasChevron)
+{
+    using namespace copperui::v1;
+    int width = CONTENT_WIDTH - (DOT_UPDATE + RHYTHM);
+    if (hasIcon) {
+        width -= ICON_DRAWER_ROW + RHYTHM;
+    }
+    if (hasChevron) {
+        width -= ICON_CHEVRON + RHYTHM;
+    }
+    return width;
+}
+
+bool emptyStateShowsDetails(bool hasModel)
+{
+    return hasModel;
+}
+
+bool emptyStateShowsButton(bool hasModel, bool hasRefreshItem)
+{
+    return hasModel && hasRefreshItem;
 }
 
 int pageCount(int itemCount, int perPage)

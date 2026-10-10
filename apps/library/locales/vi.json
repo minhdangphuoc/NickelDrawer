@@ -51,7 +51,7 @@
   "msg.err_report_broken": "Không đọc được báo cáo {path}: {cause}. Hãy quét lại.",
   "msg.err_no_backups": "Không có bản sao lưu để khôi phục.",
   "msg.err_no_trash": "Thùng rác trống.",
-  "msg.err_bad_date": "Không phải ngày (dùng AAAA-MM-DD): {date}",
+  "msg.err_bad_date": "Không phải ngày (dùng năm-tháng-ngày, ví dụ 2026-10-31): {date}",
   "msg.err_exists": "{path} đã có. Không ghi đè.",
   "msg.err_need_confirm": "Thêm --confirm để chuyển sách trùng vào thùng rác.",
   "msg.err_last_copy": "{path} là bản cuối cùng của sách này. Không xóa.",
@@ -81,7 +81,7 @@
   "ui.toast_started": "Đang xử lý thư viện. Xem màn hình.",
   "ui.toast_busy": "Vẫn đang xử lý. Vui lòng đợi.",
   "ui.toast_trashed": "Đã chuyển vào thùng rác 30 ngày.",
-  "ui.toast_failed": "Không thành công. Xem data/log.txt.",
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt.",
   "actions.normalize.label": "Sửa tên (NFC)",
   "actions.restore.label": "Khôi phục từ thùng rác",
   "actions.cancel.label": "Dừng",
@@ -107,5 +107,8 @@
   "actions.fix.confirm": "Sửa ngôn ngữ các sách đã chọn?",
   "actions.undo.confirm": "Hoàn tác lần sửa ngôn ngữ gần nhất?",
   "actions.normalize.confirm": "Đổi tên tệp về dạng NFC?",
-  "actions.trash.confirm": "Chuyển sách đã chọn vào thùng rác?"
+  "actions.trash.confirm": "Chuyển sách đã chọn vào thùng rác?",
+  "format.date": "dd/MM/yyyy",
+  "format.datetime": "dd/MM/yyyy HH:mm",
+  "format.time": "HH:mm"
 }

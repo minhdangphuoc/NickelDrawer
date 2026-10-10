@@ -11,17 +11,21 @@
 #include "debug_log.h"
 #include "nickel_fonts.h"
 #include "plain_dialog.h"
+#include "screen_logic.h"
 #include "system_icon.h"
+#include "text_meter.h"
+#include "tweaks_logic.h"
 
-// The modal's own metrics are "legacy" tokens until it moves to the dialog tokens (fix 3.2).
-static const int BOX_WIDTH = copperui::v1::LEGACY_TWEAKS_BOX_WIDTH;
-static const int BORDER_WIDTH = copperui::v1::LEGACY_TWEAKS_BOX_BORDER;
-static const int CLOSE_SIDE = copperui::v1::LEGACY_TWEAKS_CLOSE_SIDE; // N3Dialog.qss #closeContainer on Storm
+// The dialog tokens (docs/design-system.md A6): 1040 wide, 3 px black border, 120 px title row with
+// the serif dialog title between two 120 px squares (the Nickel close icon sits in the right one).
+static const int BOX_WIDTH = TweaksLogic::BOX_WIDTH;
+static const int BORDER_WIDTH = TweaksLogic::BOX_BORDER;
+static const int CLOSE_SIDE = TweaksLogic::TITLE_ROW_HEIGHT;
 
 static const char *const OVERLAY_STYLE =
-    "#tweaksOverlayBox { background: " COPPERUI_GREY_PAPER_WHITE "; border: " COPPERUI_PX_LEGACY_TWEAKS_BOX_BORDER
-    " solid " COPPERUI_GREY_INK_BLACK "; }"
-    "#tweaksOverlayTitle { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_TITLE_SIZE "; color: "
+    "#tweaksOverlayBox { background: " COPPERUI_GREY_PAPER_WHITE "; border: " COPPERUI_PX_STROKE_BUTTON " solid "
+    COPPERUI_GREY_INK_BLACK "; }"
+    "#tweaksOverlayTitle { font-family: @TITLE_FAMILY@; font-size: " COPPERUI_PX_TYPE_DIALOG_TITLE_SIZE "; font-weight: bold; color: "
     COPPERUI_GREY_INK_BLACK "; background: transparent; }";
 
 CloseCrossButton::CloseCrossButton(QWidget *parent) : PressArea(parent)
@@ -79,11 +83,15 @@ TweaksOverlay::TweaksOverlay(const QString &title, QWidget *content)
 QWidget *TweaksOverlay::createTitleRow(const QString &title, QWidget *box)
 {
     QWidget *row = new QWidget(box);
+    row->setFixedHeight(TweaksLogic::TITLE_ROW_HEIGHT);
     QHBoxLayout *layout = new QHBoxLayout(row);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
     layout->addSpacing(CLOSE_SIDE);
-    QLabel *titleLabel = new QLabel(title, row);
+    // The title is one measured line between the two squares, elided if it cannot fit.
+    ScreenLogic::TextRun titleRun = {ScreenLogic::tokens::TYPE_DIALOG_TITLE_SIZE, ScreenLogic::FAMILY_SERIF, true};
+    int titleWidth = BOX_WIDTH - 2 * BORDER_WIDTH - 2 * CLOSE_SIDE;
+    QLabel *titleLabel = new QLabel(QtTextMeter::elideLine(title, titleWidth, titleRun), row);
     titleLabel->setObjectName(QStringLiteral("tweaksOverlayTitle"));
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setTextFormat(Qt::PlainText);

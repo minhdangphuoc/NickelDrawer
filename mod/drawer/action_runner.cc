@@ -64,7 +64,11 @@ void ActionRunner::setBusy(bool busy)
 
 void ActionRunner::runPrimary(const DrawerItem &item)
 {
-    if (isBusy || item.isProblem) {
+    if (isBusy) {
+        return;
+    }
+    if (item.isProblem) {
+        showProblemText(item); // the row shows one elided line; the dialog has all of it
         return;
     }
     if (!item.hasPrimaryAction()) {
@@ -75,6 +79,13 @@ void ActionRunner::runPrimary(const DrawerItem &item)
     hasRetriedAfterWifi = false;
     setBusy(true);
     runAction(item.actions.first());
+}
+
+void ActionRunner::showProblemText(const DrawerItem &item)
+{
+    if (!item.status.isEmpty()) {
+        Dialogs::showMessage(item.name, item.status);
+    }
 }
 
 void ActionRunner::runAction(const DrawerAction &action)
@@ -290,7 +301,8 @@ void ActionRunner::openMenu(const DrawerItem &item, const QPoint &anchor)
     // Items that do not apply are hidden, not greyed (ui-kit §3.16).
     QList<DialogChoice> choices;
     bool isApp = !item.isHostItem() && !item.id.isEmpty();
-    if (isApp && !item.isProblem) {
+    bool hasInfo = item.isProblem ? !item.status.isEmpty() : isApp; // a problem's Info is its full message
+    if (hasInfo) {
         choices << choice(QString::fromLatin1(MENU_INFO_ID), FallbackStrings::text(FallbackStrings::MENU_INFO));
     }
     int fixedEntries = choices.size() + (isApp ? 1 : 0); // Info above, Remove below
@@ -312,6 +324,9 @@ void ActionRunner::openMenu(const DrawerItem &item, const QPoint &anchor)
 void ActionRunner::onMenuChoice(const QString &choiceId)
 {
     if (choiceId.isEmpty()) {
+        setBusy(false);
+    } else if (choiceId == QLatin1String(MENU_INFO_ID) && currentItem.isProblem) {
+        showProblemText(currentItem);
         setBusy(false);
     } else if (choiceId == QLatin1String(MENU_INFO_ID)) {
         client->requestInfo(currentItem.id);

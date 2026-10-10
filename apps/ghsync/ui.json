@@ -22,7 +22,9 @@
     "pair_code": "",
     "pair_expires": "",
     "pair_hint": "",
-    "pair_note": ""
+    "pair_note": "",
+    "step_done": "",
+    "step_total": ""
   },
   "screens": {
     "main": {
@@ -66,24 +68,33 @@
           "title": "@ui.error_title"
         },
         {
-          "text": "$progress"
-        },
-        {
-          "text": "$step_detail",
-          "style": "caption"
+          "steps": {
+            "label": "$progress",
+            "done": "$step_done",
+            "total": "$step_total",
+            "detail": "$step_detail"
+          }
         },
         {
           "row": "@ui.pair_row",
           "detail": "$pair_row",
-          "push": "pair"
+          "push": "pair",
+          "show": "$configured"
         }
       ],
       "footer": [
         {
+          "button": "@ui.pair_row",
+          "push": "pair",
+          "style": "primary",
+          "show": "!$configured"
+        },
+        {
           "button": "@ui.sync",
           "action": "sync",
           "style": "primary",
-          "enabled": "$can_sync"
+          "enabled": "$can_sync",
+          "show": "$configured"
         }
       ],
       "toasts": {
@@ -114,16 +125,16 @@
       ],
       "footer": [
         {
-          "button": "@ui.pair_stop",
-          "action": "stop-pairing",
-          "style": "secondary",
-          "enabled": "$pairing"
-        },
-        {
           "button": "@ui.pair_start",
           "action": "pair",
           "style": "primary",
-          "enabled": "!$pairing"
+          "show": "!$pairing"
+        },
+        {
+          "button": "@ui.pair_stop",
+          "action": "stop-pairing",
+          "style": "primary",
+          "show": "$pairing"
         }
       ],
       "toasts": {

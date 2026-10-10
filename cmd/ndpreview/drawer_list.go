@@ -64,19 +64,47 @@ func sectionItems(label string, y int) []Item {
 }
 
 // drawerListPage lays out one page of the list view: rows in one section.
-func drawerListPage(items []drawerItem, chrome drawerChrome, pageIndex int) Page {
-	pages := max(1, (len(items)+drawerListRows-1)/drawerListRows)
-	pageIndex = clamp(pageIndex, 0, pages-1)
+func drawerListPage(items []drawerItem, chrome drawerChrome, pageIndex int, extras drawerListExtras) Page {
 	layout := drawerHeaderItems(chrome.title, false, true)
 	y := headerHeight
+	hint := chrome.hint
+	if extras.hasQt6Notice { // the notice takes the hint line's room and some rows (DrawerLogic::listRowsThatFit)
+		notice, taken := qt6NoticeItems(chrome.qt6Notice)
+		layout = append(layout, notice...)
+		y += taken
+		hint = ""
+	}
+	rowsPerPage := listRowsThatFit(drawerPageArea + drawerHintHeight*boolToInt(extras.hasQt6Notice) - (y - headerHeight))
+	pages := max(1, (len(items)+rowsPerPage-1)/rowsPerPage)
+	pageIndex = clamp(pageIndex, 0, pages-1)
 	layout = append(layout, sectionItems(chrome.section, y)...)
 	y += sectionHeight
-	for index := pageIndex * drawerListRows; index < min(len(items), (pageIndex+1)*drawerListRows); index++ {
+	for index := pageIndex * rowsPerPage; index < min(len(items), (pageIndex+1)*rowsPerPage); index++ {
 		layout = append(layout, drawerRowItems(items[index], y)...)
 		y += drawerRowHeight
 	}
-	layout = append(layout, drawerFooterItems(chrome.hint, pageIndex+1, pages)...)
+	if extras.hasProblem && pageIndex == pages-1 && y+sectionHeight+drawerRowHeight <= headerHeight+drawerPageArea {
+		layout = append(layout, sectionItems(chrome.problemsSection, y)...)
+		layout = append(layout, problemRowItems(chrome.problemName, chrome.problemStatus, y+sectionHeight)...)
+	}
+	layout = append(layout, drawerFooterItems(hint, pageIndex+1, pages)...)
 	return Page{ScreenID: "drawer-list", Items: finishPage(layout, nil), Index: pageIndex, Count: pages}
+}
+
+// drawerListExtras are the optional surfaces of a list preview.
+type drawerListExtras struct{ hasProblem, hasQt6Notice bool }
+
+func boolToInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
+}
+
+// listRowsThatFit is DrawerLogic::listRowsThatFit: rows of drawerRowHeight under one section label,
+// at least 1 and at most drawerListRows.
+func listRowsThatFit(available int) int {
+	return clamp((available-sectionHeight)/drawerRowHeight, 1, drawerListRows)
 }
 
 func runDrawerList(args []string, stdout, stderr io.Writer) int {
@@ -85,7 +113,8 @@ func runDrawerList(args []string, stdout, stderr io.Writer) int {
 		return exitFailure
 	}
 	build := func() Page {
-		return drawerListPage(sampleDrawerItems(flags.appsDir, flags.locale, flags.count, "icon.png"), chromeFor(flags.locale), 0)
+		extras := drawerListExtras{hasProblem: flags.problems, hasQt6Notice: flags.qt6Notice}
+		return drawerListPage(sampleDrawerItems(flags.appsDir, flags.locale, flags.count, "icon.png"), chromeFor(flags.locale), 0, extras)
 	}
 	return renderDrawerPage("drawer list", flags, build, stdout, stderr)
 }

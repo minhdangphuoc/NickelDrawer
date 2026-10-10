@@ -2,6 +2,7 @@
 
 #include "copperui/button.h"
 #include "copperui/divider.h"
+#include "copperui/empty_state.h"
 #include "copperui/list_row.h"
 #include "copperui/pager.h"
 #include "test_expect.h"
@@ -144,8 +145,50 @@ static void testRowDividerIsGreyAndTheSectionRuleIsBlack()
     EXPECT_EQ(STROKE_RULE, section.rect.height);
 }
 
+static void testEmptyStateStacksIconHeadingCaptionAndButton()
+{
+    EmptyStateContent content = {true, 1, 2, true, 1};
+    EmptyStateGeometry empty = emptyStateGeometry(content, 100, GUTTER, CONTENT_WIDTH);
+    int iconTop = 100 + EMPTY_SPACER;
+    EXPECT_EQ(iconTop, empty.icon.y);
+    EXPECT_EQ(ICON_GRID, empty.icon.height);
+    EXPECT_EQ(GUTTER + (CONTENT_WIDTH - ICON_GRID) / 2, empty.icon.x);
+    EXPECT_EQ(iconTop + ICON_GRID + RHYTHM, empty.heading.y);
+    EXPECT_EQ(TYPE_HEADING_LINE, empty.heading.height);
+    EXPECT_EQ(CONTENT_WIDTH, empty.heading.width);
+    EXPECT_EQ(empty.heading.y + TYPE_HEADING_LINE + RHYTHM, empty.caption.y);
+    EXPECT_EQ(2 * TYPE_CAPTION_LINE, empty.caption.height);
+    EXPECT_EQ(empty.caption.y + empty.caption.height + RHYTHM, empty.button.y);
+    EXPECT_EQ(BUTTON_HEIGHT, empty.button.height);
+    EXPECT_EQ(CONTENT_WIDTH, empty.button.width);
+    EXPECT_EQ(empty.button.y + BUTTON_HEIGHT - 100, empty.height);
+}
+
+static void testEmptyStateWithoutIconOrButtonLeavesNoGap()
+{
+    EmptyStateContent loading = {false, 1, 0, false, 0};
+    EmptyStateGeometry empty = emptyStateGeometry(loading, 0, GUTTER, CONTENT_WIDTH);
+    EXPECT_EQ(0, empty.icon.height);
+    EXPECT_EQ(EMPTY_SPACER, empty.heading.y);
+    EXPECT_EQ(0, empty.caption.height);
+    EXPECT_EQ(0, empty.button.height);
+    EXPECT_EQ(EMPTY_SPACER + TYPE_HEADING_LINE, empty.height);
+}
+
+static void testEmptyStateButtonGrowsForTwoLines()
+{
+    EmptyStateContent content = {false, 2, 0, true, 2};
+    EmptyStateGeometry empty = emptyStateGeometry(content, 0, GUTTER, CONTENT_WIDTH);
+    EXPECT_EQ(BUTTON_TALL_HEIGHT, empty.button.height);
+    EXPECT_EQ(2 * TYPE_HEADING_LINE, empty.heading.height);
+    EXPECT_EQ(EMPTY_SPACER + 2 * TYPE_HEADING_LINE + RHYTHM, empty.button.y);
+}
+
 int main()
 {
+    testEmptyStateStacksIconHeadingCaptionAndButton();
+    testEmptyStateWithoutIconOrButtonLeavesNoGap();
+    testEmptyStateButtonGrowsForTwoLines();
     testRowDividerIsGreyAndTheSectionRuleIsBlack();
     testPagerIsHiddenOnASinglePage();
     testPagerHalvesAreTheTouchTargets();

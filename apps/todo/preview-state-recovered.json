@@ -3,6 +3,6 @@
   "done": "0",
   "hasdone": false,
   "newitem": "",
-  "notice": "Danh sách đã lưu bị hỏng. Bản sao nằm ở data/todo.json.corrupt và danh sách bắt đầu lại từ trống.",
+  "notice": "Danh sách đã lưu bị hỏng và đã được cất riêng. Danh sách bắt đầu lại từ trống.",
   "items": []
 }

@@ -1,6 +1,7 @@
 #!/bin/sh
-# Prints the screen variables as one JSON object: the stored control values, two read-only facts
-# about the device and the gallery tiles. Local files only (well under 1 s).
+# Prints the screen variables as one JSON object: the stored control values, the readout of the
+# last event, the fake job's progress, two read-only facts about the device, the sample books and
+# the gallery tiles. Local files only (well under 1 s).
 . "$(dirname "$0")/lib.sh"
 
 MAX_SAMPLES=6
@@ -51,15 +52,55 @@ ensure_sample_pictures() {
 }
 
 note_text() {
-    if [ "$(stored_flag shownote)" = true ]; then
+    if [ "$(stored_flag shownote false)" = true ]; then
         msg "$APP_ID" msg.note_text
     fi
 }
 
+# The sample list of the List and Menu pages; the titles are the books of the examples.
+sample_books() {
+    printf '[["Truyện Kiều","Nguyễn Du"],["Số đỏ","Vũ Trọng Phụng"],["Dế Mèn phiêu lưu ký","Tô Hoài"],["Pride and Prejudice","Jane Austen"]]'
+}
+
+# The readout rows exist once an event was recorded: their labels are empty until then, and a kv
+# row whose key and value are both empty is hidden.
+readout_fields() {
+    event=$(stored_value lastEvent '')
+    value=$(stored_value lastValue '')
+    label_event=""
+    label_value=""
+    if [ -n "$event" ]; then
+        label_event=$(msg "$APP_ID" msg.label_event)
+        label_value=$(msg "$APP_ID" msg.label_value)
+        value=${value:-—}
+    fi
+    printf '"lastEvent":"%s","lastValue":"%s","labelEvent":"%s","labelValue":"%s"' \
+        "$(json_escape "$event")" "$(json_escape "$value")" "$(json_escape "$label_event")" "$(json_escape "$label_value")"
+}
+
+# The fake job (steps.sh): "<label key>|<done>|<total>|<detail>" while it runs or after it ended.
+job_fields() {
+    running=false
+    label=""
+    done_count=""
+    total=""
+    detail=""
+    if [ -s "$JOB_FILE" ]; then
+        IFS='|' read -r key done_count total detail <"$JOB_FILE"
+        label=$(msg "$APP_ID" "$key")
+        if [ -f "$DATA_DIR/job.pid" ] && kill -0 "$(cat "$DATA_DIR/job.pid")" 2>/dev/null; then
+            running=true
+        fi
+    fi
+    printf '"jobRunning":%s,"progressLabel":"%s","progressDone":"%s","progressTotal":"%s","progressDetail":"%s"' \
+        "$running" "$(json_escape "$label")" "$(json_escape "$done_count")" "$(json_escape "$total")" "$(json_escape "$detail")"
+}
+
 ensure_sample_pictures
-printf '{"firmware":"%s","locale":"%s","shownote":%s,"hiddennote":"%s",' \
+printf '{"firmware":"%s","locale":"%s","sampleenabled":%s,"autorescan":%s,"shownote":%s,"noteText":"%s",' \
     "$(json_escape "$(firmware_version)")" "$(json_escape "$(device_locale)")" \
-    "$(stored_flag shownote)" "$(json_escape "$(note_text)")"
-printf '"refreshmode":"%s","searchtext":"%s","pagenumber":"%s","pictures":%s}\n' \
+    "$(stored_flag sampleenabled true)" "$(stored_flag autorescan false)" "$(stored_flag shownote false)" \
+    "$(json_escape "$(note_text)")"
+printf '"refreshmode":"%s","searchtext":"%s","pagenumber":"%s","books":%s,"pictures":%s,%s,%s}\n' \
     "$(json_escape "$(stored_value refreshmode balanced)")" "$(json_escape "$(stored_value searchtext '')")" \
-    "$(json_escape "$(stored_value pagenumber 1)")" "$(gallery_tiles)"
+    "$(json_escape "$(stored_value pagenumber 1)")" "$(sample_books)" "$(gallery_tiles)" "$(readout_fields)" "$(job_fields)"

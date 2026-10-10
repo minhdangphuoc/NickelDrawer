@@ -11,6 +11,7 @@
 #include "copperui/pager.h"
 #include "debug_log.h"
 
+#include "drawer_surfaces.h"
 #include "fallback_strings.h"
 #include "qt6_notice.h"
 #include "item_widgets.h"
@@ -22,6 +23,7 @@
 #include "system_icon.h"
 #include "painted_marks.h"
 #include "status_bar_inset.h"
+#include "text_meter.h"
 #include "view_settings.h"
 
 // Sizes in device pixels: the CopperUI tokens (docs/copperui-tokens.md).
@@ -30,7 +32,7 @@ static const int CONTENT_WIDTH = ScreenLogic::CONTENT_WIDTH;
 static const int FOOTER_BUTTON_SIDE = copperui::v1::DRAWER_FOOTER_BUTTON;
 
 // Black on white; row dividers 2 px in the row grey; secondary text (status, section, hint,
-// pager) muted. Families are Nickel's own, filled in at run time (nickel_fonts.h): never
+// pager) muted. The empty state and the Qt6 notice paint themselves (drawer_surfaces.h). Families are Nickel's own, filled in at run time (nickel_fonts.h): never
 // generic ones.
 static const char *const VIEW_STYLE =
     "DrawerView { background: " COPPERUI_GREY_PAPER_WHITE "; }"
@@ -44,13 +46,10 @@ static const char *const VIEW_STYLE =
     "#drawerProblemName { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; font-weight: bold; }"
     "#drawerItemStatus { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
     "#drawerSectionLabel { font-size: " COPPERUI_PX_TYPE_SECTION_SIZE "; font-weight: bold; color: "
-    COPPERUI_GREY_INK_MUTED "; border-bottom: " COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_LINE_SECTION "; }"
+    COPPERUI_GREY_INK_MUTED "; padding-top: " COPPERUI_PX_SPACE_SECTION "; border-bottom: " COPPERUI_PX_STROKE_RULE
+    " solid " COPPERUI_GREY_LINE_SECTION "; }"
     "#drawerHint { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
-    "#drawerQt6Notice { font-size: " COPPERUI_PX_LEGACY_DRAWER_QT6_NOTICE_SIZE "; font-weight: bold; border-bottom: "
-    COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_INK_BLACK "; padding: " COPPERUI_PX_SPACE_UNIT " 0px; }"
-    "#drawerPageIndicator { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
-    "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: " COPPERUI_PX_TYPE_BODY_SIZE "; font-weight: bold; }"
-    "#drawerEmptyText { font-size: " COPPERUI_PX_LEGACY_DRAWER_EMPTY_TEXT_SIZE "; }";
+    "#drawerPageIndicator { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }";
 
 static const int HOST_DOT_INSET = copperui::v1::DRAWER_HOST_DOT_INSET;
 
@@ -62,10 +61,11 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 }
 
 DrawerView::DrawerView()
-    : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
-      hintLabel(NULL), pageIndicator(NULL), previousArrow(NULL), nextArrow(NULL), refreshButton(NULL), settingsButton(NULL), settingsDot(NULL),
-      viewMode(ViewSettings::load()), gridRows(DrawerLogic::GRID_DEFAULT_ROWS), currentPage(0), isInputBlocked(false),
-      hasModel(false), isUpdateAvailable(false), hasLoggedLayout(false), hasQt6Notice(false)
+    : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL),
+      pageLayout(NULL), hintLabel(NULL), pageIndicator(NULL), previousArrow(NULL), nextArrow(NULL), emptyState(NULL),
+      refreshButton(NULL), settingsButton(NULL), settingsDot(NULL), viewMode(ViewSettings::load()),
+      gridRows(DrawerLogic::GRID_DEFAULT_ROWS), listRows(DrawerLogic::LIST_ROWS_PER_PAGE), currentPage(0), isInputBlocked(false), hasModel(false),
+      isUpdateAvailable(false), hasLoggedLayout(false), hasQt6Notice(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerView"));
@@ -86,7 +86,7 @@ DrawerView::DrawerView()
     pageArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
     hintLabel = createTextLabel(QString(), "drawerHint", this);
     hintLabel->setAlignment(Qt::AlignHCenter);
-    hintLabel->setWordWrap(true);
+    hintLabel->setFixedHeight(ScreenLogic::CAPTION_LINE_HEIGHT);
 
     // Top margin is the status-bar inset, known only once Nickel shows the view (showEvent).
     rootLayout = new QVBoxLayout(this);
@@ -169,16 +169,14 @@ HeaderIconButton *DrawerView::createHostButton(HeaderIconButton::Icon icon, cons
     return button;
 }
 
-// A warning row under the header while Kobo offers 5.x and it is not declined.
-// It takes the hint line's room, so the page keeps its height.
+// A notice under the header while Kobo offers 5.x and it is not declined. It takes the hint
+// line's place: the hint is hidden meanwhile.
 void DrawerView::addQt6NoticeIfPending()
 {
     if (!Qt6Notice::isUpgradePending()) {
         return;
     }
-    QLabel *notice = createTextLabel(FallbackStrings::text(FallbackStrings::QT6_UPGRADE_PENDING), "drawerQt6Notice", this);
-    notice->setWordWrap(true);
-    rootLayout->addWidget(notice);
+    rootLayout->addWidget(new NoticeBox(FallbackStrings::text(FallbackStrings::QT6_UPGRADE_PENDING), this));
     hintLabel->hide();
     hasQt6Notice = true;
 }
@@ -214,7 +212,8 @@ void DrawerView::setModel(const DrawerModel &model)
     isUpdateAvailable = model.updateAvailable;
     header->setTitle(model.title.isEmpty() ? FallbackStrings::text(FallbackStrings::APPS_TITLE) : model.title);
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
-    hintLabel->setText(hint);
+    ScreenLogic::TextRun hintRun = {ScreenLogic::CAPTION_SIZE, ScreenLogic::FAMILY_SANS, false};
+    hintLabel->setText(QtTextMeter::elideLine(hint, ScreenLogic::CONTENT_WIDTH, hintRun)); // one measured line
     hintLabel->setVisible(!hasQt6Notice);
     flatten(model);
     rebuildShownIndices();
@@ -270,7 +269,7 @@ void DrawerView::applyLiveStates()
 
 int DrawerView::perPage() const
 {
-    return DrawerLogic::itemsPerPage(viewMode, gridRows);
+    return DrawerLogic::itemsPerPage(viewMode, gridRows, listRows);
 }
 
 // Both views hide the host items the header buttons stand for, so refresh and
@@ -296,13 +295,18 @@ const DrawerItem *DrawerView::hostItem(const char *id) const
     return NULL;
 }
 
+const DrawerItem *DrawerView::hostItemOf(DrawerLogic::HeaderButton button) const
+{
+    return hostItem(DrawerLogic::hostItemIdOfHeaderButton(button));
+}
+
 // The refresh and settings buttons, when the host offers the item and an icon
 // is installed. The settings gear carries the dot while an update is waiting
 // (the item's badge, or the model's update_available).
 void DrawerView::updateHostButtons()
 {
-    const DrawerItem *settings = hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_SETTINGS));
-    bool hasRefreshItem = hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_REFRESH)) != NULL;
+    const DrawerItem *settings = hostItemOf(DrawerLogic::HEADER_SETTINGS);
+    bool hasRefreshItem = hostItemOf(DrawerLogic::HEADER_REFRESH) != NULL;
     refreshButton->setVisible(hasRefreshItem && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
     settingsButton->setVisible(settings && !SystemIcon::icon(SystemIcon::SETTINGS).isNull());
     settingsDot->setVisible(settings && (settings->hasUpdate || isUpdateAvailable));
@@ -324,7 +328,7 @@ QWidget *DrawerView::headerWidget(DrawerLogic::HeaderButton button) const
 
 void DrawerView::onRefreshTapped()
 {
-    const DrawerItem *item = isInputBlocked ? NULL : hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_REFRESH));
+    const DrawerItem *item = isInputBlocked ? NULL : hostItemOf(DrawerLogic::HEADER_REFRESH);
     if (item) {
         emit itemTapped(*item);
     }
@@ -332,7 +336,7 @@ void DrawerView::onRefreshTapped()
 
 void DrawerView::onSettingsTapped()
 {
-    const DrawerItem *item = isInputBlocked ? NULL : hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_SETTINGS));
+    const DrawerItem *item = isInputBlocked ? NULL : hostItemOf(DrawerLogic::HEADER_SETTINGS);
     if (item) {
         emit itemTapped(*item);
     }
@@ -346,13 +350,16 @@ void DrawerView::fitGridRows()
         return;
     }
     int rows = DrawerLogic::gridRowsThatFit(pageArea->height(), DrawerLogic::GRID_ROW_HEIGHT);
-    if (rows == gridRows) {
+    int fittingListRows = DrawerLogic::listRowsThatFit(pageArea->height());
+    if (rows == gridRows && fittingListRows == listRows) {
         return;
     }
-    DebugLog::write("drawer view: grid rows %d -> %d (page area %d px)", gridRows, rows, pageArea->height());
+    DebugLog::write("drawer view: grid rows %d -> %d, list rows %d -> %d (page area %d px)", gridRows, rows, listRows,
+                    fittingListRows, pageArea->height());
     int firstVisible = DrawerLogic::firstIndexOnPage(currentPage, perPage());
     gridRows = rows;
-    if (viewMode == DrawerLogic::VIEW_GRID) {
+    listRows = fittingListRows;
+    if (hasModel || viewMode == DrawerLogic::VIEW_GRID) {
         currentPage = DrawerLogic::pageContainingItem(firstVisible, perPage());
         renderPage();
         scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy));
@@ -368,6 +375,9 @@ void DrawerView::setInputBlocked(bool isBlocked)
     }
     for (int i = 0; i < pageWidgets.size(); i++) {
         pageWidgets[i]->setAcceptsPresses(!isBlocked);
+    }
+    if (emptyState) {
+        emptyState->setInputEnabled(!isBlocked);
     }
 }
 
@@ -443,6 +453,7 @@ void DrawerView::goToPage(int page)
 void DrawerView::clearPage()
 {
     pageWidgets.clear();
+    emptyState = NULL;
     while (QLayoutItem *child = pageLayout->takeAt(0)) {
         if (child->widget()) {
             child->widget()->hide();
@@ -504,18 +515,18 @@ void DrawerView::renderGridPage(int first, int count)
     pageLayout->addWidget(gridHost);
 }
 
+// Loading: the heading alone. Loaded: icon, caption and, only when the host's refresh item exists
+// (there is something to do), the primary "Find apps", which taps that item like the header button.
 void DrawerView::renderEmptyState()
 {
-    FallbackStrings::Key heading = hasModel ? FallbackStrings::EMPTY_TITLE : FallbackStrings::LOADING;
-    QLabel *title = createTextLabel(FallbackStrings::text(heading), "drawerEmptyTitle", pageArea);
-    QLabel *text = createTextLabel(hasModel ? FallbackStrings::text(FallbackStrings::EMPTY_HINT) : QString(),
-                                   "drawerEmptyText", pageArea);
-    title->setAlignment(Qt::AlignHCenter);
-    text->setAlignment(Qt::AlignHCenter);
-    text->setWordWrap(true);
-    pageLayout->addStretch(1);
-    pageLayout->addWidget(title);
-    pageLayout->addWidget(text);
+    bool hasDetails = DrawerLogic::emptyStateShowsDetails(hasModel);
+    bool hasButton = DrawerLogic::emptyStateShowsButton(hasModel, hostItemOf(DrawerLogic::HEADER_REFRESH) != NULL);
+    QString heading = FallbackStrings::text(hasDetails ? FallbackStrings::EMPTY_TITLE : FallbackStrings::LOADING);
+    QString caption = hasDetails ? FallbackStrings::text(FallbackStrings::EMPTY_HINT) : QString();
+    QString buttonLabel = hasButton ? FallbackStrings::text(FallbackStrings::FIND_APPS) : QString();
+    emptyState = new EmptyState(heading, caption, hasDetails, buttonLabel, pageArea);
+    connect(emptyState, SIGNAL(buttonTapped()), this, SLOT(onRefreshTapped()));
+    pageLayout->addWidget(emptyState, 0, Qt::AlignHCenter | Qt::AlignTop);
 }
 
 void DrawerView::updateFooter()

@@ -637,4 +637,68 @@ bool rowHasRightCell(int row, int itemCountOnPage)
     return row * COLUMN_COUNT + 1 < itemCountOnPage;
 }
 
+int boxInnerWidth()
+{
+    return BOX_WIDTH - 2 * BOX_BORDER;
+}
+
+int panelHeight(int itemCountOnFirstPage, int pageCount)
+{
+    if (itemCountOnFirstPage <= 0) {
+        return RULE_HEIGHT + MESSAGE_HEIGHT;
+    }
+    int pagerLine = pageCount > 1 ? PAGER_LINE_HEIGHT : 0;
+    return RULE_HEIGHT + gridHeight(itemCountOnFirstPage, CELL_HEIGHT, DIVIDER_WIDTH) + pagerLine;
+}
+
+int boxHeight(int itemCountOnFirstPage, int pageCount)
+{
+    return 2 * BOX_BORDER + TITLE_ROW_HEIGHT + panelHeight(itemCountOnFirstPage, pageCount);
+}
+
+int maxLabelLines(Kind kind)
+{
+    return kind == KIND_INFO ? 1 : LABEL_MAX_LINES;
+}
+
+int labelWidth(Kind kind, int cellWidth)
+{
+    int inner = cellWidth - 2 * CELL_PADDING;
+    return kind == KIND_TOGGLE ? inner - TOGGLE_COLUMN_WIDTH - copperui::v1::RHYTHM : inner;
+}
+
+static Rect makeRect(int x, int y, int width, int height)
+{
+    Rect rect = {x, y, width, height};
+    return rect;
+}
+
+CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCount)
+{
+    int lines = labelLineCount < 1 ? 1 : labelLineCount;
+    CellLayout layout;
+    layout.isCentred = kind == KIND_ACTION;
+    layout.value = makeRect(0, 0, 0, 0);
+    layout.switchImage = makeRect(0, 0, 0, 0);
+    layout.stateWord = makeRect(0, 0, 0, 0);
+    int width = labelWidth(kind, cellWidth);
+    int labelHeight = lines * LABEL_LINE_HEIGHT;
+    if (kind == KIND_INFO) {
+        int blockTop = (cellHeight - LABEL_LINE_HEIGHT - VALUE_LINE_HEIGHT) / 2;
+        layout.label = makeRect(CELL_PADDING, blockTop, width, LABEL_LINE_HEIGHT);
+        layout.value = makeRect(CELL_PADDING, blockTop + LABEL_LINE_HEIGHT, width, VALUE_LINE_HEIGHT);
+        return layout;
+    }
+    layout.label = makeRect(CELL_PADDING, (cellHeight - labelHeight) / 2, width, labelHeight);
+    if (kind == KIND_TOGGLE) {
+        int blockHeight = TOGGLE_SWITCH_HEIGHT + TOGGLE_STATE_TOP_GAP + TOGGLE_STATE_HEIGHT;
+        int blockTop = (cellHeight - blockHeight) / 2;
+        int columnLeft = cellWidth - CELL_PADDING - TOGGLE_COLUMN_WIDTH;
+        layout.switchImage = makeRect(columnLeft, blockTop, TOGGLE_COLUMN_WIDTH, TOGGLE_SWITCH_HEIGHT);
+        layout.stateWord = makeRect(columnLeft, blockTop + TOGGLE_SWITCH_HEIGHT + TOGGLE_STATE_TOP_GAP, TOGGLE_COLUMN_WIDTH,
+                                    TOGGLE_STATE_HEIGHT);
+    }
+    return layout;
+}
+
 } // namespace TweaksLogic

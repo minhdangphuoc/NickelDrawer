@@ -1,0 +1,93 @@
+{
+  "title": "@ui.lbl_row",
+  "status": "@ui.pos_row",
+  "body": [
+    {
+      "text": "@ui.desc_row"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "row": "@ui.row_open",
+          "action": "echo",
+          "caption": "@ui.cap_chevron"
+        },
+        {
+          "row": "@ui.row_open",
+          "action": "echo",
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        },
+        {
+          "row": "@ui.row_refresh",
+          "detail": "@ui.val_balanced",
+          "action": "echo",
+          "caption": "@ui.cap_value"
+        },
+        {
+          "kv": [
+            [
+              "@ui.row_refresh",
+              "@ui.val_balanced"
+            ]
+          ],
+          "caption": "@ui.cap_not_tappable"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "row": "@ui.row_tap",
+      "detail": "@ui.row_tap_detail",
+      "action": "echo"
+    },
+    {
+      "row": "@ui.row_push",
+      "push": "navigation"
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_row",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_row",
+      "style": "caption"
+    }
+  ],
+  "actions": [
+    {
+      "icon": "refresh",
+      "label": "@ui.act_refresh",
+      "action": "echo"
+    },
+    {
+      "icon": "settings",
+      "label": "@ui.act_settings",
+      "action": "echo"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "title": "@ui.lbl_radio",
+  "status": "@ui.pos_radio",
+  "body": [
+    {
+      "text": "@ui.desc_radio"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "samples": [
+        {
+          "radio": "@ui.rd_title",
+          "options": [
+            [
+              "fast",
+              "@ui.opt_fast"
+            ]
+          ],
+          "caption": "@ui.cap_normal"
+        },
+        {
+          "radio": "@ui.rd_title",
+          "options": [
+            [
+              "fast",
+              "@ui.opt_fast"
+            ]
+          ],
+          "look": "selected",
+          "caption": "@ui.cap_selected"
+        },
+        {
+          "radio": "@ui.rd_title",
+          "options": [
+            [
+              "balanced",
+              "@ui.opt_balanced",
+              "@ui.opt_balanced_detail"
+            ]
+          ],
+          "caption": "@ui.cap_subline"
+        }
+      ]
+    },
+    {
+      "samples": [
+        {
+          "radio": "@ui.rd_title",
+          "options": [
+            [
+              "fast",
+              "@ui.opt_fast"
+            ]
+          ],
+          "look": "pressed",
+          "caption": "@ui.cap_pressed"
+        },
+        {
+          "radio": "@ui.rd_title",
+          "options": [
+            [
+              "fast",
+              "@ui.opt_fast"
+            ]
+          ],
+          "look": "disabled",
+          "caption": "@ui.cap_disabled"
+        }
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "radio": "@ui.rd_title",
+      "bind": "refreshmode",
+      "options": [
+        [
+          "fast",
+          "@ui.opt_fast"
+        ],
+        [
+          "balanced",
+          "@ui.opt_balanced",
+          "@ui.opt_balanced_detail"
+        ],
+        [
+          "clean",
+          "@ui.opt_clean",
+          "@ui.opt_clean_detail"
+        ]
+      ]
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_radio",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_radio",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed",
+    "saved": "@ui.toast_saved"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "title": "@ui.lbl_list",
+  "status": "@ui.pos_list",
+  "body": [
+    {
+      "text": "@ui.desc_list"
+    },
+    {
+      "list": "$books",
+      "title": "@ui.list_title",
+      "max": 4,
+      "empty_text": "@ui.list_empty",
+      "tap": "echo",
+      "menu": [
+        {
+          "id": "echo",
+          "label": "@ui.menu_open"
+        },
+        {
+          "id": "echo",
+          "label": "@ui.menu_remove",
+          "confirm": true
+        }
+      ]
+    },
+    {
+      "kv": [
+        [
+          "$labelEvent",
+          "$lastEvent"
+        ],
+        [
+          "$labelValue",
+          "$lastValue"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_list",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_list",
+      "style": "caption"
+    }
+  ],
+  "toasts": {
+    "echo": "@ui.toast_echo",
+    "failed": "@ui.toast_failed"
+  }
+}

@@ -9,7 +9,8 @@
     "ip": "",
     "summary": "",
     "received": [],
-    "note": ""
+    "note": "",
+    "keep_awake": ""
   },
   "screens": {
     "main": {
@@ -38,7 +39,7 @@
           ]
         },
         {
-          "notice": "@ui.keep_awake"
+          "notice": "$keep_awake"
         },
         {
           "text": "@ui.idle_stop",
@@ -62,14 +63,14 @@
         {
           "button": "@ui.start",
           "action": "start",
-          "style": "secondary",
-          "enabled": "!$running"
+          "style": "primary",
+          "show": "!$running"
         },
         {
-          "button": "@ui.stop_and_update",
+          "button": "@ui.stop",
           "action": "stop",
           "style": "primary",
-          "enabled": "$running"
+          "show": "$running"
         }
       ],
       "toasts": {

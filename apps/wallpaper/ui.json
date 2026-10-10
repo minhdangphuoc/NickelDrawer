@@ -12,12 +12,15 @@
     "rotation": "fixed",
     "busy": false,
     "pending": 0,
-    "import_step": "",
     "sleep_screen_ready": true,
     "sleep_screen_hint": "",
     "sleep_screen_notice": "",
     "sleep_screen_line": "",
-    "last_import": ""
+    "last_import": "",
+    "step_label": "",
+    "step_done": "",
+    "step_total": "",
+    "step_detail": ""
   },
   "screens": {
     "main": {
@@ -45,7 +48,12 @@
           "push": "options"
         },
         {
-          "notice": "$import_step"
+          "steps": {
+            "label": "$step_label",
+            "done": "$step_done",
+            "total": "$step_total",
+            "detail": "$step_detail"
+          }
         },
         {
           "gallery": "$pictures",
@@ -175,10 +183,8 @@
           ]
         },
         {
-          "section": "@ui.section_sleep"
-        },
-        {
-          "text": "$sleep_screen_line"
+          "notice": "$sleep_screen_line",
+          "title": "@ui.section_sleep"
         }
       ],
       "toasts": {

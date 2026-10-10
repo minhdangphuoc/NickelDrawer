@@ -11,6 +11,7 @@
 #include "painted_marks.h"
 #include "system_icon.h"
 
+class EmptyState;
 class ItemWidget;
 class PageHeader;
 class PressArea;
@@ -84,6 +85,7 @@ private:
     void rebuildShownIndices();
     void updateHostButtons();
     const DrawerItem *hostItem(const char *id) const;
+    const DrawerItem *hostItemOf(DrawerLogic::HeaderButton button) const;
     QWidget *headerWidget(DrawerLogic::HeaderButton button) const;
 
     void setViewMode(DrawerLogic::ViewMode mode);
@@ -114,6 +116,7 @@ private:
     QLabel *pageIndicator;
     PressArea *previousArrow;
     PressArea *nextArrow;
+    EmptyState *emptyState; // the shown empty state, else NULL
     QList<PressArea *> pressables;
     HeaderIconButton *refreshButton;  // stands for the "_refresh" host item
     HeaderIconButton *settingsButton; // stands for "_settings"
@@ -122,6 +125,7 @@ private:
     DrawerLogic::ViewMode viewMode;
     DrawerLogic::RefreshPolicy refreshPolicy;
     int gridRows; // rows of 4 cells that fit the page area
+    int listRows; // list rows that fit the page area (fewer while the Qt6 notice is shown)
     int currentPage;
     bool isInputBlocked;
     bool hasModel;
