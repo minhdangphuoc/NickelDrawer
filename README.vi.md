@@ -30,4 +30,4 @@ Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới ch�
 
 ## Giấy phép
 
-MIT, xem [LICENSE](LICENSE). NickelDrawer là dự án độc lập, không liên kết với Rakuten Kobo.
+[PolyForm Noncommercial 1.0.0](LICENSE): miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; **không dùng cho mục đích thương mại**. NickelDrawer là dự án độc lập, không liên kết với Rakuten Kobo.

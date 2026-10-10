@@ -117,7 +117,7 @@ Tiếng Việt: xem [README.vi.md](README.vi.md).
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).
+[PolyForm Noncommercial 1.0.0](LICENSE): free for personal use, study, hobby projects and non-profit organisations; **no commercial use**. Forks and changes are welcome under the same terms. NickelDrawer is source-available, not OSI open source. Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).
 
 ## Credits
 

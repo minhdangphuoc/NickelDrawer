@@ -923,7 +923,7 @@ before test days; by Thu 15 Oct to keep G1 on 23 Oct.
 
 ```
 koboapps/
-├── README.md, LICENSE (MIT for our code), CHANGELOG.md
+├── README.md, LICENSE (PolyForm Noncommercial 1.0.0 for our code), CHANGELOG.md
 ├── NickelHook/                 # git submodule (pgaskin/NickelHook)
 ├── Makefile                    # includes NickelHook.mk; targets all/koboroot/check/test/release
 ├── src/

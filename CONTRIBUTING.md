@@ -88,4 +88,4 @@ See [docs/APPS.md](docs/APPS.md).
 
 ## License
 
-By contributing you agree that your work is released under the [MIT License](LICENSE).
+By contributing you agree that your work is released under the project's license, [PolyForm Noncommercial 1.0.0](LICENSE), and that the maintainers may also offer it under other terms (for example a separate commercial license).

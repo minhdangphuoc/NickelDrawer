@@ -8,6 +8,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 First public beta. Tested on one Libra 2 running 4.38.23828; the other four supported builds are checked statically (symbols) only.
 
+Licensed under PolyForm Noncommercial 1.0.0: free for personal and non-profit use, no commercial use.
+
 ### Added
 
 - **Native drawer** (`libnickeldrawer`, a NickelHook mod): an Apps row in the More tab that opens a list or grid of apps, with Nickel's own fonts, icons, dialogs, header and press feedback. Failsafe (the mod removes itself if Nickel crashes right after boot), an `uninstall` flag, a `disable` kill switch and a firmware check that turns the drawer off on an unknown build or a missing symbol.
