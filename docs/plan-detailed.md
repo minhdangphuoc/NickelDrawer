@@ -333,6 +333,8 @@ Each session has a checklist (section 9.9), takes 15–60 minutes, starts with a
 | G5 | after W9 | LS/GH/LIB/FI cases pass; S5, S6, S7, S12 met | Ship LocalSend + GitHub only; Library tool to v1.1 |
 | G6 | 23 Dec | CI green incl. symcheck ×5; S13 met; uninstall verified; user signs off | Release as 1.0-rc; fix list to January |
 
+Note (2026-10-10, see `docs/DECISIONS.md`): the 72 h idle and usage soaks (SOAK-1, SOAK-2) are skipped. G3 and G5 pass on one batched device session, `docs/sessions/T-final-checklist.md`, which also covers G4; S4 and S5 are not measured, `debug.log` stays on in the beta. GitHub sync cases (GH-*) are postponed and do not block G5.
+
 ---
 
 ## 6. Reverse-engineering workplan
