@@ -18,22 +18,27 @@
               "id": "start",
               "label": "Start",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             },
             {
               "id": "stop",
               "label": "Stop",
-              "kind": "show"
+              "kind": "show",
+              "menu": true,
+              "confirm": "Stop now?"
             },
             {
               "id": "status",
               "label": "Status",
-              "kind": "show"
+              "kind": "show",
+              "menu": false
             },
             {
               "id": "bg",
               "label": "Background",
-              "kind": "background"
+              "kind": "background",
+              "menu": false
             }
           ]
         },
@@ -48,7 +53,8 @@
               "id": "open",
               "label": "Open",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         }
@@ -68,7 +74,8 @@
               "id": "refresh",
               "label": "Refresh",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         },
@@ -83,7 +90,8 @@
               "id": "check",
               "label": "Check for updates",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         }

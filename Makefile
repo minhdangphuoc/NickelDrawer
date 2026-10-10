@@ -9,7 +9,7 @@ DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 APPS_DIR = $(DIST_ONBOARD)/.adds/apps
 
-.PHONY: check build dist release sync-embedded schema shellcheck clean
+.PHONY: check build dist release sync-embedded schema golden-test shellcheck clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
@@ -20,6 +20,11 @@ sync-embedded:
 # Rewrites spec/ui.schema.json from the component registry in internal/uikit.
 schema:
 	go test ./internal/uikit -run TestSchemaFileIsCurrent -update
+
+# The drawer model and screen JSON that the mod parses, compared with cmd/appsctl/testdata/drawer.
+# Rewrite them after a deliberate change: go test ./cmd/appsctl -run Golden -update
+golden-test:
+	go test ./cmd/appsctl -run Golden
 
 check: sync-embedded
 	@unformatted=$$(gofmt -l cmd internal); \
@@ -52,12 +57,13 @@ build: sync-embedded
 # dist/.stamp is what tools/install-to-kobo.sh compares against the sources.
 dist: build
 	rm -rf dist
-	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(HOST_DIR)/config $(HOST_DIR)/screens $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/ghsync/data $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales $(APPS_DIR)/library/bin $(APPS_DIR)/library/locales $(APPS_DIR)/todo/bin $(APPS_DIR)/todo/locales $(APPS_DIR)/uikit/bin $(APPS_DIR)/uikit/locales $(HOST_DIR)/icons/ui
+	mkdir -p $(HOST_DIR)/bin $(HOST_DIR)/lib $(HOST_DIR)/locales $(HOST_DIR)/config $(HOST_DIR)/screens $(APPS_DIR)/localsend/bin $(APPS_DIR)/ghsync/bin $(APPS_DIR)/wallpaper/bin $(APPS_DIR)/wallpaper/locales $(APPS_DIR)/library/bin $(APPS_DIR)/library/locales $(APPS_DIR)/todo/bin $(APPS_DIR)/todo/locales $(APPS_DIR)/uikit/bin $(APPS_DIR)/uikit/locales $(HOST_DIR)/icons/ui
 	cp build/appsctl-linux-armv7 $(HOST_DIR)/bin/appsctl
 	cp host/lib/common.sh $(HOST_DIR)/lib/common.sh
 	cp host/bin/*.sh $(HOST_DIR)/bin/
 	cp host/locales/*.json $(HOST_DIR)/locales/
 	cp host/config/routing.json $(HOST_DIR)/config/routing.json
+	cp host/config/update.json $(HOST_DIR)/config/update.json
 	cp host/icons/*.png $(HOST_DIR)/icons/
 	cp host/icons/ui/*.png $(HOST_DIR)/icons/ui/
 	cp -R host/screens/. $(HOST_DIR)/screens/
@@ -71,7 +77,7 @@ dist: build
 	cp apps/ghsync/bin/*.sh $(APPS_DIR)/ghsync/bin/
 	mkdir -p $(APPS_DIR)/ghsync/locales && cp apps/ghsync/locales/*.json $(APPS_DIR)/ghsync/locales/
 	cp build/ghsync-linux-armv7 $(APPS_DIR)/ghsync/bin/ghsync
-	cp apps/ghsync/data/config.example.json $(APPS_DIR)/ghsync/data/config.example.json
+	cp apps/ghsync/config.example.json $(APPS_DIR)/ghsync/config.example.json
 	cp apps/wallpaper/app.json apps/wallpaper/ui.json $(APPS_DIR)/wallpaper/
 	cp apps/wallpaper/bin/*.sh $(APPS_DIR)/wallpaper/bin/
 	cp apps/wallpaper/locales/*.json $(APPS_DIR)/wallpaper/locales/
@@ -88,7 +94,7 @@ dist: build
 	cp apps/uikit/bin/*.sh $(APPS_DIR)/uikit/bin/
 	cp apps/uikit/locales/*.json $(APPS_DIR)/uikit/locales/
 	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/* $(APPS_DIR)/library/bin/* $(APPS_DIR)/todo/bin/* $(APPS_DIR)/uikit/bin/*
-	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(HOST_DIR)/screens/updates/ui.json $(HOST_DIR)/screens/updates/locales/*.json $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/todo/ui.json $(APPS_DIR)/uikit/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/data/config.example.json
+	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/config/update.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(HOST_DIR)/screens/updates/ui.json $(HOST_DIR)/screens/updates/locales/*.json $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/todo/ui.json $(APPS_DIR)/uikit/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/config.example.json
 	if [ -d $(HOST_DIR)/mod ]; then chmod 644 $(HOST_DIR)/mod/*; fi
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp

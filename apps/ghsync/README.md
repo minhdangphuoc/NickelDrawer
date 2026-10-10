@@ -13,7 +13,7 @@ Tải sách mới từ một repo GitHub riêng về máy. Chỉ thêm, không b
 
 Chỉ dùng trên Wi-Fi nhà bạn: trang ghép nối là HTTP, không mã hóa. Nhập sai mã 5 lần là dừng. Chi tiết và kiểm tra an toàn token: `docs/spec/ghsync-pairing.md`.
 
-Cách thủ công (cắm USB): dán token vào `.adds/apps/ghsync/data/token`, chép `data/config.example.json` thành `data/config.json` rồi sửa `repo`, `path` (thư mục sách, `""` = cả repo), `branch` (bỏ trống = nhánh mặc định).
+Cách thủ công (cắm USB): dán token vào `.adds/apps/ghsync/data/token`, chép `config.example.json` (cạnh `app.json`) thành `data/config.json` rồi sửa `repo`, `path` (thư mục sách, `""` = cả repo), `branch` (bỏ trống = nhánh mặc định).
 
 Chi tiết lỗi: `data/log.txt`. Sách đã tải rồi bị bạn xóa trên máy sẽ không bị tải lại; muốn tải lại, chạy `bin/ghsync run --redownload-deleted`. File tải dở (máy tắt giữa chừng) bị dọn ở lần sau và tải lại từ đầu, không bao giờ để file hỏng. Nếu GitHub báo chưa có gì mới, lần đồng bộ bỏ qua việc tải (không tốn lượt gọi API). Không bao giờ chia sẻ file `token`.
 
@@ -32,7 +32,7 @@ Downloads new books from a private GitHub repo. Add-only: never deletes or overw
 
 Use pairing only on your own Wi-Fi: the page is plain HTTP and unencrypted. Five wrong codes close it. Details and the token-safety audit: `docs/spec/ghsync-pairing.md`.
 
-By hand (over USB): put the token in `.adds/apps/ghsync/data/token`, copy `data/config.example.json` to `data/config.json` and edit `repo`, `path` (empty = whole repo), `branch` (empty = default branch).
+By hand (over USB): put the token in `.adds/apps/ghsync/data/token`, copy `config.example.json` (next to `app.json`) to `data/config.json` and edit `repo`, `path` (empty = whole repo), `branch` (empty = default branch).
 
 Errors are in `data/log.txt`. A book you deleted on the device is not downloaded again; use `bin/ghsync run --redownload-deleted` to override. A download cut short (power loss) is cleaned up on the next run and fetched again from the start, so a broken file never appears. When GitHub says nothing changed, the sync skips the downloads (and costs no API quota). Never share the `token` file.
 

@@ -219,3 +219,17 @@ func TestActionMenuDefaultsToTrueAndAcceptsFalse(t *testing.T) {
 		t.Fatalf("InMenu = %v, %v; want true, false", app.Actions[0].InMenu(), app.Actions[1].InMenu())
 	}
 }
+
+func TestDrawerMenuIsOptInAndConfirmIsRead(t *testing.T) {
+	app, warnings, err := Load(stageApp(t, "valid-action-drawer-menu"))
+	if err != nil || len(warnings) > 0 {
+		t.Fatalf("err=%v warnings=%v", err, warnings)
+	}
+	got := []bool{app.Actions[0].InDrawerMenu(), app.Actions[1].InDrawerMenu(), app.Actions[2].InDrawerMenu()}
+	if got[0] || !got[1] || got[2] {
+		t.Errorf("InDrawerMenu = %v; want false, true, false (opt-in)", got)
+	}
+	if app.Actions[1].Confirm != "Wipe everything?" || app.Actions[0].Confirm != "" {
+		t.Errorf("confirm = %q / %q", app.Actions[1].Confirm, app.Actions[0].Confirm)
+	}
+}

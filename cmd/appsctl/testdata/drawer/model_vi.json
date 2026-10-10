@@ -18,22 +18,27 @@
               "id": "start",
               "label": "Bắt đầu",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             },
             {
               "id": "stop",
               "label": "Dừng",
-              "kind": "show"
+              "kind": "show",
+              "menu": true,
+              "confirm": "Dừng ngay?"
             },
             {
               "id": "status",
               "label": "Status",
-              "kind": "show"
+              "kind": "show",
+              "menu": false
             },
             {
               "id": "bg",
               "label": "Background",
-              "kind": "background"
+              "kind": "background",
+              "menu": false
             }
           ]
         },
@@ -48,7 +53,8 @@
               "id": "open",
               "label": "Open",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         }
@@ -68,7 +74,8 @@
               "id": "refresh",
               "label": "Làm mới",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         },
@@ -83,7 +90,8 @@
               "id": "check",
               "label": "Kiểm tra cập nhật",
               "kind": "show",
-              "primary": true
+              "primary": true,
+              "menu": false
             }
           ]
         }

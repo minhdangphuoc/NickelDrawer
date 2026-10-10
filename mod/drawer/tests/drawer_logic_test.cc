@@ -202,6 +202,9 @@ static void testMenuCap()
     EXPECT_EQ(false, isMenuAction("status", true));
     EXPECT_EQ(false, isMenuAction("state", true));
     EXPECT_EQ(false, isMenuAction(0, true));
+    EXPECT_EQ(true, needsConfirmation("Move to trash?"));
+    EXPECT_EQ(false, needsConfirmation(""));
+    EXPECT_EQ(false, needsConfirmation(0));
 }
 
 int main()

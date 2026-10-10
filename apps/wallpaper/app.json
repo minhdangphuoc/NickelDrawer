@@ -41,15 +41,6 @@
       "menu": false
     },
     {
-      "id": "off",
-      "label": "Turn off",
-      "run": "bin/off.sh",
-      "output": "show",
-      "timeout_ms": 3000,
-      "rescan": "none",
-      "menu": false
-    },
-    {
       "id": "status",
       "label": "Status",
       "run": "bin/status.sh",
@@ -83,7 +74,8 @@
       "output": "show",
       "timeout_ms": 5000,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Remove this picture?"
     },
     {
       "id": "remove-all",
@@ -92,7 +84,8 @@
       "output": "show",
       "timeout_ms": 5000,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Remove this picture and its original?"
     }
   ],
   "requests": [

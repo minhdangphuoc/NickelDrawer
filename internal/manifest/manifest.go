@@ -43,7 +43,7 @@ var (
 	semverPattern   = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
 
 	knownAppFields    = []string{"schema", "id", "name", "version", "description", "menu", "hidden", "storage", "network", "requests", "min_host", "actions"}
-	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan", "menu"}
+	knownActionFields = []string{"id", "label", "run", "output", "timeout_ms", "wifi", "rescan", "menu", "confirm"}
 )
 
 // App is a parsed app.json. Use the methods for fields that have defaults.
@@ -80,6 +80,7 @@ type Action struct {
 	Wifi      bool   `json:"wifi"`
 	Rescan    string `json:"rescan"`
 	Menu      *bool  `json:"menu"`
+	Confirm   string `json:"confirm"` // question asked before the drawer runs the action; empty: none
 }
 
 // Warning is a non-fatal remark about a manifest.
@@ -109,6 +110,12 @@ func (a App) InMenu() bool {
 // valid and runnable; the native drawer shows it later.
 func (a Action) InMenu() bool {
 	return a.Menu == nil || *a.Menu
+}
+
+// InDrawerMenu reports whether the action is in the drawer's long-press menu. Unlike
+// NickelMenu this is opt-in (`"menu": true`): most actions only make sense on the app's screen.
+func (a Action) InDrawerMenu() bool {
+	return a.Menu != nil && *a.Menu
 }
 
 // Timeout returns the cmd_output timeout in ms; 0 when the action has no dialog.
@@ -283,6 +290,9 @@ func validateAction(action Action, dir string) []string {
 	problems = append(problems, validateText("label", action.Label, 1, maxLabelLen)...)
 	if problem := validateRunPath(action.Run, dir); problem != "" {
 		problems = append(problems, problem)
+	}
+	if action.Confirm != "" {
+		problems = append(problems, validateText("confirm", action.Confirm, 1, maxDescriptionN)...)
 	}
 	problems = append(problems, validateOutput(action)...)
 	switch action.RescanMode() {

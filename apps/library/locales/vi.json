@@ -103,5 +103,9 @@
   "ui.restore_confirm": "Trả lại các sách trùng đã bỏ vào thùng rác ở ngày gần nhất? Tệp đã có lại sẽ không bị ghi đè.",
   "ui.restore_ok": "Khôi phục",
   "ui.toast_stopping": "Sẽ dừng sau cuốn sách đang xử lý.",
-  "ui.toast_restored": "Đã khôi phục từ thùng rác."
+  "ui.toast_restored": "Đã khôi phục từ thùng rác.",
+  "actions.fix.confirm": "Sửa ngôn ngữ các sách đã chọn?",
+  "actions.undo.confirm": "Hoàn tác lần sửa ngôn ngữ gần nhất?",
+  "actions.normalize.confirm": "Đổi tên tệp về dạng NFC?",
+  "actions.trash.confirm": "Chuyển sách đã chọn vào thùng rác?"
 }

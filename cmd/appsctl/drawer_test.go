@@ -78,7 +78,7 @@ const alphaManifest = `{"schema":1,"id":"alpha","name":"Alpha","version":"1.2.0"
  "storage":{"reads":["inbox"],"writes":["books"]},"network":true,
  "actions":[
   {"id":"start","label":"Start","run":"bin/start.sh","output":"show","wifi":true,"rescan":"quick"},
-  {"id":"stop","label":"Stop","run":"bin/stop.sh","output":"show"},
+  {"id":"stop","label":"Stop","run":"bin/stop.sh","output":"show","menu":true,"confirm":"Stop now?"},
   {"id":"status","label":"Status","run":"bin/status.sh","output":"show","menu":false},
   {"id":"bg","label":"Background","run":"bin/bg.sh","output":"none"}]}`
 
@@ -93,10 +93,10 @@ func installFixtureApps(t *testing.T, root drawerRoot) {
 		"status.sh": `echo '{"running":true,"line":"Receiving 4821"}'`,
 		"bg.sh":     "exit 0",
 	})
-	writeLocale(t, root.apps, "alpha", "vi", `{"name":"Anpha","actions.start.label":"Bắt đầu","actions.stop.label":"Dừng"}`)
+	writeLocale(t, root.apps, "alpha", "vi", `{"name":"Anpha","actions.start.label":"Bắt đầu","actions.stop.label":"Dừng","actions.stop.confirm":"Dừng ngay?"}`)
 	writeScriptApp(t, root.apps, betaManifest, map[string]string{"open.sh": "echo hi"})
 	writeApp(t, root.apps, "broken", `{"schema":1,"id":"broken","name":"","version":"1.0.0","actions":[]}`)
-	if err := os.WriteFile(filepath.Join(root.host, "data", "update.json"), []byte(`{}`), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root.host, "data", "update.json"), []byte(`{"repo":"o/r"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -142,6 +142,19 @@ func TestDrawerModelOmitsUpdatesWithoutConfig(t *testing.T) {
 	_, _, raw := root.call(t, "en", "model")
 	if strings.Contains(raw, "_updates") || !strings.Contains(raw, "_refresh") {
 		t.Errorf("want _refresh only: %s", raw)
+	}
+}
+
+func TestDrawerModelHidesUpdatesWhileRepoIsEmpty(t *testing.T) {
+	root := newDrawerRoot(t)
+	for name, content := range map[string]string{"empty repo": `{"repo":"","channel":"stable"}`, "no repo": `{}`, "broken": `{`} {
+		if err := os.WriteFile(filepath.Join(root.host, "data", "update.json"), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		_, _, raw := root.call(t, "en", "model")
+		if strings.Contains(raw, "_updates") {
+			t.Errorf("%s: the Updates row must stay hidden: %s", name, raw)
+		}
 	}
 }
 

@@ -191,7 +191,7 @@ Bạn vừa chép thêm hay xoá một ứng dụng qua USB? Bấm **Làm mới 
 Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện ra:
 
 - **Thông tin**: phiên bản, ứng dụng đọc và ghi những thư mục nào, có dùng mạng không, và thư mục của nó.
-- Các thao tác khác của ứng dụng. Chúng chạy ngay, không hỏi lại như màn hình của ứng dụng. Với việc làm thay đổi tệp, nên dùng màn hình của ứng dụng.
+- Vài thao tác nhanh mà ứng dụng đưa vào menu này (ví dụ **Dừng nhận** trong LocalSend). Thao tác có thể làm mất dữ liệu sẽ hỏi trước. Mọi thứ khác nằm trên màn hình của ứng dụng.
 - **Gỡ…**: xoá ứng dụng. Máy hỏi lại trước.
 
 > **Gỡ sẽ xoá cả thư mục của ứng dụng, kể cả `data/`.** Với GitHub, đó là token và cài đặt. Với Thư viện, đó là bản sao lưu và thùng rác, nên bạn không thể hoàn tác lần sửa hay khôi phục sách đã bỏ nữa. Sách và ảnh ở các thư mục thường vẫn còn. Hãy hoàn tác hoặc khôi phục những gì cần trước.
@@ -241,7 +241,7 @@ Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện
 Nên biết:
 
 - Tệp trùng tên với tệp đã có không bao giờ bị ghi đè. Tệp mới được thêm số, ví dụ `sach (2).epub`.
-- Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp `.epub` phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 30 MB, tệp văn bản 20 MB). Tệp không đạt vào `.adds/koboapps/inbox/rejected/` và bị xoá sau 7 ngày.
+- Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp `.epub` phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 20 MB, tệp văn bản 20 MB). Tệp không đạt vào `.adds/koboapps/inbox/rejected/` và bị xoá sau 7 ngày.
 - Mã PIN được tạo một lần và giữ nguyên. Muốn mã mới, xoá tệp `.adds/apps/localsend/data/pin.txt` qua USB.
 - Bạn có thể bấm **←** và làm việc khác. Kobo vẫn nhận, và hàng **Ứng dụng** cho biết LocalSend đang nhận.
 - **Việc nhận tự dừng sau 15 phút không có tệp mới.** Khi đó màn hình báo, và thư viện được quét lại.
@@ -496,13 +496,13 @@ NickelDrawer có thể cập nhật các ứng dụng, công cụ chủ và mod 
 ### Thiết lập cập nhật (một lần)
 
 1. Cắm Kobo qua USB.
-2. Tạo tệp `.adds/koboapps/data/update.json` với nội dung sau, trong đó `owner/name` là repo GitHub nơi phát hành NickelDrawer:
+2. Mở tệp `.adds/koboapps/data/update.json` (trình cài đặt tạo sẵn với `"repo"` rỗng; nếu chưa có thì tự tạo) và điền `owner/name` là repo GitHub nơi phát hành NickelDrawer:
 
         {"repo": "owner/name", "channel": "stable"}
 
     Dùng `"channel": "beta"` để nhận cả bản thử nghiệm.
 
-3. Ngắt kết nối. Mục **HỆ THỐNG** trong Ngăn giờ có hàng **Cập nhật**.
+3. Ngắt kết nối. Khi `"repo"` còn rỗng, hàng **Cập nhật** bị ẩn; sau khi điền, mục **HỆ THỐNG** trong Ngăn sẽ có hàng này.
 
 ### Kiểm tra và cài
 

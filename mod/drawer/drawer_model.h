@@ -12,7 +12,8 @@ struct DrawerAction {
     QString id;
     QString label;
     bool isBackground = false; // kind "background": start, then toast
-    bool isInMenu = true;      // "menu": false keeps the action out of the long-press menu
+    bool isInMenu = false;     // "menu": true opts the action into the long-press menu
+    QString confirm;           // "confirm": the question asked before running; empty runs at once
 };
 
 struct DrawerItem {

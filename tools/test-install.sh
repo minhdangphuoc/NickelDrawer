@@ -82,8 +82,8 @@ check "uikit ui.json installed" test -f "$ADDS/apps/uikit/ui.json"
 check "uikit locales installed" test -f "$ADDS/apps/uikit/locales/vi.json"
 check "uikit icon installed" test -f "$ADDS/apps/uikit/icon.png"
 check "uikit ships hidden" contains "$ADDS/apps/uikit/app.json" '"hidden": true'
-check "config.example.json installed" test -f "$ADDS/apps/ghsync/data/config.example.json"
-check "no other ghsync data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l | tr -d ' ')" = 1
+check "config.example.json installed" test -f "$ADDS/apps/ghsync/config.example.json"
+check "ghsync ships no data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l | tr -d ' ')" = 0
 check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
 check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
 check "UI icon installed" test -f "$ADDS/koboapps/icons/ui/settings-64.png"
@@ -93,8 +93,9 @@ check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
 check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
 check "inbox folder created" test -d "$ADDS/koboapps/inbox"
 check "inbox/rejected folder created" test -d "$ADDS/koboapps/inbox/rejected"
+check "update.json template shipped" contains "$ADDS/koboapps/config/update.json" '"repo": ""'
+check "data/update.json created disabled (empty repo)" contains "$ADDS/koboapps/data/update.json" '"repo": ""'
 check "no user routing.json created by the installer" test ! -e "$ADDS/koboapps/data/routing.json"
-check "localsend sort script installed" test -x "$ADDS/apps/localsend/bin/sort.sh"
 check "localsend routes through the inbox hook" contains "$ADDS/apps/localsend/bin/env.sh" "inbox route --from-env --source localsend"
 check "locales installed (app)" test -f "$ADDS/apps/localsend/locales/vi.json"
 check "update-apply.sh installed and executable" test -x "$ADDS/koboapps/bin/update-apply.sh"
@@ -126,6 +127,7 @@ echo "secret-token" >"$ADDS/apps/ghsync/data/token"
 echo '{"repo":"o/r"}' >"$ADDS/apps/ghsync/data/config.json"
 echo "1234" >"$ADDS/apps/localsend/data/pin.txt" 2>/dev/null || { mkdir -p "$ADDS/apps/localsend/data"; echo 1234 >"$ADDS/apps/localsend/data/pin.txt"; }
 echo '{"remove":["gif"]}' >"$ADDS/koboapps/data/routing.json"
+echo '{"repo":"me/mine","channel":"beta"}' >"$ADDS/koboapps/data/update.json"
 mkdir -p "$ADDS/apps/todo/data" && echo '{"version":1,"tasks":[{"text":"Mua sữa","done":false}]}' >"$ADDS/apps/todo/data/todo.json"
 echo "waiting" >"$ADDS/koboapps/inbox/pending.pdf"
 cp "$ADDS/nm/items" "$WORK/items.after-first"
@@ -137,6 +139,7 @@ check "token preserved" contains "$ADDS/apps/ghsync/data/token" "secret-token"
 check "config preserved" contains "$ADDS/apps/ghsync/data/config.json" '"o/r"'
 check "todo list preserved" contains "$ADDS/apps/todo/data/todo.json" "Mua sữa"
 check "pin preserved" contains "$ADDS/apps/localsend/data/pin.txt" "1234"
+check "user update.json never overwritten" contains "$ADDS/koboapps/data/update.json" '"me/mine"'
 check "user routing.json never overwritten" contains "$ADDS/koboapps/data/routing.json" '"remove":["gif"]'
 check "files waiting in the inbox kept" contains "$ADDS/koboapps/inbox/pending.pdf" "waiting"
 check "shipped routing.json refreshed" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
@@ -306,6 +309,15 @@ check "--purge alone is refused" test "$purgeStatus" -ne 0
 echo "--- guards"
 KOBO_ROOT=$WORK/nothing "$INSTALLER" >"$WORK/missing.out" 2>&1 && missingStatus=0 || missingStatus=$?
 check "refuses a volume without .kobo" test "$missingStatus" -ne 0
+
+echo "--- finding the volume"
+mkdir -p "$WORK/mounts/KOBOeReader/.kobo"
+env -u KOBO_ROOT KOBO_SEARCH_DIRS="$WORK/mounts" "$INSTALLER" --dry-run >"$WORK/detect.out" 2>&1 && detectStatus=0 || detectStatus=$?
+check "auto-detects a KOBOeReader volume in a search dir" test "$detectStatus" -eq 0
+check "...and uses that volume" grep -qF "$WORK/mounts/KOBOeReader/.adds" "$WORK/detect.out"
+env -u KOBO_ROOT KOBO_SEARCH_DIRS="$WORK/empty-mounts" "$INSTALLER" --dry-run >"$WORK/detect-none.out" 2>&1 && detectNoneStatus=0 || detectNoneStatus=$?
+check "reports a missing volume when none is found" test "$detectNoneStatus" -ne 0
+check "...and says how to set KOBO_ROOT" grep -qF "KOBO_ROOT" "$WORK/detect-none.out"
 
 if [ "$failures" -ne 0 ]; then
     echo "$failures check(s) failed"

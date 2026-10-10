@@ -37,10 +37,10 @@ Every tap on the screen runs one **action**: a script named in `app.json`.
   "network": false,
   "actions": [
     { "id": "newitem",    "label": "New task",          "run": "bin/newitem.sh",    "output": "show", "timeout_ms": 3000 },
-    { "id": "toggle",     "label": "Mark done or open", "run": "bin/toggle.sh",     "output": "show", "timeout_ms": 3000, "menu": false },
-    { "id": "remove",     "label": "Delete task",       "run": "bin/remove.sh",     "output": "show", "timeout_ms": 3000, "menu": false },
-    { "id": "clear-done", "label": "Clear done tasks",  "run": "bin/clear-done.sh", "output": "show", "timeout_ms": 3000 },
-    { "id": "state",      "label": "State",             "run": "bin/state.sh",      "output": "show", "timeout_ms": 1000, "menu": false }
+    { "id": "toggle",     "label": "Mark done or open", "run": "bin/toggle.sh",     "output": "show", "timeout_ms": 3000 },
+    { "id": "remove",     "label": "Delete task",       "run": "bin/remove.sh",     "output": "show", "timeout_ms": 3000, "confirm": "Delete this task?" },
+    { "id": "clear-done", "label": "Clear done tasks",  "run": "bin/clear-done.sh", "output": "show", "timeout_ms": 3000, "menu": true, "confirm": "Clear all done tasks?" },
+    { "id": "state",      "label": "State",             "run": "bin/state.sh",      "output": "show", "timeout_ms": 1000 }
   ]
 }
 ```
@@ -285,7 +285,7 @@ tap on the Kobo ──► libnickeldrawer.so (inside Nickel, draws only)
 
 Three rules:
 
-1. **Scripts are short.** Each tap runs one script. It does a quick job, or starts a detached background job, and returns at once. Inside the drawer a script is stopped after 30 s and the user sees a timeout message; aim for well under a second.
+1. **Scripts are short.** Each tap runs one script. It does a quick job, or starts a detached background job, and returns at once. Inside the drawer a script is stopped when its `timeout_ms` runs out (5 s when you declare none, never more than 30 s) and the user sees a timeout message; aim for well under a second.
 2. **State is re-read.** The screen's values come only from `state`. A background job shows progress by writing files that `state` reads. There is no long-running app process inside or next to Nickel.
 3. **Signals are declared.** A script answers with JSON signals naming things the screen declared: `{"toast":"id"}`, `{"dialog":"id"}`, and requests the manifest allows: `{"request":"rescan"}`, `{"request":"wifi"}`. Anything else on stdout is logged and dropped.
 
@@ -323,7 +323,9 @@ Full rules: [app-format.md](../spec/app-format.md).
 | `actions[].label` | 1 to 32 characters, no `:`. |
 | `actions[].run` | Path inside the app folder, executable. |
 | `actions[].output` | `show`: run and wait, only JSON signals reach the screen. `none`: start detached and return at once. |
-| `actions[].timeout_ms` | With `show`: 500 to 9999, default 5000. Validated, but the drawer itself applies a fixed 30 s cap (see [Mismatches](#known-gaps-in-this-beta)). |
+| `actions[].timeout_ms` | With `show`: 500 to 9999, default 5000. The drawer stops the script when it runs out and shows a timeout message. |
+| `actions[].menu` | `true` puts the action in the drawer's long-press menu. Default `false`: an action stays on the screen only. |
+| `actions[].confirm` | A question (up to 120 characters, no `:`; translate it as `actions.<id>.confirm`). The drawer asks it in a Nickel dialog before it runs the action from a tap or the long-press menu. Set it on every destructive action. |
 | `actions[].wifi` | `true`: the drawer makes sure Wi-Fi is connected first (it asks the user, connects and retries once). |
 | `actions[].rescan` | `none`, `quick` or `full`: the host rescans the library after the action, only when it exits 0. |
 
@@ -522,7 +524,7 @@ Icons come from **Nickel's own resources first, then Tabler Icons (MIT)**. Never
 
         zip -r mytodo-0.1.0.zip mytodo -x 'mytodo/data/*'
 
-    If you need a default config, ship `data/config.example.json` and let the user copy it, as GitHub sync does.
+    If you need a default config, ship `config.example.json` next to `app.json` (not in `data/`) and let the user copy it, as GitHub sync does.
 
 3. Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.
 4. Users install by copying the folder to `.adds/apps/` and tapping **Refresh list**.
@@ -553,18 +555,15 @@ To propose an app for the main repository, follow [CONTRIBUTING.md](../../CONTRI
 | Writing outside `data/` and declared folders, or overwriting user files. | Declare the folder, use your own sub-folder or prefix, never overwrite. |
 | A file left open on `/mnt/onboard`, or a background job without redirected fds. | Log to `/tmp`; use `start_detached`. Otherwise USB connect hangs. |
 | A token typed on the Kobo or printed in a log. | Pairing page on the phone; secrets only in `data/`, never printed. |
-| Relying on `"menu": false` to keep an action out of the drawer's long-press menu. | Today the flag is not passed to the drawer: every action after the first, except `state` and `status`, appears in the long-press menu (up to 6) and runs **without** the confirm your screen declares. Order actions so the safe ones come first, and make every action safe to run with no `NICKELDRAWER_VALUE`. |
 | A hand-drawn icon. | A Tabler icon rendered with `iconsgen`. |
 | Testing first on the device. | Validate, run the scripts and preview on the computer first. |
 
 ## Known gaps in this beta
 
-Places where the code today behaves differently from what the specs promise, or where nothing has run on a device yet. Design around them.
+Places where nothing has run on a device yet, or where the Kobo side differs from the preview. Design around them.
 
 | Gap | What to do |
 |---|---|
-| `actions[].menu: false` is accepted but not sent to the drawer, so the long-press menu in the drawer lists every action after the first one except `state` and `status` (up to 6), and runs them without your screen's confirm. | Put a harmless action first; make every action safe without a value; keep destructive work behind a screen button with `confirm` and re-check state inside the script. |
-| `timeout_ms` is validated, but the drawer applies one fixed 30 s limit to every `show` action. | Keep scripts fast; use background jobs. |
 | The current app screens, gallery and viewer have run on a Kobo only in earlier builds, and the `field` keyboard never. | Treat `ndpreview` as a layout check only. Expect real fonts to be wider: long screens page earlier on the device. |
 | The mod's own texts (the More rows, a few errors) exist in English and Vietnamese only. | Nothing for app authors; your app's texts follow its locale files. |
 

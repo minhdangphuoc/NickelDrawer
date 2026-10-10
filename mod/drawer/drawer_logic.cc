@@ -228,6 +228,11 @@ bool isMenuAction(const char *id, bool isInMenu)
     return strcmp(id, "status") != 0 && strcmp(id, "state") != 0;
 }
 
+bool needsConfirmation(const char *confirmQuestion)
+{
+    return confirmQuestion && confirmQuestion[0] != '\0';
+}
+
 RunStep nextStepAfterRun(bool needsWifi, bool hasRetriedAfterWifi)
 {
     if (!needsWifi) {

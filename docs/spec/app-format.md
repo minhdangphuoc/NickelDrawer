@@ -83,10 +83,11 @@ Optional `icon.png` next to `app.json`: 96x96 px, black outline strokes on a tra
 | `actions[].id` | string | `^[a-z0-9][a-z0-9-]{0,30}$` |
 | `actions[].label` | string | 1–32 chars, no `:` (the drawer menus use it as a separator) |
 | `actions[].run` | string | path relative to the app folder, no `..`, no leading `/`; must exist and be executable |
-| `actions[].output` | enum | `show` = run and wait (at most 30 s); only JSON signals on stdout reach the screen; `none` = start detached and return at once |
-| `actions[].timeout_ms` | int | only with `output: show`; 500–9999; default 5000 (kept from the NickelMenu era) |
+| `actions[].output` | enum | `show` = run and wait (at most `timeout_ms`); only JSON signals on stdout reach the screen; `none` = start detached and return at once |
+| `actions[].timeout_ms` | int | only with `output: show`; 500–9999; default 5000. The drawer stops the script when it runs out (the user sees a timeout message) |
 | `actions[].wifi` | bool | default `false`; `true` makes the drawer connect Wi-Fi first (no IP: `needs_wifi`, the mod connects and retries once) |
-| `actions[].menu` | bool | legacy, no effect (it kept the action out of NickelMenu) |
+| `actions[].menu` | bool | `true` puts the action in the drawer's long-press menu. Opt-in, default `false`: leave screen-only actions out |
+| `actions[].confirm` | string | 1–120 chars, no `:`. A question the drawer asks (Nickel confirmation) before it runs the action; translate it as `actions.<id>.confirm` in `locales/<lang>.json`. Mark destructive actions that are reachable from a tap or the menu |
 | `actions[].rescan` | enum | `none` (default), `quick` / `full` = the host rescans the library after the action; runs only if the action succeeded |
 
 ### storage and network

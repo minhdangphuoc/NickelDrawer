@@ -67,7 +67,8 @@ static DrawerAction parseAction(const QJsonObject &object)
     action.id = stringField(object, "id");
     action.label = stringField(object, "label");
     action.isBackground = stringField(object, "kind") == QLatin1String(KIND_BACKGROUND);
-    action.isInMenu = !object.contains(QLatin1String("menu")) || boolField(object, "menu");
+    action.isInMenu = boolField(object, "menu");
+    action.confirm = stringField(object, "confirm");
     return action;
 }
 

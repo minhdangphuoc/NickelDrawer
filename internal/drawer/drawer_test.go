@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"koboapps/internal/i18n"
+	"koboapps/internal/manifest"
 )
 
 func writeStatusApp(t *testing.T, appsDir, id string) {
@@ -191,5 +192,45 @@ func TestRunDropsSignalsWithoutAScreen(t *testing.T) {
 	result, err := config.Run("one", "status")
 	if err != nil || !result.OK || result.Text != "" {
 		t.Fatalf("result = %+v, err = %v", result, err)
+	}
+}
+
+func TestActionTimeoutHonoursTimeoutMSUpToTheCap(t *testing.T) {
+	config := Config{ShowTimeout: 30 * time.Second}
+	shortMS, longMS := 1000, 9500
+	tests := []struct {
+		name   string
+		action manifest.Action
+		want   time.Duration
+	}{
+		{"declared", manifest.Action{Output: manifest.OutputShow, TimeoutMS: &shortMS}, time.Second},
+		{"declared long", manifest.Action{Output: manifest.OutputShow, TimeoutMS: &longMS}, 9500 * time.Millisecond},
+		{"manifest default", manifest.Action{Output: manifest.OutputShow}, time.Duration(manifest.DefaultTimeout) * time.Millisecond},
+	}
+	for _, test := range tests {
+		if got := config.actionTimeout(test.action); got != test.want {
+			t.Errorf("%s: timeout = %v, want %v", test.name, got, test.want)
+		}
+	}
+	capped := Config{ShowTimeout: 2 * time.Second}
+	if got := capped.actionTimeout(manifest.Action{Output: manifest.OutputShow, TimeoutMS: &longMS}); got != 2*time.Second {
+		t.Errorf("capped timeout = %v, want 2s", got)
+	}
+}
+
+func TestRunForegroundPassesTheDeclaredTimeoutToTheScript(t *testing.T) {
+	var seen time.Duration
+	config, _ := testConfig(t, func(ctx context.Context, _ string) ScriptOutput {
+		deadline, _ := ctx.Deadline()
+		seen = time.Until(deadline)
+		return ScriptOutput{}
+	})
+	timeoutMS := 1000
+	action := manifest.Action{ID: "go", Label: "Go", Run: "bin/go.sh", Output: manifest.OutputShow, TimeoutMS: &timeoutMS}
+	if _, err := config.RunAction(t.TempDir(), action); err != nil {
+		t.Fatal(err)
+	}
+	if seen <= 0 || seen > time.Second {
+		t.Errorf("script deadline %v away, want within the declared 1s (not the 30s cap)", seen)
 	}
 }

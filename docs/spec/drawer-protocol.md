@@ -6,7 +6,7 @@ Why: less code inside Nickel means fewer ways to crash it (P6 fail soft); logic 
 
 ## Rules
 
-- Binary: `/mnt/onboard/.adds/koboapps/bin/appsctl`. Every call has a hard timeout in the mod: `model` 3 s, `info` 3 s, `screen` 5 s, `run` and `event` 35 s for `show` actions (appsctl caps scripts at 30 s) and 3 s for `background`, `remove` 10 s. On timeout or bad JSON the mod shows a localized error row and logs; it never blocks the UI thread (QProcess async signals only).
+- Binary: `/mnt/onboard/.adds/koboapps/bin/appsctl`. Every call has a hard timeout in the mod: `model` 3 s, `info` 3 s, `screen` 5 s, `run` and `event` 35 s for `show` actions (appsctl stops a `show` script at its `timeout_ms`, at most 30 s) and 3 s for `background`, `remove` 10 s. On timeout or bad JSON the mod shows a localized error row and logs; it never blocks the UI thread (QProcess async signals only).
 - Output is UTF-8 JSON on stdout, exit code 0. Errors: exit 2 and `{"error":{"code":"…","message":"…"}}` (message already localized).
 - All user-facing text in the JSON is already localized by `appsctl` (device `CurrentLocale`). The mod never translates app strings; it only has a handful of built-in fallback strings (e.g. "Apps", "Error") for when `appsctl` itself fails.
 - `"v": 1` in every response. The mod refuses a higher major version with an "update NickelDrawer" row.
@@ -33,8 +33,8 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
           "badge": false,
           "running": true,
           "actions": [
-            {"id": "start", "label": "Bắt đầu nhận", "kind": "show", "primary": true},
-            {"id": "stop", "label": "Dừng nhận", "kind": "show"}
+            {"id": "start", "label": "Bắt đầu nhận", "kind": "show", "primary": true, "menu": false},
+            {"id": "stop", "label": "Dừng nhận", "kind": "show", "menu": true, "confirm": "Dừng nhận tệp?"}
           ]
         }
       ]
@@ -53,11 +53,11 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
 ```
 
 - `update_available` (bool): a checked update is waiting (see Updates below). The mod shows a dot on the More row.
-- `kind`: `show` (run, then show the printed result in a native dialog) or `background` (start, show a toast).
-- `primary`: the action run when the row is tapped. Other actions appear in the long-press menu (with Info and Remove).
-- Items with app-level `menu: false` still appear in the drawer (the flag is a leftover of the retired NickelMenu items and has no effect). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
+- `kind`: `show` (run, then act on the JSON signals the script printed: a toast or a declared dialog; any other output is dropped) or `background` (start, show a toast).
+- `primary`: the action run when the row is tapped. Other actions appear in the long-press menu (with Info and Remove) only when `menu` is `true`: the menu is opt-in (`"menu": true` in app.json), so screen-only actions that need a selection or a value never run from it. `menu` is always present (false when not opted in). `confirm` (omitted when the action has none) is the localized question from app.json; the mod asks it in a Nickel confirmation dialog before running the action, from the tap or from the menu. `status` and `state` are never menu entries.
+- Items with app-level `menu: false` still appear in the drawer (that app-level flag is a leftover of the retired NickelMenu items and has no effect). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
 - `screen: true` (omitted otherwise) when the app folder has a `ui.json`: a tap opens the app screen (`drawer screen`) instead of running the primary action (screens are on by default; the flag `.adds/nickeldrawer/no-screens` opts out).
-- Ids starting with `_` are host items: `_refresh` (action `refresh`) and `_updates` (only when `data/update.json` exists; it has `screen: true`, so a tap opens the Updates screen, and its long-press action is `check`; when a checked update is newer than the installed version it has `badge: true` and the status line "1 update"). `drawer run` accepts both. Host items have no `running` field; `icon` is the absolute path of a 96x96 PNG, omitted when the file does not exist: apps use `<app>/icon.png`, host items `<koboapps>/icons/refresh.png` and `updates.png`.
+- Ids starting with `_` are host items: `_refresh` (action `refresh`) and `_updates` (only when `data/update.json` has a non-empty `repo`; the installer ships it with an empty one, so the row stays hidden until the user sets `owner/name`; it has `screen: true`, so a tap opens the Updates screen, and its long-press action is `check`; when a checked update is newer than the installed version it has `badge: true` and the status line "1 update"). `drawer run` accepts both. Host items have no `running` field; `icon` is the absolute path of a 96x96 PNG, omitted when the file does not exist: apps use `<app>/icon.png`, host items `<koboapps>/icons/refresh.png` and `updates.png`.
 - An app whose `min_host` is newer than this NickelDrawer has the status line "Needs a newer version" instead of its own status (the app still runs).
 - `primary` is set on the first action in manifest order (no manifest field). The `status` action stays in `actions`.
 - `running`/`status`: the app's action with id `status` is run (1 s budget). Its first line may be `{"running":true,"line":"…"}`; otherwise the first non-empty line is the text. Non-zero exit or timeout leaves both empty. The cache lives in the temp dir for 30 s and is ignored when the language changes.
@@ -74,7 +74,7 @@ Runs the declared action (same `wifi`/`rescan` semantics as the manifest says) a
 - `wifi: true` in the manifest → `appsctl` returns `{"v":1,"ok":false,"needs_wifi":true,…}` without running when there is no IP; the mod then calls Nickel's Wi-Fi connect and retries once.
 - `rescan`: the mod triggers Nickel's library rescan (quick/full) after showing the result.
 - `requests` (omitted when none): host services the script asked for and its `app.json` `requests` allows, see "Requests" below.
-- A script that exits non-zero still returns exit 0 with `"ok": false` and `text` set to the short localized message "<action label> did not work."; `rescan` is then `none`. `kind: show` is capped at 30 s (then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH`, `HOME=/` and `NICKELDRAWER=1` (the script runs inside the drawer: return at once, print only JSON signals or nothing).
+- A script that exits non-zero still returns exit 0 with `"ok": false` and `text` set to the short localized message "<action label> did not work."; `rescan` is then `none`. `kind: show` runs for at most its action's `timeout_ms` (default 5000, never more than 30 s; then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH`, `HOME=/` and `NICKELDRAWER=1` (the script runs inside the drawer: return at once, print only JSON signals or nothing).
 - Only actions declared in `app.json` can run (same validation as the menu). Unknown app/action → error.
 
 ## `appsctl drawer screen <app-id> [--screen <id>] [--value <v>]`

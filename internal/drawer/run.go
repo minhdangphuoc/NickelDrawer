@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"koboapps/internal/manifest"
 )
@@ -86,7 +87,8 @@ func (c Config) startBackground(result RunResult, script string, action manifest
 }
 
 func (c Config) runForeground(result RunResult, script string, action manifest.Action, fromApp bool) (RunResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), c.showTimeout())
+	timeout := c.actionTimeout(action)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	output := c.runScript()(ctx, script)
 	switch {
@@ -94,7 +96,7 @@ func (c Config) runForeground(result RunResult, script string, action manifest.A
 		return RunResult{}, newError(CodeExecFailed, "app", action.ID, "detail", output.Err.Error())
 	case output.TimedOut:
 		result.Text = c.message("drawer.timeout", map[string]string{
-			"label": action.Label, "seconds": strconv.Itoa(int(c.showTimeout().Seconds()))})
+			"label": action.Label, "seconds": secondsText(timeout)})
 		return result, nil
 	}
 	result.Text = scriptText(output)
@@ -106,6 +108,21 @@ func (c Config) runForeground(result RunResult, script string, action manifest.A
 		result.Rescan = action.RescanMode() // a failed action must not trigger a rescan
 	}
 	return result, nil
+}
+
+// actionTimeout is the budget the manifest declares (timeout_ms, else the manifest default),
+// never above the host cap so a wrong value cannot hang the drawer.
+func (c Config) actionTimeout(action manifest.Action) time.Duration {
+	declared := time.Duration(action.Timeout()) * time.Millisecond
+	if declared <= 0 || declared > c.showTimeout() {
+		return c.showTimeout()
+	}
+	return declared
+}
+
+// secondsText rounds up so a 9.5 s budget reads "10", never "0" for a short one.
+func secondsText(duration time.Duration) string {
+	return strconv.Itoa(int((duration + time.Second - 1) / time.Second))
 }
 
 // scriptText prefers stdout, which is what NickelMenu would show; stderr only helps when

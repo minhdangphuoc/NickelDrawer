@@ -3,6 +3,7 @@
   "refresh.failures": "{count} apps have errors.",
   "update.no_config": "Updates are not set up.\\nMissing file {file}",
   "update.bad_config": "Cannot read {file}: {cause}",
+  "update.no_repo": "No update repo set.\\nPut owner/name as \"repo\" in {file}",
   "update.bad_repo": "Bad repo '{repo}' in {file}. Use owner/name.",
   "update.bad_channel": "Bad channel '{channel}' in {file}. Use stable or beta.",
   "update.no_public_key": "This build has no release key, so it cannot verify updates.",

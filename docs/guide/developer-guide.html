@@ -102,10 +102,10 @@ build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/a
   &quot;network&quot;: false,
   &quot;actions&quot;: [
     { &quot;id&quot;: &quot;newitem&quot;,    &quot;label&quot;: &quot;New task&quot;,          &quot;run&quot;: &quot;bin/newitem.sh&quot;,    &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000 },
-    { &quot;id&quot;: &quot;toggle&quot;,     &quot;label&quot;: &quot;Mark done or open&quot;, &quot;run&quot;: &quot;bin/toggle.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;menu&quot;: false },
-    { &quot;id&quot;: &quot;remove&quot;,     &quot;label&quot;: &quot;Delete task&quot;,       &quot;run&quot;: &quot;bin/remove.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;menu&quot;: false },
-    { &quot;id&quot;: &quot;clear-done&quot;, &quot;label&quot;: &quot;Clear done tasks&quot;,  &quot;run&quot;: &quot;bin/clear-done.sh&quot;, &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000 },
-    { &quot;id&quot;: &quot;state&quot;,      &quot;label&quot;: &quot;State&quot;,             &quot;run&quot;: &quot;bin/state.sh&quot;,      &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 1000, &quot;menu&quot;: false }
+    { &quot;id&quot;: &quot;toggle&quot;,     &quot;label&quot;: &quot;Mark done or open&quot;, &quot;run&quot;: &quot;bin/toggle.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000 },
+    { &quot;id&quot;: &quot;remove&quot;,     &quot;label&quot;: &quot;Delete task&quot;,       &quot;run&quot;: &quot;bin/remove.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;confirm&quot;: &quot;Delete this task?&quot; },
+    { &quot;id&quot;: &quot;clear-done&quot;, &quot;label&quot;: &quot;Clear done tasks&quot;,  &quot;run&quot;: &quot;bin/clear-done.sh&quot;, &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;menu&quot;: true, &quot;confirm&quot;: &quot;Clear all done tasks?&quot; },
+    { &quot;id&quot;: &quot;state&quot;,      &quot;label&quot;: &quot;State&quot;,             &quot;run&quot;: &quot;bin/state.sh&quot;,      &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 1000 }
   ]
 }
 </code></pre>
@@ -301,7 +301,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </code></pre>
 <p>Three rules:</p>
 <ol>
-<li><strong>Scripts are short.</strong> Each tap runs one script. It does a quick job, or starts a detached background job, and returns at once. Inside the drawer a script is stopped after 30 s and the user sees a timeout message; aim for well under a second.</li>
+<li><strong>Scripts are short.</strong> Each tap runs one script. It does a quick job, or starts a detached background job, and returns at once. Inside the drawer a script is stopped when its <code>timeout_ms</code> runs out (5 s when you declare none, never more than 30 s) and the user sees a timeout message; aim for well under a second.</li>
 <li><strong>State is re-read.</strong> The screen's values come only from <code>state</code>. A background job shows progress by writing files that <code>state</code> reads. There is no long-running app process inside or next to Nickel.</li>
 <li><strong>Signals are declared.</strong> A script answers with JSON signals naming things the screen declared: <code>{"toast":"id"}</code>, <code>{"dialog":"id"}</code>, and requests the manifest allows: <code>{"request":"rescan"}</code>, <code>{"request":"wifi"}</code>. Anything else on stdout is logged and dropped.</li>
 </ol>
@@ -387,7 +387,15 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tr>
 <tr>
 <td><code>actions[].timeout_ms</code></td>
-<td>With <code>show</code>: 500 to 9999, default 5000. Validated, but the drawer itself applies a fixed 30 s cap (see <a href="#known-gaps-in-this-beta">Mismatches</a>).</td>
+<td>With <code>show</code>: 500 to 9999, default 5000. The drawer stops the script when it runs out and shows a timeout message.</td>
+</tr>
+<tr>
+<td><code>actions[].menu</code></td>
+<td><code>true</code> puts the action in the drawer's long-press menu. Default <code>false</code>: an action stays on the screen only.</td>
+</tr>
+<tr>
+<td><code>actions[].confirm</code></td>
+<td>A question (up to 120 characters, no <code>:</code>; translate it as <code>actions.&lt;id&gt;.confirm</code>). The drawer asks it in a Nickel dialog before it runs the action from a tap or the long-press menu. Set it on every destructive action.</td>
 </tr>
 <tr>
 <td><code>actions[].wifi</code></td>
@@ -784,7 +792,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 <p>Package the folder so the folder itself is at the top level, <strong>without <code>data/</code></strong>:</p>
 <pre><code>zip -r mytodo-0.1.0.zip mytodo -x 'mytodo/data/*'
 </code></pre>
-<p>If you need a default config, ship <code>data/config.example.json</code> and let the user copy it, as GitHub sync does.</p>
+<p>If you need a default config, ship <code>config.example.json</code> next to <code>app.json</code> (not in <code>data/</code>) and let the user copy it, as GitHub sync does.</p>
 </li>
 <li>
 <p>Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.</p>
@@ -854,10 +862,6 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 <td>Pairing page on the phone; secrets only in <code>data/</code>, never printed.</td>
 </tr>
 <tr>
-<td>Relying on <code>"menu": false</code> to keep an action out of the drawer's long-press menu.</td>
-<td>Today the flag is not passed to the drawer: every action after the first, except <code>state</code> and <code>status</code>, appears in the long-press menu (up to 6) and runs <strong>without</strong> the confirm your screen declares. Order actions so the safe ones come first, and make every action safe to run with no <code>NICKELDRAWER_VALUE</code>.</td>
-</tr>
-<tr>
 <td>A hand-drawn icon.</td>
 <td>A Tabler icon rendered with <code>iconsgen</code>.</td>
 </tr>
@@ -868,7 +872,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 </tbody>
 </table></div>
 <h2 id="known-gaps-in-this-beta">Known gaps in this beta</h2>
-<p>Places where the code today behaves differently from what the specs promise, or where nothing has run on a device yet. Design around them.</p>
+<p>Places where nothing has run on a device yet, or where the Kobo side differs from the preview. Design around them.</p>
 <div class="tbl"><table>
 <thead>
 <tr>
@@ -877,14 +881,6 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><code>actions[].menu: false</code> is accepted but not sent to the drawer, so the long-press menu in the drawer lists every action after the first one except <code>state</code> and <code>status</code> (up to 6), and runs them without your screen's confirm.</td>
-<td>Put a harmless action first; make every action safe without a value; keep destructive work behind a screen button with <code>confirm</code> and re-check state inside the script.</td>
-</tr>
-<tr>
-<td><code>timeout_ms</code> is validated, but the drawer applies one fixed 30 s limit to every <code>show</code> action.</td>
-<td>Keep scripts fast; use background jobs.</td>
-</tr>
 <tr>
 <td>The current app screens, gallery and viewer have run on a Kobo only in earlier builds, and the <code>field</code> keyboard never.</td>
 <td>Treat <code>ndpreview</code> as a layout check only. Expect real fonts to be wider: long screens page earlier on the device.</td>

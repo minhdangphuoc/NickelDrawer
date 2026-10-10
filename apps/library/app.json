@@ -33,7 +33,8 @@
       "output": "show",
       "timeout_ms": 9500,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Fix the language of the selected books?"
     },
     {
       "id": "undo",
@@ -42,7 +43,8 @@
       "output": "show",
       "timeout_ms": 9500,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Undo the last language fix?"
     },
     {
       "id": "normalize",
@@ -51,7 +53,8 @@
       "output": "show",
       "timeout_ms": 9500,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Rename files to the NFC form?"
     },
     {
       "id": "pick",
@@ -78,7 +81,8 @@
       "output": "show",
       "timeout_ms": 5000,
       "rescan": "none",
-      "menu": false
+      "menu": false,
+      "confirm": "Move the selected book to the trash?"
     },
     {
       "id": "restore",

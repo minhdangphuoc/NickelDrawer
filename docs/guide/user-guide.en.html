@@ -331,7 +331,7 @@ tools/install-to-kobo.sh              # install
 <p>Hold your finger on an app for about half a second. A menu opens:</p>
 <ul>
 <li><strong>Info</strong>: version, which folders the app reads and writes, whether it uses the network, and its folder.</li>
-<li>The app's other actions. These run at once, without the questions the app's own screen asks first. Prefer the app's screen for anything that changes files.</li>
+<li>The app's quick actions, only the few it offers for this menu (for example <strong>Stop receiving</strong> in LocalSend). An action that could lose data asks first. Everything else is on the app's screen.</li>
 <li><strong>Remove…</strong>: deletes the app. You are asked first.</li>
 </ul>
 <blockquote>
@@ -405,7 +405,7 @@ tools/install-to-kobo.sh              # install
 <p>Good to know:</p>
 <ul>
 <li>A file with the same name as an existing one is never overwritten. The new one gets a number, for example <code>book (2).epub</code>.</li>
-<li>Each file is checked: its content must match its name (a <code>.epub</code> must really be an EPUB) and it must not be too large (books 200 MB, PDF 300 MB, comics 500 MB, pictures 30 MB, text files 20 MB). Files that fail go to <code>.adds/koboapps/inbox/rejected/</code> and are deleted after 7 days.</li>
+<li>Each file is checked: its content must match its name (a <code>.epub</code> must really be an EPUB) and it must not be too large (books 200 MB, PDF 300 MB, comics 500 MB, pictures 20 MB, text files 20 MB). Files that fail go to <code>.adds/koboapps/inbox/rejected/</code> and are deleted after 7 days.</li>
 <li>The PIN is made once and stays the same. To get a new PIN, delete <code>.adds/apps/localsend/data/pin.txt</code> over USB.</li>
 <li>You can tap <strong>←</strong> and do other things. Receiving goes on, and the <strong>Apps</strong> row shows that LocalSend is receiving.</li>
 <li><strong>Receiving stops by itself after 15 minutes without a new file.</strong> The screen then says so, and the library is rescanned.</li>
@@ -720,13 +720,13 @@ tools/install-to-kobo.sh              # install
 <ol>
 <li>Connect the Kobo over USB.</li>
 <li>
-<p>Create the file <code>.adds/koboapps/data/update.json</code> with this text, where <code>owner/name</code> is the GitHub repository the NickelDrawer releases come from:</p>
+<p>Open the file <code>.adds/koboapps/data/update.json</code> (the installer creates it with an empty <code>"repo"</code>; if it is missing, create it) and set <code>owner/name</code> to the GitHub repository the NickelDrawer releases come from:</p>
 <pre><code>{"repo": "owner/name", "channel": "stable"}
 </code></pre>
 <p>Use <code>"channel": "beta"</code> to also get test releases.</p>
 </li>
 <li>
-<p>Eject. The drawer's <strong>SYSTEM</strong> section now has an <strong>Updates</strong> row.</p>
+<p>Eject. While <code>"repo"</code> is empty the <strong>Updates</strong> row stays hidden; now the drawer's <strong>SYSTEM</strong> section has it.</p>
 </li>
 </ol>
 <h3 id="check-and-install">Check and install</h3>

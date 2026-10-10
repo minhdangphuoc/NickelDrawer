@@ -46,7 +46,7 @@ Firmware 5.x is **not** supported. Other Kobo models are untested. Details: [doc
 You need a Kobo Libra 2 on one of the builds above, a computer, a USB cable and the files from the latest [release](../../releases): `koboapps-<version>.zip` (apps and host tool) and `KoboRoot-nickeldrawer.tgz` (the native drawer).
 
 1. **Back up first.** Connect the Kobo, copy the whole `.kobo` and `.adds` folders to your computer. Keep them until you are happy.
-2. Unzip `koboapps-<version>.zip`. Copy the `.adds` folder inside `onboard/` into the root of the Kobo drive and merge it with the existing `.adds` (hidden folders: Cmd+Shift+. in macOS Finder, "show hidden files" on Windows and Linux). An app's `data/` folder is never part of the zip.
+2. Unzip `koboapps-<version>.zip`. Copy the `.adds` folder inside `onboard/` into the root of the Kobo drive and merge it with the existing `.adds` (hidden folders: Cmd+Shift+. in macOS Finder, "show hidden files" on Windows and Linux). The zip holds no `data/` folders; an example GitHub config sits next to the app (`.adds/apps/ghsync/config.example.json`). **macOS Finder: if it asks whether to Replace a folder that already exists, do not.** Replace deletes the folder's existing contents (app settings, tokens, other mods' files). Hold Option and choose **Merge**, or use the installer below.
 3. Copy `KoboRoot-nickeldrawer.tgz` to `.kobo/KoboRoot.tgz` on the drive (rename it while copying).
 4. Eject the Kobo from the computer. It installs the drawer and reboots. After the boot, the More tab has an **Apps** row.
 
@@ -55,7 +55,7 @@ On macOS or Linux with a checkout of this repository there is a safer installer 
 ```sh
 make check build dist
 tools/install-to-kobo.sh --dry-run     # show what would happen
-tools/install-to-kobo.sh               # KOBO_ROOT=/path if the volume has another name
+tools/install-to-kobo.sh               # finds /Volumes/KOBOeReader, /media/$USER/KOBOeReader or /run/media/$USER/KOBOeReader; else set KOBO_ROOT=/path
 ```
 
 [NickelMenu](https://github.com/pgaskin/NickelMenu) is optional. NickelDrawer does not need it, and it coexists with it.
@@ -68,14 +68,16 @@ Empty files you create over USB in `.adds/nickeldrawer/` (create the folder if i
 |---|---|
 | `uninstall` | Removes the native drawer on the next boot, then deletes itself |
 | `disable` | Loads the drawer but keeps it inactive (kill switch) |
-| `screens` | Opens an app's `ui.json` screen when you tap it (off by default in this beta) |
+| `no-screens` | Opt out of app screens: a tap runs the app's main action instead of opening its `ui.json` screen. Screens are on by default (an old `screens` file is ignored) |
 | `no-keyboard` | Text fields show "edit on your phone" instead of Nickel's keyboard |
+| `debug` | Writes a step log to `.adds/nickeldrawer/debug.log` |
+| `test-unknown-fw` | Test hook: pretends the firmware is unknown, so the drawer disables itself with one toast. Delete it and reboot to return to normal |
 
 ## Safety
 
 Apps run as root on a device that holds your library. Install only apps you trust. The rules:
 
-- The native drawer is a [NickelHook](https://github.com/pgaskin/NickelHook) mod with a **failsafe**: if Nickel crashes in the first 15 seconds after boot, the mod removes itself on the next boot and Nickel starts as stock.
+- The native drawer is a [NickelHook](https://github.com/pgaskin/NickelHook) mod with a **failsafe**: if Nickel crashes (or you power off once) in the first 15 seconds after the mod loads, the mod is left out at the next boot and Nickel starts as stock.
 - **Uninstall:** create `.adds/nickeldrawer/uninstall` (empty), eject, wait for the reboot. Then delete the `.adds/koboapps` and `.adds/apps` folders if you want everything gone. Your books are never touched.
 - No telemetry. The network is used only for what you start (LocalSend, GitHub sync, update check).
 - Releases are signed (ed25519). The private key stays on the maintainer's computer.

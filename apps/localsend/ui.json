@@ -77,11 +77,7 @@
         "stopped": "@ui.toast_stopped",
         "wifi_missing": "@ui.toast_wifi_missing",
         "start_failed": "@ui.toast_start_failed",
-        "failed": "@ui.toast_failed",
-        "sort_started": "@ui.toast_sort_started",
-        "sort_running": "@ui.toast_sort_running",
-        "sort_nothing": "@ui.toast_sort_nothing",
-        "sort_done": "@ui.toast_sort_done"
+        "failed": "@ui.toast_failed"
       }
     }
   }

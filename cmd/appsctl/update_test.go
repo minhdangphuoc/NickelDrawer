@@ -94,5 +94,5 @@ func TestUpdateRejectsUnknownSubcommand(t *testing.T) {
 // writeUpdateConfig creates update.json, which switches the update menu items on.
 func writeUpdateConfig(t *testing.T, hostDir string) {
 	t.Helper()
-	writeLocaleFile(t, filepath.Join(hostDir, "data"), "update.json", []byte("{}"))
+	writeLocaleFile(t, filepath.Join(hostDir, "data"), "update.json", []byte(`{"repo":"o/r"}`))
 }

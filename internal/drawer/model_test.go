@@ -2,11 +2,14 @@ package drawer
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"koboapps/internal/manifest"
 )
 
 func writeFile(t *testing.T, path string) {
@@ -42,7 +45,7 @@ func TestAppIconIsThePngNextToTheManifest(t *testing.T) {
 
 func TestHostItemsGetTheirIconsWhenTheFilesExist(t *testing.T) {
 	config, _ := testConfig(t, nil)
-	writeFile(t, filepath.Join(config.HostDir, "data", "update.json"))
+	writeFileIn(t, config.HostDir, "data/update.json", `{"repo":"o/r"}`)
 	writeFile(t, filepath.Join(config.HostDir, "icons", "refresh.png"))
 	model, err := config.BuildModel()
 	if err != nil {
@@ -105,5 +108,25 @@ func TestHiddenAppStillRunsById(t *testing.T) {
 	}
 	if !result.OK || runs.Load() != 1 {
 		t.Fatalf("result = %+v, runs = %d", result, runs.Load())
+	}
+}
+
+func TestModelActionsCarryMenuOptInAndConfirm(t *testing.T) {
+	yes, no := true, false
+	actions := modelActions([]manifest.Action{
+		{ID: "go", Label: "Go", Output: manifest.OutputShow},
+		{ID: "wipe", Label: "Wipe", Output: manifest.OutputShow, Menu: &yes, Confirm: "Wipe everything?"},
+		{ID: "quiet", Label: "Quiet", Output: manifest.OutputShow, Menu: &no},
+	})
+	if actions[0].Menu || !actions[1].Menu || actions[2].Menu {
+		t.Errorf("menu flags = %v %v %v; want false true false (screen-only actions stay out)",
+			actions[0].Menu, actions[1].Menu, actions[2].Menu)
+	}
+	if actions[1].Confirm != "Wipe everything?" || actions[0].Confirm != "" {
+		t.Errorf("confirm = %q / %q", actions[1].Confirm, actions[0].Confirm)
+	}
+	encoded, _ := json.Marshal(actions[1])
+	if !strings.Contains(string(encoded), `"confirm":"Wipe everything?"`) || !strings.Contains(string(encoded), `"menu":true`) {
+		t.Errorf("json = %s", encoded)
 	}
 }

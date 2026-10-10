@@ -189,7 +189,7 @@ You copied a new app over USB, or removed one? Tap **Refresh list** (in the grid
 Hold your finger on an app for about half a second. A menu opens:
 
 - **Info**: version, which folders the app reads and writes, whether it uses the network, and its folder.
-- The app's other actions. These run at once, without the questions the app's own screen asks first. Prefer the app's screen for anything that changes files.
+- The app's quick actions, only the few it offers for this menu (for example **Stop receiving** in LocalSend). An action that could lose data asks first. Everything else is on the app's screen.
 - **Remove…**: deletes the app. You are asked first.
 
 > **Remove deletes the app's whole folder, including its `data/`.** For GitHub that is your token and settings. For Library that is the backups and the trash, so you can no longer undo a fix or restore a trashed book. Your books and pictures in the normal folders stay. Undo or restore what you need first.
@@ -239,7 +239,7 @@ Apps answer with a short message at the bottom of the screen (a "toast"), for ex
 Good to know:
 
 - A file with the same name as an existing one is never overwritten. The new one gets a number, for example `book (2).epub`.
-- Each file is checked: its content must match its name (a `.epub` must really be an EPUB) and it must not be too large (books 200 MB, PDF 300 MB, comics 500 MB, pictures 30 MB, text files 20 MB). Files that fail go to `.adds/koboapps/inbox/rejected/` and are deleted after 7 days.
+- Each file is checked: its content must match its name (a `.epub` must really be an EPUB) and it must not be too large (books 200 MB, PDF 300 MB, comics 500 MB, pictures 20 MB, text files 20 MB). Files that fail go to `.adds/koboapps/inbox/rejected/` and are deleted after 7 days.
 - The PIN is made once and stays the same. To get a new PIN, delete `.adds/apps/localsend/data/pin.txt` over USB.
 - You can tap **←** and do other things. Receiving goes on, and the **Apps** row shows that LocalSend is receiving.
 - **Receiving stops by itself after 15 minutes without a new file.** The screen then says so, and the library is rescanned.
@@ -492,13 +492,13 @@ NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It 
 ### Set up updates (once)
 
 1. Connect the Kobo over USB.
-2. Create the file `.adds/koboapps/data/update.json` with this text, where `owner/name` is the GitHub repository the NickelDrawer releases come from:
+2. Open the file `.adds/koboapps/data/update.json` (the installer creates it with an empty `"repo"`; if it is missing, create it) and set `owner/name` to the GitHub repository the NickelDrawer releases come from:
 
         {"repo": "owner/name", "channel": "stable"}
 
     Use `"channel": "beta"` to also get test releases.
 
-3. Eject. The drawer's **SYSTEM** section now has an **Updates** row.
+3. Eject. While `"repo"` is empty the **Updates** row stays hidden; now the drawer's **SYSTEM** section has it.
 
 ### Check and install
 

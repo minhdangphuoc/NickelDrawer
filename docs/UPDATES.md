@@ -4,21 +4,21 @@ NickelDrawer can update its own apps, host tool and Nickel mod over Wi-Fi. An up
 
 ## For users
 
-1. Create `/mnt/onboard/.adds/koboapps/data/update.json` once (copy it from the computer):
+1. Open `/mnt/onboard/.adds/koboapps/data/update.json` once and set the repo. The installer (`tools/install-to-kobo.sh`) creates the file from `.adds/koboapps/config/update.json` with an empty `repo` and never overwrites it afterwards; with a manual copy, create it yourself. Until `repo` is set the Updates row stays hidden:
 
    ```json
    {"repo": "owner/name", "channel": "stable"}
    ```
 
    `channel` is `stable` (default) or `beta`. Only `beta` accepts GitHub pre-releases. Versions follow Semantic Versioning, so `1.0.0-beta.2` is newer than `1.0.0-beta.1` and older than `1.0.0`.
-2. Open More, Apps, and look at the **Updates** row in the System section (it appears once `update.json` exists). Tap it to open the Updates screen.
+2. Open More, Apps, and look at the **Updates** row in the System section (it appears once `update.json` names a `repo`). Tap it to open the Updates screen.
 3. Tap **Check for updates**. It connects Wi-Fi if needed, fetches and verifies the signed release index and records the result; nothing is installed. When a newer release exists the row shows **1 update** and the screen shows the installed and the available version and a short "What's new" text.
 4. Tap **Update** and confirm. The update runs in the background; the screen shows its state ("Updating...", then the result). Keep Wi-Fi on until it ends.
 5. When the result says to restart the Kobo, restart it: the Nickel mod of the release is installed by the reboot (see "The Nickel mod" below).
 
 From a shell: `appsctl update check | apply | status | rollback`. `check` writes `.adds/koboapps/data/update/available.json` (`available`, `version`, `current`, `notes`, `has_mod`, `checked`), which the drawer reads for the badge and the screen; it is a cache, and `apply` verifies everything again. `apply` takes `--allow-downgrade`; every subcommand takes `--onboard-root`, `--api-base`, `--tmp-dir`, `--locale`.
 
-If `update.json` is missing, or this build has no release key, the update stops with a message that says what to fix. Nothing is changed.
+If `update.json` is missing or has an empty `repo`, or this build has no release key, the update stops with a message that says what to fix. Nothing is changed.
 
 ## Trust model
 
@@ -54,7 +54,7 @@ A release may include the mod as `.adds/koboapps/mod/KoboRoot-nickeldrawer.tgz` 
 3. Only when the archive differs from the copy recorded in `.adds/koboapps/mod/` (so an unchanged mod is not installed again), after the other files are swapped and the self-check passed, it copies the archive to `.kobo/KoboRoot.tgz`. The result is then "Updated X to Y. Restart the Kobo to finish." (`update.applied_reboot`).
 4. Nickel installs the mod at the next boot and deletes `KoboRoot.tgz`. The recorded copy in `.adds/koboapps/mod/` stays, so the next update can tell whether the mod changed. `tools/install-to-kobo.sh` writes the same record when it stages the mod.
 
-The mod itself is not replaced while Nickel runs. If the mod fails to load after the restart, NickelHook's failsafe (power off within about 20 s of boot, twice) uninstalls it.
+The mod itself is not replaced while Nickel runs. If the mod fails to load after the restart, NickelHook's failsafe (power off once within 15 s of the mod loading) uninstalls it.
 
 ## Rollback
 

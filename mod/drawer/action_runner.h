@@ -47,10 +47,12 @@ private slots:
     void onRemoveAnswer(bool isAccepted);
     void onRemoveFinished(const ActionResult &result);
     void onDeclaredDialogAnswer(bool isAccepted);
+    void onActionConfirmAnswer(bool isAccepted);
 
 private:
     void setBusy(bool isBusy);
     void runAction(const DrawerAction &action);
+    void askToConfirmAction(const DrawerAction &action);
     void runCurrent();
     bool presentScreenSignal(const ActionResult &result);
     void presentScreenEventOutcome(const ActionResult &result);

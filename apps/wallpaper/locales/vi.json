@@ -4,7 +4,6 @@
   "actions.import.label": "Nhập ảnh",
   "actions.mode.label": "Lấp đầy / Vừa khung",
   "actions.rotation.label": "Cố định / Ngẫu nhiên",
-  "actions.off.label": "Tắt hình nền",
   "actions.status.label": "Trạng thái",
   "msg.usage": "Cách dùng: wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status|state|set-current ID|remove [--confirm] [--delete-original] ID [--app-dir DIR]",
   "msg.unknown_command": "Lệnh không có: {command}",
@@ -116,5 +115,7 @@
   "ui.remove_original_ok": "Xoá cả hai",
   "ui.toast_removed_original": "Đã xoá, kể cả ảnh gốc",
   "ui.toast_removed_original_kept": "Đã xoá. Không thấy ảnh gốc giống hệt nên không xoá gì thêm.",
-  "actions.remove-all.label": "Xoá cả ảnh gốc"
+  "actions.remove-all.label": "Xoá cả ảnh gốc",
+  "actions.remove.confirm": "Xóa ảnh này?",
+  "actions.remove-all.confirm": "Xóa ảnh này và bản gốc?"
 }

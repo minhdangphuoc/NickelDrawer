@@ -116,7 +116,7 @@ sequenceDiagram
 | Text | `.txt` | valid UTF-8, no NUL bytes | 20 MB | `documents` |
 | HTML / RTF | `.html`, `.htm`, `.rtf` | `<` as first visible character / `{\rtf` | 20 MB | `documents` |
 | Comics | `.cbz`, `.cbr` | ZIP / RAR4 or RAR5 signature | 500 MB | `comics` |
-| Pictures | `.png`, `.jpg`, `.jpeg`, `.gif` | PNG / JPEG / GIF signature | 30 MB | `pictures` |
+| Pictures | `.png`, `.jpg`, `.jpeg`, `.gif` | PNG / JPEG / GIF signature | 20 MB | `pictures` |
 
 Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension and content must agree; a `.pdf` that is really a ZIP is rejected. The rules are data (`host/config/routing.json`, installed to `.adds/koboapps/config/routing.json` and replaced on every install). A user override `.adds/koboapps/data/routing.json` (never touched by the installer) may only **remove** types (`{"remove": ["gif"]}`) or **change a destination** to another library folder (`{"destinations": {"txt": "books"}}`); it cannot add types, extensions, checks, size caps or paths. Both files are validated; a bad override is reported and ignored (defaults apply), a bad shipped file stops routing. Format and reason codes: [spec/inbox.md](spec/inbox.md).
 
@@ -134,7 +134,7 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
 
 | Source | How |
 |---|---|
-| LocalSend | localgo saves into `inbox`; its `--exec` hook runs `appsctl inbox route --from-env --source localsend` per file. "Stop receiving" waits up to 2 s for running hooks, runs `appsctl inbox sort` as a safety net, prints `appsctl inbox status`, then the library rescan runs. "Sort old files" runs `appsctl inbox sort --source-dir /mnt/onboard/LocalSend` in the background to migrate the old folder. |
+| LocalSend | localgo saves into `inbox`; its `--exec` hook runs `appsctl inbox route --from-env --source localsend` per file. "Stop receiving" waits up to 2 s for running hooks, runs `appsctl inbox sort` as a safety net, prints `appsctl inbox status`, then the library rescan runs. It also runs `appsctl inbox sort --source-dir /mnt/onboard/LocalSend` once to migrate the old folder. |
 | GitHub sync | add-only. Each file must pass the same allowlist as the router (`routing.json`: extension, size cap, magic bytes on the downloaded temp file) and goes to the folder its type maps to, below a `GitHub` subfolder: `Books/GitHub`, `Documents/GitHub`, `Comics/GitHub` (names in NFC). A `config.json` with an explicit `dest` (such as the old `/mnt/onboard/GitHub`) puts everything there instead. |
 | USB | `appsctl inbox route <path>` and `sort` apply the same rules to files in the inbox |
 
@@ -174,7 +174,7 @@ localgo builds the hook by replacing `%f` (path), `%n` (file name), `%a` (sender
 ## 7. Roadmap impact
 
 1. Done: `internal/storage` (logical folders incl. `inbox`, `rejected`), `internal/inbox` and `appsctl inbox route|sort|status|purge`, `host/config/routing.json`, tests on a fake Kobo.
-2. Done: LocalSend receives into `inbox`, routes per file, shows the summary; "Sort old files" migrates the old `/LocalSend` folder.
+2. Done: LocalSend receives into `inbox`, routes per file, shows the summary; "Stop receiving" also migrates the old `/LocalSend` folder.
 3. Done: ghsync routes by type to `Books|Documents|Comics/GitHub` with the inbox rules; an explicit `dest` keeps working.
 4. Done: `app.json` has `storage` / `network`; `appsctl validate` checks them.
 5. Open: signed updates (`internal/release`) do not yet ship `.adds/koboapps/config/`; until `config` is added to the host folders an update leaves `routing.json` as the installer wrote it.

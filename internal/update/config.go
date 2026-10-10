@@ -63,6 +63,9 @@ func LoadConfig(layout Layout) (Config, error) {
 	if config.Channel == "" {
 		config.Channel = ChannelStable
 	}
+	if config.Repo == "" {
+		return Config{}, i18n.NewError("update.no_repo", "file", file)
+	}
 	if !repoPattern.MatchString(config.Repo) {
 		return Config{}, i18n.NewError("update.bad_repo", "file", file, "repo", config.Repo)
 	}

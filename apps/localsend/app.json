@@ -34,16 +34,8 @@
       "run": "bin/stop.sh",
       "output": "show",
       "timeout_ms": 5000,
-      "rescan": "quick"
-    },
-    {
-      "id": "sort",
-      "label": "Sort old files",
-      "run": "bin/sort.sh",
-      "output": "show",
-      "timeout_ms": 3000,
       "rescan": "quick",
-      "menu": false
+      "menu": true
     },
     {
       "id": "state",

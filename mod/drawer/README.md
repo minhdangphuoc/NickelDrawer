@@ -68,6 +68,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `tweaks_panel.{h,cc}` | modal body: rule, 2-column cells (italic serif label, On/Off or value), page keys |
 | `tweaks_session.{h,cc}` | one open modal: Nickel's N3Dialog as a controller view (else the overlay), confirm, `tweak`, toast, Nickel sleep/reboot/rescan |
 | `tweaks_overlay.{h,cc}` | own modal chrome when Nickel's N3Dialog cannot be used |
+| `wake_rotation.{h,cc}` | random wallpaper: on `N3PowerWorkflowManager::resumedFromSleep()`, if the Wallpaper app's `data/rotate-on-wake` exists, starts `wallpaper next` detached (docs/spec/wallpaper.md "Random rotation") |
 | `screen_model.h` | plain structs of a `drawer screen` reply |
 | `screen_logic.{h,cc}` | pure ndpreview metrics and rules: wrap, elide, pages, component heights (Qt-free) |
 | `qr_encoder.{h,cc}` | QR byte mode, level M, versions 1–20; checked against segno matrices (Qt-free) |
@@ -136,6 +137,7 @@ run removes only one of them).
 | `moreContainerLayout` not found | no row, logged |
 | N3Dialog or controller push missing | Tweaks modal in the own overlay (re/notes/tweaks-modal.md) |
 | N3PowerWorkflowManager / rescan missing | the tweak still runs; toast "Not available on this firmware." instead of sleep/reboot/rescan |
+| N3PowerWorkflowManager or its `resumedFromSleep()` signal missing | logged; random wallpaper keeps the current picture (no change on wake) |
 | `AbstractController` offset not 8, or push did not stack the view | page discarded, toast |
 | appsctl missing / slow / crashing / bad JSON / too new | problem row + "Try again" row; the More row just reads "Apps" |
 | `drawer.ini` not writable | logged, list/grid choice not kept |

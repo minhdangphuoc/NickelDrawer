@@ -29,14 +29,17 @@
       "label": "Delete task",
       "run": "bin/remove.sh",
       "output": "show",
-      "timeout_ms": 3000
+      "timeout_ms": 3000,
+      "confirm": "Delete this task?"
     },
     {
       "id": "clear-done",
       "label": "Clear done tasks",
       "run": "bin/clear-done.sh",
       "output": "show",
-      "timeout_ms": 3000
+      "timeout_ms": 3000,
+      "confirm": "Clear all done tasks?",
+      "menu": true
     },
     {
       "id": "state",

@@ -97,5 +97,5 @@ func IsKnown(name string) bool {
 // KoboappsDir is the host folder; its config/ ships with the release and its data/ is ours to write.
 func KoboappsDir() string { return filepath.Join(root, filepath.FromSlash(koboappsRelative)) }
 
-// LegacyLocalSendDir is the old receive folder that "Sort old files" migrates.
+// LegacyLocalSendDir is the old receive folder that "Stop receiving" migrates.
 func LegacyLocalSendDir() string { return filepath.Join(root, legacyLocalSendRelative) }

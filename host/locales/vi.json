@@ -3,6 +3,7 @@
   "refresh.failures": "Lỗi: {count} ứng dụng.",
   "update.no_config": "Chưa thiết lập cập nhật.\\nThiếu tệp {file}",
   "update.bad_config": "Không đọc được {file}: {cause}",
+  "update.no_repo": "Chưa đặt kho cập nhật.\\nGhi chủ/tên vào \"repo\" trong {file}",
   "update.bad_repo": "Kho '{repo}' trong {file} sai. Dùng dạng chủ/tên.",
   "update.bad_channel": "Kênh '{channel}' trong {file} sai. Dùng stable hoặc beta.",
   "update.no_public_key": "Bản này chưa có khóa phát hành nên không kiểm tra được cập nhật.",

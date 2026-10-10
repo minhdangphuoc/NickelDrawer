@@ -332,7 +332,7 @@ tools/install-to-kobo.sh              # cài
 <p>Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện ra:</p>
 <ul>
 <li><strong>Thông tin</strong>: phiên bản, ứng dụng đọc và ghi những thư mục nào, có dùng mạng không, và thư mục của nó.</li>
-<li>Các thao tác khác của ứng dụng. Chúng chạy ngay, không hỏi lại như màn hình của ứng dụng. Với việc làm thay đổi tệp, nên dùng màn hình của ứng dụng.</li>
+<li>Vài thao tác nhanh mà ứng dụng đưa vào menu này (ví dụ <strong>Dừng nhận</strong> trong LocalSend). Thao tác có thể làm mất dữ liệu sẽ hỏi trước. Mọi thứ khác nằm trên màn hình của ứng dụng.</li>
 <li><strong>Gỡ…</strong>: xoá ứng dụng. Máy hỏi lại trước.</li>
 </ul>
 <blockquote>
@@ -406,7 +406,7 @@ tools/install-to-kobo.sh              # cài
 <p>Nên biết:</p>
 <ul>
 <li>Tệp trùng tên với tệp đã có không bao giờ bị ghi đè. Tệp mới được thêm số, ví dụ <code>sach (2).epub</code>.</li>
-<li>Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp <code>.epub</code> phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 30 MB, tệp văn bản 20 MB). Tệp không đạt vào <code>.adds/koboapps/inbox/rejected/</code> và bị xoá sau 7 ngày.</li>
+<li>Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp <code>.epub</code> phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 20 MB, tệp văn bản 20 MB). Tệp không đạt vào <code>.adds/koboapps/inbox/rejected/</code> và bị xoá sau 7 ngày.</li>
 <li>Mã PIN được tạo một lần và giữ nguyên. Muốn mã mới, xoá tệp <code>.adds/apps/localsend/data/pin.txt</code> qua USB.</li>
 <li>Bạn có thể bấm <strong>←</strong> và làm việc khác. Kobo vẫn nhận, và hàng <strong>Ứng dụng</strong> cho biết LocalSend đang nhận.</li>
 <li><strong>Việc nhận tự dừng sau 15 phút không có tệp mới.</strong> Khi đó màn hình báo, và thư viện được quét lại.</li>
@@ -722,13 +722,13 @@ tools/install-to-kobo.sh              # cài
 <ol>
 <li>Cắm Kobo qua USB.</li>
 <li>
-<p>Tạo tệp <code>.adds/koboapps/data/update.json</code> với nội dung sau, trong đó <code>owner/name</code> là repo GitHub nơi phát hành NickelDrawer:</p>
+<p>Mở tệp <code>.adds/koboapps/data/update.json</code> (trình cài đặt tạo sẵn với <code>"repo"</code> rỗng; nếu chưa có thì tự tạo) và điền <code>owner/name</code> là repo GitHub nơi phát hành NickelDrawer:</p>
 <pre><code>{"repo": "owner/name", "channel": "stable"}
 </code></pre>
 <p>Dùng <code>"channel": "beta"</code> để nhận cả bản thử nghiệm.</p>
 </li>
 <li>
-<p>Ngắt kết nối. Mục <strong>HỆ THỐNG</strong> trong Ngăn giờ có hàng <strong>Cập nhật</strong>.</p>
+<p>Ngắt kết nối. Khi <code>"repo"</code> còn rỗng, hàng <strong>Cập nhật</strong> bị ẩn; sau khi điền, mục <strong>HỆ THỐNG</strong> trong Ngăn sẽ có hàng này.</p>
 </li>
 </ol>
 <h3 id="kiem-tra-va-cai">Kiểm tra và cài</h3>

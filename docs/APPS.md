@@ -375,6 +375,6 @@ Zip the app folder so the folder itself is at the top level:
 zip -r hello-1.0.0.zip hello -x 'hello/data/*'
 ```
 
-Do not ship `data/`. It holds the user's tokens and logs. If you need a default config, ship `data/config.example.json` as ghsync does.
+Do not ship `data/`. It holds the user's tokens and logs. If you need a default config, ship `config.example.json` next to `app.json` (outside `data/`) as ghsync does.
 
 Do not include Kobo binaries or firmware files in a package.

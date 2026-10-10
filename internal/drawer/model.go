@@ -1,6 +1,7 @@
 package drawer
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -61,6 +62,11 @@ type Action struct {
 	Label   string `json:"label"`
 	Kind    string `json:"kind"`
 	Primary bool   `json:"primary,omitempty"`
+	// Menu is true only for actions the app marked `"menu": true`: the long-press menu is
+	// opt-in so that screen-only actions (which need a selection or a value) never appear.
+	Menu bool `json:"menu"`
+	// Confirm is the localized question the mod asks before running the action; empty runs it at once.
+	Confirm string `json:"confirm,omitempty"`
 }
 
 type AppProblem struct {
@@ -166,17 +172,34 @@ func modelActions(actions []manifest.Action) []Action {
 		if action.Output == manifest.OutputNone {
 			kind = KindBackground
 		}
-		result = append(result, Action{ID: action.ID, Label: action.Label, Kind: kind, Primary: i == 0})
+		result = append(result, Action{
+			ID: action.ID, Label: action.Label, Kind: kind, Primary: i == 0,
+			Menu: action.InDrawerMenu(), Confirm: action.Confirm,
+		})
 	}
 	return result
 }
 
 func (c Config) hostItems() []Item {
 	items := []Item{c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action", "refresh.png")}
-	if _, err := os.Stat(filepath.Join(c.HostDir, "data", updateConfigName)); err == nil {
+	if c.isUpdateRepoSet() {
 		items = append(items, c.updatesItem())
 	}
 	return items
+}
+
+// isUpdateRepoSet is true once data/update.json names a repo. The installer ships the file with
+// an empty repo, so the Updates row stays hidden until the user chooses where releases come
+// from; a repo that is set but malformed still shows the row so the screen can explain it.
+func (c Config) isUpdateRepoSet() bool {
+	data, err := os.ReadFile(filepath.Join(c.HostDir, "data", updateConfigName))
+	if err != nil {
+		return false
+	}
+	var config struct {
+		Repo string `json:"repo"`
+	}
+	return json.Unmarshal(data, &config) == nil && config.Repo != ""
 }
 
 func (c Config) hostItem(id, nameKey, actionID, labelKey, iconName string) Item {

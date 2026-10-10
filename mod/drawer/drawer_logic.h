@@ -135,8 +135,11 @@ static const int MAX_MENU_ENTRIES = 8;
 // How many action entries fit next to the drawer's own entries (Info, Remove).
 int menuActionLimit(int fixedEntries);
 // An action is a menu entry unless it is the status / state feed of the drawer
-// and its screen, or the model marked it "menu": false.
+// and its screen, or the model did not mark it "menu": true (opt-in, so that
+// screen-only actions never run unasked from the long-press menu).
 bool isMenuAction(const char *id, bool isInMenu);
+// True when the action carries a "confirm" question the user must accept first.
+bool needsConfirmation(const char *confirmQuestion);
 
 // ---- Wi-Fi retry (drawer-protocol "needs_wifi": connect, then retry once) ----
 

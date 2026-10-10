@@ -30,7 +30,8 @@
       "output": "show",
       "timeout_ms": 9500,
       "wifi": true,
-      "rescan": "none"
+      "rescan": "none",
+      "menu": true
     },
     {
       "id": "stop-pairing",

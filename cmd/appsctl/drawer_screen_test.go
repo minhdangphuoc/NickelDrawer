@@ -21,7 +21,7 @@ func installLocalsend(t *testing.T, root drawerRoot) {
 	t.Helper()
 	source := filepath.Join("..", "..", "apps", "localsend")
 	target := filepath.Join(root.apps, "localsend")
-	for _, relative := range []string{"app.json", "ui.json", "locales/en.json", "locales/vi.json", "bin/start.sh", "bin/stop.sh", "bin/sort.sh"} {
+	for _, relative := range []string{"app.json", "ui.json", "locales/en.json", "locales/vi.json", "bin/start.sh", "bin/stop.sh"} {
 		data, err := os.ReadFile(filepath.Join(source, filepath.FromSlash(relative)))
 		if err != nil {
 			t.Fatal(err)

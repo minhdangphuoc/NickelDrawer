@@ -81,6 +81,29 @@ void ActionRunner::runAction(const DrawerAction &action)
 {
     currentAction = action;
     isScreenEvent = false;
+    if (DrawerLogic::needsConfirmation(qPrintable(action.confirm))) {
+        askToConfirmAction(action);
+        return;
+    }
+    runCurrent();
+}
+
+// The question comes from the app's manifest (localized by appsctl); only an accept runs the action.
+void ActionRunner::askToConfirmAction(const DrawerAction &action)
+{
+    ConfirmQuestion *question = new ConfirmQuestion(currentItem.name, action.confirm, action.label,
+                                                    FallbackStrings::text(FallbackStrings::CANCEL),
+                                                    ConfirmQuestion::DESTRUCTIVE);
+    connect(question, SIGNAL(answered(bool)), this, SLOT(onActionConfirmAnswer(bool)));
+    question->ask();
+}
+
+void ActionRunner::onActionConfirmAnswer(bool isAccepted)
+{
+    if (!isAccepted) {
+        setBusy(false); // cancel returns to the drawer unchanged
+        return;
+    }
     runCurrent();
 }
 

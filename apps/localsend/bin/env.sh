@@ -6,7 +6,7 @@ APP_DIR=$APPS_ROOT/$APP_ID
 DATA_DIR=$APP_DIR/data
 BINARY=$APP_DIR/bin/localgo
 INBOX=/mnt/onboard/.adds/koboapps/inbox
-# Where earlier versions received files; "Sort old files" moves them into the library.
+# Where earlier versions received files; "Stop receiving" moves them into the library.
 LEGACY_FOLDER=/mnt/onboard/LocalSend
 APPSCTL=$KOBOAPPS_ROOT/bin/appsctl
 # localgo runs this through `sh -c` after each received file, once per file and concurrently.

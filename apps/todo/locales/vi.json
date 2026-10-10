@@ -37,5 +37,7 @@
   "ui.toast_full": "Đầy: hãy xoá bớt một việc",
   "ui.toast_missing": "Không thấy việc này",
   "ui.toast_recovered": "Danh sách hỏng: bắt đầu lại từ trống",
-  "ui.toast_failed": "Không được. Xem data/log.txt."
+  "ui.toast_failed": "Không được. Xem data/log.txt.",
+  "actions.remove.confirm": "Xóa việc này?",
+  "actions.clear-done.confirm": "Xóa mọi việc đã xong?"
 }

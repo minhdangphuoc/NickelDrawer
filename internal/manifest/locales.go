@@ -22,6 +22,8 @@ const (
 
 func actionLabelKey(actionID string) string { return "actions." + actionID + ".label" }
 
+func actionConfirmKey(actionID string) string { return "actions." + actionID + ".confirm" }
+
 // Localize returns a copy of app with name and labels in the bundle's language.
 // A translation that would break a rule (length, ':') is skipped in favour of English,
 // so one bad translation can never corrupt the generated menu.
@@ -32,6 +34,9 @@ func (a App) Localize(bundle *i18n.Bundle) App {
 	localized.Actions = make([]Action, len(a.Actions))
 	for i, action := range a.Actions {
 		action.Label = translatedOrEnglish(bundle, actionLabelKey(action.ID), action.Label, maxLabelLen)
+		if action.Confirm != "" {
+			action.Confirm = translatedOrEnglish(bundle, actionConfirmKey(action.ID), action.Confirm, maxDescriptionN)
+		}
 		localized.Actions[i] = action
 	}
 	return localized
@@ -109,6 +114,9 @@ func englishStrings(app App, englishFile i18n.Catalog) i18n.Catalog {
 	english := i18n.Catalog{keyName: app.Name, keyDescription: app.Description}
 	for _, action := range app.Actions {
 		english[actionLabelKey(action.ID)] = action.Label
+		if action.Confirm != "" {
+			english[actionConfirmKey(action.ID)] = action.Confirm
+		}
 	}
 	for key, text := range englishFile {
 		if isAppTextKey(key) {
@@ -161,6 +169,8 @@ func validateTranslatedField(key, text string) []string {
 		if utf8.RuneCountInString(text) > maxDescriptionN {
 			return []string{fmt.Sprintf("description is longer than %d characters; shorten it", maxDescriptionN)}
 		}
+	case strings.HasPrefix(key, "actions.") && strings.HasSuffix(key, ".confirm"):
+		return validateText(key, text, 1, maxDescriptionN)
 	case strings.HasPrefix(key, "actions."):
 		return validateText(key, text, 1, maxLabelLen)
 	}

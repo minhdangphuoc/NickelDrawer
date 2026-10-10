@@ -7,8 +7,7 @@ Receives files from a phone via LocalSend and sorts them into the library.
 - **Start receiving** runs `localgo` with `--dir` set to the inbox (`/mnt/onboard/.adds/koboapps/inbox`) and `--exec` set to `appsctl inbox route --from-env --source localsend`. localgo runs that hook once for each received file.
 - The router checks the file against an allowlist (extension and content must agree, size caps) and moves it: books (EPUB, KEPUB, MOBI) to `Books`, PDF/TXT/HTML/RTF to `Documents`, CBZ/CBR to `Comics`, PNG/JPEG/GIF to `Pictures`. Anything else goes to `inbox/rejected/` and is deleted after 7 days. Existing files are never overwritten (`name (2).epub`). Rules and format: `docs/spec/inbox.md`.
 - Receiving **stops by itself after 15 minutes without a received file** (`bin/watch.sh`, started with the receiver). The screen then says so, and the library is rescanned (a `rescan` request from `state`, declared in `app.json`). No script can keep the Kobo awake: Nickel's own sleep timer still applies, so wake the Kobo while sending.
-- **Stop receiving** stops localgo, waits up to 2 seconds for running hooks, sorts anything left in the inbox, shows a summary (for example `Books: 2`, `Rejected: 1`) and rescans the library.
-- **Sort old files** moves the files that older versions left in `/mnt/onboard/LocalSend` through the same rules. It runs in the background; tap it again to see the result.
+- **Stop receiving** stops localgo, waits up to 2 seconds for running hooks, sorts anything left in the inbox (and in the old `/mnt/onboard/LocalSend` folder that older versions used), shows a summary (for example `Books: 2`, `Rejected: 1`) and rescans the library.
 
 ## Security note
 

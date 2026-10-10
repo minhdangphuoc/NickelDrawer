@@ -1,8 +1,10 @@
 #!/bin/bash
-# Installs, updates or removes NickelDrawer on a mounted Kobo (macOS).
+# Installs, updates or removes NickelDrawer on a mounted Kobo (macOS or Linux).
 #   tools/install-to-kobo.sh [--dry-run] [--remove-legacy] [--with-mod | --no-mod]
 #   tools/install-to-kobo.sh --uninstall [--purge] [--dry-run]
-# Env: KOBO_ROOT (default /Volumes/KOBOeReader) for tests or a differently named volume;
+# Env: KOBO_ROOT, the mounted Kobo. Default: the first KOBOeReader volume found under
+#        /Volumes (macOS), /media/$USER, /run/media/$USER or /mnt (Linux); KOBO_SEARCH_DIRS
+#        (space-separated) replaces that list;
 #      BACKUP_ROOT (default <repo>/backups); MOD_TGZ (default build/mod/KoboRoot-nickeldrawer.tgz).
 # Run `make check build dist` first. Never cd into the volume: it would block ejecting.
 #
@@ -12,7 +14,24 @@
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
-KOBO_ROOT=${KOBO_ROOT:-/Volumes/KOBOeReader}
+# Where a desktop mounts the Kobo (volume label KOBOeReader), most likely first.
+KOBO_VOLUME_NAME=KOBOeReader
+KOBO_SEARCH_DIRS=${KOBO_SEARCH_DIRS:-/Volumes /media/${USER:-$(id -un)} /run/media/${USER:-$(id -un)} /mnt}
+
+# Prints the first mounted Kobo volume, or the macOS default when none is mounted (the
+# "no Kobo found" message then names a path the user knows).
+detect_kobo_root() {
+    local searchDir
+    for searchDir in $KOBO_SEARCH_DIRS; do
+        if [ -d "$searchDir/$KOBO_VOLUME_NAME/.kobo" ]; then
+            echo "$searchDir/$KOBO_VOLUME_NAME"
+            return
+        fi
+    done
+    echo "/Volumes/$KOBO_VOLUME_NAME"
+}
+
+KOBO_ROOT=${KOBO_ROOT:-$(detect_kobo_root)}
 BACKUP_ROOT=${BACKUP_ROOT:-$REPO_ROOT/backups}
 ADDS=$KOBO_ROOT/.adds
 FLAG_DIR=$ADDS/nickeldrawer
@@ -84,7 +103,7 @@ parse_flags() {
 
 require_mounted_kobo() {
     [ -d "$KOBO_ROOT/.kobo" ] ||
-        fail "no Kobo found at $KOBO_ROOT (missing .kobo). Plug in the Kobo, tap Connect, and try again."
+        fail "no Kobo found at $KOBO_ROOT (missing .kobo). Plug in the Kobo, tap Connect, and try again, or set KOBO_ROOT=/path/to/the/mounted/Kobo."
 }
 
 require_fresh_dist() {
@@ -197,8 +216,8 @@ install_folder() {
 
 install_example_config() {
     local source=$1 target=$2
-    [ -f "$source/data/config.example.json" ] || return 0
-    act cp "$source/data/config.example.json" "$target/data/config.example.json"
+    [ -f "$source/config.example.json" ] || return 0
+    act cp "$source/config.example.json" "$target/config.example.json"
 }
 
 # The inbox and its rejected/ folder must exist before the first file arrives. The user's
@@ -207,9 +226,21 @@ create_inbox_folders() {
     act mkdir -p "$ADDS/koboapps/inbox/rejected"
 }
 
+# The Updates row needs data/update.json. The shipped template has an empty "repo", which keeps
+# the row hidden until the user sets owner/name (docs/UPDATES.md). An existing file is the
+# user's choice and is never touched.
+create_update_config() {
+    local userConfig=$ADDS/koboapps/data/update.json
+    [ -e "$userConfig" ] && return 0
+    act mkdir -p "$ADDS/koboapps/data"
+    act cp "$DIST_ADDS/koboapps/config/update.json" "$userConfig"
+    note_change "created data/update.json (set \"repo\" to enable the Updates row)"
+}
+
 install_host() {
     install_folder "$DIST_ADDS/koboapps" "$ADDS/koboapps" bin lib locales config icons screens
     create_inbox_folders
+    create_update_config
     note_change "installed .adds/koboapps (bin, lib, locales, config, icons, screens, inbox)"
 }
 
