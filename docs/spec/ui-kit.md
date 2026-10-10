@@ -248,7 +248,7 @@ Default is **list**. The choice is remembered (written on change, small file in 
 - Cell: no border. The app's icon (96 px, the generic apps icon without one) centred; under it the name centred in Nickel's sans at 32 px (one step under the list's 36), at most 2 lines, the last one elided. No status line (list view keeps it). Icon and name are one group centred in the cell with the icon at a fixed offset, so icons line up across a row.
 - Rows start right under the header; as many rows as fit above the hint and page bar (5 on the Libra 2), so 20 apps per page. The page bar and hint stay as in the list.
 - Pressed: the whole cell is inverted, as on Nickel's pressed rows. Long press and the update dot (at the icon's top-right) work as in the list.
-- Host items are not apps and are never cells: **refresh** is a header icon button (Nickel's reload icon) left of the list/grid toggles; **check for updates** (only when the host offers it) is a second header button (Nickel's download icon) with the black update dot when an update is waiting. The list view still shows both as rows.
+- Host items are not apps and are never cells: **refresh** is a header icon button (Nickel's reload icon) left of the list/grid toggles; **check for updates** (only when the host offers it) is a second header button (Nickel's download icon) with the black update dot when an update is waiting. The list view uses the same header buttons and shows no host rows, so both views match.
 - `ndpreview drawer-grid --out build/preview/drawer-grid.png --locale vi` renders the grid with sample apps (icons approximated).
 
 ### 5.3 Paging and hard keys

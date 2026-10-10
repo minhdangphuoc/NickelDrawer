@@ -262,12 +262,13 @@ int DrawerView::perPage() const
     return DrawerLogic::itemsPerPage(viewMode, gridRows);
 }
 
-// The grid hides the host items its header buttons stand for; the list shows all.
+// Both views hide the host items the header buttons stand for, so refresh and
+// updates sit next to the list/grid toggles in either view.
 void DrawerView::rebuildShownIndices()
 {
     shownIndices.clear();
     for (int i = 0; i < items.size(); i++) {
-        bool isHidden = viewMode == DrawerLogic::VIEW_GRID && DrawerLogic::isHeaderControlId(qPrintable(items[i].id));
+        bool isHidden = DrawerLogic::isHeaderControlId(qPrintable(items[i].id));
         if (!isHidden) {
             shownIndices.append(i);
         }
@@ -284,14 +285,13 @@ const DrawerItem *DrawerView::hostItem(const char *id) const
     return NULL;
 }
 
-// Grid mode only: the refresh button, and the updates button (with the dot when
-// an update is waiting) when the host offers the item and an icon is installed.
+// The refresh button, and the updates button (with the dot when an update is
+// waiting), when the host offers the item and an icon is installed.
 void DrawerView::updateHostButtons()
 {
-    bool isGrid = viewMode == DrawerLogic::VIEW_GRID;
     const DrawerItem *updates = hostItem(HOST_UPDATES_ID);
-    refreshButton->setVisible(isGrid && hostItem(HOST_REFRESH_ID) && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
-    updatesButton->setVisible(isGrid && updates && !SystemIcon::icon(SystemIcon::IMPORT).isNull());
+    refreshButton->setVisible(hostItem(HOST_REFRESH_ID) && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
+    updatesButton->setVisible(updates && !SystemIcon::icon(SystemIcon::IMPORT).isNull());
     updatesDot->setVisible(updates && updates->hasUpdate);
 }
 
@@ -446,8 +446,8 @@ void DrawerView::renderPage()
 void DrawerView::renderListPage(int first, int count)
 {
     for (int i = 0; i < count; i++) {
-        int index = shownIndices[first + i]; // the list shows every item: the same as first + i
-        int previousSection = i > 0 ? sectionOfItem[index - 1] : -1;
+        int index = shownIndices[first + i];
+        int previousSection = i > 0 ? sectionOfItem[shownIndices[first + i - 1]] : -1;
         if (DrawerLogic::startsSectionOnPage(i, sectionOfItem[index], previousSection)) {
             pageLayout->addWidget(createSectionLabel(sectionTitles[sectionOfItem[index]], pageArea));
         }
