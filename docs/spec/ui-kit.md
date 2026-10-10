@@ -118,10 +118,12 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 
 ### 3.8 Toggle
 
-`{ "toggle": "Auto-update library", "bind": "autoRescan" }`
+`{ "toggle": "Auto-update library", "bind": "autoRescan", "detail": "Checks once a day" }`
 
 - Use only for a real two-way choice. Do not use a toggle to run an action (use a button).
-- The **whole row** (104 px or more) is tappable, not just the switch. State is shown by switch position and the words On / Off at the right.
+- The **whole row** (104 px or more) is tappable, not just the switch. Pressed, the whole row inverts.
+- Looks like Nickel's own settings switch (`ToggleSwitch`, as in Wi-Fi and Bluetooth settings): at the right end of the row, the state word in Nickel's style (uppercase, regular, 29 px sans: "ON" / "OFF", vi "BẬT" / "TẮT"), 25 px, then **Nickel's switch image** (`:/images/widgets/switch_on.png` / `switch_off.png`, 94 x 56 on the Libra 2; `re/notes/system-icons.md`). We never draw the switch: without Nickel's image the mod uses the Tabler `toggle-on` / `toggle-off` PNG, and without either the state word alone shows the state. `ndpreview` draws an approximation of the image.
+- **Detail line** (`detail`, optional, text 60): caption style, muted, under the label **inside the row**, above the row divider, like a radio sub-line (§3.9); the row is then 128 px instead of 104. Use it for a hint that belongs to the toggle instead of a separate text component.
 - Event: `{"event":"toggle","bind":…,"value":bool}`. Host updates the var at once; the backend may set it back.
 
 ### 3.9 Radio list

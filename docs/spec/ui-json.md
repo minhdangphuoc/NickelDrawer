@@ -96,7 +96,7 @@ A component is one object with one component key; its other keys are properties 
 | `section` | text (40) | none | none |
 | `kv` | array of `[key, value]`, 1 to 12; key text (24), value text with bindings (60) | none | none |
 | `row` | label text (60) | `detail` (60), `action` (action id; makes the row tappable) | `action` |
-| `toggle` | label text (60) | `bind` (required), `enabled` | `toggle` |
+| `toggle` | label text (60) | `bind` (required), `enabled`, `detail` (hint line inside the row, 60) | `toggle` |
 | `radio` | label text (60) | `bind` and `options` (both required), `enabled`. `options` is 1 to 8 entries `[value, label]` or `[value, label, sub-line]`; values are ids (`^[a-z0-9][a-z0-9_-]{0,31}$`), unique; label text (40), sub-line text (60, makes the row 128 px) | `input` |
 | `field` | label text (40) | `bind` (required), `keyboard`: `text` / `number` / `url`, `placeholder` (40), `secret` (bool; a warning when `bind` looks like a token or key: use `pair`) | `input` |
 | `bigcode` | binding or literal (16) | `digits`: 3 to 12 | none |

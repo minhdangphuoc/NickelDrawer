@@ -51,8 +51,6 @@ static const int QR_QUIET_ZONE_MODULES = 4;
 static const int NOTICE_PADDING = 24;
 static const int NOTICE_BORDER = SEPARATOR;
 static const int KEY_COLUMN_WIDTH = 440;
-static const int SWITCH_WIDTH = 96;
-static const int SWITCH_HEIGHT = 52;
 static const int RADIO_RING_SIDE = 52;
 static const int EMPTY_SPACER_HEIGHT = 240;
 
@@ -230,6 +228,33 @@ IntRect viewerBackArrowRect();
 
 // Largest size with the source's aspect that fits the box (scales up too).
 void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, int *width, int *height);
+
+// ---- Toggle row (docs/spec/ui-kit.md section 3.8) ----
+// Nickel's own settings switch (ToggleSwitch, re/notes/system-icons.md): the
+// state word ("ON" / "OFF", uppercase, 29 px sans, right-aligned), 25 px, then
+// Nickel's switch image (94 x 56 on the Libra 2 class), ending at the content
+// edge. A detail line sits under the label inside the row, like a radio sub-line.
+static const int TOGGLE_SWITCH_WIDTH = 94;
+static const int TOGGLE_SWITCH_HEIGHT = 56;
+static const int TOGGLE_STATE_SIZE = 29;
+static const int TOGGLE_STATE_GAP = 25;
+static const int TOGGLE_STATE_WIDTH = 140;
+static const int TOGGLE_LABEL_GAP = RHYTHM; // between the label column and the state word
+static const int ROW_LABEL_TOP = 24;             // a one-line row's label
+static const int ROW_LABEL_TOP_WITH_DETAIL = 12; // the label of a row with a detail line
+static const int ROW_DETAIL_TOP = 68;            // the detail line, CAPTION_LINE_HEIGHT high
+static const int ROW_LABEL_HEIGHT = 56;
+
+struct ToggleRow {
+    int height; // ROW_HEIGHT, or TAP_ROW_HEIGHT with a detail line
+    IntRect label;
+    IntRect detail; // zero height without a detail line
+    IntRect state;
+    IntRect switchBox;
+};
+
+// Rectangles of a toggle row whose top is top (screen coordinates).
+ToggleRow toggleRow(int top, bool hasDetail);
 
 // ---- Live screens ----
 

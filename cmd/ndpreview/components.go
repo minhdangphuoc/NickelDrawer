@@ -177,6 +177,7 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 
 func (rc renderContext) toggleBlock(c uikit.Component) block {
 	label := rc.text(c.Main())
+	detail := rc.text(c.Prop("detail"))
 	bind, _ := c.Prop("bind").(string)
 	isOn := uikit.Truthy("$"+bind, rc.vars)
 	isEnabled := uikit.Truthy(c.Prop("enabled"), rc.vars)
@@ -184,34 +185,50 @@ func (rc renderContext) toggleBlock(c uikit.Component) block {
 	if isEnabled {
 		event = eventLine(map[string]any{"event": "toggle", "bind": bind, "value": !isOn})
 	}
-	return block{height: rowHeight, gap: rhythm, draw: func(y int) []Item {
-		word := rc.host("off")
+	height := rowHeight
+	if detail != "" {
+		height = radioDetailRow
+	}
+	return block{height: height, gap: rhythm, draw: func(y int) []Item {
+		state := rc.host("off")
 		if isOn {
-			word = rc.host("on")
+			state = rc.host("on")
 		}
-		textWidth := contentWidth - 360
-		wordItem := textItem(screenWidth-gutter-140, y+24, 140, 56, word, rowTextSize, familySans, "end")
-		wordItem.Bold = isOn
+		switchX := gutter + contentWidth - toggleSwitchWidth
+		switchY := y + (height-toggleSwitchHeight)/2
+		stateX := switchX - toggleStateGap - toggleStateWidth
+		textWidth := stateX - rhythm - gutter
+		labelY := y + 24
+		if detail != "" {
+			labelY = y + 12
+		}
 		items := []Item{
-			textItem(gutter, y+24, textWidth, 56, elide(label, textWidth, rowTextSize, familySans, false), rowTextSize, familySans, "start"),
-			wordItem,
-			separator(y + rowHeight - separatorPx),
+			textItem(gutter, labelY, textWidth, 56, elide(label, textWidth, rowTextSize, familySans, false), rowTextSize, familySans, "start"),
+			textItem(stateX, switchY, toggleStateWidth, toggleSwitchHeight, strings.ToUpper(state), toggleStateSize, familySans, "end"),
 		}
-		items = append(items, switchItems(screenWidth-gutter-140-rhythm-96, y+26, isOn)...)
-		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: rowHeight, Fill: noFill, Event: event, Label: label})
+		if detail != "" {
+			sub := textItem(gutter, y+68, textWidth, captionLineH, elide(detail, textWidth, captionSize, familySans, false), captionSize, familySans, "start")
+			sub.Ink = inkMuted
+			items = append(items, sub)
+		}
+		items = append(items, switchItems(switchX, switchY, isOn)...)
+		items = append(items, separator(y+height-separatorPx))
+		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: height, Fill: noFill, Event: event, Label: label})
 	}}
 }
 
-// switchItems draws a 96 x 52 switch: outline with the knob left (off) or right and filled (on).
+// switchItems approximates Nickel's switch image (94 x 56; the preview cannot ship Kobo
+// images): outline with the knob left (off), or filled with the knob right (on).
 func switchItems(x, y int, isOn bool) []Item {
-	track := Item{Shape: "rect", X: x, Y: y, W: 96, H: 52, Fill: noFill, Border: 3}
-	knobX, knobFill := x+6, paperFull
+	const border, knob, inset = 3, 44, 6
+	track := Item{Shape: "rect", X: x, Y: y, W: toggleSwitchWidth, H: toggleSwitchHeight, Fill: noFill, Border: border}
+	knobX, knobFill := x+inset, paperFull
 	if isOn {
 		track.Fill = inkBlack
-		knobX = x + 96 - 6 - 40
+		knobX = x + toggleSwitchWidth - inset - knob
 	}
-	knob := Item{Shape: "ellipse", X: knobX, Y: y + 6, W: 40, H: 40, Fill: knobFill, Border: 3}
-	return []Item{track, knob}
+	knobItem := Item{Shape: "ellipse", X: knobX, Y: y + inset, W: knob, H: knob, Fill: knobFill, Border: border}
+	return []Item{track, knobItem}
 }
 
 func (rc renderContext) radioBlocks(c uikit.Component) []block {

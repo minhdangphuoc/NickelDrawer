@@ -330,7 +330,6 @@ func (s screenContext) components(components []uikit.Component) []ScreenComponen
 	for i := 0; i < len(components); i++ {
 		if isHiddenAppTemplate(components[i]) {
 			resolved = append(resolved, s.hiddenAppComponents()...)
-			i++ // the caption after the template toggle is part of the template
 			continue
 		}
 		next := s.component(components[i])
@@ -417,8 +416,8 @@ func (s screenContext) inputEnabled(c uikit.Component, bind string) *bool {
 
 func (s screenContext) toggleComponent(c uikit.Component) ScreenComponent {
 	bind := stringProp(c.Props, "bind")
-	return ScreenComponent{Text: s.text(c.Main()), Bind: bind, Value: uikit.Truthy("$"+bind, s.vars),
-		Enabled: s.inputEnabled(c, bind), Action: s.boundAction(bind)}
+	return ScreenComponent{Text: s.text(c.Main()), Detail: s.text(c.Prop("detail")), Bind: bind,
+		Value: uikit.Truthy("$"+bind, s.vars), Enabled: s.inputEnabled(c, bind), Action: s.boundAction(bind)}
 }
 
 func (s screenContext) radioComponent(c uikit.Component) ScreenComponent {

@@ -195,6 +195,33 @@
               "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
               "type": "string"
             },
+            "detail": {
+              "anyOf": [
+                {
+                  "pattern": "^@ui\\.[a-z0-9][a-z0-9_.]*$",
+                  "type": "string"
+                },
+                {
+                  "maxLength": 60,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "additionalProperties": {
+                    "maxLength": 60,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "propertyNames": {
+                    "pattern": "^[a-z]{2,3}([_-][A-Za-z0-9]{2,8})?$"
+                  },
+                  "required": [
+                    "en"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
             "enabled": {
               "anyOf": [
                 {

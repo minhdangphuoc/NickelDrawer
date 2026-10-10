@@ -300,8 +300,41 @@ static void testFitInside()
     EXPECT_EQ(0, h);
 }
 
+static void expectRect(int x, int y, int width, int height, const IntRect &rect)
+{
+    EXPECT_EQ(x, rect.x);
+    EXPECT_EQ(y, rect.y);
+    EXPECT_EQ(width, rect.width);
+    EXPECT_EQ(height, rect.height);
+}
+
+static void testToggleRowWithoutDetail()
+{
+    ToggleRow row = toggleRow(200, false);
+    EXPECT_EQ(ROW_HEIGHT, row.height);
+    expectRect(1098, 224, 94, 56, row.switchBox); // right-aligned at the content edge, centred
+    EXPECT_EQ(GUTTER + CONTENT_WIDTH, row.switchBox.x + row.switchBox.width);
+    expectRect(933, 224, 140, 56, row.state); // 25 px left of the switch
+    expectRect(GUTTER, 224, 837, 56, row.label); // ends RHYTHM before the state word
+    EXPECT_EQ(0, row.detail.height);
+}
+
+static void testToggleRowDetailStaysAboveTheDivider()
+{
+    ToggleRow row = toggleRow(200, true);
+    EXPECT_EQ(TAP_ROW_HEIGHT, row.height);
+    expectRect(GUTTER, 212, 837, 56, row.label);
+    expectRect(GUTTER, 268, 837, CAPTION_LINE_HEIGHT, row.detail);
+    // The detail line ends inside the row, above its divider (the last SEPARATOR px).
+    EXPECT_EQ(1, row.detail.y + row.detail.height <= 200 + row.height - SEPARATOR);
+    EXPECT_EQ(236, row.switchBox.y);
+    EXPECT_EQ(row.switchBox.y, row.state.y);
+}
+
 int main()
 {
+    testToggleRowWithoutDetail();
+    testToggleRowDetailStaysAboveTheDivider();
     testGalleryMetricsMatchTheSpec();
     testGalleryGridMatchesTheContentGutters();
     testGalleryRowsThatFit();

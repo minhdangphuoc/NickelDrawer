@@ -9,20 +9,14 @@ using namespace ScreenLogic;
 
 static const char *const CHEVRON_GLYPH = "\xE2\x80\xBA"; // ›
 static const int FIELD_CAPTION_GAP = 8;
-static const int SWITCH_BORDER = 3;
-static const int SWITCH_KNOB = 40;
-static const int SWITCH_KNOB_INSET = 6;
 static const int RADIO_RING_BORDER = 4;
 static const int RADIO_DOT = 24;
 static const int BUTTON_BORDER = 3;
 static const int ROW_DETAIL_WIDTH = 280;
 static const int ROW_DETAIL_RIGHT = 320;
 static const int TAP_ROW_TEXT_INSET = 360;
-static const int TOGGLE_WORD_WIDTH = 140;
 static const int FIELD_BORDER = 2;
 static const int QR_FRAME_BORDER = 2;
-static const int RADIO_LABEL_TOP_WITH_DETAIL = 12;
-static const int RADIO_DETAIL_TOP = 68;
 static const int GALLERY_EMPTY_SPACER_HEIGHT = 120;
 static const int GALLERY_PICTURE_STROKE = 4;
 static const int GALLERY_CHECK_STROKE = 6;
@@ -74,7 +68,7 @@ bool PaintItem::operator==(const PaintItem &other) const
            lines == other.lines && size == other.size && lineHeight == other.lineHeight && family == other.family &&
            isBold == other.isBold && isUnderlined == other.isUnderlined && align == other.align && ink == other.ink &&
            qrSide == other.qrSide && qrModules == other.qrModules && imagePath == other.imagePath &&
-           isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph;
+           isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph && isOn == other.isOn;
 }
 
 static PaintItem rectItem(int x, int y, int width, int height, int fill, int border)
@@ -384,8 +378,9 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         row.isTappable = !c.action.isEmpty() || !c.push.isEmpty();
         blocks->append(row);
     } else if (type == QLatin1String("toggle")) {
-        LayoutBlock toggle = block(LayoutBlock::KIND_TOGGLE, index, ROW_HEIGHT, RHYTHM);
+        LayoutBlock toggle = block(LayoutBlock::KIND_TOGGLE, index, toggleRow(0, !c.detail.isEmpty()).height, RHYTHM);
         toggle.primary = c.text;
+        toggle.secondary = c.detail;
         toggle.isOn = c.isOn;
         toggle.isTappable = c.isEnabled;
         blocks->append(toggle);
@@ -639,26 +634,37 @@ static void drawTapRow(const LayoutBlock &b, int y, ScreenPage *page)
     }
 }
 
-// A 96 x 52 switch: outline with the knob left (off), or filled with the knob right (on).
-static void drawSwitch(int x, int y, bool isOn, ScreenPage *page)
+static QRect toQRect(const IntRect &rect)
 {
-    PaintItem track = rectItem(x, y, SWITCH_WIDTH, SWITCH_HEIGHT, isOn ? INK_BLACK : NO_FILL, SWITCH_BORDER);
-    int knobX = isOn ? x + SWITCH_WIDTH - SWITCH_KNOB_INSET - SWITCH_KNOB : x + SWITCH_KNOB_INSET;
-    page->items << track << ellipseItem(knobX, y + SWITCH_KNOB_INSET, SWITCH_KNOB, PAPER_WHITE, SWITCH_BORDER);
+    return QRect(rect.x, rect.y, rect.width, rect.height);
 }
 
+// A label (detail line under it, inside the row) and, at the right, Nickel's
+// ToggleSwitch: the state word, uppercase like Nickel's, then its switch image.
 static void drawToggle(const LayoutBlock &b, int y, const HostTexts &texts, ScreenPage *page)
 {
-    int textWidth = CONTENT_WIDTH - TAP_ROW_TEXT_INSET;
-    PaintItem word = textItem(SCREEN_WIDTH - GUTTER - TOGGLE_WORD_WIDTH, y + 24, TOGGLE_WORD_WIDTH, 56,
-                              b.isOn ? texts.on : texts.off, ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
-    word.isBold = b.isOn;
-    page->items << textItem(GUTTER, y + 24, textWidth, 56, elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false),
-                            ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START)
-                << word << separatorItem(y + ROW_HEIGHT - SEPARATOR);
-    drawSwitch(SCREEN_WIDTH - GUTTER - TOGGLE_WORD_WIDTH - RHYTHM - SWITCH_WIDTH, y + 26, b.isOn, page);
+    ToggleRow row = toggleRow(y, !b.secondary.isEmpty());
+    page->items.append(textItem(row.label.x, row.label.y, row.label.width, row.label.height,
+                                elided(b.primary, row.label.width, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
+                                FAMILY_SANS, PaintItem::ALIGN_START));
+    if (!b.secondary.isEmpty()) {
+        PaintItem detail = textItem(row.detail.x, row.detail.y, row.detail.width, row.detail.height,
+                                    elided(b.secondary, row.detail.width, CAPTION_SIZE, FAMILY_SANS, false),
+                                    CAPTION_SIZE, FAMILY_SANS, PaintItem::ALIGN_START);
+        detail.ink = INK_MUTED;
+        page->items.append(detail);
+    }
+    QString state = (b.isOn ? texts.on : texts.off).toUpper();
+    page->items.append(textItem(row.state.x, row.state.y, row.state.width, row.state.height,
+                                elided(state, row.state.width, TOGGLE_STATE_SIZE, FAMILY_SANS, false),
+                                TOGGLE_STATE_SIZE, FAMILY_SANS, PaintItem::ALIGN_END));
+    PaintItem image;
+    image.shape = PaintItem::SHAPE_SWITCH;
+    image.rect = toQRect(row.switchBox);
+    image.isOn = b.isOn;
+    page->items << image << separatorItem(y + row.height - SEPARATOR);
     if (b.isTappable) {
-        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, QString());
+        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, row.height), b.component, QString());
     }
 }
 
@@ -672,13 +678,13 @@ static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
     }
     int textWidth = CONTENT_WIDTH - RADIO_RING_SIDE - RHYTHM;
     int textLeft = GUTTER + RADIO_RING_SIDE + RHYTHM;
-    PaintItem label = textItem(textLeft, y + (hasDetail ? RADIO_LABEL_TOP_WITH_DETAIL : 24), textWidth, 56,
+    PaintItem label = textItem(textLeft, y + (hasDetail ? ROW_LABEL_TOP_WITH_DETAIL : ROW_LABEL_TOP), textWidth, 56,
                                elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                                FAMILY_SANS, PaintItem::ALIGN_START);
     label.isBold = b.isOn;
     page->items.append(label);
     if (hasDetail) {
-        PaintItem detail = textItem(textLeft, y + RADIO_DETAIL_TOP, textWidth, CAPTION_LINE_HEIGHT,
+        PaintItem detail = textItem(textLeft, y + ROW_DETAIL_TOP, textWidth, CAPTION_LINE_HEIGHT,
                                     elided(b.secondary, textWidth, CAPTION_SIZE, FAMILY_SANS, false), CAPTION_SIZE,
                                     FAMILY_SANS, PaintItem::ALIGN_START);
         detail.ink = INK_MUTED;
@@ -911,11 +917,6 @@ void ScreenLayout::drawGalleryPage(int index, ScreenPage *page) const
 }
 
 // ---- Viewer ----
-
-static QRect toQRect(const IntRect &rect)
-{
-    return QRect(rect.x, rect.y, rect.width, rect.height);
-}
 
 static void addZone(ScreenPage *page, TapTarget::Kind kind, const QRect &rect)
 {

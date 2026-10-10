@@ -36,6 +36,9 @@ const Spec SPECS[ID_COUNT] = {
     {"view grid", NULL, NULL, "grid", 64},
     {"picture", NULL, NULL, "picture", 96},
     {"app", NULL, NULL, "apps", 96},
+    // No "_hit" image: Nickel's ToggleSwitch turns its hit state off; the row shows the press.
+    {"switch on", ":/images/widgets/switch_on.png", NULL, "toggle-on", 64},
+    {"switch off", ":/images/widgets/switch_off.png", NULL, "toggle-off", 64},
 };
 
 const char *sourceName(Source source)

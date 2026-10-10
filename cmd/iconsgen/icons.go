@@ -44,6 +44,9 @@ var uiIcons = []uiIcon{
 	{"picture-off", "photo-off"},
 	{"tweaks", "adjustments-horizontal"},
 	{"apps", "apps"},
+	// Fallback of the app screens' toggle when Nickel's switch_on/off images are missing.
+	{"toggle-on", "toggle-right"},
+	{"toggle-off", "toggle-left"},
 }
 
 var icons = buildIconTable()

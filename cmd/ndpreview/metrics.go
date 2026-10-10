@@ -62,7 +62,7 @@ const (
 	defaultGalleryRows  = 3
 	headerIconTarget    = 120 // tap target of a header icon action
 	headerIconGlyph     = 64
-	radioDetailRow      = 128 // a radio option with a sub-line
+	radioDetailRow      = 128 // a radio option with a sub-line; a toggle with a detail line too
 	viewerBarHeight     = 120
 	viewerSecondaryWide = 360
 	viewerBarGap        = 24
@@ -108,3 +108,13 @@ func hostText(locale, key string) string {
 	}
 	return hostStrings["en"][key]
 }
+
+// Toggle: Nickel's ToggleSwitch on the Libra 2 class (state word, 25 px, 94 x 56 switch image).
+// mod/drawer/screen_logic.h TOGGLE_* must have the same numbers.
+const (
+	toggleSwitchWidth  = 94
+	toggleSwitchHeight = 56
+	toggleStateSize    = 29
+	toggleStateGap     = 25
+	toggleStateWidth   = 140
+)

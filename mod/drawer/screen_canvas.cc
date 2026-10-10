@@ -655,6 +655,13 @@ static void paintBackArrow(QPainter *painter, const PaintItem &item)
     paintIcon(painter, item.rect, SystemIcon::icon(SystemIcon::BACK).normal, item.ink);
 }
 
+// Nickel's switch image at its own size; without it the state word alone shows the state.
+static void paintSwitch(QPainter *painter, const PaintItem &item)
+{
+    SystemIcon::Id id = item.isOn ? SystemIcon::SWITCH_ON : SystemIcon::SWITCH_OFF;
+    SystemIcon::drawCentred(painter, item.rect, SystemIcon::icon(id).normal);
+}
+
 // The picture centred in its box (it was decoded to fit); the glyph when it is missing.
 static void paintImage(QPainter *painter, const PaintItem &item, const QPixmap *picture)
 {
@@ -696,6 +703,9 @@ static void paintItem(QPainter *painter, const PaintItem &item, const QPixmap *p
         break;
     case PaintItem::SHAPE_BACK_ARROW:
         paintBackArrow(painter, item);
+        break;
+    case PaintItem::SHAPE_SWITCH:
+        paintSwitch(painter, item);
         break;
     }
 }

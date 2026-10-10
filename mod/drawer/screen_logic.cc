@@ -540,4 +540,26 @@ void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, i
     }
 }
 
+static IntRect makeRect(int x, int y, int width, int height)
+{
+    IntRect rect = {x, y, width, height};
+    return rect;
+}
+
+ToggleRow toggleRow(int top, bool hasDetail)
+{
+    ToggleRow row;
+    row.height = hasDetail ? TAP_ROW_HEIGHT : ROW_HEIGHT;
+    int switchLeft = GUTTER + CONTENT_WIDTH - TOGGLE_SWITCH_WIDTH;
+    int switchTop = top + (row.height - TOGGLE_SWITCH_HEIGHT) / 2;
+    row.switchBox = makeRect(switchLeft, switchTop, TOGGLE_SWITCH_WIDTH, TOGGLE_SWITCH_HEIGHT);
+    int stateLeft = switchLeft - TOGGLE_STATE_GAP - TOGGLE_STATE_WIDTH;
+    row.state = makeRect(stateLeft, switchTop, TOGGLE_STATE_WIDTH, TOGGLE_SWITCH_HEIGHT);
+    int labelWidth = stateLeft - TOGGLE_LABEL_GAP - GUTTER;
+    int labelTop = top + (hasDetail ? ROW_LABEL_TOP_WITH_DETAIL : ROW_LABEL_TOP);
+    row.label = makeRect(GUTTER, labelTop, labelWidth, ROW_LABEL_HEIGHT);
+    row.detail = makeRect(GUTTER, top + ROW_DETAIL_TOP, labelWidth, hasDetail ? CAPTION_LINE_HEIGHT : 0);
+    return row;
+}
+
 } // namespace ScreenLogic

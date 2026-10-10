@@ -237,6 +237,7 @@ var Components = []ComponentSpec{
 	{Key: "toggle", Main: text(60), Props: []Prop{
 		requiredKey("bind", varName),
 		optionalKey("enabled", flagShape),
+		optionalKey("detail", text(60)),
 	}},
 	{Key: "radio", Main: text(60), Props: []Prop{
 		requiredKey("bind", varName),

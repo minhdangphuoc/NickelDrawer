@@ -25,6 +25,8 @@ enum Id {
     VIEW_GRID,   // drawer header grid toggle
     PICTURE,     // gallery: picture missing, empty gallery
     APP,         // drawer: an app without its own icon file
+    SWITCH_ON,   // app screens: a toggle that is on (Nickel's settings switch)
+    SWITCH_OFF,  // app screens: a toggle that is off
     ID_COUNT
 };
 

@@ -93,11 +93,11 @@ func TestSettingsScreenOffersOneToggleAndHintPerHiddenApp(t *testing.T) {
 	}
 }
 
-// captionsAfter returns the text right after the toggle labelled name.
+// captionsAfter returns the hint line of the toggle labelled name (its detail, inside the row).
 func captionsAfter(components []ScreenComponent, name string) string {
-	for i, component := range components {
-		if component.Type == "toggle" && component.Text == name && i+1 < len(components) {
-			return components[i+1].Text
+	for _, component := range components {
+		if component.Type == "toggle" && component.Text == name {
+			return component.Detail
 		}
 	}
 	return ""

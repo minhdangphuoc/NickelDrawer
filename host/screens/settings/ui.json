@@ -31,8 +31,7 @@
       "title": "@ui.title",
       "body": [
         { "section": "@ui.sec_hidden" },
-        { "toggle": "$hidden_app_name", "bind": "hidden_app" },
-        { "text": "$hidden_app_hint", "style": "caption" },
+        { "toggle": "$hidden_app_name", "bind": "hidden_app", "detail": "$hidden_app_hint" },
         { "text": "$hidden_none", "style": "caption" },
         { "text": "@ui.hidden_note", "style": "caption" },
         { "section": "@ui.sec_updates" },
@@ -46,8 +45,7 @@
         { "notice": "$message" },
         { "notice": "$notes", "title": "@ui.notes_title" },
         { "section": "@ui.sec_debug" },
-        { "toggle": "@ui.debug", "bind": "debug" },
-        { "text": "@ui.debug_hint", "style": "caption" },
+        { "toggle": "@ui.debug", "bind": "debug", "detail": "@ui.debug_hint" },
         { "section": "@ui.sec_about" },
         { "kv": [["@ui.firmware", "$firmware"]] },
         { "row": "@ui.about_row", "push": "about" }

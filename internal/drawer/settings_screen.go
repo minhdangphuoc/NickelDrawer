@@ -58,15 +58,16 @@ func isHiddenAppTemplate(component uikit.Component) bool {
 	return component.Kind == "toggle" && component.Props["bind"] == hiddenAppTemplateBind
 }
 
-// hiddenAppComponents expands the template toggle: a toggle and a hint line per hidden app.
+// hiddenAppComponents expands the template toggle: one toggle per hidden app, its hint as the
+// toggle's detail line so it sits inside the row.
 func (s screenContext) hiddenAppComponents() []ScreenComponent {
-	resolved := make([]ScreenComponent, 0, 2*len(s.hiddenApps))
+	resolved := make([]ScreenComponent, 0, len(s.hiddenApps))
 	for _, row := range s.hiddenApps {
 		action := showHiddenActionStem + row.appID
 		isEnabled := true
 		resolved = append(resolved,
-			ScreenComponent{Type: "toggle", Text: row.name, Bind: action, Value: row.isShown, Enabled: &isEnabled, Action: action},
-			ScreenComponent{Type: "text", Text: row.hint, Style: "caption"})
+			ScreenComponent{Type: "toggle", Text: row.name, Detail: row.hint, Bind: action, Value: row.isShown,
+				Enabled: &isEnabled, Action: action})
 	}
 	return resolved
 }

@@ -21,6 +21,7 @@ struct PaintItem {
     // SHAPE_CHECK: a check mark in ink inside rect, border = stroke width (0: not drawn).
     // SHAPE_PICTURE_GLYPH: an outline picture icon in ink, border = stroke width.
     // SHAPE_BACK_ARROW: the header's drawn "←" in ink inside rect, border = stroke width.
+    // SHAPE_SWITCH: Nickel's on or off switch image (isOn) centred in rect, never drawn by us.
     enum Shape {
         SHAPE_RECT,
         SHAPE_ELLIPSE,
@@ -29,7 +30,8 @@ struct PaintItem {
         SHAPE_IMAGE,
         SHAPE_CHECK,
         SHAPE_PICTURE_GLYPH,
-        SHAPE_BACK_ARROW
+        SHAPE_BACK_ARROW,
+        SHAPE_SWITCH
     };
     enum Align { ALIGN_START, ALIGN_CENTER, ALIGN_END };
 
@@ -50,6 +52,7 @@ struct PaintItem {
     QString imagePath;            // compared, so a thumbnail that appears repaints its tile only
     bool isDashed = false;        // SHAPE_RECT border drawn dashed
     bool showsMissingGlyph = true;
+    bool isOn = false;            // SHAPE_SWITCH: the on image
 
     bool operator==(const PaintItem &other) const;
     bool operator!=(const PaintItem &other) const { return !(*this == other); }
