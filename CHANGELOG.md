@@ -4,6 +4,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [1.0.0-beta.3] - 2026-10-10
+
 ### Fixed
 
 - Pressing a pager arrow on an app screen shows a black circle behind the arrow, like the drawer footer, instead of inverting half the pager line over the page number.
