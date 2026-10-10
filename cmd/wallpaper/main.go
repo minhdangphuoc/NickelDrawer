@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 const (
 	defaultAppDir = "/mnt/onboard/.adds/apps/wallpaper"
 	exitUsage     = 2
+	exitNotDue    = 1 // first-import-due: nothing to import now
 )
 
 func main() {
@@ -82,6 +84,8 @@ var commands = map[string]command{
 	"status":   {0, false, (*session).status},
 	"state":    {0, false, (*session).state},
 
+	"first-import-due": {0, false, (*session).firstImportDue},
+
 	"set-current": {1, false, (*session).setCurrent},
 	"remove":      {1, false, (*session).remove},
 }
@@ -109,7 +113,13 @@ func execute(args []string, out io.Writer) int {
 		return exitUsage
 	}
 	if err := runSession(selected, common, messages, out, flags.Args()); err != nil {
+		if errors.Is(err, errNotDue) {
+			return exitNotDue
+		}
 		say(out, messages, "msg.error", "message", messages.Describe(err))
+		if args[0] == "first-import-due" {
+			return exitUsage
+		}
 		return 1
 	}
 	return 0

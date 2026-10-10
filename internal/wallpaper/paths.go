@@ -41,3 +41,9 @@ func (paths Paths) Thumb(id int) string { return filepath.Join(paths.Thumbs(), i
 
 // Removed lists the hashes of pictures the user removed, so an import does not bring them back.
 func (paths Paths) Removed() string { return filepath.Join(paths.Data(), "removed.json") }
+
+// FirstImportMarker exists once the automatic first import was started; it is never removed, so a
+// user who emptied the gallery on purpose keeps it empty.
+func (paths Paths) FirstImportMarker() string {
+	return filepath.Join(paths.Data(), "first-import-done")
+}

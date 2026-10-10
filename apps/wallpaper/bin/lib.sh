@@ -48,7 +48,20 @@ run_quick() {
     run_quick_command "$APP_DIR" "$success_toast" run_wallpaper "$@"
 }
 
-# Runs a subcommand detached. All fds are redirected so the caller does not wait for the child.
+# Starts a subcommand detached and records its pid. All fds are redirected so the caller does not wait.
+# The pid is the wrapper shell, which ends after the status summary is written, so the output always
+# finishes with the current settings (the Status action is not in NickelMenu). The parent writes the
+# pid itself, so is_working is true as soon as this returns.
+# Usage: launch_in_background <subcommand> [args...]
+launch_in_background() {
+    subcommand=$1
+    shift
+    sh -c 'app=$1; shift; "$app/bin/wallpaper" "$@"; "$app/bin/wallpaper" status --app-dir "$app"' sh "$APP_DIR" \
+        "$subcommand" --app-dir "$APP_DIR" --progress-file "$PROGRESS_FILE" "$@" </dev/null >"$OUTPUT_FILE" 2>&1 &
+    echo $! >"$PID_FILE"
+}
+
+# Runs a subcommand detached.
 # Usage: run_wallpaper_in_background <drawer-toast> <subcommand> [args...]
 # Drawer: returns at once (toast "busy" when a job runs, else the given toast). Command line: waits a
 # few seconds and shows the result.
@@ -60,15 +73,24 @@ run_wallpaper_in_background() {
         report busy "$APP_ID" msg.busy
         exit 0
     fi
-    # The recorded pid is the wrapper shell, which ends after the status summary is written, so
-    # the output always finishes with the current settings (the Status action is not in NickelMenu).
-    sh -c 'echo $$ >"$1"; app=$2; shift 2; "$app/bin/wallpaper" "$@"; "$app/bin/wallpaper" status --app-dir "$app"' sh "$PID_FILE" "$APP_DIR" \
-        "$subcommand" --app-dir "$APP_DIR" --progress-file "$PROGRESS_FILE" "$@" </dev/null >"$OUTPUT_FILE" 2>&1 &
+    launch_in_background "$subcommand" "$@"
     if is_drawer; then
         emit_toast "$started_toast"
         return 0
     fi
     wait_for_result
+}
+
+# The first time the gallery is empty and Pictures has pictures, imports them without being asked.
+# Silent (no toast, no output; failures go to data/log.txt) so a caller that prints JSON stays clean;
+# progress shows in the state.
+start_first_import_if_due() {
+    if is_working; then
+        return 0
+    fi
+    if run_wallpaper first-import-due >/dev/null 2>&1; then
+        launch_in_background import
+    fi
 }
 
 # The command line waits a few seconds and shows the result if the work ends in time.

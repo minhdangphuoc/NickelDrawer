@@ -83,6 +83,13 @@ value** (the picture id); see §6.
 Shown by the gallery itself: picture icon, heading `Chưa có ảnh`, text `Chép ảnh PNG hoặc JPEG vào
 thư mục Pictures qua USB, hoặc gửi bằng LocalSend.`, primary button `Nhập ảnh` (action `import`).
 
+First open: when the library is empty, `data/first-import-done` is absent, no job runs and Pictures holds at
+least one supported picture, the `state` action starts the import in the background by itself (no
+toast; stdout stays the one state JSON object, which already reports the importing state) and writes
+the marker (`wallpaper first-import-due`: exit 0 due, 1 not due, 2 error logged to `data/log.txt`).
+This happens once per install: the marker is never removed, so a user who removes every picture keeps
+an empty gallery. An empty Pictures folder writes no marker, so it triggers once pictures arrive.
+
 ## 3. ui.json additions (kit 1, additive)
 
 ### 3.1 Header icon actions

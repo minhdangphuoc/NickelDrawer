@@ -67,26 +67,46 @@ type File struct {
 //
 // A missing dir is normal and yields nothing. Nothing is modified.
 func ListImages(dir string, maxBytes int64, logf Logf) []File {
+	var files []File
+	eachImage(dir, maxBytes, logf, func(file File) bool {
+		files = append(files, file)
+		return true
+	})
+	return files
+}
+
+// FirstImage returns the first picture ListImages would return, reading only as many files as needed.
+func FirstImage(dir string, maxBytes int64, logf Logf) (File, bool) {
+	var first File
+	var found bool
+	eachImage(dir, maxBytes, logf, func(file File) bool {
+		first, found = file, true
+		return false
+	})
+	return first, found
+}
+
+// eachImage applies every ListImages rule and calls visit per picture in name order until it returns false.
+func eachImage(dir string, maxBytes int64, logf Logf, visit func(File) bool) {
 	realDir, err := filepath.EvalSymlinks(dir)
 	if err != nil {
-		return nil
+		return
 	}
 	entries, err := os.ReadDir(realDir)
 	if err != nil {
 		logf.printf("cannot list %s: %v", dir, err)
-		return nil
+		return
 	}
 	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
-	var files []File
 	for _, entry := range entries {
 		if IsSkippedName(entry.Name()) || entry.IsDir() {
 			continue
 		}
-		if file, ok := checkImage(dir, realDir, entry.Name(), maxBytes, logf); ok {
-			files = append(files, file)
+		file, ok := checkImage(dir, realDir, entry.Name(), maxBytes, logf)
+		if ok && !visit(file) {
+			return
 		}
 	}
-	return files
 }
 
 // IsSkippedName is true for hidden names and names starting with '_'.

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -48,6 +49,22 @@ func (current *session) sayCounts(imported wallpaper.ImportReport) {
 	if imported.Failed > 0 {
 		current.say("msg.import_failed", "count", strconv.Itoa(imported.Failed))
 	}
+}
+
+// errNotDue is the quiet answer of first-import-due: not an error, only exit status 1.
+var errNotDue = errors.New("first import is not due")
+
+// firstImportDue succeeds (and records the marker) once, when the gallery is empty and Pictures has a picture.
+func (current *session) firstImportDue([]string) error {
+	due, err := current.service.FirstImportDue()
+	if err != nil {
+		current.service.Log.Printf("first-import-due failed: %s", current.messages.Describe(err))
+		return err
+	}
+	if !due {
+		return errNotDue
+	}
+	return nil
 }
 
 func (current *session) apply([]string) error {

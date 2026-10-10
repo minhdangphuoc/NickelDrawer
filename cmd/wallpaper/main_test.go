@@ -203,3 +203,23 @@ func TestImportAndStatusTellWhichKoboSettingsToTick(t *testing.T) {
 		t.Fatalf("status shows the hint although both settings are on: %q", output)
 	}
 }
+
+func TestFirstImportDueExitCodes(t *testing.T) {
+	_, appDir, _ := deviceRoot(t)
+	common := []string{"--app-dir", appDir, "--locale", "en"}
+	if status, output := run(t, append([]string{"first-import-due"}, common...)...); status != 0 || output != "" {
+		t.Fatalf("first call: status %d, output %q; want 0 and silent", status, output)
+	}
+	if status, output := run(t, append([]string{"first-import-due"}, common...)...); status != 1 || output != "" {
+		t.Fatalf("second call: status %d, output %q; want 1 and silent", status, output)
+	}
+}
+
+func TestFirstImportDueReportsFailureWithExitTwo(t *testing.T) {
+	_, appDir, _ := deviceRoot(t)
+	write(t, filepath.Join(appDir, "data", "images", "index.json"), []byte("not json"))
+	status, output := run(t, "first-import-due", "--app-dir", appDir, "--locale", "en")
+	if status != 2 || !strings.Contains(output, "index.json") {
+		t.Fatalf("status %d, output %q; want 2 and the index path", status, output)
+	}
+}
