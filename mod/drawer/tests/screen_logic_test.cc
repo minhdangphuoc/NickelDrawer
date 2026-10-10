@@ -243,6 +243,31 @@ static void testViewerAreas()
     EXPECT_EQ(secondary.y - RHYTHM, shown.y + shown.height);
 }
 
+// Full view: the only visible way back sits where the header's "←" was, a
+// 120 px target inside the picture area (below the status bar: the view starts
+// under it), over the previous-picture zone, so the layout must add it last.
+static void testViewerBackButtonInFullView()
+{
+    IntRect target = viewerBackRect();
+    EXPECT_EQ(120, target.width);
+    EXPECT_EQ(120, target.height);
+    EXPECT_EQ(0, target.y);
+    EXPECT_EQ(GUTTER + HEADER_ICON_WIDTH / 2, target.x + target.width / 2);
+    IntRect full = viewerPictureArea(false, 1552);
+    EXPECT_EQ(1, target.x >= full.x && target.y >= full.y);
+    EXPECT_EQ(1, target.x + target.width <= full.x + full.width && target.y + target.height <= full.y + full.height);
+    EXPECT_EQ(ZONE_PREVIOUS, viewerZoneAt(target.x, full.width));
+    EXPECT_EQ(ZONE_PREVIOUS, viewerZoneAt(target.x + target.width - 1, full.width));
+    IntRect disc = viewerBackDiscRect();
+    EXPECT_EQ(88, disc.width);
+    EXPECT_EQ(target.x + 16, disc.x);
+    EXPECT_EQ(target.y + 16, disc.y);
+    IntRect arrow = viewerBackArrowRect();
+    EXPECT_EQ(64, arrow.width);
+    EXPECT_EQ(target.x + 28, arrow.x);
+    EXPECT_EQ(1, arrow.width < disc.width);
+}
+
 static void testFitInside()
 {
     int w = 0;
@@ -272,6 +297,7 @@ int main()
     testViewerNavigationHasNoWrap();
     testNeighbourAfterRemoval();
     testViewerAreas();
+    testViewerBackButtonInFullView();
     testFitInside();
     testCharsPerLine();
     testCodePoints();

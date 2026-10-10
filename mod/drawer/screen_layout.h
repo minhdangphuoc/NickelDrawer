@@ -20,7 +20,17 @@ struct PaintItem {
     // when the path is empty or unreadable (unless showsMissingGlyph is off).
     // SHAPE_CHECK: a check mark in ink inside rect, border = stroke width (0: not drawn).
     // SHAPE_PICTURE_GLYPH: an outline picture icon in ink, border = stroke width.
-    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR, SHAPE_IMAGE, SHAPE_CHECK, SHAPE_PICTURE_GLYPH };
+    // SHAPE_BACK_ARROW: the header's drawn "←" in ink inside rect, border = stroke width.
+    enum Shape {
+        SHAPE_RECT,
+        SHAPE_ELLIPSE,
+        SHAPE_TEXT,
+        SHAPE_QR,
+        SHAPE_IMAGE,
+        SHAPE_CHECK,
+        SHAPE_PICTURE_GLYPH,
+        SHAPE_BACK_ARROW
+    };
     enum Align { ALIGN_START, ALIGN_CENTER, ALIGN_END };
 
     Shape shape = SHAPE_RECT;
@@ -47,7 +57,8 @@ struct PaintItem {
 
 struct TapTarget {
     // TAP_TILE: a gallery picture (value = its id); tap and long press.
-    // TAP_VIEWER_*: the viewer's picture zones (no pressed feedback).
+    // TAP_VIEWER_PREVIOUS/NEXT/TOGGLE_CHROME: the viewer's picture zones (no pressed feedback).
+    // TAP_VIEWER_BACK: the full view's back button (circle feedback): shows the chrome again.
     enum Kind {
         TAP_PREVIOUS_PAGE,
         TAP_NEXT_PAGE,
@@ -55,7 +66,8 @@ struct TapTarget {
         TAP_TILE,
         TAP_VIEWER_PREVIOUS,
         TAP_VIEWER_NEXT,
-        TAP_VIEWER_TOGGLE_CHROME
+        TAP_VIEWER_TOGGLE_CHROME,
+        TAP_VIEWER_BACK
     };
 
     Kind kind = TAP_COMPONENT;
@@ -153,6 +165,7 @@ private:
     void drawGallerySlot(int slotIndex, int slotOnPage, ScreenPage *page) const;
     void planGrid(int footerHeight, const QVector<ScreenLogic::Block> &bodySizes);
     void drawViewerPage(ScreenPage *page) const;
+    void drawViewerBackButton(ScreenPage *page) const;
     void addGalleryEmptyBlocks(int component, QList<LayoutBlock> *blocks) const;
 
     ScreenModel model;

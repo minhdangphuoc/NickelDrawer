@@ -192,7 +192,12 @@ void ScreenView::showHeader()
     actionButton->setText(hasIcons ? QString() : model.headerLabel);
     actionButton->setVisible(!hasIcons && !model.headerLabel.isEmpty());
     showHeaderIcons();
-    header->setVisible(!isViewer || canvas->isChromeShown());
+    bool isHeaderWanted = !isViewer || canvas->isChromeShown();
+    if (isHeaderWanted != header->isVisibleTo(this)) {
+        DebugLog::write("screen view: header %s (viewer chrome %s)", isHeaderWanted ? "shown" : "hidden",
+                        canvas->isChromeShown() ? "shown" : "hidden");
+    }
+    header->setVisible(isHeaderWanted);
 }
 
 // Up to two painted icon buttons at the right of the row. A button is rebuilt

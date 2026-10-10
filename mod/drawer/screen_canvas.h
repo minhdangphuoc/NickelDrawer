@@ -83,6 +83,8 @@ private:
     void goToPage(int index);
     void stepViewer(int step);
     void toggleChrome();
+    void showChrome();
+    void restoreViewerState(const QString &keptPicture);
     void refreshPictures();
     const QPixmap *pictureFor(const PaintItem &item) const;
     const TapTarget *targetAt(const QPoint &position) const;

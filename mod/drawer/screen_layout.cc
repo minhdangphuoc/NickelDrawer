@@ -922,6 +922,21 @@ static void addZone(ScreenPage *page, TapTarget::Kind kind, const QRect &rect)
     page->targets.append(zone);
 }
 
+// Full view: a white disc with a thin outline and the header's "←", over
+// whatever the picture has there. It lies over the previous-picture zone, so
+// it comes after the zones and wins (the canvas takes the topmost target).
+void ScreenLayout::drawViewerBackButton(ScreenPage *page) const
+{
+    QRect disc = toQRect(viewerBackDiscRect());
+    page->items.append(ellipseItem(disc.x(), disc.y(), disc.width(), PAPER_WHITE, VIEWER_BACK_OUTLINE));
+    QRect arrowBox = toQRect(viewerBackArrowRect());
+    PaintItem arrow = rectItem(arrowBox.x(), arrowBox.y(), arrowBox.width(), arrowBox.height(), NO_FILL,
+                               VIEWER_BACK_ARROW_STROKE);
+    arrow.shape = PaintItem::SHAPE_BACK_ARROW;
+    page->items.append(arrow);
+    addZone(page, TapTarget::TAP_VIEWER_BACK, toQRect(viewerBackRect()));
+}
+
 // The picture fills the area (fitted by the painter); thirds of the area turn
 // pages or toggle the chrome. Buttons come after the zones, so they win.
 void ScreenLayout::drawViewerPage(ScreenPage *page) const
@@ -942,6 +957,7 @@ void ScreenLayout::drawViewerPage(ScreenPage *page) const
     addZone(page, TapTarget::TAP_VIEWER_NEXT, QRect(area.right() + 1 - third, area.y(), third, area.height()));
     addZone(page, TapTarget::TAP_VIEWER_TOGGLE_CHROME, QRect(area.x() + third, area.y(), area.width() - 2 * third, area.height()));
     if (!isChromeShown) {
+        drawViewerBackButton(page);
         return;
     }
     QRect primaryBox = toQRect(viewerPrimaryRect(height));

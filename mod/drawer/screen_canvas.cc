@@ -16,6 +16,7 @@
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
 #include "open_popups.h"
+#include "page_header.h"
 #include "picture_loader.h"
 
 using namespace ScreenLogic;
@@ -68,6 +69,8 @@ static const char *targetName(TapTarget::Kind kind)
         return "viewer next zone";
     case TapTarget::TAP_VIEWER_TOGGLE_CHROME:
         return "viewer chrome zone";
+    case TapTarget::TAP_VIEWER_BACK:
+        return "viewer full-view back button";
     case TapTarget::TAP_COMPONENT:
         break;
     }
@@ -124,14 +127,10 @@ void ScreenCanvas::showScreen(const ScreenModel &next)
     model = next;
     hasScreen = true;
     layout = ScreenLayout(model, height(), hostTexts());
-    if (layout.viewerComponent() >= 0) {
-        isChrome = isSameScreen ? isChrome : true;
-        layout.setChromeShown(isChrome);
-        int kept = layout.viewerIndexOfTile(keptPicture);
-        if (kept >= 0) {
-            layout.showViewerPictureAt(kept);
-        }
+    if (layout.viewerComponent() >= 0 && !isSameScreen) {
+        isChrome = true;
     }
+    restoreViewerState(keptPicture);
     if (!isSameScreen && model.screen.isEmpty()) {
         // A placeholder (no screen id: loading) is drawn without the flash.
         pageIndex = 0;
@@ -174,9 +173,31 @@ void ScreenCanvas::relayout()
     if (!hasScreen) {
         return;
     }
+    QString keptPicture = viewerPictureId();
     layout = ScreenLayout(model, height(), hostTexts());
+    restoreViewerState(keptPicture);
+    if (hasViewer()) {
+        DebugLog::write("viewer: relayout for canvas %dx%d, chrome %s, picture \"%s\" kept", width(), height(),
+                        isChrome ? "shown" : "hidden", qPrintable(viewerPictureId()));
+    }
     pageIndex = qBound(0, pageIndex, layout.pageCount() - 1);
     applyPage(pageIndex, true);
+}
+
+// A new layout starts with the chrome shown and the reply's picture; the
+// viewer keeps the user's own: the chrome as last toggled and the picture on
+// screen. Without this a resize showed the chrome on the canvas while the
+// header stayed hidden.
+void ScreenCanvas::restoreViewerState(const QString &keptPicture)
+{
+    if (layout.viewerComponent() < 0) {
+        return;
+    }
+    layout.setChromeShown(isChrome);
+    int kept = layout.viewerIndexOfTile(keptPicture);
+    if (kept >= 0) {
+        layout.showViewerPictureAt(kept);
+    }
 }
 
 // ---- Refresh ----
@@ -352,6 +373,8 @@ void ScreenCanvas::stepViewer(int step)
 {
     int next = ScreenLogic::viewerIndexAfterStep(layout.viewerShownIndex(), layout.viewerCount(), step);
     if (next == layout.viewerShownIndex()) {
+        DebugLog::write("viewer: no %s picture (%d of %d), nothing changes; chrome %s", step < 0 ? "previous" : "next",
+                        layout.viewerShownIndex() + 1, layout.viewerCount(), isChrome ? "shown" : "hidden");
         return;
     }
     OpenPopups::closeAll("viewer picture change");
@@ -365,10 +388,21 @@ void ScreenCanvas::stepViewer(int step)
 void ScreenCanvas::toggleChrome()
 {
     isChrome = !isChrome;
-    DebugLog::write("viewer: chrome %s", isChrome ? "shown" : "hidden");
     layout.setChromeShown(isChrome);
     applyPage(0, true);
+    DebugLog::write("viewer: chrome %s, %d tap target(s), canvas %dx%d", isChrome ? "shown" : "hidden",
+                    page.targets.size(), width(), height());
     emit viewerStateChanged();
+}
+
+// The full view's back button: one level back, from the full view to the viewer.
+void ScreenCanvas::showChrome()
+{
+    if (isChrome) {
+        DebugLog::write("viewer: back button tapped with the chrome already shown, ignored");
+        return;
+    }
+    toggleChrome();
 }
 
 void ScreenCanvas::goToPage(int index)
@@ -403,7 +437,8 @@ PressArea::PressFeedback ScreenCanvas::feedbackAt(const QPoint &position) const
                              target->kind == TapTarget::TAP_VIEWER_TOGGLE_CHROME);
     if (target && !isZone) { // a third of the picture never inverts
         feedback.rect = target->rect;
-        feedback.highlight = HIGHLIGHT_INVERT;
+        // An icon button over a picture: Nickel's black circle, not the whole target inverted.
+        feedback.highlight = target->kind == TapTarget::TAP_VIEWER_BACK ? HIGHLIGHT_CIRCLE : HIGHLIGHT_INVERT;
     }
     return feedback;
 }
@@ -416,8 +451,9 @@ void ScreenCanvas::onTapped()
     QPoint position = pressPosition();
     const TapTarget *found = isInputBlocked ? NULL : targetAt(position);
     if (!found) {
-        DebugLog::write("screen: tap at %d,%d ignored (%s)", position.x(), position.y(),
-                        isInputBlocked ? "input blocked" : "no target: text or a disabled control");
+        DebugLog::write("screen: tap at %d,%d ignored (%s; %d target(s), canvas %dx%d%s)", position.x(), position.y(),
+                        isInputBlocked ? "input blocked" : "no target: text or a disabled control", page.targets.size(),
+                        width(), height(), hasViewer() ? (isChrome ? ", viewer chrome shown" : ", viewer full view") : "");
         return;
     }
     TapTarget target = *found; // the action may relayout the page
@@ -438,6 +474,9 @@ void ScreenCanvas::onTapped()
         return;
     case TapTarget::TAP_VIEWER_TOGGLE_CHROME:
         toggleChrome();
+        return;
+    case TapTarget::TAP_VIEWER_BACK:
+        showChrome();
         return;
     case TapTarget::TAP_TILE:
     case TapTarget::TAP_COMPONENT:
@@ -654,6 +693,9 @@ static void paintItem(QPainter *painter, const PaintItem &item, const QPixmap *p
         break;
     case PaintItem::SHAPE_PICTURE_GLYPH:
         paintPictureGlyph(painter, item.rect, item.ink, item.border);
+        break;
+    case PaintItem::SHAPE_BACK_ARROW:
+        BackArrowIcon::paintStroke(painter, item.rect, grey(item.ink), item.border);
         break;
     }
 }

@@ -161,6 +161,17 @@ static const int VIEWER_BAR_HEIGHT = 120;
 static const int VIEWER_SECONDARY_WIDTH = 360;
 static const int VIEWER_BAR_GAP = 24;
 
+// Full view (chrome hidden): a back button where the header's "←" was, so
+// the way back is visible over any picture (docs/spec/wallpaper-gallery.md
+// section 2.2). The disc is PressArea's pressed circle (the 120 px target less
+// 16 px each side); the arrow is PageHeader's drawn one (64 px, 5 px stroke).
+static const int HEADER_ICON_WIDTH = 64; // Nickel's "headerIconWidth" on the Libra 2 class
+static const int VIEWER_BACK_TARGET = 120;
+static const int VIEWER_BACK_DISC = 88;
+static const int VIEWER_BACK_OUTLINE = 2;
+static const int VIEWER_BACK_ARROW_SIDE = HEADER_ICON_WIDTH;
+static const int VIEWER_BACK_ARROW_STROKE = 5;
+
 // Larger files are never read (a picture is decoded from memory).
 static const int MAX_PICTURE_FILE_BYTES = 8 * 1024 * 1024;
 
@@ -208,6 +219,12 @@ ViewerZone viewerZoneAt(int x, int width);
 IntRect viewerPictureArea(bool isChromeShown, int viewHeight);
 IntRect viewerSecondaryRect(int viewHeight);
 IntRect viewerPrimaryRect(int viewHeight);
+// Full view's back button (tap target, view coordinates): centred on the
+// header's back arrow, so it lies over the previous-picture zone and must win.
+IntRect viewerBackRect();
+// The disc (VIEWER_BACK_DISC) and the arrow box (VIEWER_BACK_ARROW_SIDE) centred in the target.
+IntRect viewerBackDiscRect();
+IntRect viewerBackArrowRect();
 
 // Largest size with the source's aspect that fits the box (scales up too).
 void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, int *width, int *height);

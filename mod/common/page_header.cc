@@ -59,6 +59,20 @@ QPixmap pixmap(bool isPressed)
     return images[isPressed ? 1 : 0];
 }
 
+void paintStroke(QPainter *painter, const QRect &box, const QColor &ink, int stroke)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    painter->setPen(QPen(ink, stroke, Qt::SolidLine, Qt::RoundCap));
+    qreal reach = qMin(box.width(), box.height()) * 0.28; // half the shaft
+    QPointF centre = QRectF(box).center();
+    QPointF tip(centre.x() - reach, centre.y());
+    painter->drawLine(QPointF(centre.x() + reach, centre.y()), tip);
+    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() - reach * 0.8));
+    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() + reach * 0.8));
+    painter->restore();
+}
+
 // "←" in a circle-sized box: black on white, or white on a black circle when pressed.
 static void paintDrawnArrow(QPainter *painter, const QRect &area, bool isPressed)
 {
@@ -72,14 +86,8 @@ static void paintDrawnArrow(QPainter *painter, const QRect &area, bool isPressed
         painter->setBrush(Qt::black);
         painter->drawEllipse(box);
     }
-    painter->setPen(QPen(isPressed ? Qt::white : Qt::black, DRAWN_ARROW_STROKE, Qt::SolidLine, Qt::RoundCap));
-    qreal reach = side * 0.28; // half the shaft
-    QPointF centre = QRectF(box).center();
-    QPointF tip(centre.x() - reach, centre.y());
-    painter->drawLine(QPointF(centre.x() + reach, centre.y()), tip);
-    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() - reach * 0.8));
-    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() + reach * 0.8));
     painter->restore();
+    paintStroke(painter, box, isPressed ? Qt::white : Qt::black, DRAWN_ARROW_STROKE);
 }
 
 void paint(QPainter *painter, const QRect &area, bool isPressed)

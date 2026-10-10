@@ -229,8 +229,15 @@ func TestViewerChromeShownAndHidden(t *testing.T) {
 	}
 
 	hidden, _ := renderFixture(t, appDir, statePath, renderOptions{Screen: "viewer", Value: &value, Chrome: chromeHidden})
-	if len(hidden.Items) != 1 || hidden.Items[0].Shape != "image" {
-		t.Fatalf("chrome hidden must draw only the picture, got %d items", len(hidden.Items))
+	if len(hidden.Items) != 3 || hidden.Items[0].Shape != "image" {
+		t.Fatalf("chrome hidden must draw the picture and the back button, got %d items", len(hidden.Items))
+	}
+	disc, arrow := hidden.Items[1], hidden.Items[2]
+	if disc.Shape != "ellipse" || disc.W != viewerBackDisc || disc.Fill != paperFull || disc.Border != viewerBackOutline {
+		t.Errorf("back disc %+v: want a white %d px disc with a %d px outline", disc, viewerBackDisc, viewerBackOutline)
+	}
+	if strings.Join(arrow.Lines, "") != "←" || arrow.X+arrow.W/2 != gutter+headerIconWidth/2 || arrow.W != viewerBackTarget {
+		t.Errorf("back arrow %+v: want a %d px target centred on the header's arrow", arrow, viewerBackTarget)
 	}
 	if hidden.Items[0].H != screenHeight && hidden.Items[0].W != screenWidth {
 		t.Errorf("picture %dx%d must fill the area in one direction", hidden.Items[0].W, hidden.Items[0].H)

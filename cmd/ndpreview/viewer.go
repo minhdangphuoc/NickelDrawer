@@ -34,13 +34,15 @@ func (rc renderContext) shownIndex(tiles []pictureTile) int {
 
 // layoutViewer draws the picture viewer. With the chrome shown: header ("n / N", status when the
 // picture is current), the picture between header and bottom bar, and the bar with the secondary
-// and primary buttons. Hidden: the picture alone, filling the whole area.
+// and primary buttons. Hidden (full view): the picture filling the whole area and the back button
+// that shows the chrome again.
 func (rc renderContext) layoutViewer(screen *uikit.Screen, viewer uikit.Component, overlay Overlay) Page {
 	tiles := rc.pictureTiles(viewer)
 	shownIndex := rc.shownIndex(tiles)
 	var items []Item
 	if rc.chrome == chromeHidden {
 		items = rc.viewerPicture(tiles, shownIndex, image.Rect(0, 0, screenWidth, screenHeight))
+		items = append(items, rc.viewerBackButton()...)
 	} else {
 		items = rc.viewerChrome(screen, viewer, tiles, shownIndex)
 	}
@@ -56,6 +58,18 @@ func (rc renderContext) viewerPicture(tiles []pictureTile, shownIndex int, area 
 		return []Item{picture}
 	}
 	return pictureGlyphItems(area.Min.X+area.Dx()/2, area.Min.Y+area.Dy()/2, inkDim)
+}
+
+// viewerBackButton is the full view's way back (mod/drawer screen_layout.cc drawViewerBackButton):
+// a white disc with a thin black outline and the header's "←", where the header's arrow was.
+func (rc renderContext) viewerBackButton() []Item {
+	x, y := gutter+headerIconWidth/2-viewerBackTarget/2, (headerRowHeight-viewerBackTarget)/2
+	inset := (viewerBackTarget - viewerBackDisc) / 2
+	disc := Item{Shape: "ellipse", X: x + inset, Y: y + inset, W: viewerBackDisc, H: viewerBackDisc,
+		Fill: paperFull, Border: viewerBackOutline, Ink: inkBlack}
+	arrow := textItem(x, y, viewerBackTarget, viewerBackTarget, "←", headerTitleSz+8, familySans, "center")
+	arrow.Label = rc.host("back")
+	return []Item{disc, arrow}
 }
 
 func (rc renderContext) viewerChrome(screen *uikit.Screen, viewer uikit.Component, tiles []pictureTile, shownIndex int) []Item {

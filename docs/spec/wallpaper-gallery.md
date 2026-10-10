@@ -56,10 +56,19 @@ value** (the picture id); see §6.
     `Đặt làm hình nền` filling the rest (24 px gap). When the picture is already current the primary
     is disabled and reads `Đang dùng`.
 - Tap zones: left third = previous picture, right third = next picture, centre = toggle the chrome.
-  Chrome hidden: only the picture, filling the whole area below the status bar. The header and the
-  bottom bar take their own taps while shown.
+  The header and the bottom bar take their own taps while shown.
+- Full view (chrome hidden): the picture fills the whole area below the status bar, with one back
+  button at the top left, where the header's `←` was: a 120 px tap target holding a white disc
+  (88 px, the pressed circle of an icon button) with a 2 px black outline and the header's drawn
+  `←` (64 px box, 5 px stroke), so it shows over any picture. It lies below the status bar (the
+  screen starts under it) and over the previous-picture zone, and wins over the zones. Pressed:
+  black circle, white arrow (like the header's icon buttons). Tap: the chrome comes back. This is
+  one level of the back stack: full view → viewer (chrome) → gallery. The centre zone still
+  toggles the chrome too; the side zones still flip pictures, and at the ends do nothing.
 - Page-turn keys: next / previous picture. No wrap-around; at the ends nothing happens.
-- Back returns to the gallery on the page that holds the last viewed picture.
+- Back (header `←`) returns to the gallery on the page that holds the last viewed picture.
+- The chrome state and the picture on screen survive a reload and a relayout (resize) of the
+  same viewer; a newly pushed viewer starts with the chrome shown.
 - `Đặt làm hình nền`: event `set-current` with the picture id; toast `Đã đặt làm hình nền`; the
   screen reloads, so the status and the disabled primary update. No dialog.
 - `Xoá…`: confirm dialog, title `Xoá ảnh này?`, text `Ảnh sẽ không còn trong Hình nền. Ảnh gốc trong

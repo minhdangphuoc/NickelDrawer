@@ -69,6 +69,9 @@ const (
 	viewerBarHeight     = 120
 	viewerSecondaryWide = 360
 	viewerBarGap        = 24
+	viewerBackTarget    = 120 // full view's back button: centred on the header's back arrow
+	viewerBackDisc      = 88  // the pressed circle of a 120 px icon target (16 px margin)
+	viewerBackOutline   = 2
 	selectedVarName     = "selected" // receives the screen value, as in appsctl
 	maxPictureBytes     = 8 << 20    // larger files are not decoded (mod and preview)
 )

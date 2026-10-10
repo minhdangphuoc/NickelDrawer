@@ -486,6 +486,30 @@ IntRect viewerPrimaryRect(int viewHeight)
     return rect;
 }
 
+IntRect viewerBackRect()
+{
+    int arrowCentreX = GUTTER + HEADER_ICON_WIDTH / 2;
+    IntRect rect = {arrowCentreX - VIEWER_BACK_TARGET / 2, (HEADER_ROW_HEIGHT - VIEWER_BACK_TARGET) / 2,
+                    VIEWER_BACK_TARGET, VIEWER_BACK_TARGET};
+    return rect;
+}
+
+static IntRect centredIn(const IntRect &outer, int side)
+{
+    IntRect rect = {outer.x + (outer.width - side) / 2, outer.y + (outer.height - side) / 2, side, side};
+    return rect;
+}
+
+IntRect viewerBackDiscRect()
+{
+    return centredIn(viewerBackRect(), VIEWER_BACK_DISC);
+}
+
+IntRect viewerBackArrowRect()
+{
+    return centredIn(viewerBackRect(), VIEWER_BACK_ARROW_SIDE);
+}
+
 void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, int *width, int *height)
 {
     *width = 0;

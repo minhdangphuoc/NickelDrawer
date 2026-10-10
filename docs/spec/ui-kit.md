@@ -208,7 +208,7 @@ Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. 
 
 - The picture fitted as large as possible below the header and above the bottom bar, on white; every picture change is a full refresh.
 - Chrome shown: header title `n / N` (built from the position), `current_status` at the right while the shown picture is current; bottom bar of 120 px: `secondary` (360 px) at the left, `primary` filling the rest, 24 px gap. When the shown picture is current the primary is disabled and reads `label_current`.
-- Tap zones: left third previous, right third next, centre toggles the chrome. Chrome hidden: the picture fills the whole area. Page-turn keys: next / previous picture, no wrap.
+- Tap zones: left third previous, right third next, centre toggles the chrome. Chrome hidden (full view): the picture fills the whole area, with a back button at the top left (white disc, thin outline, `←`, 120 px target) that shows the chrome again. Page-turn keys: next / previous picture, no wrap.
 - Events: `primary` and `secondary` (after its `confirm`) send the shown id as the value. The variable `selected` holds the screen value (the shown id) so bindings can read it.
 
 ## 4. i18n and layout notes

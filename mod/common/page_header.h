@@ -6,6 +6,7 @@
 
 #include "press_area.h"
 
+class QColor;
 class QHBoxLayout;
 class QLabel;
 class QPainter;
@@ -49,6 +50,9 @@ struct NickelTextHeaderApi {
 namespace BackArrowIcon {
 QPixmap pixmap(bool isPressed); // null when the resource is missing
 void paint(QPainter *painter, const QRect &area, bool isPressed);
+// The drawn arrow alone (three round-capped lines), in ink, centred in box;
+// also the viewer's full-view back button (mod/drawer/screen_canvas.cc).
+void paintStroke(QPainter *painter, const QRect &box, const QColor &ink, int stroke);
 } // namespace BackArrowIcon
 
 // Our back arrow, for the fallback header: a 120 px tap target.
