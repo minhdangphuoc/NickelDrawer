@@ -3,6 +3,7 @@
 #include <QVector>
 
 #include "qr_encoder.h"
+#include "row_menu_logic.h"
 
 using namespace ScreenLogic;
 
@@ -120,13 +121,14 @@ static PaintItem pictureGlyph(const QRect &rect, int ink)
     return item;
 }
 
-static void addTarget(ScreenPage *page, const QRect &rect, int component, const QString &value)
+static void addTarget(ScreenPage *page, const QRect &rect, int component, const QString &value, int listRow = -1)
 {
     TapTarget target;
-    target.kind = TapTarget::TAP_COMPONENT;
+    target.kind = listRow >= 0 ? TapTarget::TAP_LIST_ROW : TapTarget::TAP_COMPONENT;
     target.rect = rect;
     target.component = component;
     target.value = value;
+    target.row = listRow;
     page->targets.append(target);
 }
 
@@ -325,8 +327,9 @@ static void addListBlocks(int component, const ScreenComponent &c, QList<LayoutB
     for (int i = 0; i < c.items.size(); i++) {
         const QString &primary = c.items[i].first;
         LayoutBlock row = valueRow(component, primary, c.items[i].second, isFileName(primary));
-        row.isTappable = !c.tap.isEmpty();
+        row.isTappable = RowMenuLogic::isRowTarget(!c.tap.isEmpty(), c.menu.size());
         row.tapValue = primary;
+        row.listRow = i;
         blocks->append(row);
     }
     withTrailingGap(blocks, first);
@@ -602,7 +605,7 @@ static void drawValueRow(const LayoutBlock &b, int y, ScreenPage *page)
     page->items.append(value);
     page->items.append(separatorItem(y + ROW_HEIGHT - SEPARATOR));
     if (b.isTappable) {
-        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, b.tapValue);
+        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, b.tapValue, b.listRow);
     }
 }
 

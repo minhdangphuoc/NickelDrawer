@@ -7,6 +7,7 @@
 #include "fallback_strings.h"
 #include "model_client.h"
 #include "nickel_bridge.h"
+#include "toast_gate.h"
 #include "wifi_connector.h"
 
 // Menu ids of the drawer's own entries; '#' cannot start an app action id.
@@ -157,7 +158,7 @@ void ActionRunner::presentResult(const ActionResult &result)
     }
     bool isToast = currentAction.isBackground && result.isOk;
     if (isToast && NickelBridge::hasToast()) {
-        NickelBridge::showToast(result.text.isEmpty() ? currentAction.label : result.text);
+        ToastGate::show(currentItem.id, result.text.isEmpty() ? currentAction.label : result.text);
         return;
     }
     if (!result.text.isEmpty()) {
@@ -176,7 +177,7 @@ void ActionRunner::presentScreenEventOutcome(const ActionResult &result)
     nh_log("action: event %s failed: %s", qPrintable(currentEvent.actionId), qPrintable(result.text));
     QString notice = FallbackStrings::text(FallbackStrings::ACTION_FAILED);
     if (NickelBridge::hasToast()) {
-        NickelBridge::showToast(notice);
+        ToastGate::show(currentItem.id, notice);
     } else {
         Dialogs::showMessage(currentItem.name, notice);
     }
@@ -199,7 +200,7 @@ bool ActionRunner::presentScreenSignal(const ActionResult &result)
         return false;
     }
     if (NickelBridge::hasToast()) {
-        NickelBridge::showToast(result.toast);
+        ToastGate::show(currentItem.id, result.toast);
     } else {
         Dialogs::showMessage(currentItem.name, result.toast);
     }

@@ -58,6 +58,9 @@ static const Translation TABLE[] = {
     {"Tweaks", "Tinh chỉnh"},
     {"OK", "OK"},
     {"Not available on this firmware.", "Không dùng được trên firmware này."},
+    {"NickelDrawer does not support this firmware yet", "NickelDrawer chưa hỗ trợ firmware này"},
+    {"Kobo is offering update 5.x — NickelDrawer will stop working",
+     "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"},
 };
 
 static_assert(sizeof(TABLE) / sizeof(TABLE[0]) == FallbackStrings::KEY_COUNT, "one translation per FallbackStrings::Key");

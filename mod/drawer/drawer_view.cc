@@ -11,6 +11,7 @@
 #include "debug_log.h"
 
 #include "fallback_strings.h"
+#include "qt6_notice.h"
 #include "item_widgets.h"
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
@@ -45,6 +46,7 @@ static const char *const VIEW_STYLE =
     "#drawerChevron { font-size: 56px; }"
     "#drawerSectionLabel { font-size: 26px; font-weight: bold; }"
     "#drawerHint { font-size: 28px; }"
+    "#drawerQt6Notice { font-size: 28px; font-weight: bold; border-bottom: 2px solid black; padding: 8px 0px; }"
     "#drawerPageIndicator { font-size: 32px; }"
     "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: 40px; font-weight: bold; }"
     "#drawerEmptyText { font-size: 30px; }";
@@ -62,7 +64,7 @@ DrawerView::DrawerView()
     : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
       hintLabel(NULL), pageIndicator(NULL), refreshButton(NULL), updatesButton(NULL), updatesDot(NULL),
       viewMode(ViewSettings::load()), gridRows(DrawerLogic::GRID_DEFAULT_ROWS), currentPage(0), isInputBlocked(false),
-      hasModel(false), hasLoggedLayout(false)
+      hasModel(false), hasLoggedLayout(false), hasQt6Notice(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerView"));
@@ -91,6 +93,7 @@ DrawerView::DrawerView()
     rootLayout->setSpacing(0);
     header = createHeader();
     rootLayout->addWidget(header);
+    addQt6NoticeIfPending();
     rootLayout->addWidget(pageArea, 1);
     rootLayout->addWidget(hintLabel);
     rootLayout->addWidget(createFooter());
@@ -166,6 +169,20 @@ HeaderIconButton *DrawerView::createHostButton(HeaderIconButton::Icon icon, cons
     return button;
 }
 
+// A warning row under the header while Kobo offers 5.x and it is not declined.
+// It takes the hint line's room, so the page keeps its height.
+void DrawerView::addQt6NoticeIfPending()
+{
+    if (!Qt6Notice::isUpgradePending()) {
+        return;
+    }
+    QLabel *notice = createTextLabel(FallbackStrings::text(FallbackStrings::QT6_UPGRADE_PENDING), "drawerQt6Notice", this);
+    notice->setWordWrap(true);
+    rootLayout->addWidget(notice);
+    hintLabel->hide();
+    hasQt6Notice = true;
+}
+
 QWidget *DrawerView::createFooter()
 {
     QWidget *footer = new QWidget(this);
@@ -187,6 +204,7 @@ void DrawerView::setModel(const DrawerModel &model)
     header->setTitle(model.title.isEmpty() ? FallbackStrings::text(FallbackStrings::APPS_TITLE) : model.title);
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
     hintLabel->setText(hint);
+    hintLabel->setVisible(!hasQt6Notice);
     flatten(model);
     rebuildShownIndices();
     updateHostButtons();

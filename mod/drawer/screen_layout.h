@@ -56,6 +56,8 @@ struct PaintItem {
 };
 
 struct TapTarget {
+    // TAP_LIST_ROW: a row of a list with a tap action and/or a menu (value = its
+    // primary text, row = its index in the list); tap and long press.
     // TAP_TILE: a gallery picture (value = its id); tap and long press.
     // TAP_VIEWER_PREVIOUS/NEXT/TOGGLE_CHROME: the viewer's picture zones (no pressed feedback).
     // TAP_VIEWER_BACK: the full view's back button (circle feedback): shows the chrome again.
@@ -64,6 +66,7 @@ struct TapTarget {
         TAP_NEXT_PAGE,
         TAP_COMPONENT,
         TAP_TILE,
+        TAP_LIST_ROW,
         TAP_VIEWER_PREVIOUS,
         TAP_VIEWER_NEXT,
         TAP_VIEWER_TOGGLE_CHROME,
@@ -73,6 +76,7 @@ struct TapTarget {
     Kind kind = TAP_COMPONENT;
     QRect rect;
     int component = -1; // index into ScreenLayout::component()
+    int row = -1;       // TAP_LIST_ROW: index of the row in the list's items
     QString value;      // radio: the option id; list: the row's primary text; tile: its id; viewer button: "primary" / "secondary"
 };
 
@@ -117,6 +121,7 @@ struct LayoutBlock {
     QString title;
     bool isOn = false; // toggle on, radio option selected, button primary
     bool isTappable = false;
+    int listRow = -1; // list rows: index in the list's items, for the row menu
     bool isMiddleElided = false;
     QString tapValue;
     QByteArray qrModules;

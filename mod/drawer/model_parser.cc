@@ -9,6 +9,7 @@
 
 #include "drawer_logic.h"
 #include "fallback_strings.h"
+#include "row_menu_logic.h"
 
 static const char *const KIND_BACKGROUND = "background";
 static const char *const PROBLEM_ROW_ID = "_problem";
@@ -145,23 +146,39 @@ static QList<PictureTile> parseTiles(const QJsonArray &array)
     return tiles;
 }
 
-static QList<TileMenuItem> parseMenu(const QJsonArray &array)
+// confirm: an object (declared dialog) or `true` (generic destructive question).
+static void parseMenuConfirm(const QJsonValue &confirm, TileMenuItem *item)
 {
+    item->hasConfirm = confirm.isObject() || (confirm.isBool() && confirm.toBool());
+    if (confirm.isObject()) {
+        item->confirm = parseDeclaredDialog(confirm.toObject());
+    }
+}
+
+// Gallery menus (action / push / info, no cap) and list-row menus (an id, at
+// most RowMenuLogic::MAX_LIST_ITEMS) share the entry format; the rules for
+// keeping an entry are RowMenuLogic's.
+static QList<TileMenuItem> parseMenu(const QJsonArray &array, bool isListMenu)
+{
+    int maxItems = isListMenu ? RowMenuLogic::MAX_LIST_ITEMS : RowMenuLogic::NO_LIMIT;
     QList<TileMenuItem> menu;
     for (int i = 0; i < array.size(); i++) {
         QJsonObject object = array.at(i).toObject();
         TileMenuItem item;
+        item.id = isListMenu ? stringField(object, "id") : QString();
         item.label = stringField(object, "label");
         item.action = stringField(object, "action");
         item.push = stringField(object, "push");
         item.isInfo = boolField(object, "info");
-        QJsonValue confirm = object.value(QLatin1String("confirm"));
-        item.hasConfirm = confirm.isObject();
-        if (item.hasConfirm) {
-            item.confirm = parseDeclaredDialog(confirm.toObject());
-        }
-        if (item.label.isEmpty() || (item.action.isEmpty() && item.push.isEmpty() && !item.isInfo)) {
-            nh_log("parser: gallery menu entry without label or target skipped");
+        parseMenuConfirm(object.value(QLatin1String("confirm")), &item);
+        bool hasTarget = !item.id.isEmpty() || !item.action.isEmpty() || !item.push.isEmpty() || item.isInfo;
+        QByteArray label = item.label.toUtf8();
+        RowMenuLogic::EntryVerdict verdict = RowMenuLogic::judgeEntry(label.constData(), hasTarget, menu.size(), maxItems);
+        if (verdict != RowMenuLogic::ENTRY_KEPT) {
+            nh_log("parser: %s menu entry skipped (%s)", isListMenu ? "list" : "gallery",
+                   verdict == RowMenuLogic::ENTRY_NO_LABEL    ? "no label"
+                   : verdict == RowMenuLogic::ENTRY_NO_TARGET ? "no target"
+                                                              : "more than 6 entries");
             continue;
         }
         menu.append(item);
@@ -194,7 +211,7 @@ static void parsePictureFields(const QJsonObject &object, ScreenComponent *compo
         component->tapPush = stringField(tap, "push");
         component->tapAction = stringField(tap, "action");
     }
-    component->menu = parseMenu(object.value(QLatin1String("menu")).toArray());
+    component->menu = parseMenu(object.value(QLatin1String("menu")).toArray(), false);
     QJsonObject empty = object.value(QLatin1String("empty")).toObject();
     component->galleryEmpty.icon = stringField(empty, "icon");
     component->galleryEmpty.title = stringField(empty, "title");
@@ -249,6 +266,9 @@ static ScreenComponent parseComponent(const QJsonObject &object)
     component.optionDetails = stringListField(object, "option_details");
     if (component.type == QLatin1String("gallery") || component.type == QLatin1String("viewer")) {
         parsePictureFields(object, &component);
+    }
+    if (component.type == QLatin1String("list")) {
+        component.menu = parseMenu(object.value(QLatin1String("menu")).toArray(), true);
     }
     return component;
 }

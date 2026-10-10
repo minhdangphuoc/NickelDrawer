@@ -37,6 +37,11 @@ extern struct nh_dlsym symbolTable[];
 bool activate();
 bool isActive();
 
+// While inert because of an unknown firmware or a missing symbol (not the kill
+// switch): called from the More-tab hook, shows ONE Nickel toast a few seconds
+// later when the toast symbols resolved, else only logs. No-op afterwards.
+void scheduleDisabledNotice();
+
 // The firmware string read by activate() ("unknown" on failure).
 const char *firmware();
 
@@ -146,6 +151,16 @@ bool rescanLibrary(RescanKind kind);
 void requestFullRefresh(QWidget *widget);
 
 } // namespace NickelBridge
+
+// The one-shot toast of scheduleDisabledNotice(); deletes itself.
+class DisabledNotice : public QObject {
+    Q_OBJECT
+public:
+    DisabledNotice();
+
+public slots:
+    void show();
+};
 
 // Second half of a full rescan, run 1 s later from the event loop instead of
 // sleeping on the GUI thread (NickelMenu's rescan_books_full sleeps 1 s).

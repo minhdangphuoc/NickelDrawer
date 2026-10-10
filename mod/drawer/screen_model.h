@@ -25,8 +25,11 @@ struct PictureTile {
     bool isCurrent = false;
 };
 
-// A long-press menu entry of a gallery: exactly one of action / push / isInfo.
+// A long-press menu entry. Gallery: exactly one of action / push / isInfo.
+// List row (ui-json.md): an id, sent back in the menu event. hasConfirm with an
+// empty confirm (`"confirm": true`) asks the generic destructive question.
 struct TileMenuItem {
+    QString id;
     QString label;
     QString action;
     QString push;

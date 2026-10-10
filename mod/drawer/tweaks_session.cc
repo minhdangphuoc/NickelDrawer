@@ -14,6 +14,7 @@
 #include "fallback_strings.h"
 #include "model_client.h"
 #include "nickel_bridge.h"
+#include "toast_gate.h"
 #include "open_popups.h"
 #include "tweaks_overlay.h"
 #include "tweaks_panel.h"
@@ -41,7 +42,7 @@ void TweaksSession::open()
     TweaksSession *session = new TweaksSession();
     if (!session->present()) {
         delete session;
-        NickelBridge::showToast(FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
+        ToastGate::show(ToastGate::TWEAKS_KEY, FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
         return;
     }
     openSession = session;
@@ -199,7 +200,7 @@ void TweaksSession::onTweakApplied(const TweakResult &result)
     setBusy(false);
     DebugLog::write("tweaks: \"%s\" %s", qPrintable(pendingTweakId), result.isOk ? "applied" : "failed");
     if (!result.isOk) {
-        NickelBridge::showToast(result.error);
+        ToastGate::show(ToastGate::TWEAKS_KEY, result.error);
         return;
     }
     const TweakItem *item = panel ? panel->item(pendingTweakId) : NULL;
@@ -214,7 +215,7 @@ void TweaksSession::onTweakApplied(const TweakResult &result)
 void TweaksSession::showResult(const TweakResult &result)
 {
     if (!result.toast.isEmpty()) {
-        NickelBridge::showToast(result.toast);
+        ToastGate::show(ToastGate::TWEAKS_KEY, result.toast);
     }
     runNickelAction(result.nickel);
 }
@@ -246,7 +247,7 @@ void TweaksSession::runNickelAction(TweaksLogic::NickelAction action)
         break;
     }
     if (!isAvailable) {
-        NickelBridge::showToast(FallbackStrings::text(FallbackStrings::NICKEL_ACTION_UNAVAILABLE));
+        ToastGate::show(ToastGate::TWEAKS_KEY, FallbackStrings::text(FallbackStrings::NICKEL_ACTION_UNAVAILABLE));
     }
 }
 

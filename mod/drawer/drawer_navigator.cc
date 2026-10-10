@@ -12,6 +12,7 @@
 #include "mod_switches.h"
 #include "navigation.h"
 #include "nickel_bridge.h"
+#include "toast_gate.h"
 #include "status_bar_inset.h"
 
 // PlugWorkflowManager::plugged() emits both, on the GUI thread, before it
@@ -73,7 +74,7 @@ void DrawerNavigator::open()
     FallbackStrings::reloadLocale();
     if (!hasRouteApi()) {
         DebugLog::write("navigator: libnickel API for route %s missing", ModSwitches::usesViewPushRoute() ? "B" : "A");
-        NickelBridge::showToast(FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
+        ToastGate::show(ToastGate::HOST_KEY, FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
         return;
     }
 
@@ -158,7 +159,7 @@ void DrawerNavigator::openWithViewPush()
 void DrawerNavigator::discardUnpushedView()
 {
     delete view;
-    NickelBridge::showToast(FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
+    ToastGate::show(ToastGate::HOST_KEY, FallbackStrings::text(FallbackStrings::DRAWER_UNAVAILABLE));
 }
 
 void DrawerNavigator::onBackRequested()

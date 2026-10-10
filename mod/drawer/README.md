@@ -31,7 +31,7 @@ drawer_session ── model_client (appsctl via QProcess, async) ─► model_pa
               └── action_runner ─► dialogs / plain_dialog, wifi_connector, bridge (toast, rescan)
 drawer_logic: Qt-free rules (paging, refresh, protocol, retry, locale), unit-tested on the host
 
-Phase 4 (flag `screens`): drawer_session ── tap on an app with "screen" ─► screen_session
+Phase 4 (on by default, opt out with `no-screens`): drawer_session ── tap on an app with "screen" ─► screen_session
 screen_session ── model_client (`drawer screen`) ─► screen_view (child of drawer_view, covers it)
               └── taps ─► action_runner (`drawer event`), field_editor (Nickel keyboard via the bridge)
 screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, unit-tested on the host
@@ -74,6 +74,9 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `screen_view.{h,cc}` | paints a page, page keys (event filter on the drawer view), taps, full/partial refresh |
 | `picture_loader.{h,cc}` | gallery/viewer pictures: read whole (cap 8 MB) and close, decode from memory scaled to the box |
 | `tile_menu.{h,cc}` | gallery long-press: Nickel popup titled with the tile label, destructive confirm first |
+| `row_menu_logic.{h,cc}` | Qt-free rules of list row menus: which declared entries are kept (cap 6), when a long press opens the menu (unit-tested) |
+| `toast_limiter.{h,cc}`, `toast_gate.{h,cc}` | one toast per app per 2 s (Qt-free limiter, unit-tested) and the gate every drawer toast goes through |
+| `qt6_notice.{h,cc}` | reads the 5.x offer from `Kobo eReader.conf` (rule: `DrawerLogic::isQt6UpgradePending`) |
 | `event_queue.{h,cc}` | Qt-free FIFO of radio/toggle events: coalesce by control, drop in-flight duplicates, one at a time |
 | `field_editor.{h,cc}` | `field` editing in Nickel's N3Dialog keyboard; else the caller shows "edit on your phone" |
 | `screen_session.{h,cc}` | one open app screen: load, live re-read, taps → events, pushed screens, back |
@@ -104,12 +107,16 @@ the 9th partial update in a row is upgraded to a full one. A changed item list r
 
 ## Flags (on the Kobo, read once at boot; reboot to apply)
 
+Version `1.0.0-beta.1` (`NH_VERSION`, logged by NickelHook).
+
 | Path | Effect |
 |---|---|
 | `.adds/nickeldrawer/uninstall` | NickelHook removes the mod and the flag at the next boot |
 | `.adds/nickeldrawer/disable` | kill switch: the mod loads, the bridge stays inert, the More tab is stock |
 | `.adds/nickeldrawer/pushview` | open the drawer with route B (`pushView`) instead of the controller push |
-| `.adds/nickeldrawer/screens` | Phase 4: tapping an app that has a `ui.json` opens its native screen; without the flag the tap runs the primary action as before (default off until G2 passes) |
+| `.adds/nickeldrawer/no-screens` | opt-out: tapping an app runs its primary action instead of opening its `ui.json` screen. Screens are on by default |
+| `.adds/nickeldrawer/screens` | obsolete (screens used to be opt-in): still read, logged nowhere, changes nothing |
+| `.adds/nickeldrawer/test-unknown-fw` | test hook (FI-04): the firmware check fails as if the build were unknown, so the drawer disables itself and shows the one "not supported" toast. Remove it and reboot to return to normal |
 | `.adds/nickeldrawer/no-keyboard` | `field` taps show the "edit on your phone" notice instead of Nickel's keyboard |
 | `.adds/nickeldrawer/debug` | step log of row construction and the tap path in `.adds/nickeldrawer/debug.log` (append, fsync, close per line; restarts at 64 KB). Survives a Nickel crash, unlike syslog. Shared with the prototype (`mod/common/debug_log.cc`) |
 
@@ -121,8 +128,10 @@ run removes only one of them).
 | Situation | Result |
 |---|---|
 | `disable` flag | inert; hooks pass straight through |
-| firmware not one of the five 4.38 builds | inert, logged; NickelMenu stays |
-| a libnickel symbol missing | only the feature using it is off: no row (IconLeftButton/hook), toast "not available" (push API), plain Qt dialog (Nickel dialogs), message instead of toast, no Wi-Fi retry, no rescan |
+| firmware not one of the five 4.38 builds | inert, logged; no More rows. One Nickel toast a few seconds after the first More tab is built: "NickelDrawer does not support this firmware yet" (vi: "NickelDrawer chưa hỗ trợ firmware này"), only when `MainWindowController::toast` resolved, else log only. NickelMenu is not a fallback |
+| a critical symbol missing (`MoreView` hook, `IconLeftButton`, `MainWindowController::sharedInstance`, neither push route) | same as an unknown firmware: inert, logged, the one toast. Test build: `make -C mod/drawer docker-build EXTRA_CPPFLAGS=-DND_TEST_MISSING_SYM` pretends one is missing (FI-03); never install that build for real use |
+| Kobo offers 5.x (`AvailableQt6Upgrade` in `Kobo eReader.conf` is set and differs from `SkippedQt6UpgradeUrl`) | a bold notice row under the drawer header: "Kobo is offering update 5.x — NickelDrawer will stop working" (vi: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"), taking the hint line's room. Config keys, not `IOUtil::isQt6UpgradePending` (23828 only, needs a `Device`) |
+| a non-critical libnickel symbol missing | only the feature using it is off: no row (IconLeftButton/hook), toast "not available" (push API), plain Qt dialog (Nickel dialogs), message instead of toast, no Wi-Fi retry, no rescan |
 | `moreContainerLayout` not found | no row, logged |
 | N3Dialog or controller push missing | Tweaks modal in the own overlay (re/notes/tweaks-modal.md) |
 | N3PowerWorkflowManager / rescan missing | the tweak still runs; toast "Not available on this firmware." instead of sleep/reboot/rescan |
@@ -148,7 +157,7 @@ Failsafe: a crash in the first 15 s after boot removes the mod (NickelHook).
 7. `connectWireless(true,false)` UI and `isInternetAccessible` polling; `PlugWorkflowManager` rescans.
 8. SVG icons via `QPixmap` (needs Nickel's svg image plugin).
 9. QSettings writing `drawer.ini` on the FAT partition while Nickel runs.
-10. App screens (flag `screens`): the screen view over the drawer page (fonts, sizes vs the ndpreview PNG),
+10. App screens (on by default): the screen view over the drawer page (fonts, sizes vs the ndpreview PNG),
     page keys on long screens, partial refresh of a toggled switch, the N3Dialog keyboard for a `field`
     (`KeyboardReceiver` size and `QLocale()` keyboard layout are unverified), QR scannable from a phone.
 
@@ -161,7 +170,11 @@ differ (a real font wider than the estimate is elided again instead of clipped).
 real one (Nickel's status and tab bars take part of 1680 px), so long screens page earlier than the
 preview. Taps: buttons, rows, `empty` and the header action run `drawer event`; toggles and radios show the
 new value at once and run the action named like their variable with `--value`; list rows with `tap` pass
-the row's primary text; `field` opens Nickel's keyboard. List row menus are not supported yet. Back pops
+the row's primary text; `field` opens Nickel's keyboard. A held list row with a `menu` opens Nickel's popup menu (title: the row's primary text; `confirm`
+entries ask first) and runs `appsctl drawer event <app> <menu-id> --list <bind> --index <n> --value <primary> [--screen <id>]`;
+a row with only a `menu` still shows the pressed state on a short tap but sends nothing. Menu entries are `{id, label, confirm}`
+(`confirm`: `true` for the generic destructive question, or a `{title,text,ok,cancel}` object), at most 6, taken from the list
+component's `menu` array. Back pops
 pushed screens, then returns to the drawer (one flash). A screen whose app has a `state` action is re-read
 every 5 s while idle; unchanged primitives are not repainted.
 

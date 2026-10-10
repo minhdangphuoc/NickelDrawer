@@ -85,6 +85,10 @@ void ModelClient::requestEvent(const QString &appId, const ScreenEvent &event)
     if (event.hasValue) {
         arguments << QStringLiteral("--value") << event.value;
     }
+    if (event.listIndex >= 0) {
+        arguments << QStringLiteral("--list") << event.listBind << QStringLiteral("--index")
+                  << QString::number(event.listIndex);
+    }
     if (!event.screenId.isEmpty()) {
         arguments << QStringLiteral("--screen") << event.screenId;
     }

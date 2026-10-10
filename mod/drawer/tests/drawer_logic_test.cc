@@ -180,6 +180,17 @@ static void testLocale()
     EXPECT_EQ(LANGUAGE_ENGLISH, languageForLocale(0));
 }
 
+static void testQt6UpgradePending()
+{
+    EXPECT_EQ(false, isQt6UpgradePending("", ""));
+    EXPECT_EQ(false, isQt6UpgradePending(0, 0));
+    EXPECT_EQ(false, isQt6UpgradePending("", "http://x/a"));
+    EXPECT_EQ(true, isQt6UpgradePending("http://x/a", ""));
+    EXPECT_EQ(true, isQt6UpgradePending("http://x/a", 0));
+    EXPECT_EQ(false, isQt6UpgradePending("http://x/a", "http://x/a")); // declined
+    EXPECT_EQ(true, isQt6UpgradePending("http://x/b", "http://x/a"));  // a new offer
+}
+
 int main()
 {
     testPageCount();
@@ -195,5 +206,6 @@ int main()
     testProtocol();
     testWifiRetry();
     testLocale();
+    testQt6UpgradePending();
     return finishTests("drawer_logic");
 }

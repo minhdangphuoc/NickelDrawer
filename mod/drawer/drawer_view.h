@@ -72,6 +72,7 @@ private:
     PageHeader *createHeader();
     HeaderIconButton *createHostButton(HeaderIconButton::Icon icon, const char *slot, QWidget *parent);
     void applyStatusBarInset();
+    void addQt6NoticeIfPending();
     QWidget *createFooter();
     PressArea *createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent);
 
@@ -121,6 +122,7 @@ private:
     bool isInputBlocked;
     bool hasModel;
     bool hasLoggedLayout;
+    bool hasQt6Notice;
 };
 
 #endif

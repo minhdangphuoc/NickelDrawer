@@ -67,6 +67,8 @@ ScreenView::ScreenView(const QString &title, QWidget *drawerView)
     canvas = new ScreenCanvas(host, this);
     connect(canvas, SIGNAL(componentTapped(int, QString)), this, SIGNAL(componentTapped(int, QString)));
     connect(canvas, SIGNAL(tileLongPressed(int, QString, QPoint)), this, SIGNAL(tileLongPressed(int, QString, QPoint)));
+    connect(canvas, SIGNAL(listRowLongPressed(int, int, QString, QPoint)), this,
+            SIGNAL(listRowLongPressed(int, int, QString, QPoint)));
     connect(canvas, SIGNAL(viewerPictureChanged(QString)), this, SIGNAL(viewerPictureChanged(QString)));
     connect(canvas, SIGNAL(viewerStateChanged()), this, SLOT(showHeader()));
     header = createHeader(title);

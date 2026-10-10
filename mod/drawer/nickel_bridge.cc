@@ -16,6 +16,8 @@
 #include <QWidget>
 
 #include "debug_log.h"
+#include "fallback_strings.h"
+#include "mod_switches.h"
 
 // ---- libnickel entry points (filled by NickelHook before init; NULL if absent) ----
 
@@ -122,7 +124,11 @@ static const int FULL_RESCAN_UNPLUG_DELAY_MILLISECONDS = 1000;
 // for a flashing full update (re/notes/G2-findings.md Q4).
 static const Qt::WidgetAttribute FULL_REFRESH_ATTRIBUTE = static_cast<Qt::WidgetAttribute>(0x80);
 
+static const int DISABLED_NOTICE_DELAY_MILLISECONDS = 5000;
+
 static bool isBridgeActive = false;
+// Set when the bridge disables itself (unknown firmware, missing symbol), not by the kill switch.
+static bool isDisabledNoticePending = false;
 static char firmwareVersion[32] = "unknown";
 static NickelBridge::MoreViewCreatedHandler moreViewCreatedHandler = NULL;
 
@@ -262,21 +268,88 @@ static void *mainWindow()
     return window;
 }
 
+// Without these the Apps row cannot exist or cannot open anything. Everything
+// else degrades feature by feature (README "How it degrades"). NULL: all present.
+static const char *missingCriticalSymbol()
+{
+#ifdef ND_TEST_MISSING_SYM
+    // FI-03: pretend one symbol is missing.
+    return "IconLeftButton::setText (ND_TEST_MISSING_SYM)";
+#else
+    if (!MoreView_construct_original) {
+        return "MoreView::MoreView(QWidget*)";
+    }
+    if (!IconLeftButton_construct || !IconLeftButton_setPixmap || !IconLeftButton_setText) {
+        return "IconLeftButton";
+    }
+    if (!MainWindowController_sharedInstance) {
+        return "MainWindowController::sharedInstance";
+    }
+    bool hasControllerRoute = MainWindowController_push && MainWindowController_pop;
+    bool hasViewRoute = MainWindowController_pushView && MainWindowController_popView;
+    if (!hasControllerRoute && !hasViewRoute) {
+        return "MainWindowController::push/pushView";
+    }
+    return NULL;
+#endif
+}
+
+static bool canToastWhileInert()
+{
+    return MainWindowController_sharedInstance && MainWindowController_toast;
+}
+
+static void disableBridge(const char *reason)
+{
+    isBridgeActive = false;
+    isDisabledNoticePending = true;
+    nh_log("bridge: %s, drawer disabled (no More rows)", reason);
+}
+
 namespace NickelBridge {
 
 bool activate()
 {
     readFirmwareVersion();
-    isBridgeActive = isSupportedFirmware(firmwareVersion);
-    if (!isBridgeActive) {
-        nh_log("bridge: firmware %s not in the tested list, drawer disabled (NickelMenu stays)", firmwareVersion);
+    char reason[128];
+    if (ModSwitches::isUnknownFirmwareForced()) {
+        snprintf(reason, sizeof(reason), "test flag %s present, firmware %s treated as unknown",
+                 ModSwitches::TEST_UNKNOWN_FIRMWARE_FLAG_PATH, firmwareVersion);
+        disableBridge(reason);
+        return false;
     }
-    return isBridgeActive;
+    if (!isSupportedFirmware(firmwareVersion)) {
+        snprintf(reason, sizeof(reason), "firmware %s not in the tested list", firmwareVersion);
+        disableBridge(reason);
+        return false;
+    }
+    const char *missing = missingCriticalSymbol();
+    if (missing) {
+        snprintf(reason, sizeof(reason), "libnickel symbol %s missing", missing);
+        disableBridge(reason);
+        return false;
+    }
+    isBridgeActive = true;
+    return true;
 }
 
 bool isActive()
 {
     return isBridgeActive;
+}
+
+// Once, a few seconds after the first MoreView exists (Nickel's window is up).
+void scheduleDisabledNotice()
+{
+    if (!isDisabledNoticePending) {
+        return;
+    }
+    isDisabledNoticePending = false;
+    if (!canToastWhileInert()) {
+        nh_log("bridge: toast symbols missing, the disabled notice is only logged");
+        return;
+    }
+    QTimer::singleShot(DISABLED_NOTICE_DELAY_MILLISECONDS, new DisabledNotice(), SLOT(show()));
 }
 
 const char *firmware()
@@ -756,6 +829,22 @@ void requestFullRefresh(QWidget *widget)
 
 FullRescanFinisher::FullRescanFinisher(void *plugWorkflowManager) : QObject(NULL), manager(plugWorkflowManager) {}
 
+DisabledNotice::DisabledNotice() : QObject(NULL) {}
+
+void DisabledNotice::show()
+{
+    FallbackStrings::reloadLocale();
+    QString text = FallbackStrings::text(FallbackStrings::UNSUPPORTED_FIRMWARE);
+    void *window = canToastWhileInert() ? mainWindow() : NULL;
+    if (window) {
+        nh_log("bridge: telling the user the drawer is disabled");
+        MainWindowController_toast(window, text, QStringLiteral(""), TOAST_DURATION_MILLISECONDS);
+    } else {
+        nh_log("bridge: no window for the disabled notice: %s", qPrintable(text));
+    }
+    deleteLater();
+}
+
 void FullRescanFinisher::finish()
 {
     if (PlugWorkflowManager_unplugged) {
@@ -773,5 +862,7 @@ extern "C" __attribute__((visibility("default"))) void nickeldrawer_MoreView_con
     if (isBridgeActive && moreViewCreatedHandler) {
         // MoreView derives from QWidget as its first base.
         moreViewCreatedHandler(reinterpret_cast<QWidget *>(moreView));
+    } else if (!isBridgeActive) {
+        NickelBridge::scheduleDisabledNotice();
     }
 }

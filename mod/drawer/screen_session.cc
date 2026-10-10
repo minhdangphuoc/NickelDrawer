@@ -13,8 +13,10 @@
 #include "model_client.h"
 #include "navigation.h"
 #include "nickel_bridge.h"
+#include "toast_gate.h"
 #include "screen_logic.h"
 #include "screen_view.h"
+#include "row_menu_logic.h"
 #include "tile_menu.h"
 
 // Host actions of the synthetic error screen; '#' cannot start an app action id.
@@ -72,7 +74,7 @@ static ScreenModel errorScreen(const DrawerItem &app, const QString &failure)
 ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, ActionRunner *actionRunner)
     : QObject(NULL), app(screenApp), runner(actionRunner), client(NULL), view(new ScreenView(screenApp.name, drawerView)),
       liveTimer(new QTimer(this)), isLoading(false), isEditingField(false), isConfirmOpen(false), isMenuOpen(false),
-      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), hasPendingConfirmValue(false),
+      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), menuRow(-1), hasPendingConfirmValue(false),
       hasPendingNextValue(false)
 {
     setParent(view);
@@ -85,6 +87,8 @@ ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, A
     connect(view, SIGNAL(headerActionTapped()), this, SLOT(onHeaderActionTapped()));
     connect(view, SIGNAL(headerIconTapped(int)), this, SLOT(onHeaderIconTapped(int)));
     connect(view, SIGNAL(tileLongPressed(int, QString, QPoint)), this, SLOT(onTileLongPressed(int, QString, QPoint)));
+    connect(view, SIGNAL(listRowLongPressed(int, int, QString, QPoint)), this,
+            SLOT(onListRowLongPressed(int, int, QString, QPoint)));
     connect(view, SIGNAL(viewerPictureChanged(QString)), this, SLOT(onViewerPictureChanged(QString)));
     connect(view, SIGNAL(componentTapped(int, QString)), this, SLOT(onComponentTapped(int, QString)));
     connect(runner, SIGNAL(busyChanged(bool)), this, SLOT(onBusyChanged(bool)));
@@ -531,7 +535,7 @@ void ScreenSession::tapField(const ScreenComponent &field)
         // ui-kit §1.7: long or secret input goes through the phone.
         QString notice = FallbackStrings::text(FallbackStrings::SCREEN_EDIT_ON_PHONE);
         if (NickelBridge::hasToast()) {
-            NickelBridge::showToast(notice);
+            ToastGate::show(app.id, notice);
         } else {
             Dialogs::showMessage(field.text, notice);
         }
@@ -623,6 +627,42 @@ void ScreenSession::onTileMenuChoice(int index)
     } else {
         runWithValue(item.action, tile.id);
     }
+}
+
+// ---- List row menus (ui-kit §3.16) ----
+
+void ScreenSession::onListRowLongPressed(int index, int row, const QString &primary, const QPoint &anchor)
+{
+    ScreenComponent list;
+    bool isList = view->componentAt(index, &list) && list.type == QLatin1String("list");
+    if (!isList || !RowMenuLogic::opensMenuOnLongPress(list.menu.size(), isMenuOpen, runner->isRunning())) {
+        DebugLog::write("screen: row menu not opened (%s)", isMenuOpen ? "one is open" : "busy or no menu");
+        return;
+    }
+    menuListBind = list.bind;
+    menuRow = row;
+    menuRowPrimary = primary;
+    menuItems = list.menu; // copies: the screen may reload under the menu
+    isMenuOpen = true;
+    TileMenu *menu = new TileMenu(primary, menuItems);
+    connect(menu, SIGNAL(itemChosen(int)), this, SLOT(onListMenuChoice(int)));
+    connect(menu, SIGNAL(closed()), this, SLOT(onTileMenuClosed()));
+    menu->popup(anchor);
+}
+
+void ScreenSession::onListMenuChoice(int index)
+{
+    if (index < 0 || index >= menuItems.size()) {
+        return;
+    }
+    ScreenEvent event;
+    event.actionId = menuItems[index].id;
+    event.value = menuRowPrimary;
+    event.hasValue = true;
+    event.listBind = menuListBind;
+    event.listIndex = menuRow;
+    DebugLog::write("screen: row menu \"%s\" on row %d of %s", qPrintable(event.actionId), menuRow, qPrintable(menuListBind));
+    runEvent(event);
 }
 
 void ScreenSession::onTileMenuClosed()

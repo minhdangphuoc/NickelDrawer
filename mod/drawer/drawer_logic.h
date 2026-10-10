@@ -143,6 +143,14 @@ enum Language { LANGUAGE_ENGLISH, LANGUAGE_VIETNAMESE };
 // Nickel's CurrentLocale ("vi", "vi_VN", "en_US", empty) to a fallback table.
 Language languageForLocale(const char *locale);
 
+// ---- Kobo 5.x (Qt6) upgrade offer ----
+
+// Nickel stores the offered package URL (AvailableQt6Upgrade) and the one the
+// user declined (SkippedQt6UpgradeUrl) in Kobo eReader.conf. An offer that is
+// present and not declined is pending: the next sync would install firmware 5.x,
+// which NickelDrawer does not support (docs/DECISIONS.md).
+bool isQt6UpgradePending(const char *offeredUrl, const char *skippedUrl);
+
 // ---- Confirmations ----
 
 static const int CONFIRM_TIMEOUT_MILLISECONDS = 120000;

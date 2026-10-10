@@ -72,6 +72,7 @@ signals:
     void headerIconTapped(int index);
     void componentTapped(int component, const QString &value);
     void tileLongPressed(int component, const QString &id, const QPoint &anchor);
+    void listRowLongPressed(int component, int row, const QString &primary, const QPoint &anchor);
     void viewerPictureChanged(const QString &id);
 
 protected:

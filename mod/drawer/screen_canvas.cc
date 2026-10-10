@@ -60,6 +60,8 @@ static const char *targetName(TapTarget::Kind kind)
         return "next page";
     case TapTarget::TAP_TILE:
         return "tile";
+    case TapTarget::TAP_LIST_ROW:
+        return "list row";
     case TapTarget::TAP_VIEWER_PREVIOUS:
         return "viewer previous zone";
     case TapTarget::TAP_VIEWER_NEXT:
@@ -476,26 +478,35 @@ void ScreenCanvas::onTapped()
         showChrome();
         return;
     case TapTarget::TAP_TILE:
+    case TapTarget::TAP_LIST_ROW:
     case TapTarget::TAP_COMPONENT:
         emit componentTapped(target.component, target.value);
         return;
     }
 }
 
-// A held gallery tile opens the tile menu at the tile; PressArea keeps the
-// pressed state until this returns, and does not also send tapped().
+// A held gallery tile or list row opens its menu at the target; PressArea keeps
+// the pressed state until this returns, and does not also send tapped().
 void ScreenCanvas::onLongPressed()
 {
     QPoint position = pressPosition();
     const TapTarget *found = isInputBlocked ? NULL : targetAt(position);
-    if (!found || found->kind != TapTarget::TAP_TILE) {
+    bool isMenuTarget = found && (found->kind == TapTarget::TAP_TILE || found->kind == TapTarget::TAP_LIST_ROW);
+    if (!isMenuTarget) {
         DebugLog::write("screen: long press at %d,%d ignored (%s)", position.x(), position.y(),
-                        found ? "not a gallery tile" : "no target");
+                        found ? "not a gallery tile or list row" : "no target");
         return;
     }
     TapTarget target = *found;
+    QPoint anchor = mapToGlobal(target.rect.center());
+    if (target.kind == TapTarget::TAP_LIST_ROW) {
+        DebugLog::write("screen: long press on list row %d (\"%s\") at %d,%d", target.row, qPrintable(target.value),
+                        position.x(), position.y());
+        emit listRowLongPressed(target.component, target.row, target.value, anchor);
+        return;
+    }
     DebugLog::write("screen: long press on tile \"%s\" at %d,%d", qPrintable(target.value), position.x(), position.y());
-    emit tileLongPressed(target.component, target.value, mapToGlobal(target.rect.center()));
+    emit tileLongPressed(target.component, target.value, anchor);
 }
 
 // ---- Painting (cmd/ndpreview/render_png.go) ----

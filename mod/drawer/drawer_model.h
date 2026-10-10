@@ -70,6 +70,10 @@ struct ScreenEvent {
     QString value;
     bool hasValue = false; // false: no --value, NICKELDRAWER_VALUE stays unset
     QString screenId;      // lets the script open the screen's declared toasts and dialogs
+    // List row menu event: actionId is the menu item's id, value the row's primary
+    // text; sent as `--list <bind> --index <n>` (docs/spec/drawer-protocol.md).
+    QString listBind;
+    int listIndex = -1;
 };
 
 // Reply of `drawer info`.

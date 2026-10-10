@@ -15,7 +15,7 @@ class ModelClient;
 class QTimer;
 class ScreenView;
 
-// One open app screen (Phase 4, flag .adds/nickeldrawer/screens): loads it
+// One open app screen (Phase 4, opt out with .adds/nickeldrawer/no-screens): loads it
 // with `appsctl drawer screen`, shows it in a ScreenView over the drawer page
 // and turns taps into `drawer event` runs through the drawer's ActionRunner
 // (same Wi-Fi, dialog and rescan rules as a drawer tap).
@@ -54,6 +54,8 @@ private slots:
     void onComponentTapped(int component, const QString &value);
     void onTileLongPressed(int component, const QString &id, const QPoint &anchor);
     void onTileMenuChoice(int index);
+    void onListRowLongPressed(int component, int row, const QString &primary, const QPoint &anchor);
+    void onListMenuChoice(int index);
     void onTileMenuClosed();
     void onViewerPictureChanged(const QString &id);
     void pumpEventQueue();
@@ -103,6 +105,9 @@ private:
     EventQueue::Queue eventQueue;
     // Copies taken when the tile menu opened: the screen may reload under it.
     PictureTile menuTile;
+    QString menuListBind; // list row menu: the list, the row and its primary text
+    int menuRow;
+    QString menuRowPrimary;
     QList<TileMenuItem> menuItems;
     QString pendingConfirmAction;
     QString pendingConfirmValue;

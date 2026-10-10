@@ -230,4 +230,12 @@ Language languageForLocale(const char *locale)
     return LANGUAGE_ENGLISH;
 }
 
+bool isQt6UpgradePending(const char *offeredUrl, const char *skippedUrl)
+{
+    if (!offeredUrl || offeredUrl[0] == '\0') {
+        return false;
+    }
+    return !skippedUrl || strcmp(offeredUrl, skippedUrl) != 0;
+}
+
 } // namespace DrawerLogic

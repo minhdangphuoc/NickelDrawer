@@ -6,7 +6,9 @@ namespace ModSwitches {
 
 static bool isKillSwitchFlagged = false;
 static bool isViewPushFlagged = false;
-static bool isScreensFlagged = false;
+static bool isNoScreensFlagged = false;
+static bool isLegacyScreensFlagged = false;
+static bool isUnknownFirmwareTestFlagged = false;
 static bool isNoKeyboardFlagged = false;
 
 bool hasFlag(const char *path)
@@ -26,7 +28,17 @@ bool usesViewPushRoute()
 
 bool usesScreens()
 {
-    return isScreensFlagged;
+    return !isNoScreensFlagged;
+}
+
+bool hasLegacyScreensFlag()
+{
+    return isLegacyScreensFlagged;
+}
+
+bool isUnknownFirmwareForced()
+{
+    return isUnknownFirmwareTestFlagged;
 }
 
 bool usesNickelKeyboard()
@@ -38,7 +50,9 @@ void readAtBoot()
 {
     isKillSwitchFlagged = hasFlag(DISABLE_FLAG_PATH);
     isViewPushFlagged = hasFlag(VIEW_PUSH_FLAG_PATH);
-    isScreensFlagged = hasFlag(SCREENS_FLAG_PATH);
+    isNoScreensFlagged = hasFlag(NO_SCREENS_FLAG_PATH);
+    isLegacyScreensFlagged = hasFlag(LEGACY_SCREENS_FLAG_PATH);
+    isUnknownFirmwareTestFlagged = hasFlag(TEST_UNKNOWN_FIRMWARE_FLAG_PATH);
     isNoKeyboardFlagged = hasFlag(NO_KEYBOARD_FLAG_PATH);
 }
 

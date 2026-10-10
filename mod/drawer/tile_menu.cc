@@ -5,6 +5,15 @@
 #include "dialogs.h"
 #include "fallback_strings.h"
 
+// "Remove…" opens a question; the button that answers it is "Remove".
+static QString withoutTrailingEllipsis(QString label)
+{
+    if (label.endsWith(QChar(0x2026)) || label.endsWith(QLatin1String("..."))) {
+        label.chop(label.endsWith(QChar(0x2026)) ? 1 : 3);
+    }
+    return label.trimmed();
+}
+
 TileMenu::TileMenu(const QString &menuTitle, const QList<TileMenuItem> &menuItems)
     : QObject(NULL), title(menuTitle), items(menuItems), confirmingIndex(-1)
 {
@@ -40,8 +49,12 @@ void TileMenu::onMenuChoice(const QString &choiceId)
     const DeclaredDialog &confirm = items[index].confirm;
     QString cancel = confirm.cancel.isEmpty() ? FallbackStrings::text(FallbackStrings::CANCEL) : confirm.cancel;
     confirmingIndex = index;
-    ConfirmQuestion *question =
-        new ConfirmQuestion(confirm.title.isEmpty() ? title : confirm.title, confirm.text, confirm.ok, cancel, ConfirmQuestion::DESTRUCTIVE);
+    // `"confirm": true` declares no texts: ask about the chosen entry, answer with its name.
+    QString actionName = withoutTrailingEllipsis(items[index].label);
+    ConfirmQuestion *question = new ConfirmQuestion(confirm.title.isEmpty() ? title : confirm.title,
+                                                    confirm.text.isEmpty() ? actionName + QLatin1Char('?') : confirm.text,
+                                                    confirm.ok.isEmpty() ? actionName : confirm.ok, cancel,
+                                                    ConfirmQuestion::DESTRUCTIVE);
     connect(question, SIGNAL(answered(bool)), this, SLOT(onConfirmAnswer(bool)));
     question->ask();
 }

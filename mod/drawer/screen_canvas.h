@@ -56,6 +56,8 @@ signals:
     void componentTapped(int component, const QString &value);
     // A gallery tile was held; anchor in global coordinates.
     void tileLongPressed(int component, const QString &id, const QPoint &anchor);
+    // A list row was held (row = index in the list, primary = its text); anchor in global coordinates.
+    void listRowLongPressed(int component, int row, const QString &primary, const QPoint &anchor);
     // The viewer shows another picture (the user flipped).
     void viewerPictureChanged(const QString &id);
     // The picture, the chrome or the viewer itself changed: refresh the header.
