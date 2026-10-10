@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NickelDrawer Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+main img { display: block; width: 100%; max-width: 380px; height: auto; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+main p > em:only-child { color: var(--muted); font-size: .85rem; }
+blockquote p:last-child { margin-bottom: 0; }
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#guides">Guides</a><a href="#start-here">Start here</a><a href="#specifications">Specifications</a><a href="#more-background">More background</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">NickelDrawer · documentation</span>
+      <h1>NickelDrawer documentation</h1>
+      <p class="lede">Guides for Kobo owners and app developers, and the specifications behind them.</p>
+    </header>
+    
+<p>NickelDrawer adds an <strong>Apps</strong> drawer and a <strong>Tweaks</strong> window to the More tab of a Kobo e-reader running Kobo's own software, with small apps that look like the rest of the Kobo. It is an independent project, not made by or affiliated with Rakuten Kobo.</p>
+<p><strong>Status: 1.0.0-beta.1.</strong> Supported on the Kobo Libra 2 with five 4.38 firmware builds; tried on one device so far. Each guide says what has run on a real device.</p>
+<h2 id="guides">Guides</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Guide</th>
+<th>For</th>
+<th>Language</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="user-guide.vi.html">Hướng dẫn sử dụng</a></td>
+<td>Người dùng Kobo: cài, dùng các ứng dụng, xử lý sự cố, gỡ cài đặt</td>
+<td>Tiếng Việt</td>
+</tr>
+<tr>
+<td><a href="user-guide.en.html">User guide</a></td>
+<td>Kobo owners: install, use the apps, fix problems, uninstall</td>
+<td>English</td>
+</tr>
+<tr>
+<td><a href="developer-guide.html">Developer guide</a></td>
+<td>People who build apps for the drawer: a 15-minute tutorial and the reference</td>
+<td>English</td>
+</tr>
+</tbody>
+</table></div>
+<p>Rendered pages: <a href="user-guide.vi.html">user-guide.vi.html</a>, <a href="user-guide.en.html">user-guide.en.html</a>, <a href="developer-guide.html">developer-guide.html</a>.</p>
+<h2 id="start-here">Start here</h2>
+<ul>
+<li><strong>Install it:</strong> <a href="user-guide.en.html#check-that-your-kobo-is-supported">check your firmware</a>, <a href="user-guide.en.html#back-up">back up</a>, then <a href="user-guide.en.html#install">install</a>.</li>
+<li><strong>Something is wrong:</strong> <a href="user-guide.en.html#troubleshooting">troubleshooting</a> and <a href="user-guide.en.html#safety-and-uninstall">safety and uninstall</a>.</li>
+<li><strong>Build an app:</strong> <a href="developer-guide.html#build-an-app-in-15-minutes">the 15-minute tutorial</a>.</li>
+<li><strong>Translate:</strong> <a href="user-guide.en.html#languages">languages in the user guide</a> and <a href="../TRANSLATING.md">TRANSLATING.md</a>.</li>
+</ul>
+<h2 id="specifications">Specifications</h2>
+<p>The exact formats and contracts. When a guide and a spec disagree, the spec wins.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Spec</th>
+<th>What it defines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../spec/app-format.md">app-format.md</a></td>
+<td>An app folder and its <code>app.json</code></td>
+</tr>
+<tr>
+<td><a href="../spec/ui-json.md">ui-json.md</a></td>
+<td>The <code>ui.json</code> screen schema and validator error codes</td>
+</tr>
+<tr>
+<td><a href="../spec/ui-kit.md">ui-kit.md</a></td>
+<td>How each component looks, sizes, screen patterns</td>
+</tr>
+<tr>
+<td><a href="../spec/drawer-protocol.md">drawer-protocol.md</a></td>
+<td>The JSON protocol between the Kobo mod and <code>appsctl</code></td>
+</tr>
+<tr>
+<td><a href="../spec/tweaks.md">tweaks.md</a></td>
+<td>The Tweaks window and the settings it changes</td>
+</tr>
+<tr>
+<td><a href="../spec/inbox.md">inbox.md</a></td>
+<td>How received files are checked and sorted</td>
+</tr>
+<tr>
+<td><a href="../spec/ghsync-pairing.md">ghsync-pairing.md</a></td>
+<td>Phone pairing and token safety for GitHub sync</td>
+</tr>
+<tr>
+<td><a href="../spec/library.md">library.md</a></td>
+<td>The Library app</td>
+</tr>
+<tr>
+<td><a href="../spec/wallpaper.md">wallpaper.md</a>, <a href="../spec/wallpaper-gallery.md">wallpaper-gallery.md</a></td>
+<td>The Wallpaper app and its gallery</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="more-background">More background</h2>
+<ul>
+<li><a href="../../README.md">README.md</a>: overview, build commands, credits.</li>
+<li><a href="../COMPATIBILITY.md">COMPATIBILITY.md</a>: firmware and device support.</li>
+<li><a href="../UPDATES.md">UPDATES.md</a>: how signed updates work.</li>
+<li><a href="../ARCHITECTURE.md">ARCHITECTURE.md</a> and <a href="../DECISIONS.md">DECISIONS.md</a>: design and the decisions behind it.</li>
+<li><a href="../../SECURITY.md">SECURITY.md</a>: reporting a problem.</li>
+<li><a href="../../LICENSE">LICENSE</a>: PolyForm Noncommercial 1.0.0. Free for personal, study, hobby and non-profit use; no commercial use. Source-available, not open source.</li>
+</ul>
+<p>The screen pictures in these guides are drawn on a computer with <code>ndpreview</code> at the Kobo's screen size, not photographed on a device.</p>
+  </main>
+</div>

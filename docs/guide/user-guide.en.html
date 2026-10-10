@@ -1,0 +1,1140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NickelDrawer User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+main img { display: block; width: 100%; max-width: 380px; height: auto; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+main p > em:only-child { color: var(--muted); font-size: .85rem; }
+blockquote p:last-child { margin-bottom: 0; }
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#what-nickeldrawer-is-and-is-not">What NickelDrawer is (and is not)</a><a href="#check-that-your-kobo-is-supported">Check that your Kobo is supported</a><a href="#before-you-install">Before you install</a><a href="#install">Install</a><a href="#first-look">First look</a><a href="#localsend-receive-books-from-your-phone">LocalSend: receive books from your phone</a><a href="#github-sync-books-from-your-repository">GitHub: sync books from your repository</a><a href="#wallpaper-your-pictures-on-the-sleep-screen">Wallpaper: your pictures on the sleep screen</a><a href="#library-tidy-your-books">Library: tidy your books</a><a href="#to-do-a-small-task-list">To-do: a small task list</a><a href="#tweaks">Tweaks</a><a href="#updates">Updates</a><a href="#languages">Languages</a><a href="#troubleshooting">Troubleshooting</a><a href="#safety-and-uninstall">Safety and uninstall</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a><a href="#glossary">Glossary</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">NickelDrawer · user guide</span>
+      <h1>NickelDrawer user guide</h1>
+      <p class="lede">Install, use and remove the app drawer on your Kobo. No programming needed. An independent project, not affiliated with Rakuten Kobo.</p>
+    </header>
+    
+<p>For Kobo owners who want to install NickelDrawer, use its apps and remove it again. No programming needed. Vietnamese version: <a href="user-guide.vi.html">user-guide.vi.md</a>.</p>
+<p>Names in <strong>bold</strong> are what you see on a Kobo set to English. A name marked † has not been checked on a real English-language Kobo yet; it may differ slightly on your device.</p>
+<h2 id="what-nickeldrawer-is-and-is-not">What NickelDrawer is (and is not)</h2>
+<p>NickelDrawer adds two rows to the <strong>More</strong> tab of your Kobo:</p>
+<ul>
+<li><strong>Apps</strong> opens an app drawer: a list (or grid) of small tools that look like the rest of your Kobo.</li>
+<li><strong>Tweaks</strong> opens a settings-style window with useful switches (sleep screen, screenshots, auto USB connect, text legibility) and actions (sleep, restart, rescan library).</li>
+</ul>
+<p>The apps that come with it:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>App</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LocalSend</td>
+<td>Receive books, documents, comics and pictures from your phone over Wi-Fi.</td>
+</tr>
+<tr>
+<td>GitHub</td>
+<td>Download new books from your own private GitHub repository. Add-only.</td>
+</tr>
+<tr>
+<td>Wallpaper</td>
+<td>Use your own pictures as the sleep screen.</td>
+</tr>
+<tr>
+<td>Library</td>
+<td>Fix the language tag of Vietnamese books, fix Unicode names, find duplicates.</td>
+</tr>
+<tr>
+<td>To-do</td>
+<td>A small to-do list kept on the Kobo.</td>
+</tr>
+</tbody>
+</table></div>
+<p>What it is not:</p>
+<ul>
+<li><strong>Not made by Kobo.</strong> NickelDrawer is an independent project. It is not made by, affiliated with or endorsed by Rakuten Kobo. "Kobo" and "Nickel" are trademarks of their owners.</li>
+<li><strong>Not a new reading app.</strong> It does not replace Kobo's reader, store or library. It adds rows and screens to Kobo's own software (called Nickel).</li>
+<li><strong>Not a cloud service.</strong> It has no account and sends nothing anywhere unless you start a feature that needs the network.</li>
+<li><strong>Not open source.</strong> NickelDrawer is source-available under the PolyForm Noncommercial 1.0.0 license: free for personal use, study, hobby projects and non-profit organisations; no commercial use.</li>
+</ul>
+<blockquote>
+<p><strong>Status: beta (1.0.0-beta.1).</strong> NickelDrawer has been tried on one Kobo Libra 2 with one firmware build. Parts of it have run on that device; much of what this guide describes has only been tested on a computer so far. Each chapter says what has been tried on a real device. Read <a href="#safety-and-uninstall">Safety and uninstall</a> before you install.</p>
+</blockquote>
+<h2 id="check-that-your-kobo-is-supported">Check that your Kobo is supported</h2>
+<p>NickelDrawer supports the <strong>Kobo Libra 2</strong> with one of these five firmware builds:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Firmware</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.38.23828</td>
+<td>Earlier test builds of the drawer and its app screens ran on a device. The current build is waiting for its full device test session.</td>
+</tr>
+<tr>
+<td>4.38.23697</td>
+<td>Checked on a computer only. Never run on a device.</td>
+</tr>
+<tr>
+<td>4.38.23684</td>
+<td>Checked on a computer only. Never run on a device.</td>
+</tr>
+<tr>
+<td>4.38.23648</td>
+<td>Checked on a computer only. Never run on a device.</td>
+</tr>
+<tr>
+<td>4.38.23552</td>
+<td>Checked on a computer only. Never run on a device.</td>
+</tr>
+</tbody>
+</table></div>
+<p>"Checked on a computer" means the program checks, for each build, that every Kobo function it needs exists. It does not mean someone used it on that build.</p>
+<p>Not supported:</p>
+<ul>
+<li><strong>Firmware 5.x.</strong> Do not install NickelDrawer on a 5.x Kobo. If your Kobo offers to upgrade to 5.x, say no (see <a href="#faq">FAQ</a>).</li>
+<li><strong>Other Kobo models.</strong> No other model has been checked. Do not install it on them.</li>
+</ul>
+<h3 id="find-your-firmware-version">Find your firmware version</h3>
+<p>On the Kobo:</p>
+<ol>
+<li>Open <strong>Settings</strong> → <strong>Device information</strong> †.</li>
+<li>Read the <strong>Software version</strong> † line. It looks like <code>4.38.23828</code>.</li>
+</ol>
+<p>Over USB (if you cannot find the menu):</p>
+<ol>
+<li>Connect the Kobo and tap <strong>Connect</strong>.</li>
+<li>Open the hidden folder <code>.kobo</code> on the Kobo drive and open the file <code>version</code> with a text editor.</li>
+<li>The line has several parts separated by commas. The third part is the firmware, for example <code>4.38.23828</code>.</li>
+</ol>
+<blockquote>
+<p>The first part of that line is your Kobo's serial number. Do not post it in a bug report.</p>
+</blockquote>
+<p>If your version is not in the table, stop here. NickelDrawer would turn itself off on that build (see <a href="#troubleshooting">Troubleshooting</a>).</p>
+<h2 id="before-you-install">Before you install</h2>
+<h3 id="back-up">Back up</h3>
+<p>Do this every time before you install, update or remove NickelDrawer.</p>
+<ol>
+<li>Connect the Kobo to your computer with a USB cable and tap <strong>Connect</strong> on the Kobo.</li>
+<li>
+<p>Make hidden files visible on the computer:</p>
+<ul>
+<li>macOS Finder: press Cmd + Shift + . (full stop).</li>
+<li>Windows Explorer: View → Show → Hidden items.</li>
+<li>Linux: usually Ctrl + H in the file manager.</li>
+</ul>
+</li>
+<li>
+<p>Copy the whole <code>.kobo</code> folder and the whole <code>.adds</code> folder (if it exists) from the Kobo drive to a folder on your computer. Name it with today's date.</p>
+</li>
+<li>Keep this copy until you are happy with NickelDrawer.</li>
+</ol>
+<p>The <code>.kobo</code> folder holds your library database (<code>KoboReader.sqlite</code>), your settings (<code>Kobo eReader.conf</code>) and the sleep-screen pictures. Your books are in the normal folders and are not touched by the install.</p>
+<h3 id="charge-the-battery">Charge the battery</h3>
+<p>Charge the Kobo to <strong>50 % or more</strong>. An install restarts the Kobo; a flat battery in the middle of that is a bad moment.</p>
+<h3 id="what-the-install-changes">What the install changes</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Where</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.adds/koboapps/</code></td>
+<td>The host tool, shared files, translations, icons.</td>
+</tr>
+<tr>
+<td><code>.adds/apps/</code></td>
+<td>One folder per app. Each app keeps its own settings in its <code>data/</code> folder.</td>
+</tr>
+<tr>
+<td>Kobo system (<code>/usr/local/Kobo/imageformats/</code>)</td>
+<td>One file, the NickelDrawer mod, installed by the Kobo itself from <code>KoboRoot.tgz</code> at restart.</td>
+</tr>
+<tr>
+<td><code>.adds/nickeldrawer/</code></td>
+<td>A folder for the switch files described in <a href="#safety-and-uninstall">Safety and uninstall</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Nothing else changes until you use an app or a tweak. Each app writes only to its own folders (for example LocalSend writes to <code>Books</code>, <code>Documents</code>, <code>Comics</code> and <code>Pictures</code>). Tweaks change Kobo settings only when you tap them.</p>
+<p>NickelDrawer does not need NickelMenu and works next to it. It also works next to kobo-tieng-viet (Vietnamese fonts and fixes for Kobo).</p>
+<h2 id="install">Install</h2>
+<p>There are two ways. Most people use <strong>way A</strong>.</p>
+<h3 id="way-a-copy-the-release-files-any-computer">Way A: copy the release files (any computer)</h3>
+<p>You need: the Kobo, a USB cable, a computer, and two files from the latest NickelDrawer release:</p>
+<ul>
+<li><code>koboapps-&lt;version&gt;.zip</code>: the apps and the host tool.</li>
+<li><code>KoboRoot-nickeldrawer.tgz</code>: the Kobo mod. (The same file is also inside the zip, at <code>onboard/.adds/koboapps/mod/</code>.)</li>
+</ul>
+<p>Steps:</p>
+<ol>
+<li>Do the <a href="#back-up">backup</a> and charge the battery.</li>
+<li>Connect the Kobo and tap <strong>Connect</strong>. Make hidden files visible (see above).</li>
+<li>Unzip <code>koboapps-&lt;version&gt;.zip</code> on the computer. Inside, open <code>onboard</code>, then <code>.adds</code>. You see two folders: <code>koboapps</code> and <code>apps</code>.</li>
+<li>On the Kobo drive, open the <code>.adds</code> folder. If there is none, create a folder named <code>.adds</code> (with the dot) at the top level of the drive.</li>
+<li>
+<p>Copy the two folders <code>koboapps</code> and <code>apps</code> into the Kobo's <code>.adds</code> folder.</p>
+<blockquote>
+<p><strong>macOS Finder warning.</strong> If the Kobo already has a folder with the same name, Finder asks whether to <strong>Replace</strong> it. <strong>Replace deletes everything inside the old folder</strong>, including app settings and other mods' files. Hold the Option key while you drag and choose <strong>Merge</strong> instead, or copy only on a first install. Windows merges folders by default.</p>
+</blockquote>
+</li>
+<li>
+<p>Copy <code>KoboRoot-nickeldrawer.tgz</code> into the Kobo's <code>.kobo</code> folder and rename the copy to exactly <code>KoboRoot.tgz</code>.</p>
+</li>
+<li>Eject the Kobo safely (macOS: the eject button in Finder; Windows: "Safely remove hardware"). Then unplug the cable.</li>
+<li>The Kobo shows that it is updating and restarts. This takes a minute or two. If it does not restart by itself, restart it from the power menu.</li>
+<li>When the Kobo shows <strong>Home</strong>, wait about 20 seconds before you do anything else. In the first 15 seconds after a start, turning the Kobo off removes the mod again (this is the safety net; see <a href="#safety-and-uninstall">Safety and uninstall</a>).</li>
+<li>Tap <strong>More</strong>. You should see two new rows: <strong>Apps</strong> and <strong>Tweaks</strong>.</li>
+</ol>
+<p>If the rows are not there, see <a href="#troubleshooting">Troubleshooting</a>.</p>
+<h3 id="way-b-the-installer-script-macos-or-linux-from-the-source-code">Way B: the installer script (macOS or Linux, from the source code)</h3>
+<p>This way is for people who build NickelDrawer from its source code. It backs up everything it replaces and never touches app <code>data/</code> folders.</p>
+<pre><code class="language-sh">make check build dist                 # build everything (needs Go; the mod needs Docker)
+tools/install-to-kobo.sh --dry-run    # show what would happen; changes nothing
+tools/install-to-kobo.sh              # install
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Print every step, change nothing.</td>
+</tr>
+<tr>
+<td><code>--with-mod</code></td>
+<td>Always stage the Kobo mod, even if it did not change.</td>
+</tr>
+<tr>
+<td><code>--no-mod</code></td>
+<td>Install apps and host tool only, not the mod.</td>
+</tr>
+<tr>
+<td><code>--remove-legacy</code></td>
+<td>Also remove an old hand-made LocalSend setup (<code>.adds/localsend</code> and its NickelMenu items).</td>
+</tr>
+<tr>
+<td><code>--uninstall</code></td>
+<td>Remove NickelDrawer (see <a href="#uninstall">Uninstall</a>).</td>
+</tr>
+<tr>
+<td><code>--purge</code></td>
+<td>With <code>--uninstall</code>: also delete the apps' <code>data/</code> folders.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Good to know:</p>
+<ul>
+<li>The backup goes to <code>backups/&lt;date-time&gt;/</code> in the source folder on your computer.</li>
+<li>The script expects the Kobo at <code>/Volumes/KOBOeReader</code> (macOS). On Linux, or if your Kobo drive has another name, set it first: <code>KOBO_ROOT=/path/to/kobo tools/install-to-kobo.sh</code>.</li>
+<li>It switches off NickelMenu's tab in the bottom bar (the drawer replaces it) and removes menu items that older versions generated. <code>--uninstall</code> puts the tab back.</li>
+<li>After it finishes: eject, unplug, and let the Kobo restart if the mod was staged.</li>
+</ul>
+<h2 id="first-look">First look</h2>
+<h3 id="open-the-drawer">Open the drawer</h3>
+<ol>
+<li>Tap <strong>More</strong> in the bottom bar.</li>
+<li>Tap <strong>Apps</strong>.</li>
+</ol>
+<p>The <strong>Apps</strong> row may show a second line: an app that is busy (for example "LocalSend Receiving") or <strong>1 update</strong>. A dot means an update is waiting.</p>
+<p>The drawer has:</p>
+<ul>
+<li>a header with <strong>←</strong> (back to More), the title <strong>Apps</strong>, and two buttons to switch between <strong>list</strong> and <strong>grid</strong>;</li>
+<li>the section <strong>INSTALLED</strong> with your apps;</li>
+<li>the section <strong>SYSTEM</strong> with <strong>Refresh list</strong> and, if you set up updates, <strong>Updates</strong>;</li>
+<li>the hint "Hold an app for info or to remove it.";</li>
+<li>the page number (for example <code>1 / 2</code>) with <strong>‹ ›</strong> arrows.</li>
+</ul>
+<h3 id="list-or-grid">List or grid</h3>
+<p>Tap the list or grid button in the header. The list shows each app with its icon, name and a status line. The grid shows four icons per row with their names; in the grid, <strong>Refresh list</strong> and <strong>Updates</strong> become small buttons in the header. The drawer remembers your choice.</p>
+<h3 id="turn-pages">Turn pages</h3>
+<p>Use the Kobo's page-turn buttons or tap the <strong>‹ ›</strong> arrows. The page-turn buttons also flip pages inside long app screens.</p>
+<h3 id="refresh-the-list">Refresh the list</h3>
+<p>You copied a new app over USB, or removed one? Tap <strong>Refresh list</strong> (in the grid: the refresh button in the header). The drawer also reloads every time you open it.</p>
+<h3 id="info-and-remove">Info and remove</h3>
+<p>Hold your finger on an app for about half a second. A menu opens:</p>
+<ul>
+<li><strong>Info</strong>: version, which folders the app reads and writes, whether it uses the network, and its folder.</li>
+<li>The app's other actions. These run at once, without the questions the app's own screen asks first. Prefer the app's screen for anything that changes files.</li>
+<li><strong>Remove…</strong>: deletes the app. You are asked first.</li>
+</ul>
+<blockquote>
+<p><strong>Remove deletes the app's whole folder, including its <code>data/</code>.</strong> For GitHub that is your token and settings. For Library that is the backups and the trash, so you can no longer undo a fix or restore a trashed book. Your books and pictures in the normal folders stay. Undo or restore what you need first.</p>
+</blockquote>
+<h3 id="moving-around">Moving around</h3>
+<ul>
+<li><strong>←</strong> in a header always goes back exactly one level: picture → gallery → app → drawer → More.</li>
+<li>Tapping a tab in the bottom bar (for example <strong>Home</strong>) leaves the drawer and the app completely. Next time the drawer opens on its first page. Work that runs in the background (an import, a sync) keeps running.</li>
+<li>Leaving a screen never stops what the app is doing.</li>
+</ul>
+<h3 id="messages">Messages</h3>
+<p>Apps answer with a short message at the bottom of the screen (a "toast"), for example "Set as wallpaper". When something did not work, the message says so and the details go to the app's log file, <code>data/log.txt</code> in the app's folder (<code>.adds/apps/&lt;app&gt;/data/log.txt</code>). You can read it over USB.</p>
+<h2 id="localsend-receive-books-from-your-phone">LocalSend: receive books from your phone</h2>
+<p><img alt="The LocalSend screen while receiving" src="img/localsend-en.png" /></p>
+<p><em>Picture made on a computer at the Kobo's screen size, not a photo of a device.</em></p>
+<h3 id="what-you-need">What you need</h3>
+<ul>
+<li>The free <strong>LocalSend</strong> app on your phone or computer (from your app store or localsend.org).</li>
+<li>The Kobo and the phone on the <strong>same Wi-Fi</strong> network.</li>
+</ul>
+<h3 id="receive-files">Receive files</h3>
+<ol>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>LocalSend</strong>.</li>
+<li>
+<p>Tap <strong>Start receiving</strong>.</p>
+<ul>
+<li>If Wi-Fi is off, the Kobo asks "Wi-Fi is off. Turn it on to continue." Tap <strong>Turn on Wi-Fi</strong>. When Wi-Fi is connected, receiving starts.</li>
+</ul>
+</li>
+<li>
+<p>The screen shows a large <strong>PIN</strong>, the <strong>Device</strong> name and the <strong>IP</strong> address, and the status <strong>Receiving</strong>.</p>
+</li>
+<li>On the phone, open LocalSend, tap <strong>Send</strong>, pick the files, then tap your Kobo in the list of nearby devices.</li>
+<li>Enter the PIN from the Kobo on the phone.</li>
+<li>The files arrive. Each one appears under <strong>Received</strong> and is put in the right place:</li>
+</ol>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Goes to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EPUB, KEPUB, MOBI</td>
+<td><code>Books</code></td>
+</tr>
+<tr>
+<td>PDF, TXT, HTML, RTF</td>
+<td><code>Documents</code></td>
+</tr>
+<tr>
+<td>CBZ, CBR</td>
+<td><code>Comics</code></td>
+</tr>
+<tr>
+<td>PNG, JPEG, GIF</td>
+<td><code>Pictures</code></td>
+</tr>
+<tr>
+<td>anything else</td>
+<td>rejected (see below)</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="7">
+<li>When you are done, tap <strong>Stop and update library</strong>. The Kobo stops receiving and rescans the library so the new books show up.</li>
+</ol>
+<p>Good to know:</p>
+<ul>
+<li>A file with the same name as an existing one is never overwritten. The new one gets a number, for example <code>book (2).epub</code>.</li>
+<li>Each file is checked: its content must match its name (a <code>.epub</code> must really be an EPUB) and it must not be too large (books 200 MB, PDF 300 MB, comics 500 MB, pictures 30 MB, text files 20 MB). Files that fail go to <code>.adds/koboapps/inbox/rejected/</code> and are deleted after 7 days.</li>
+<li>The PIN is made once and stays the same. To get a new PIN, delete <code>.adds/apps/localsend/data/pin.txt</code> over USB.</li>
+<li>You can tap <strong>←</strong> and do other things. Receiving goes on, and the <strong>Apps</strong> row shows that LocalSend is receiving.</li>
+<li><strong>Receiving stops by itself after 15 minutes without a new file.</strong> The screen then says so, and the library is rescanned.</li>
+<li>The Kobo may still go to sleep on its own timer while you send. No app can keep it awake. Touch the screen now and then during a long transfer.</li>
+</ul>
+<p><em>Tried on a device:</em> receiving one EPUB with an older menu-based version of this app (the book arrived in the library). The current screen has not been re-tested on a device yet.</p>
+<h2 id="github-sync-books-from-your-repository">GitHub: sync books from your repository</h2>
+<p><img alt="The GitHub screen after pairing" src="img/ghsync-en.png" /></p>
+<p><em>Picture made on a computer, not a photo of a device.</em></p>
+<p>The GitHub app downloads new books from a <strong>private GitHub repository</strong> that you own. It only adds: it never deletes or overwrites a book on your Kobo, and a book you deleted on the Kobo is not downloaded again.</p>
+<h3 id="prepare-once-on-your-phone-or-computer">Prepare (once, on your phone or computer)</h3>
+<ol>
+<li>Create a <strong>private</strong> repository on GitHub, for example <code>my-books</code>. Put your books in a folder, for example <code>epub/</code>.</li>
+<li>
+<p>Create a <strong>fine-grained personal access token</strong> on GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</p>
+<ul>
+<li><strong>Repository access:</strong> Only select repositories → pick only your books repository.</li>
+<li><strong>Permissions:</strong> Repository permissions → <strong>Contents: Read-only</strong>.</li>
+<li><strong>Expiration:</strong> choose an end date.</li>
+</ul>
+</li>
+<li>
+<p>Keep the token in your phone's password manager. You will paste it on your phone in step 4 below.</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>Token safety.</strong> Never type the token on the Kobo, never send it to anyone, never post a screenshot of it. The token gives read access to your books repository and nothing else. If you lose the Kobo, revoke the token on GitHub.</p>
+</blockquote>
+<h3 id="pair-the-kobo-with-your-phone">Pair the Kobo with your phone</h3>
+<ol>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>GitHub</strong>. The first time it shows <strong>Not paired</strong>.</li>
+<li>
+<p>Tap <strong>Pair with your phone</strong>, then <strong>Start pairing</strong>. Turn on Wi-Fi if the Kobo asks.</p>
+<p><img alt="The pairing screen" src="img/ghsync-pair-en.png" /></p>
+</li>
+<li>
+<p>The Kobo shows a QR code, an address like <code>http://192.168.1.23:8765</code>, a 6-digit code and how long pairing stays open (10 minutes).</p>
+</li>
+<li>
+<p>On a phone on the <strong>same Wi-Fi</strong>, scan the QR code (or type the address in the browser). On the page:</p>
+<ul>
+<li><strong>Code from the Kobo</strong>: the 6 digits.</li>
+<li><strong>Repository</strong>: <code>owner/name</code>, for example <code>yourname/my-books</code>.</li>
+<li><strong>Branch (optional)</strong>: leave empty for the default branch.</li>
+<li><strong>Folder (optional)</strong>: the books folder, for example <code>epub</code>. Empty means the whole repository.</li>
+<li><strong>Access token</strong>: paste the token.</li>
+</ul>
+</li>
+<li>
+<p>Tap <strong>Check and save</strong>. The Kobo checks everything with GitHub before it saves anything.</p>
+</li>
+<li>When the page says <strong>Paired</strong>, close it. On the Kobo the status changes to <strong>Ready</strong>. Tap <strong>←</strong> to see Repo, Branch and Folder.</li>
+</ol>
+<p>Only pair on your own Wi-Fi: the pairing page is not encrypted (plain HTTP). It closes after success, after 5 wrong codes, or after 10 minutes. <strong>Stop pairing</strong> closes it at once.</p>
+<h3 id="sync">Sync</h3>
+<ol>
+<li>Tap <strong>Sync now</strong>. The message says "Syncing in the background."</li>
+<li>The screen shows "Downloading 2 / 7" and the file name. You can leave the screen.</li>
+<li>When it finishes, the screen shows for example "3 new, 120 already here, 0 errors", and the library rescans by itself if books were added.</li>
+</ol>
+<p>Where books go: books to <code>Books/GitHub</code>, PDFs to <code>Documents/GitHub</code>, comics to <code>Comics/GitHub</code>. Files are checked like LocalSend files (type, size, real content); others are skipped. If nothing changed on GitHub since the last sync, nothing is downloaded.</p>
+<p>A book you delete on the Kobo stays deleted: the next sync skips it. A book you delete from the repository stays on the Kobo.</p>
+<h3 id="pairing-and-sync-messages">Pairing and sync messages</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Message</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrong code. 4 tries left.</td>
+<td>Type the 6 digits shown on the Kobo again. After 5 wrong codes pairing stops: start it again on the Kobo.</td>
+</tr>
+<tr>
+<td>Repository … not found, or the token cannot see it.</td>
+<td>Check the <code>owner/name</code> spelling. Check that the token includes this repository with Contents: Read-only.</td>
+</tr>
+<tr>
+<td>Branch … does not exist in …</td>
+<td>Leave the branch empty to use the default one, or fix its name.</td>
+</tr>
+<tr>
+<td>Folder … does not exist on branch …</td>
+<td>Fix the folder name, or add a book to that folder in the repository, or leave the folder empty.</td>
+</tr>
+<tr>
+<td>GitHub refused (401): bad or expired token.</td>
+<td>Make a new token and pair again.</td>
+</tr>
+<tr>
+<td>GitHub refused (403): the token cannot read this repo's contents.</td>
+<td>Give the token Contents: Read-only on this repository.</td>
+</tr>
+<tr>
+<td>The token must start with github_pat_ or ghp_ …</td>
+<td>Paste the whole token, with nothing before or after it.</td>
+</tr>
+<tr>
+<td>Pairing timed out. / Pairing stopped: too many wrong codes.</td>
+<td>Tap <strong>Start pairing</strong> again on the Kobo.</td>
+</tr>
+<tr>
+<td>No Wi-Fi. Connect, then try again.</td>
+<td>Turn on Wi-Fi on the Kobo.</td>
+</tr>
+<tr>
+<td>GitHub API limit reached. Try later.</td>
+<td>Wait an hour and sync again.</td>
+</tr>
+<tr>
+<td>Sync failed. See data/log.txt.</td>
+<td>Read <code>.adds/apps/ghsync/data/log.txt</code> over USB. It never contains your token.</td>
+</tr>
+</tbody>
+</table></div>
+<p>On a failed check nothing is saved, the old settings stay, and the token box on the page is emptied so you paste it again.</p>
+<p>An empty repository still pairs; the first sync reports 0 books.</p>
+<p><em>Tried on a device:</em> not yet. The pairing and sync code is tested on a computer.</p>
+<h2 id="wallpaper-your-pictures-on-the-sleep-screen">Wallpaper: your pictures on the sleep screen</h2>
+<p><img alt="The Wallpaper gallery" src="img/wallpaper-en.png" /></p>
+<p><em>Picture made on a computer, not a photo of a device.</em></p>
+<h3 id="the-two-kobo-settings-you-need">The two Kobo settings you need</h3>
+<p>Kobo shows a picture from NickelDrawer only on its <strong>full-screen book cover</strong> sleep screen. So:</p>
+<ol>
+<li>Open <strong>Settings</strong> → <strong>Energy saving and privacy</strong>.</li>
+<li>Turn on <strong>Show current read</strong>.</li>
+<li>Turn on <strong>Show book cover full screen</strong>.</li>
+<li>Open any book once, so the Kobo has a "current read".</li>
+<li>In <strong>More</strong> → <strong>Tweaks</strong>, keep <strong>Sleep screen</strong> on.</li>
+</ol>
+<p>The Wallpaper app reminds you when either setting is off ("Sleep screen off · See Options").</p>
+<h3 id="add-pictures">Add pictures</h3>
+<ol>
+<li>Connect the Kobo over USB and copy PNG or JPEG pictures straight into the <code>Pictures</code> folder (not into sub-folders). Up to 20 MB each. You can also send them with LocalSend: pictures go to <code>Pictures</code> too.</li>
+<li>Eject and open <strong>More</strong> → <strong>Apps</strong> → <strong>Wallpaper</strong>.</li>
+<li>The first time, with an empty gallery, the pictures already in <code>Pictures</code> are imported by themselves. Later, tap the import button in the header (<strong>Import pictures</strong>).</li>
+<li>The header shows "Importing 3/13" and the grid fills in as each picture is converted. You can leave the screen meanwhile.</li>
+</ol>
+<p>Each picture is scaled to the screen and turned into 16 shades of grey. Your originals in <code>Pictures</code> are not changed. The same picture is never imported twice.</p>
+<h3 id="browse-and-view">Browse and view</h3>
+<ul>
+<li>The gallery shows 12 pictures per page (4 across, 3 down). Use the page-turn buttons for more.</li>
+<li>The picture in use has a thick frame and a ✓.</li>
+<li>Tap a picture to open the viewer. The title shows its place, for example <code>3 / 13</code>.</li>
+</ul>
+<p><img alt="The picture viewer" src="img/wallpaper-viewer-en.png" /></p>
+<p>In the viewer:</p>
+<ul>
+<li>Tap the right third of the screen (or a page-turn button) for the next picture, the left third for the previous one. At the first or last picture nothing happens.</li>
+<li>Tap the middle to hide the bars and see the picture full size. A round <strong>←</strong> button stays in the top-left corner: tap it (or the middle again) to show the bars.</li>
+<li><strong>←</strong> in the header goes back to the gallery, at the page of the picture you were viewing.</li>
+</ul>
+<h3 id="set-the-wallpaper">Set the wallpaper</h3>
+<p>In the viewer, tap <strong>Set as wallpaper</strong>. The message says "Set as wallpaper", the title shows <strong>In use ✓</strong> and the button turns into <strong>In use</strong>. Put the Kobo to sleep to see it.</p>
+<p>You can also hold a picture in the gallery. A menu opens with <strong>Set as wallpaper</strong>, <strong>View</strong>, <strong>Info</strong> (name, size, date added), <strong>Remove from Wallpaper…</strong> and <strong>Remove with original…</strong>.</p>
+<h3 id="options">Options</h3>
+<p>Tap the gear in the gallery header.</p>
+<p><img alt="Wallpaper options" src="img/wallpaper-options-en.png" /></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Choices</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>How it shows</strong></td>
+<td><strong>Fill the screen</strong> (edges are cropped) or <strong>Fit inside</strong> (whole picture, white bars). Pictures are converted again in the background.</td>
+</tr>
+<tr>
+<td><strong>Changing pictures</strong></td>
+<td><strong>Fixed</strong> (always the picture you chose) or <strong>Random</strong> (a different picture each time it sleeps).</td>
+</tr>
+<tr>
+<td><strong>Sleep screen</strong></td>
+<td><strong>Ready ✓</strong>, or which Kobo setting to turn on.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="remove-a-picture">Remove a picture</h3>
+<ul>
+<li><strong>Remove…</strong> in the viewer, or <strong>Remove from Wallpaper…</strong> in the gallery menu, takes the picture out of Wallpaper. The original stays in <code>Pictures</code>. You are asked first; tapping outside the question does not remove anything.</li>
+<li><strong>Remove with original…</strong> also deletes the original from <code>Pictures</code>, but only if it is exactly the same file. Otherwise the original is kept and the message says so.</li>
+</ul>
+<p><em>Tried on a device:</em> importing from <code>Pictures</code> and the full-screen sleep picture worked (with the two settings on and a current book). An earlier build of the gallery and viewer ran on a device; the current gallery, viewer and options screens have not been re-tested yet.</p>
+<h2 id="library-tidy-your-books">Library: tidy your books</h2>
+<p><img alt="The Library screen" src="img/library-en.png" /></p>
+<p><em>Picture made on a computer, not a photo of a device.</em></p>
+<p>The Library app looks at the books in <code>Books</code>, <code>Documents</code> and <code>Comics</code>. It is mostly for Vietnamese books, but the duplicate finder works for any book.</p>
+<p>It never touches the Kobo's library database. Every change backs up the book first, and the library rescans by itself afterwards.</p>
+<h3 id="scan">Scan</h3>
+<ol>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>Library</strong>.</li>
+<li>Tap <strong>Scan</strong>. The screen shows "Scanning n/N". It runs in the background; you can leave and come back.</li>
+<li>You get counts:<ul>
+<li><strong>Books</strong>: EPUB books found.</li>
+<li><strong>Wrong language</strong>: Vietnamese books tagged as another language, usually English. The Kobo then hyphenates and looks up words as if they were English.</li>
+<li><strong>Not NFC</strong>: names or titles written in a non-standard Unicode form (see below).</li>
+<li><strong>Duplicate groups</strong>: sets of books that are the same.</li>
+<li><strong>Last scan</strong>: when you last scanned.</li>
+</ul>
+</li>
+</ol>
+<h3 id="fix-the-language">Fix the language</h3>
+<ol>
+<li>Tap <strong>Fix language</strong>, then <strong>Fix</strong>.</li>
+<li>Each Vietnamese book with a wrong language is copied to the app's backup folder, then only its language is set to Vietnamese. The new file is checked before it replaces the old one.</li>
+<li>Open the book again to see the new hyphenation. If the Kobo still uses the old language, rescan the library (<strong>Tweaks</strong> → <strong>Rescan library</strong>).</li>
+</ol>
+<h3 id="fix-names-nfc">Fix names (NFC)</h3>
+<p>Vietnamese letters with marks (like "ệ") can be stored in two ways. They look the same but search and sorting treat them as different. <strong>Fix names (NFC)</strong> rewrites file names, titles and authors in the standard form (NFC). It backs up first.</p>
+<h3 id="undo">Undo</h3>
+<p><strong>Undo last fix</strong> puts back the originals of the last language or name fix, including the old file names.</p>
+<h3 id="duplicates">Duplicates</h3>
+<ol>
+<li>Under <strong>Duplicates</strong>, tap one book to select it. Nothing happens yet.</li>
+<li>Tap <strong>Move to trash</strong>, then <strong>Move</strong>. The book goes to the app's trash for 30 days.</li>
+<li>The last copy of a book can never be moved to the trash.</li>
+<li><strong>Restore from trash</strong> puts back the duplicates you trashed on the most recent day. It never overwrites a file.</li>
+</ol>
+<p>Trashed books older than 30 days are deleted at the start of the next scan.</p>
+<p><strong>Stop</strong> ends a running scan or fix after the current book.</p>
+<p>Limits: hidden files and links are skipped, and files over 200 MB are ignored.</p>
+<p><em>Tried on a device:</em> not yet.</p>
+<h2 id="to-do-a-small-task-list">To-do: a small task list</h2>
+<p><img alt="The To-do screen" src="img/todo-en.png" /></p>
+<p><em>Picture made on a computer, not a photo of a device.</em></p>
+<p>A short task list that lives only on your Kobo. No account, no network.</p>
+<h3 id="add-a-task">Add a task</h3>
+<ol>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>To-do</strong>.</li>
+<li>Tap the <strong>New task</strong> box. Kobo's own keyboard opens.</li>
+<li>Type the task and confirm. The task appears at the end of the list and the message says "Task added".</li>
+</ol>
+<p>The header shows how many tasks are open and done, for example "3 open · 2 done".</p>
+<h3 id="mark-done-delete-clear">Mark done, delete, clear</h3>
+<ul>
+<li><strong>Tap a task</strong> to mark it done (a ✓ appears). Tap it again to open it again.</li>
+<li><strong>Hold a task</strong> and choose <strong>Delete...</strong> to remove it. You are asked first.</li>
+<li><strong>Clear done tasks</strong> at the bottom removes every task with a ✓. You are asked first. The button is greyed out while no task is done.</li>
+</ul>
+<p>Limits: at most 200 tasks, and 200 characters per task. The same task cannot be added twice.</p>
+<p>Your list is kept in <code>.adds/apps/todo/data/todo.json</code>. If that file is ever damaged, the app keeps a copy as <code>todo.json.corrupt</code>, starts with an empty list and tells you so.</p>
+<p><em>Tried on a device:</em> not yet. Typing with Kobo's keyboard inside an app screen has not been tried on a device yet; if the keyboard does not open, the box shows "Change this from your phone or computer."</p>
+<h2 id="tweaks">Tweaks</h2>
+<p>Open <strong>More</strong> → <strong>Tweaks</strong>. A window like Kobo's own Settings opens, with two columns. Close it with <strong>✕</strong> or by tapping outside it. Use the page-turn buttons if it has more than one page.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tweak</th>
+<th>What it does</th>
+<th>When it takes effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sleep screen</strong> (On/Off)</td>
+<td>Off hides the sleep-screen pictures folder, so Kobo shows its normal sleep screen. Your pictures are kept. Must be On for Wallpaper.</td>
+<td>Next time the Kobo sleeps.</td>
+</tr>
+<tr>
+<td><strong>Screenshots</strong> (On/Off)</td>
+<td>Kobo's hidden screenshot setting.</td>
+<td>Not yet confirmed on a device. If nothing changes, restart.</td>
+</tr>
+<tr>
+<td><strong>Auto USB connect</strong> (On/Off)</td>
+<td>When on, the Kobo connects to a computer without asking <strong>Connect</strong>.</td>
+<td>Not yet confirmed on a device. If nothing changes, restart.</td>
+</tr>
+<tr>
+<td><strong>Text legibility</strong> (On/Off)</td>
+<td>Better letter spacing and ligatures. <strong>KEPUB books only</strong> (books bought from Kobo or converted to KEPUB); plain EPUB and PDF do not change.</td>
+<td>Close and reopen the book.</td>
+</tr>
+<tr>
+<td><strong>IP address</strong></td>
+<td>Shows the Kobo's Wi-Fi address, or "No Wi‑Fi". Tapping does nothing.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Invert and reboot</strong></td>
+<td>Swaps black and white on the whole screen and restarts. Run it again to switch back. Asks first.</td>
+<td>After the restart.</td>
+</tr>
+<tr>
+<td><strong>Sleep</strong></td>
+<td>Puts the Kobo to sleep now.</td>
+<td>At once.</td>
+</tr>
+<tr>
+<td><strong>Reboot</strong></td>
+<td>Restarts the Kobo. Asks first.</td>
+<td>At once.</td>
+</tr>
+<tr>
+<td><strong>Rescan library</strong></td>
+<td>Asks Kobo to look for new or changed books.</td>
+<td>At once.</td>
+</tr>
+</tbody>
+</table></div>
+<p>A switch flips at once and a message confirms it, for example "Screenshots on".</p>
+<p>The switches write to the Kobo's own settings file (<code>.kobo/Kobo/Kobo eReader.conf</code>); <strong>Sleep screen</strong> renames the <code>.kobo/screensaver</code> folder. They stay as you left them after you remove NickelDrawer, so set them back first if you want.</p>
+<p><em>Tried on a device:</em> not yet.</p>
+<h2 id="updates">Updates</h2>
+<p>NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.</p>
+<h3 id="set-up-updates-once">Set up updates (once)</h3>
+<ol>
+<li>Connect the Kobo over USB.</li>
+<li>
+<p>Create the file <code>.adds/koboapps/data/update.json</code> with this text, where <code>owner/name</code> is the GitHub repository the NickelDrawer releases come from:</p>
+<pre><code>{"repo": "owner/name", "channel": "stable"}
+</code></pre>
+<p>Use <code>"channel": "beta"</code> to also get test releases.</p>
+</li>
+<li>
+<p>Eject. The drawer's <strong>SYSTEM</strong> section now has an <strong>Updates</strong> row.</p>
+</li>
+</ol>
+<h3 id="check-and-install">Check and install</h3>
+<ol>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>Updates</strong>.</li>
+<li>Tap <strong>Check for updates</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the screen shows <strong>Installed</strong>, <strong>Latest</strong> and <strong>What's new</strong>, and the <strong>Apps</strong> row shows <strong>1 update</strong>.</li>
+<li>Tap <strong>Update</strong>, then <strong>Update</strong> again to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.</li>
+<li>If the result says "Restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
+</ol>
+<h3 id="what-a-restart-does-after-an-update">What a restart does after an update</h3>
+<p>When a release changes the Kobo mod, the update puts the new mod in <code>.kobo/KoboRoot.tgz</code>. The Kobo installs it during the next restart, the same way as the first install. Apps and the host tool are already updated before the restart.</p>
+<h3 id="if-something-goes-wrong">If something goes wrong</h3>
+<ul>
+<li>Every file is checked against the signed list before anything is replaced. A bad signature or a damaged file stops the update, and nothing changes.</li>
+<li>If a problem shows up after the files were replaced, the old version is put back by itself.</li>
+<li>Your app data (tokens, settings, pictures, trash) is never part of an update.</li>
+<li>An older release is never installed over a newer one.</li>
+<li>"A system update is already waiting for a restart": restart the Kobo, then update again.</li>
+</ul>
+<p><em>Tried on a device:</em> not yet. The update steps are tested on a computer.</p>
+<h2 id="languages">Languages</h2>
+<h3 id="how-the-language-is-chosen">How the language is chosen</h3>
+<p>NickelDrawer uses the language of your Kobo (<strong>Settings</strong> → <strong>Language and dictionaries</strong> †). Change the Kobo's language, then open the drawer again. If a translation is missing for your language, English is shown. A Kobo set to Brazilian Portuguese looks for <code>pt_BR</code>, then <code>pt</code>, then English.</p>
+<p>English and Vietnamese are maintained by the project. In other languages, a few texts that the Kobo mod draws itself (the <strong>Apps</strong> and <strong>Tweaks</strong> rows, some error messages, the "not supported" message) stay in English.</p>
+<h3 id="add-a-language">Add a language</h3>
+<p>You need no programming, only a text editor. Each translation is a small file of <code>"key": "text"</code> lines.</p>
+<ol>
+<li>
+<p>Copy <code>en.json</code> to <code>&lt;code&gt;.json</code> (for example <code>fr.json</code>) in each of these folders:</p>
+<ul>
+<li><code>.adds/koboapps/locales/</code> (drawer, tweaks, updates),</li>
+<li><code>.adds/koboapps/screens/updates/locales/</code> (the Updates screen),</li>
+<li><code>.adds/apps/&lt;app&gt;/locales/</code> for each app.</li>
+</ul>
+</li>
+<li>
+<p>Translate only the texts on the right. Never change the keys on the left.</p>
+</li>
+<li>Keep every <code>{placeholder}</code> exactly as written, and keep <code>\n</code> line breaks.</li>
+<li>Keep texts short: the screen is small. Names at most 24 characters, button labels at most 32, and no <code>:</code> in labels.</li>
+<li>Eject and open the drawer with the Kobo set to that language.</li>
+</ol>
+<p>To share your translation, see <a href="../TRANSLATING.md">docs/TRANSLATING.md</a>. Right-to-left languages are not supported yet.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No <strong>Apps</strong> or <strong>Tweaks</strong> row in <strong>More</strong>.</td>
+<td>The mod is not installed, is switched off, or does not support your firmware.</td>
+<td>Check that <code>.kobo/KoboRoot.tgz</code> is gone (the Kobo deletes it after installing). Check that <code>.adds/nickeldrawer/</code> has no <code>disable</code> file. Check your firmware version. Copy <code>KoboRoot.tgz</code> again and restart.</td>
+</tr>
+<tr>
+<td>Message "NickelDrawer does not support this firmware yet".</td>
+<td>Your firmware is not one of the five supported builds, often after Kobo updated itself.</td>
+<td>Nothing is broken; the Kobo works as normal. Wait for a NickelDrawer release that supports your build.</td>
+</tr>
+<tr>
+<td>A line under the drawer title: "Kobo is offering update 5.x — NickelDrawer will stop working".</td>
+<td>Kobo offers firmware 5.x.</td>
+<td>Decline the offer on the Kobo if you want to keep NickelDrawer.</td>
+</tr>
+<tr>
+<td>The drawer shows <strong>PROBLEMS</strong> or "appsctl is not installed. Reinstall koboapps."</td>
+<td>The host tool is missing or damaged.</td>
+<td>Copy <code>.adds/koboapps</code> from the release zip again. Tap <strong>Try again</strong>.</td>
+</tr>
+<tr>
+<td>The Kobo does not appear on the computer, or never asks <strong>Connect</strong>.</td>
+<td>The drawer or an app screen was open, or an app was busy, when you plugged in.</td>
+<td>Unplug. Tap <strong>Home</strong>. Stop LocalSend if it is receiving. Plug in again and tap <strong>Connect</strong>. If it still fails, restart the Kobo.</td>
+</tr>
+<tr>
+<td>An app shows "That did not work. See data/log.txt."</td>
+<td>The app hit a problem.</td>
+<td>Read <code>.adds/apps/&lt;app&gt;/data/log.txt</code> over USB. The last lines say what broke.</td>
+</tr>
+<tr>
+<td>An app opens a screen with "Can't open the app", <strong>Back</strong> and <strong>Try again</strong>.</td>
+<td>The app's files are incomplete or damaged.</td>
+<td>Copy that app's folder from the release zip again, then <strong>Refresh list</strong>.</td>
+</tr>
+<tr>
+<td>A new app does not appear.</td>
+<td>The drawer has not reloaded, or the app's files are wrong.</td>
+<td>Tap <strong>Refresh list</strong>. A broken app is listed under <strong>PROBLEMS</strong> with the reason.</td>
+</tr>
+<tr>
+<td>Wallpaper picture does not appear on the sleep screen.</td>
+<td>A Kobo setting is off, there is no current book, or <strong>Sleep screen</strong> is off.</td>
+<td>Turn on <strong>Show current read</strong> and <strong>Show book cover full screen</strong> (<strong>Settings</strong> → <strong>Energy saving and privacy</strong>). Open any book once. Turn <strong>Tweaks</strong> → <strong>Sleep screen</strong> on. Set a picture as wallpaper.</td>
+</tr>
+<tr>
+<td>LocalSend on the phone does not find the Kobo.</td>
+<td>Different Wi-Fi, a guest network that hides devices from each other, receiving stopped, or the Kobo fell asleep.</td>
+<td>Put both on the same home Wi-Fi (not a guest network). Open LocalSend on the Kobo and check it says <strong>Receiving</strong>. Wake the Kobo. If your phone's LocalSend can send to an address, use the IP shown on the Kobo.</td>
+</tr>
+<tr>
+<td>GitHub pairing shows an error.</td>
+<td>See the message.</td>
+<td>See <a href="#pairing-and-sync-messages">Pairing and sync messages</a>.</td>
+</tr>
+<tr>
+<td>The pairing page does not open on the phone.</td>
+<td>Different Wi-Fi, or pairing closed.</td>
+<td>Use the same Wi-Fi. Check the Kobo still shows the code. Start pairing again.</td>
+</tr>
+<tr>
+<td>"No Wi-Fi. Connect, then try again."</td>
+<td>Wi-Fi is off or not connected.</td>
+<td>Turn on Wi-Fi in the Kobo's status bar, then try again.</td>
+</tr>
+<tr>
+<td>A text box says "Change this from your phone or computer."</td>
+<td>Text entry on the Kobo is not available on this firmware or is switched off.</td>
+<td>Remove the file <code>.adds/nickeldrawer/no-keyboard</code> if you created it.</td>
+</tr>
+<tr>
+<td>The screen colours are inverted and stay that way.</td>
+<td><strong>Invert and reboot</strong> was used.</td>
+<td>Run <strong>Tweaks</strong> → <strong>Invert and reboot</strong> again.</td>
+</tr>
+<tr>
+<td>The Kobo freezes.</td>
+<td>Something went wrong in Kobo's software.</td>
+<td>Hold the power button for about 15 seconds until the screen changes, release, then press it again to start.</td>
+</tr>
+<tr>
+<td>The Kobo restarts again and again after an install.</td>
+<td>The mod crashes at start.</td>
+<td>Turn the Kobo off within 15 seconds after it starts (see <a href="#the-safety-net-failsafe">Safety net</a>). If that does not help, create the <code>uninstall</code> switch over USB.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="send-a-useful-bug-report">Send a useful bug report</h3>
+<ol>
+<li>Create an empty file <code>.adds/nickeldrawer/debug</code> over USB and restart the Kobo. The drawer then writes a step log to <code>.adds/nickeldrawer/debug.log</code>.</li>
+<li>Repeat what went wrong.</li>
+<li>Connect over USB and copy <code>debug.log</code> and the app's <code>data/log.txt</code>.</li>
+<li>Read them before you share them. Remove anything personal (book titles, names, your Wi-Fi address). Never share <code>data/token</code>.</li>
+<li>Say which firmware you have, what you did, what you expected and what happened.</li>
+</ol>
+<h2 id="safety-and-uninstall">Safety and uninstall</h2>
+<h3 id="the-rules">The rules</h3>
+<ul>
+<li>Apps run with full rights on the Kobo, which holds your library. Install only apps you trust.</li>
+<li>Back up before you install, update or remove.</li>
+<li>Never edit <code>KoboReader.sqlite</code> by hand. NickelDrawer never edits it.</li>
+</ul>
+<h3 id="switch-files">Switch files</h3>
+<p>Create these as <strong>empty files</strong> over USB in the folder <code>.adds/nickeldrawer/</code> (create the folder if it is missing). The Kobo reads them when it starts, so restart after you add or delete one.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>File</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uninstall</code></td>
+<td>Removes the NickelDrawer mod at the next start, then deletes itself.</td>
+</tr>
+<tr>
+<td><code>disable</code></td>
+<td>Keeps the mod installed but inactive: <strong>More</strong> looks like stock. Delete the file and restart to switch it on again.</td>
+</tr>
+<tr>
+<td><code>no-screens</code></td>
+<td>Tapping an app runs its main action instead of opening its screen. For troubleshooting.</td>
+</tr>
+<tr>
+<td><code>no-keyboard</code></td>
+<td>Text boxes show "Change this from your phone or computer." instead of the Kobo keyboard.</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td>Writes a step log to <code>debug.log</code> in the same folder.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="the-safety-net-failsafe">The safety net (failsafe)</h3>
+<p>The mod is built on NickelHook, which has a safety net: if the Kobo crashes or is turned off during the first <strong>15 seconds</strong> after the mod loads at start-up, the mod is left out from then on and the Kobo starts as stock. To use it on purpose: start the Kobo and turn it off (hold the power button) as soon as <strong>Home</strong> appears.</p>
+<p><em>Tried on a device:</em> the safety net has not been tried with the NickelDrawer mod yet. Install and removal with the <code>uninstall</code> file were tried with a small test mod.</p>
+<h3 id="uninstall">Uninstall</h3>
+<p><strong>With the installer</strong> (way B):</p>
+<pre><code class="language-sh">tools/install-to-kobo.sh --uninstall --dry-run   # see what would be removed
+tools/install-to-kobo.sh --uninstall             # asks whether to keep the apps' data/ folders
+</code></pre>
+<p>It backs up first, removes the apps and the host tool, keeps any received files still waiting in the inbox, writes the <code>uninstall</code> switch, and puts NickelMenu's tab back. Add <code>--purge</code> to also delete the apps' <code>data/</code> folders. Then eject and restart the Kobo.</p>
+<p><strong>By hand:</strong></p>
+<ol>
+<li>Before you start: in <strong>Tweaks</strong>, set <strong>Sleep screen</strong>, <strong>Screenshots</strong>, <strong>Auto USB connect</strong> and <strong>Text legibility</strong> as you want them to stay. If you used Library, restore any trashed books you want back.</li>
+<li>Connect over USB. Create the empty file <code>.adds/nickeldrawer/uninstall</code>.</li>
+<li>Eject and restart the Kobo. The mod is removed, and <strong>Apps</strong> and <strong>Tweaks</strong> disappear from <strong>More</strong>.</li>
+<li>Connect again and delete the folders <code>.adds/koboapps</code> and <code>.adds/apps</code> (and <code>.adds/nickeldrawer</code> if you like).</li>
+<li>Delete the pictures named <code>nd-wallpaper-*.png</code> in <code>.kobo/screensaver</code>, or the Kobo keeps showing them on the sleep screen.</li>
+</ol>
+<p><strong>Last resort:</strong> if the Kobo will not start normally, use the <a href="#the-safety-net-failsafe">safety net</a>. If that fails too, use the <code>disable</code> switch over USB, or reset the Kobo with Kobo's own instructions.</p>
+<h3 id="what-stays-after-uninstall">What stays after uninstall</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Stays</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Books, documents, comics and pictures you received or synced</td>
+<td><code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>, and the <code>GitHub</code> folders inside them</td>
+</tr>
+<tr>
+<td>Files received but not yet sorted</td>
+<td><code>.adds/koboapps/inbox/</code> (only if there are any)</td>
+</tr>
+<tr>
+<td>App data, unless you delete it or use <code>--purge</code></td>
+<td><code>.adds/apps/&lt;app&gt;/data/</code> (GitHub token, Wallpaper library, Library backups and trash)</td>
+</tr>
+<tr>
+<td>Sleep-screen pictures</td>
+<td><code>.kobo/screensaver/nd-wallpaper-*.png</code></td>
+</tr>
+<tr>
+<td>Kobo settings changed in <strong>Tweaks</strong></td>
+<td><code>.kobo/Kobo/Kobo eReader.conf</code>, and <code>.kobo/screensaver.disabled</code> if <strong>Sleep screen</strong> was off</td>
+</tr>
+<tr>
+<td>The installer's backups</td>
+<td><code>backups/</code> on your computer</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="privacy">Privacy</h2>
+<ul>
+<li><strong>No telemetry.</strong> NickelDrawer does not collect or send usage data.</li>
+<li><strong>Network only when you start it:</strong></li>
+<li>LocalSend listens on your Wi-Fi while it is receiving, and stops when you tap stop or after 15 minutes without a file.</li>
+<li>GitHub pairing opens a small page on your Wi-Fi for up to 10 minutes. Sync talks to GitHub only.</li>
+<li>Updates talk to GitHub only when you tap <strong>Check for updates</strong> or <strong>Update</strong>.</li>
+<li>Wallpaper, Library, To-do and Tweaks never use the network.</li>
+<li><strong>Your GitHub token</strong> is stored only on the Kobo, in <code>.adds/apps/ghsync/data/token</code>. It never appears on the screen, in logs or in the app's status. But the Kobo's storage cannot protect single files: anyone who connects your Kobo to a computer can read that file. That is why the token should be fine-grained, limited to one repository and read-only. Revoke it on GitHub if you lose the Kobo.</li>
+<li><strong>The LocalSend PIN</strong> is stored in <code>.adds/apps/localsend/data/pin.txt</code>, readable the same way.</li>
+<li>Logs stay on the Kobo. Nothing is uploaded.</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<p><strong>Will a Kobo firmware update remove NickelDrawer?</strong>
+It can. A firmware update may replace the mod file, and a new build that NickelDrawer does not know makes it switch itself off with a short message. Your apps and their data stay in <code>.adds</code>. Install a NickelDrawer release that supports the new build.</p>
+<p><strong>Kobo offers me "5.x". Should I accept?</strong>
+Not if you want to keep NickelDrawer: it does not work on 5.x. On a Libra 2, skip the offer. Also never install firmware made for other models.</p>
+<p><strong>Does NickelDrawer slow down my Kobo or drain the battery?</strong>
+It does nothing until you open it. Apps run only while you use them, and background jobs end by themselves. It has not been measured over long use yet.</p>
+<p><strong>Do I need NickelMenu?</strong>
+No. NickelDrawer works with or without it.</p>
+<p><strong>Does it change my reading progress, collections or the library database?</strong>
+No. Nothing in NickelDrawer edits <code>KoboReader.sqlite</code>. Library edits book files only (after a backup) and asks Kobo to rescan.</p>
+<p><strong>Can I use it on a Kobo Clara or Libra Colour?</strong>
+Not yet. Only the Libra 2 is supported.</p>
+<p><strong>Can I use it in a shop or company?</strong>
+No. The license allows personal, study, hobby and non-profit use only.</p>
+<p><strong>What is "UI Kit"?</strong>
+A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default.</p>
+<p><strong>Where are my files?</strong>
+Received books in <code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>. GitHub books in the <code>GitHub</code> folders inside them. App settings in <code>.adds/apps/&lt;app&gt;/data/</code>.</p>
+<h2 id="glossary">Glossary</h2>
+<p>Kobo's own names (the screens NickelDrawer works with) and NickelDrawer's names, on a Kobo set to English and to Vietnamese.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>English</th>
+<th>Vietnamese</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>More</td>
+<td>Thêm</td>
+<td>Tab in the bottom bar. NickelDrawer adds its rows here.</td>
+</tr>
+<tr>
+<td>Home</td>
+<td>Trang chủ</td>
+<td>Tab in the bottom bar.</td>
+</tr>
+<tr>
+<td>My Books †</td>
+<td>Thư viện</td>
+<td>Kobo's library tab. Not the same as NickelDrawer's Library app.</td>
+</tr>
+<tr>
+<td>Settings</td>
+<td>Cài đặt</td>
+<td>Kobo's settings.</td>
+</tr>
+<tr>
+<td>Energy saving and privacy</td>
+<td>Tiết kiệm pin và riêng tư</td>
+<td>Settings page with the sleep-screen options.</td>
+</tr>
+<tr>
+<td>Show current read</td>
+<td>Hiển thị sách đang đọc</td>
+<td>Sleep-screen option needed by Wallpaper.</td>
+</tr>
+<tr>
+<td>Show book cover full screen</td>
+<td>Hiển thị bìa sách toàn màn hình</td>
+<td>Sleep-screen option needed by Wallpaper.</td>
+</tr>
+<tr>
+<td>Device information †</td>
+<td>Thông tin thiết bị †</td>
+<td>Settings page with the firmware version.</td>
+</tr>
+<tr>
+<td>Language and dictionaries †</td>
+<td>Ngôn ngữ và từ điển †</td>
+<td>Settings page for the Kobo's language.</td>
+</tr>
+<tr>
+<td>Connect</td>
+<td>Kết nối</td>
+<td>Button the Kobo shows when you plug in USB.</td>
+</tr>
+<tr>
+<td>Apps</td>
+<td>Ứng dụng</td>
+<td>NickelDrawer's row in More, and the drawer's title.</td>
+</tr>
+<tr>
+<td>Tweaks</td>
+<td>Tinh chỉnh</td>
+<td>NickelDrawer's settings window in More.</td>
+</tr>
+<tr>
+<td>INSTALLED / SYSTEM</td>
+<td>ĐÃ CÀI / HỆ THỐNG</td>
+<td>Sections of the drawer.</td>
+</tr>
+<tr>
+<td>Refresh list</td>
+<td>Làm mới danh sách</td>
+<td>Reload the drawer.</td>
+</tr>
+<tr>
+<td>Updates</td>
+<td>Cập nhật</td>
+<td>The update screen in the drawer.</td>
+</tr>
+<tr>
+<td>Info / Remove…</td>
+<td>Thông tin / Gỡ…</td>
+<td>Long-press menu of an app.</td>
+</tr>
+<tr>
+<td>Wallpaper</td>
+<td>Hình nền</td>
+<td>The sleep-screen pictures app.</td>
+</tr>
+<tr>
+<td>Library</td>
+<td>Thư viện</td>
+<td>NickelDrawer's book-tidying app.</td>
+</tr>
+<tr>
+<td>To-do</td>
+<td>Việc cần làm</td>
+<td>The task-list app.</td>
+</tr>
+<tr>
+<td>UI Kit</td>
+<td>Bộ giao diện</td>
+<td>Hidden app for app makers.</td>
+</tr>
+<tr>
+<td>App drawer</td>
+<td>Ngăn Ứng Dụng</td>
+<td>The page that lists your apps.</td>
+</tr>
+<tr>
+<td>Firmware</td>
+<td>Firmware</td>
+<td>Kobo's system software, version like 4.38.23828.</td>
+</tr>
+<tr>
+<td>Toast</td>
+<td>(thông báo ngắn)</td>
+<td>Short message at the bottom of the screen.</td>
+</tr>
+<tr>
+<td>KEPUB</td>
+<td>KEPUB</td>
+<td>Kobo's own EPUB format (books from the Kobo store).</td>
+</tr>
+<tr>
+<td>NFC</td>
+<td>NFC</td>
+<td>The standard way to store letters with accent marks.</td>
+</tr>
+</tbody>
+</table></div>
+  </main>
+</div>

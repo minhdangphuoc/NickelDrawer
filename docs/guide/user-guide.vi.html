@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hướng dẫn NickelDrawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+main img { display: block; width: 100%; max-width: 380px; height: auto; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+main p > em:only-child { color: var(--muted); font-size: .85rem; }
+blockquote p:last-child { margin-bottom: 0; }
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Mục lục"><span class="lbl">Mục lục</span><a href="#nickeldrawer-la-gi-va-khong-phai-la-gi">NickelDrawer là gì (và không phải là gì)</a><a href="#kiem-tra-may-cua-ban-co-uoc-ho-tro-khong">Kiểm tra máy của bạn có được hỗ trợ không</a><a href="#truoc-khi-cai">Trước khi cài</a><a href="#cai-at">Cài đặt</a><a href="#lam-quen">Làm quen</a><a href="#localsend-nhan-sach-tu-ien-thoai">LocalSend: nhận sách từ điện thoại</a><a href="#github-ong-bo-sach-tu-repo-cua-ban">GitHub: đồng bộ sách từ repo của bạn</a><a href="#hinh-nen-anh-cua-ban-tren-man-hinh-ngu">Hình nền: ảnh của bạn trên màn hình ngủ</a><a href="#thu-vien-don-sach">Thư viện: dọn sách</a><a href="#viec-can-lam-danh-sach-viec-nho">Việc cần làm: danh sách việc nhỏ</a><a href="#tinh-chinh">Tinh chỉnh</a><a href="#cap-nhat">Cập nhật</a><a href="#ngon-ngu">Ngôn ngữ</a><a href="#xu-ly-su-co">Xử lý sự cố</a><a href="#an-toan-va-go-cai-at">An toàn và gỡ cài đặt</a><a href="#quyen-rieng-tu">Quyền riêng tư</a><a href="#hoi-ap">Hỏi đáp</a><a href="#bang-thuat-ngu">Bảng thuật ngữ</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">NickelDrawer · hướng dẫn sử dụng</span>
+      <h1>Hướng dẫn sử dụng NickelDrawer</h1>
+      <p class="lede">Cài, dùng và gỡ Ngăn Ứng Dụng trên Kobo. Không cần biết lập trình. Dự án độc lập, không liên kết với Rakuten Kobo.</p>
+    </header>
+    
+<p>Dành cho người dùng Kobo muốn cài NickelDrawer, dùng các ứng dụng của nó và gỡ ra khi cần. Không cần biết lập trình. Bản tiếng Anh: <a href="user-guide.en.html">user-guide.en.md</a>.</p>
+<p>Chữ <strong>in đậm</strong> là đúng chữ bạn thấy trên Kobo để tiếng Việt. Tên có dấu † chưa được đối chiếu trên máy thật; trên máy bạn có thể khác đôi chút.</p>
+<h2 id="nickeldrawer-la-gi-va-khong-phai-la-gi">NickelDrawer là gì (và không phải là gì)</h2>
+<p>NickelDrawer thêm hai hàng vào tab <strong>Thêm</strong> của Kobo:</p>
+<ul>
+<li><strong>Ứng dụng</strong> mở Ngăn Ứng Dụng: danh sách (hoặc lưới) các công cụ nhỏ, trông giống phần còn lại của Kobo.</li>
+<li><strong>Tinh chỉnh</strong> mở một cửa sổ kiểu Cài đặt với các công tắc hay dùng (màn hình chờ, chụp màn hình, tự kết nối USB, chữ rõ nét) và vài thao tác (ngủ, khởi động lại, quét lại thư viện).</li>
+</ul>
+<p>Các ứng dụng đi kèm:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Ứng dụng</th>
+<th>Làm gì</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LocalSend</td>
+<td>Nhận sách, tài liệu, truyện tranh và ảnh từ điện thoại qua Wi-Fi.</td>
+</tr>
+<tr>
+<td>GitHub</td>
+<td>Tải sách mới từ repo GitHub riêng của bạn. Chỉ thêm, không xoá.</td>
+</tr>
+<tr>
+<td>Hình nền</td>
+<td>Dùng ảnh của bạn làm màn hình ngủ.</td>
+</tr>
+<tr>
+<td>Thư viện</td>
+<td>Sửa nhãn ngôn ngữ của sách tiếng Việt, chuẩn hoá tên Unicode, tìm sách trùng.</td>
+</tr>
+<tr>
+<td>Việc cần làm</td>
+<td>Danh sách việc cần làm nằm gọn trong máy.</td>
+</tr>
+</tbody>
+</table></div>
+<p>NickelDrawer <strong>không</strong> phải là:</p>
+<ul>
+<li><strong>Sản phẩm của Kobo.</strong> Đây là dự án độc lập, không do Rakuten Kobo làm, không liên kết và không được Rakuten Kobo bảo trợ. "Kobo" và "Nickel" là nhãn hiệu của chủ sở hữu.</li>
+<li><strong>Ứng dụng đọc sách mới.</strong> Nó không thay trình đọc, cửa hàng hay thư viện của Kobo. Nó chỉ thêm hàng và màn hình vào phần mềm gốc của Kobo (tên là Nickel).</li>
+<li><strong>Dịch vụ đám mây.</strong> Không cần tài khoản, không gửi gì đi đâu nếu bạn không tự bật một tính năng cần mạng.</li>
+<li><strong>Phần mềm nguồn mở.</strong> NickelDrawer công khai mã nguồn theo giấy phép PolyForm Noncommercial 1.0.0: miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; không dùng cho mục đích thương mại.</li>
+</ul>
+<blockquote>
+<p><strong>Trạng thái: bản thử (1.0.0-beta.1).</strong> NickelDrawer mới được thử trên một máy Kobo Libra 2 với một bản firmware. Một phần đã chạy trên máy đó; phần lớn những gì sách này mô tả mới chỉ được kiểm trên máy tính. Mỗi chương ghi rõ phần nào đã thử trên máy thật. Đọc mục <a href="#s-an-toan-va-go-cai-at">An toàn và gỡ cài đặt</a> trước khi cài.</p>
+</blockquote>
+<h2 id="kiem-tra-may-cua-ban-co-uoc-ho-tro-khong">Kiểm tra máy của bạn có được hỗ trợ không</h2>
+<p>NickelDrawer hỗ trợ <strong>Kobo Libra 2</strong> với một trong năm bản firmware sau:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Firmware</th>
+<th>Tình trạng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.38.23828</td>
+<td>Các bản thử nghiệm trước của Ngăn và màn hình ứng dụng đã chạy trên máy. Bản hiện tại đang chờ buổi thử đầy đủ trên máy.</td>
+</tr>
+<tr>
+<td>4.38.23697</td>
+<td>Chỉ kiểm trên máy tính. Chưa chạy trên máy thật.</td>
+</tr>
+<tr>
+<td>4.38.23684</td>
+<td>Chỉ kiểm trên máy tính. Chưa chạy trên máy thật.</td>
+</tr>
+<tr>
+<td>4.38.23648</td>
+<td>Chỉ kiểm trên máy tính. Chưa chạy trên máy thật.</td>
+</tr>
+<tr>
+<td>4.38.23552</td>
+<td>Chỉ kiểm trên máy tính. Chưa chạy trên máy thật.</td>
+</tr>
+</tbody>
+</table></div>
+<p>"Kiểm trên máy tính" nghĩa là chương trình đã được kiểm rằng mọi chức năng Kobo nó cần đều có trong bản firmware đó. Không có nghĩa là đã có người dùng thử trên bản đó.</p>
+<p>Không hỗ trợ:</p>
+<ul>
+<li><strong>Firmware 5.x.</strong> Đừng cài NickelDrawer lên Kobo chạy 5.x. Nếu Kobo mời nâng cấp lên 5.x, hãy từ chối (xem <a href="#s-hoi-ap">Hỏi đáp</a>).</li>
+<li><strong>Các dòng Kobo khác.</strong> Chưa dòng nào khác được kiểm. Đừng cài lên chúng.</li>
+</ul>
+<h3 id="xem-phien-ban-firmware">Xem phiên bản firmware</h3>
+<p>Trên Kobo:</p>
+<ol>
+<li>Mở <strong>Cài đặt</strong> → <strong>Thông tin thiết bị</strong> †.</li>
+<li>Xem dòng phiên bản phần mềm †. Nó có dạng <code>4.38.23828</code>.</li>
+</ol>
+<p>Qua USB (nếu không tìm thấy mục đó):</p>
+<ol>
+<li>Cắm Kobo vào máy tính, bấm <strong>Kết nối</strong> trên Kobo.</li>
+<li>Mở thư mục ẩn <code>.kobo</code> trên ổ Kobo, mở tệp <code>version</code> bằng trình soạn thảo văn bản.</li>
+<li>Dòng trong tệp có nhiều phần, cách nhau bằng dấu phẩy. Phần thứ ba là firmware, ví dụ <code>4.38.23828</code>.</li>
+</ol>
+<blockquote>
+<p>Phần đầu tiên của dòng đó là số sê-ri máy bạn. Đừng dán nó vào báo lỗi công khai.</p>
+</blockquote>
+<p>Nếu phiên bản của bạn không có trong bảng, dừng ở đây. Trên bản đó NickelDrawer sẽ tự tắt (xem <a href="#s-xu-ly-su-co">Xử lý sự cố</a>).</p>
+<h2 id="truoc-khi-cai">Trước khi cài</h2>
+<p><a id="s-sao-luu"></a></p>
+<h3 id="sao-luu">Sao lưu</h3>
+<p>Làm việc này mỗi lần trước khi cài, cập nhật hay gỡ NickelDrawer.</p>
+<ol>
+<li>Cắm Kobo vào máy tính bằng cáp USB, bấm <strong>Kết nối</strong> trên Kobo.</li>
+<li>
+<p>Cho máy tính hiện tệp ẩn:</p>
+<ul>
+<li>macOS Finder: bấm Cmd + Shift + . (dấu chấm).</li>
+<li>Windows Explorer: Xem → Hiện → Mục ẩn.</li>
+<li>Linux: thường là Ctrl + H trong trình quản lý tệp.</li>
+</ul>
+</li>
+<li>
+<p>Chép nguyên thư mục <code>.kobo</code> và nguyên thư mục <code>.adds</code> (nếu có) từ ổ Kobo vào một thư mục trên máy tính. Đặt tên theo ngày hôm nay.</p>
+</li>
+<li>Giữ bản sao này cho đến khi bạn yên tâm với NickelDrawer.</li>
+</ol>
+<p>Thư mục <code>.kobo</code> chứa cơ sở dữ liệu thư viện (<code>KoboReader.sqlite</code>), cài đặt (<code>Kobo eReader.conf</code>) và ảnh màn hình ngủ. Sách của bạn nằm ở các thư mục thường và không bị việc cài đặt động đến.</p>
+<h3 id="sac-pin">Sạc pin</h3>
+<p>Sạc Kobo <strong>từ 50 % trở lên</strong>. Việc cài sẽ khởi động lại máy; hết pin giữa chừng là điều không nên.</p>
+<h3 id="viec-cai-thay-oi-nhung-gi">Việc cài thay đổi những gì</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Ở đâu</th>
+<th>Cái gì</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.adds/koboapps/</code></td>
+<td>Công cụ chủ, tệp dùng chung, bản dịch, biểu tượng.</td>
+</tr>
+<tr>
+<td><code>.adds/apps/</code></td>
+<td>Mỗi ứng dụng một thư mục. Mỗi ứng dụng giữ cài đặt riêng trong thư mục <code>data/</code> của nó.</td>
+</tr>
+<tr>
+<td>Hệ thống Kobo (<code>/usr/local/Kobo/imageformats/</code>)</td>
+<td>Một tệp: mod NickelDrawer, do chính Kobo cài từ <code>KoboRoot.tgz</code> khi khởi động lại.</td>
+</tr>
+<tr>
+<td><code>.adds/nickeldrawer/</code></td>
+<td>Thư mục cho các tệp công tắc, xem <a href="#s-an-toan-va-go-cai-at">An toàn và gỡ cài đặt</a>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Ngoài ra không có gì thay đổi cho đến khi bạn dùng một ứng dụng hay một tinh chỉnh. Mỗi ứng dụng chỉ ghi vào thư mục của nó (ví dụ LocalSend ghi vào <code>Books</code>, <code>Documents</code>, <code>Comics</code> và <code>Pictures</code>). Tinh chỉnh chỉ đổi cài đặt Kobo khi bạn bấm vào.</p>
+<p>NickelDrawer không cần NickelMenu và chạy được cùng nó. Nó cũng chạy cùng kobo-tieng-viet (phông và bản sửa tiếng Việt cho Kobo).</p>
+<h2 id="cai-at">Cài đặt</h2>
+<p>Có hai cách. Đa số dùng <strong>cách A</strong>.</p>
+<h3 id="cach-a-chep-tep-phat-hanh-may-tinh-nao-cung-uoc">Cách A: chép tệp phát hành (máy tính nào cũng được)</h3>
+<p>Bạn cần: Kobo, cáp USB, máy tính, và hai tệp trong bản phát hành mới nhất của NickelDrawer:</p>
+<ul>
+<li><code>koboapps-&lt;phiên bản&gt;.zip</code>: các ứng dụng và công cụ chủ.</li>
+<li><code>KoboRoot-nickeldrawer.tgz</code>: mod cho Kobo. (Tệp này cũng có trong tệp zip, ở <code>onboard/.adds/koboapps/mod/</code>.)</li>
+</ul>
+<p>Các bước:</p>
+<ol>
+<li><a href="#s-sao-luu">Sao lưu</a> và sạc pin.</li>
+<li>Cắm Kobo, bấm <strong>Kết nối</strong>. Cho hiện tệp ẩn (xem trên).</li>
+<li>Giải nén <code>koboapps-&lt;phiên bản&gt;.zip</code> trên máy tính. Bên trong, mở <code>onboard</code>, rồi <code>.adds</code>. Bạn thấy hai thư mục: <code>koboapps</code> và <code>apps</code>.</li>
+<li>Trên ổ Kobo, mở thư mục <code>.adds</code>. Nếu chưa có, tạo thư mục tên <code>.adds</code> (có dấu chấm) ở ngay gốc ổ.</li>
+<li>
+<p>Chép hai thư mục <code>koboapps</code> và <code>apps</code> vào thư mục <code>.adds</code> của Kobo.</p>
+<blockquote>
+<p><strong>Cảnh báo với macOS Finder.</strong> Nếu Kobo đã có thư mục cùng tên, Finder hỏi có <strong>Thay thế</strong> (Replace) không. <strong>Thay thế sẽ xoá mọi thứ trong thư mục cũ</strong>, kể cả cài đặt ứng dụng và tệp của mod khác. Giữ phím Option khi kéo thả và chọn <strong>Gộp</strong> (Merge), hoặc chỉ chép theo cách này ở lần cài đầu. Windows tự gộp thư mục.</p>
+</blockquote>
+</li>
+<li>
+<p>Chép <code>KoboRoot-nickeldrawer.tgz</code> vào thư mục <code>.kobo</code> của Kobo và đổi tên bản chép thành đúng <code>KoboRoot.tgz</code>.</p>
+</li>
+<li>Ngắt kết nối Kobo an toàn (macOS: nút eject trong Finder; Windows: "Tháo phần cứng an toàn"). Rồi rút cáp.</li>
+<li>Kobo báo đang cập nhật và tự khởi động lại, mất một đến hai phút. Nếu máy không tự khởi động lại, hãy khởi động lại bằng nút nguồn.</li>
+<li>Khi Kobo hiện <strong>Trang chủ</strong>, đợi khoảng 20 giây rồi mới làm gì khác. Trong 15 giây đầu sau khi khởi động, tắt máy sẽ gỡ mod ra (đó là lưới an toàn, xem <a href="#s-an-toan-va-go-cai-at">An toàn và gỡ cài đặt</a>).</li>
+<li>Bấm <strong>Thêm</strong>. Bạn sẽ thấy hai hàng mới: <strong>Ứng dụng</strong> và <strong>Tinh chỉnh</strong>.</li>
+</ol>
+<p>Nếu không thấy hai hàng đó, xem <a href="#s-xu-ly-su-co">Xử lý sự cố</a>.</p>
+<h3 id="cach-b-tap-lenh-cai-macos-hoac-linux-tu-ma-nguon">Cách B: tập lệnh cài (macOS hoặc Linux, từ mã nguồn)</h3>
+<p>Cách này dành cho người tự dựng NickelDrawer từ mã nguồn. Nó sao lưu mọi thứ nó thay và không bao giờ đụng vào thư mục <code>data/</code> của ứng dụng.</p>
+<pre><code class="language-sh">make check build dist                 # dựng mọi thứ (cần Go; mod cần Docker)
+tools/install-to-kobo.sh --dry-run    # chỉ in ra sẽ làm gì; không đổi gì
+tools/install-to-kobo.sh              # cài
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tuỳ chọn</th>
+<th>Làm gì</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--dry-run</code></td>
+<td>In từng bước, không đổi gì.</td>
+</tr>
+<tr>
+<td><code>--with-mod</code></td>
+<td>Luôn đặt mod Kobo vào chỗ chờ cài, kể cả khi mod không đổi.</td>
+</tr>
+<tr>
+<td><code>--no-mod</code></td>
+<td>Chỉ cài ứng dụng và công cụ chủ, không cài mod.</td>
+</tr>
+<tr>
+<td><code>--remove-legacy</code></td>
+<td>Gỡ thêm bản LocalSend tự làm kiểu cũ (<code>.adds/localsend</code> và các mục NickelMenu của nó).</td>
+</tr>
+<tr>
+<td><code>--uninstall</code></td>
+<td>Gỡ NickelDrawer (xem <a href="#s-go-cai-at">Gỡ cài đặt</a>).</td>
+</tr>
+<tr>
+<td><code>--purge</code></td>
+<td>Dùng cùng <code>--uninstall</code>: xoá luôn thư mục <code>data/</code> của các ứng dụng.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Nên biết:</p>
+<ul>
+<li>Bản sao lưu nằm trong <code>backups/&lt;ngày-giờ&gt;/</code> ở thư mục mã nguồn trên máy tính.</li>
+<li>Tập lệnh tìm Kobo ở <code>/Volumes/KOBOeReader</code> (macOS). Trên Linux, hoặc nếu ổ Kobo có tên khác, đặt trước: <code>KOBO_ROOT=/đường/dẫn/tới/kobo tools/install-to-kobo.sh</code>.</li>
+<li>Nó tắt tab của NickelMenu ở thanh dưới (Ngăn Ứng Dụng thay cho tab đó) và xoá các mục menu do bản cũ tạo ra. <code>--uninstall</code> bật lại tab.</li>
+<li>Xong thì ngắt kết nối, rút cáp và để Kobo khởi động lại nếu mod đã được đặt chờ cài.</li>
+</ul>
+<h2 id="lam-quen">Làm quen</h2>
+<h3 id="mo-ngan-ung-dung">Mở Ngăn Ứng Dụng</h3>
+<ol>
+<li>Bấm <strong>Thêm</strong> ở thanh dưới.</li>
+<li>Bấm <strong>Ứng dụng</strong>.</li>
+</ol>
+<p>Hàng <strong>Ứng dụng</strong> có thể có dòng thứ hai: một ứng dụng đang chạy (ví dụ "LocalSend Đang nhận") hoặc <strong>1 bản cập nhật</strong>. Dấu chấm nghĩa là có bản cập nhật đang chờ.</p>
+<p>Ngăn có:</p>
+<ul>
+<li>thanh tiêu đề với <strong>←</strong> (về Thêm), tiêu đề <strong>Ứng dụng</strong>, và hai nút chuyển giữa <strong>danh sách</strong> và <strong>lưới</strong>;</li>
+<li>mục <strong>ĐÃ CÀI</strong> với các ứng dụng của bạn;</li>
+<li>mục <strong>HỆ THỐNG</strong> với <strong>Làm mới danh sách</strong> và, nếu bạn đã thiết lập cập nhật, <strong>Cập nhật</strong>;</li>
+<li>dòng gợi ý "Giữ một ứng dụng để xem thông tin hoặc gỡ.";</li>
+<li>số trang (ví dụ <code>1 / 2</code>) với mũi tên <strong>‹ ›</strong>.</li>
+</ul>
+<h3 id="danh-sach-hay-luoi">Danh sách hay lưới</h3>
+<p>Bấm nút danh sách hoặc lưới ở thanh tiêu đề. Danh sách hiện mỗi ứng dụng với biểu tượng, tên và một dòng trạng thái. Lưới hiện bốn biểu tượng mỗi hàng kèm tên; ở chế độ lưới, <strong>Làm mới danh sách</strong> và <strong>Cập nhật</strong> thành nút nhỏ trên thanh tiêu đề. Ngăn nhớ lựa chọn của bạn.</p>
+<h3 id="lat-trang">Lật trang</h3>
+<p>Dùng nút lật trang của Kobo hoặc bấm mũi tên <strong>‹ ›</strong>. Nút lật trang cũng lật trang trong màn hình ứng dụng dài.</p>
+<h3 id="lam-moi-danh-sach">Làm mới danh sách</h3>
+<p>Bạn vừa chép thêm hay xoá một ứng dụng qua USB? Bấm <strong>Làm mới danh sách</strong> (ở chế độ lưới: nút làm mới trên thanh tiêu đề). Ngăn cũng tự tải lại mỗi lần bạn mở.</p>
+<h3 id="thong-tin-va-go">Thông tin và gỡ</h3>
+<p>Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện ra:</p>
+<ul>
+<li><strong>Thông tin</strong>: phiên bản, ứng dụng đọc và ghi những thư mục nào, có dùng mạng không, và thư mục của nó.</li>
+<li>Các thao tác khác của ứng dụng. Chúng chạy ngay, không hỏi lại như màn hình của ứng dụng. Với việc làm thay đổi tệp, nên dùng màn hình của ứng dụng.</li>
+<li><strong>Gỡ…</strong>: xoá ứng dụng. Máy hỏi lại trước.</li>
+</ul>
+<blockquote>
+<p><strong>Gỡ sẽ xoá cả thư mục của ứng dụng, kể cả <code>data/</code>.</strong> Với GitHub, đó là token và cài đặt. Với Thư viện, đó là bản sao lưu và thùng rác, nên bạn không thể hoàn tác lần sửa hay khôi phục sách đã bỏ nữa. Sách và ảnh ở các thư mục thường vẫn còn. Hãy hoàn tác hoặc khôi phục những gì cần trước.</p>
+</blockquote>
+<h3 id="i-lai-giua-cac-man-hinh">Đi lại giữa các màn hình</h3>
+<ul>
+<li><strong>←</strong> trên thanh tiêu đề luôn lùi đúng một tầng: ảnh → lưới ảnh → ứng dụng → Ngăn → Thêm.</li>
+<li>Bấm một tab ở thanh dưới (ví dụ <strong>Trang chủ</strong>) là rời hẳn Ngăn và ứng dụng. Lần sau Ngăn mở lại từ trang đầu. Việc đang chạy nền (nhập ảnh, đồng bộ) vẫn tiếp tục.</li>
+<li>Rời một màn hình không bao giờ dừng việc ứng dụng đang làm.</li>
+</ul>
+<h3 id="thong-bao">Thông báo</h3>
+<p>Ứng dụng trả lời bằng một thông báo ngắn ở cuối màn hình, ví dụ "Đã đặt làm hình nền". Khi có gì không được, thông báo sẽ nói vậy và chi tiết được ghi vào tệp nhật ký của ứng dụng, <code>data/log.txt</code> trong thư mục ứng dụng (<code>.adds/apps/&lt;ứng dụng&gt;/data/log.txt</code>). Bạn đọc được tệp này qua USB.</p>
+<h2 id="localsend-nhan-sach-tu-ien-thoai">LocalSend: nhận sách từ điện thoại</h2>
+<p><img alt="Màn hình LocalSend khi đang nhận" src="img/localsend-vi.png" /></p>
+<p><em>Ảnh dựng trên máy tính theo đúng cỡ màn hình Kobo, không phải ảnh chụp máy thật.</em></p>
+<h3 id="ban-can">Bạn cần</h3>
+<ul>
+<li>Ứng dụng <strong>LocalSend</strong> miễn phí trên điện thoại hoặc máy tính (tải từ kho ứng dụng hoặc localsend.org).</li>
+<li>Kobo và điện thoại dùng <strong>cùng một mạng Wi-Fi</strong>.</li>
+</ul>
+<h3 id="nhan-tep">Nhận tệp</h3>
+<ol>
+<li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>LocalSend</strong>.</li>
+<li>
+<p>Bấm <strong>Bắt đầu nhận</strong>.</p>
+<ul>
+<li>Nếu Wi-Fi đang tắt, Kobo hỏi "Wi-Fi đang tắt. Hãy bật để tiếp tục." Bấm <strong>Bật Wi-Fi</strong>. Khi Wi-Fi kết nối xong, việc nhận bắt đầu.</li>
+</ul>
+</li>
+<li>
+<p>Màn hình hiện <strong>mã PIN</strong> lớn, tên <strong>Thiết bị</strong>, địa chỉ <strong>IP</strong>, và trạng thái <strong>Đang nhận</strong>.</p>
+</li>
+<li>Trên điện thoại, mở LocalSend, bấm <strong>Gửi</strong> (Send), chọn tệp, rồi bấm vào tên Kobo trong danh sách thiết bị ở gần.</li>
+<li>Nhập mã PIN trên Kobo vào điện thoại.</li>
+<li>Tệp về máy. Mỗi tệp hiện dưới mục <strong>Đã nhận</strong> và được xếp vào đúng chỗ:</li>
+</ol>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tệp</th>
+<th>Vào</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EPUB, KEPUB, MOBI</td>
+<td><code>Books</code></td>
+</tr>
+<tr>
+<td>PDF, TXT, HTML, RTF</td>
+<td><code>Documents</code></td>
+</tr>
+<tr>
+<td>CBZ, CBR</td>
+<td><code>Comics</code></td>
+</tr>
+<tr>
+<td>PNG, JPEG, GIF</td>
+<td><code>Pictures</code></td>
+</tr>
+<tr>
+<td>loại khác</td>
+<td>bị từ chối (xem dưới)</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="7">
+<li>Xong thì bấm <strong>Dừng và cập nhật thư viện</strong>. Kobo dừng nhận và quét lại thư viện để sách mới hiện ra.</li>
+</ol>
+<p>Nên biết:</p>
+<ul>
+<li>Tệp trùng tên với tệp đã có không bao giờ bị ghi đè. Tệp mới được thêm số, ví dụ <code>sach (2).epub</code>.</li>
+<li>Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp <code>.epub</code> phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 30 MB, tệp văn bản 20 MB). Tệp không đạt vào <code>.adds/koboapps/inbox/rejected/</code> và bị xoá sau 7 ngày.</li>
+<li>Mã PIN được tạo một lần và giữ nguyên. Muốn mã mới, xoá tệp <code>.adds/apps/localsend/data/pin.txt</code> qua USB.</li>
+<li>Bạn có thể bấm <strong>←</strong> và làm việc khác. Kobo vẫn nhận, và hàng <strong>Ứng dụng</strong> cho biết LocalSend đang nhận.</li>
+<li><strong>Việc nhận tự dừng sau 15 phút không có tệp mới.</strong> Khi đó màn hình báo, và thư viện được quét lại.</li>
+<li>Kobo vẫn có thể tự ngủ theo hẹn giờ của nó khi bạn đang gửi. Không ứng dụng nào giữ máy thức được. Khi gửi lâu, thỉnh thoảng chạm màn hình.</li>
+</ul>
+<p><em>Đã thử trên máy:</em> nhận một EPUB bằng phiên bản cũ của ứng dụng này (chạy qua menu); sách đã vào thư viện. Màn hình hiện tại chưa được thử lại trên máy.</p>
+<h2 id="github-ong-bo-sach-tu-repo-cua-ban">GitHub: đồng bộ sách từ repo của bạn</h2>
+<p><img alt="Màn hình GitHub sau khi ghép nối" src="img/ghsync-vi.png" /></p>
+<p><em>Ảnh dựng trên máy tính, không phải ảnh chụp máy thật.</em></p>
+<p>Ứng dụng GitHub tải sách mới từ một <strong>repo GitHub riêng tư</strong> của bạn. Nó chỉ thêm: không bao giờ xoá hay ghi đè sách trên Kobo, và sách bạn đã xoá trên Kobo sẽ không bị tải lại.</p>
+<h3 id="chuan-bi-mot-lan-tren-ien-thoai-hoac-may-tinh">Chuẩn bị (một lần, trên điện thoại hoặc máy tính)</h3>
+<ol>
+<li>Tạo một repo <strong>riêng tư</strong> (private) trên GitHub, ví dụ <code>sach-cua-toi</code>. Để sách vào một thư mục, ví dụ <code>epub/</code>.</li>
+<li>
+<p>Tạo một <strong>fine-grained personal access token</strong> trên GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.</p>
+<ul>
+<li><strong>Repository access:</strong> Only select repositories → chỉ chọn repo sách của bạn.</li>
+<li><strong>Permissions:</strong> Repository permissions → <strong>Contents: Read-only</strong>.</li>
+<li><strong>Expiration:</strong> chọn ngày hết hạn.</li>
+</ul>
+</li>
+<li>
+<p>Lưu token trong trình quản lý mật khẩu của điện thoại. Bạn sẽ dán nó trên điện thoại ở bước 4 phần dưới.</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>Giữ an toàn cho token.</strong> Không bao giờ gõ token trên Kobo, không gửi cho ai, không chụp màn hình có token. Token chỉ cho quyền đọc repo sách của bạn, không hơn. Nếu mất Kobo, hãy thu hồi (revoke) token trên GitHub.</p>
+</blockquote>
+<h3 id="ghep-noi-kobo-voi-ien-thoai">Ghép nối Kobo với điện thoại</h3>
+<ol>
+<li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>GitHub</strong>. Lần đầu nó hiện <strong>Chưa ghép nối</strong>.</li>
+<li>
+<p>Bấm <strong>Ghép nối bằng điện thoại</strong>, rồi <strong>Bắt đầu ghép nối</strong>. Bật Wi-Fi nếu Kobo hỏi.</p>
+<p><img alt="Màn hình ghép nối" src="img/ghsync-pair-vi.png" /></p>
+</li>
+<li>
+<p>Kobo hiện mã QR, một địa chỉ dạng <code>http://192.168.1.23:8765</code>, một mã 6 số và thời gian còn mở (10 phút).</p>
+</li>
+<li>
+<p>Trên điện thoại dùng <strong>cùng Wi-Fi</strong>, quét mã QR (hoặc gõ địa chỉ vào trình duyệt). Trên trang đó:</p>
+<ul>
+<li><strong>Mã từ Kobo</strong>: 6 chữ số.</li>
+<li><strong>Repo</strong>: dạng <code>owner/name</code>, ví dụ <code>tencuaban/sach-cua-toi</code>.</li>
+<li><strong>Nhánh (không bắt buộc)</strong>: bỏ trống để dùng nhánh mặc định.</li>
+<li><strong>Thư mục (không bắt buộc)</strong>: thư mục sách, ví dụ <code>epub</code>. Bỏ trống là cả repo.</li>
+<li><strong>Token truy cập</strong>: dán token.</li>
+</ul>
+</li>
+<li>
+<p>Bấm <strong>Kiểm tra và lưu</strong>. Kobo kiểm mọi thứ với GitHub rồi mới lưu.</p>
+</li>
+<li>Khi trang báo <strong>Đã ghép nối</strong>, đóng trang. Trên Kobo, trạng thái đổi thành <strong>Sẵn sàng</strong>. Bấm <strong>←</strong> để xem Repo, Nhánh và Thư mục.</li>
+</ol>
+<p>Chỉ ghép nối trên Wi-Fi nhà bạn: trang ghép nối không mã hoá (HTTP thường). Trang tự đóng khi thành công, sau 5 lần sai mã, hoặc sau 10 phút. <strong>Dừng ghép nối</strong> đóng ngay.</p>
+<h3 id="ong-bo">Đồng bộ</h3>
+<ol>
+<li>Bấm <strong>Đồng bộ ngay</strong>. Thông báo "Đang đồng bộ trong nền."</li>
+<li>Màn hình hiện "Đang tải 2 / 7" và tên tệp. Bạn có thể rời màn hình.</li>
+<li>Xong thì màn hình hiện ví dụ "3 mới, 120 đã có, 0 lỗi", và thư viện tự quét lại nếu có sách mới.</li>
+</ol>
+<p>Sách vào đâu: sách vào <code>Books/GitHub</code>, PDF vào <code>Documents/GitHub</code>, truyện tranh vào <code>Comics/GitHub</code>. Tệp được kiểm như tệp LocalSend (loại, dung lượng, nội dung thật); tệp không đạt bị bỏ qua. Nếu trên GitHub không có gì mới từ lần trước, không có gì được tải.</p>
+<p>Sách bạn xoá trên Kobo sẽ không quay lại: lần đồng bộ sau bỏ qua nó. Sách bạn xoá khỏi repo vẫn còn trên Kobo.</p>
+<p><a id="s-thong-bao-khi-ghep-noi-va-ong-bo"></a></p>
+<h3 id="thong-bao-khi-ghep-noi-va-ong-bo">Thông báo khi ghép nối và đồng bộ</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Thông báo</th>
+<th>Cách xử lý</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sai mã. Còn 4 lần thử.</td>
+<td>Gõ lại 6 số đang hiện trên Kobo. Sai 5 lần thì phiên ghép nối dừng: bắt đầu lại trên Kobo.</td>
+</tr>
+<tr>
+<td>Không tìm thấy repo …, hoặc token không thấy repo này.</td>
+<td>Kiểm lại chính tả <code>owner/name</code>. Kiểm token có chọn repo này với quyền Contents: Read-only.</td>
+</tr>
+<tr>
+<td>Nhánh … không có trong …</td>
+<td>Bỏ trống ô nhánh để dùng nhánh mặc định, hoặc sửa tên nhánh.</td>
+</tr>
+<tr>
+<td>Thư mục … không có trên nhánh …</td>
+<td>Sửa tên thư mục, hoặc thêm một cuốn sách vào thư mục đó trong repo, hoặc bỏ trống ô thư mục.</td>
+</tr>
+<tr>
+<td>GitHub từ chối (401): token sai hoặc hết hạn.</td>
+<td>Tạo token mới rồi ghép nối lại.</td>
+</tr>
+<tr>
+<td>GitHub từ chối (403): token không có quyền đọc Contents của repo này.</td>
+<td>Cho token quyền Contents: Read-only với repo này.</td>
+</tr>
+<tr>
+<td>Token phải bắt đầu bằng github_pat_ hoặc ghp_ …</td>
+<td>Dán nguyên token, không thừa ký tự trước hay sau.</td>
+</tr>
+<tr>
+<td>Hết thời gian ghép nối. / Đã dừng ghép nối: nhập sai mã quá nhiều lần.</td>
+<td>Bấm lại <strong>Bắt đầu ghép nối</strong> trên Kobo.</td>
+</tr>
+<tr>
+<td>Chưa có Wi-Fi. Kết nối rồi thử lại.</td>
+<td>Bật Wi-Fi trên Kobo.</td>
+</tr>
+<tr>
+<td>Hết lượt gọi API GitHub. Thử lại sau.</td>
+<td>Đợi khoảng một giờ rồi đồng bộ lại.</td>
+</tr>
+<tr>
+<td>Đồng bộ lỗi. Xem data/log.txt.</td>
+<td>Đọc <code>.adds/apps/ghsync/data/log.txt</code> qua USB. Tệp này không bao giờ chứa token.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Khi kiểm không đạt, không có gì được lưu, cài đặt cũ vẫn giữ, và ô token trên trang được xoá trống để bạn dán lại.</p>
+<p>Repo còn trống vẫn ghép nối được; lần đồng bộ đầu báo 0 sách.</p>
+<p><em>Đã thử trên máy:</em> chưa. Phần ghép nối và đồng bộ đã được kiểm trên máy tính.</p>
+<h2 id="hinh-nen-anh-cua-ban-tren-man-hinh-ngu">Hình nền: ảnh của bạn trên màn hình ngủ</h2>
+<p><img alt="Thư viện ảnh của Hình nền" src="img/wallpaper-vi.png" /></p>
+<p><em>Ảnh dựng trên máy tính, không phải ảnh chụp máy thật.</em></p>
+<h3 id="hai-cai-at-kobo-can-bat">Hai cài đặt Kobo cần bật</h3>
+<p>Kobo chỉ hiện ảnh của NickelDrawer khi màn hình ngủ đang ở kiểu <strong>bìa sách toàn màn hình</strong>. Vì vậy:</p>
+<ol>
+<li>Mở <strong>Cài đặt</strong> → <strong>Tiết kiệm pin và riêng tư</strong>.</li>
+<li>Bật <strong>Hiển thị sách đang đọc</strong>.</li>
+<li>Bật <strong>Hiển thị bìa sách toàn màn hình</strong>.</li>
+<li>Mở một cuốn sách bất kỳ một lần, để Kobo có "sách đang đọc".</li>
+<li>Trong <strong>Thêm</strong> → <strong>Tinh chỉnh</strong>, để <strong>Màn hình chờ</strong> ở <strong>Bật</strong>.</li>
+</ol>
+<p>Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình ngủ chưa bật · Xem Tùy chọn").</p>
+<h3 id="them-anh">Thêm ảnh</h3>
+<ol>
+<li>Cắm Kobo qua USB và chép ảnh PNG hoặc JPEG thẳng vào thư mục <code>Pictures</code> (không để trong thư mục con). Tối đa 20 MB mỗi ảnh. Bạn cũng có thể gửi bằng LocalSend: ảnh cũng vào <code>Pictures</code>.</li>
+<li>Ngắt kết nối rồi mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>Hình nền</strong>.</li>
+<li>Lần đầu, khi thư viện ảnh còn trống, các ảnh đã có trong <code>Pictures</code> được tự nhập. Về sau, bấm nút nhập ở thanh tiêu đề (<strong>Nhập ảnh</strong>).</li>
+<li>Tiêu đề hiện "Đang nhập 3/13" và lưới đầy dần khi từng ảnh được chuyển đổi. Bạn có thể rời màn hình trong lúc đó.</li>
+</ol>
+<p>Mỗi ảnh được thu theo cỡ màn hình và chuyển sang 16 mức xám. Ảnh gốc trong <code>Pictures</code> không bị đổi. Cùng một ảnh không bao giờ bị nhập hai lần.</p>
+<h3 id="xem-anh">Xem ảnh</h3>
+<ul>
+<li>Lưới hiện 12 ảnh mỗi trang (4 ngang, 3 dọc). Dùng nút lật trang để xem tiếp.</li>
+<li>Ảnh đang dùng có viền dày và dấu ✓.</li>
+<li>Chạm một ảnh để mở trình xem. Tiêu đề cho biết vị trí, ví dụ <code>3 / 13</code>.</li>
+</ul>
+<p><img alt="Trình xem ảnh" src="img/wallpaper-viewer-vi.png" /></p>
+<p>Trong trình xem:</p>
+<ul>
+<li>Chạm một phần ba bên phải màn hình (hoặc nút lật trang) để sang ảnh sau, một phần ba bên trái để về ảnh trước. Ở ảnh đầu hoặc cuối thì không có gì xảy ra.</li>
+<li>Chạm giữa màn hình để ẩn các thanh và xem ảnh đủ cỡ. Một nút tròn <strong>←</strong> nằm ở góc trên bên trái: chạm nó (hoặc chạm giữa lần nữa) để hiện lại các thanh.</li>
+<li><strong>←</strong> trên thanh tiêu đề về lại lưới, đúng trang có ảnh bạn vừa xem.</li>
+</ul>
+<h3 id="at-lam-hinh-nen">Đặt làm hình nền</h3>
+<p>Trong trình xem, bấm <strong>Đặt làm hình nền</strong>. Thông báo "Đã đặt làm hình nền", tiêu đề hiện <strong>Đang dùng ✓</strong> và nút chuyển thành <strong>Đang dùng</strong>. Cho máy ngủ để xem.</p>
+<p>Bạn cũng có thể giữ một ảnh trong lưới. Menu hiện ra có <strong>Đặt làm hình nền</strong>, <strong>Xem</strong>, <strong>Thông tin</strong> (tên, kích thước, ngày nhập), <strong>Xoá khỏi Hình nền…</strong> và <strong>Xoá cả ảnh gốc…</strong>.</p>
+<h3 id="tuy-chon">Tùy chọn</h3>
+<p>Bấm biểu tượng bánh răng trên thanh tiêu đề của lưới.</p>
+<p><img alt="Tùy chọn của Hình nền" src="img/wallpaper-options-vi.png" /></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tùy chọn</th>
+<th>Lựa chọn</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cách hiển thị</strong></td>
+<td><strong>Lấp đầy màn hình</strong> (cắt bớt mép ảnh) hoặc <strong>Vừa khung</strong> (giữ cả ảnh, có viền trắng). Ảnh được chuyển đổi lại trong nền.</td>
+</tr>
+<tr>
+<td><strong>Đổi ảnh</strong></td>
+<td><strong>Cố định</strong> (luôn dùng ảnh đã chọn) hoặc <strong>Ngẫu nhiên</strong> (ảnh khác mỗi lần máy ngủ).</td>
+</tr>
+<tr>
+<td><strong>Màn hình ngủ</strong></td>
+<td><strong>Sẵn sàng ✓</strong>, hoặc cho biết cần bật cài đặt Kobo nào.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="xoa-anh">Xoá ảnh</h3>
+<ul>
+<li><strong>Xoá…</strong> trong trình xem, hoặc <strong>Xoá khỏi Hình nền…</strong> trong menu của lưới, bỏ ảnh khỏi Hình nền. Ảnh gốc vẫn ở <code>Pictures</code>. Máy hỏi trước; chạm ra ngoài hộp hỏi thì không xoá gì.</li>
+<li><strong>Xoá cả ảnh gốc…</strong> xoá luôn ảnh gốc trong <code>Pictures</code>, nhưng chỉ khi đó đúng là tệp giống hệt. Nếu không, ảnh gốc được giữ và thông báo nói rõ.</li>
+</ul>
+<p><em>Đã thử trên máy:</em> nhập ảnh từ <code>Pictures</code> và ảnh toàn màn hình khi máy ngủ đã chạy đúng (khi bật hai cài đặt và có sách đang đọc). Một bản trước của lưới ảnh và trình xem đã chạy trên máy; lưới ảnh, trình xem và Tùy chọn hiện tại chưa được thử lại.</p>
+<h2 id="thu-vien-don-sach">Thư viện: dọn sách</h2>
+<p><img alt="Màn hình Thư viện" src="img/library-vi.png" /></p>
+<p><em>Ảnh dựng trên máy tính, không phải ảnh chụp máy thật.</em></p>
+<p>Ứng dụng Thư viện xem các sách trong <code>Books</code>, <code>Documents</code> và <code>Comics</code>. Nó chủ yếu dành cho sách tiếng Việt, nhưng phần tìm sách trùng dùng được cho mọi sách.</p>
+<p>Nó không bao giờ đụng đến cơ sở dữ liệu thư viện của Kobo. Mỗi lần sửa đều sao lưu sách trước, và thư viện tự quét lại sau đó.</p>
+<h3 id="quet">Quét</h3>
+<ol>
+<li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>Thư viện</strong>.</li>
+<li>Bấm <strong>Quét</strong>. Màn hình hiện "Đang quét n/N". Việc quét chạy nền; bạn có thể rời đi rồi quay lại.</li>
+<li>Bạn có các con số:<ul>
+<li><strong>Sách</strong>: số sách EPUB tìm thấy.</li>
+<li><strong>Sai ngôn ngữ</strong>: sách tiếng Việt bị gắn ngôn ngữ khác, thường là tiếng Anh. Khi đó Kobo ngắt dòng và tra từ như thể sách tiếng Anh.</li>
+<li><strong>Chưa chuẩn NFC</strong>: tên hoặc tựa sách viết theo dạng Unicode không chuẩn (xem dưới).</li>
+<li><strong>Nhóm trùng</strong>: các nhóm sách giống nhau.</li>
+<li><strong>Lần quét cuối</strong>: lần quét gần nhất.</li>
+</ul>
+</li>
+</ol>
+<h3 id="sua-ngon-ngu">Sửa ngôn ngữ</h3>
+<ol>
+<li>Bấm <strong>Sửa ngôn ngữ</strong>, rồi <strong>Sửa</strong>.</li>
+<li>Mỗi sách tiếng Việt bị gắn sai ngôn ngữ được chép vào thư mục sao lưu của ứng dụng, rồi chỉ ngôn ngữ của nó được đặt lại là tiếng Việt. Tệp mới được kiểm trước khi thay tệp cũ.</li>
+<li>Mở lại sách để thấy cách ngắt dòng mới. Nếu Kobo vẫn dùng ngôn ngữ cũ, quét lại thư viện (<strong>Tinh chỉnh</strong> → <strong>Quét lại thư viện</strong>).</li>
+</ol>
+<h3 id="sua-ten-nfc">Sửa tên (NFC)</h3>
+<p>Chữ Việt có dấu (như "ệ") có thể được lưu theo hai cách. Nhìn giống nhau nhưng khi tìm kiếm và sắp xếp lại bị coi là khác nhau. <strong>Sửa tên (NFC)</strong> viết lại tên tệp, tựa sách và tác giả theo dạng chuẩn (NFC). Nó sao lưu trước.</p>
+<h3 id="hoan-tac">Hoàn tác</h3>
+<p><strong>Hoàn tác lần sửa</strong> đưa bản gốc của lần sửa ngôn ngữ hay sửa tên gần nhất trở lại, kể cả tên tệp cũ.</p>
+<h3 id="sach-trung">Sách trùng</h3>
+<ol>
+<li>Ở mục <strong>Sách trùng</strong>, chạm vào một cuốn để chọn. Chưa có gì xảy ra.</li>
+<li>Bấm <strong>Bỏ vào thùng rác</strong>, rồi <strong>Chuyển</strong>. Sách vào thùng rác của ứng dụng trong 30 ngày.</li>
+<li>Bản cuối cùng của một cuốn sách không bao giờ bỏ được vào thùng rác.</li>
+<li><strong>Khôi phục từ thùng rác</strong> trả lại các sách trùng đã bỏ vào thùng rác ở ngày gần nhất. Nó không bao giờ ghi đè tệp.</li>
+</ol>
+<p>Sách trong thùng rác quá 30 ngày bị xoá khi bắt đầu lần quét kế tiếp.</p>
+<p><strong>Dừng</strong> dừng việc quét hoặc sửa đang chạy sau cuốn sách hiện tại.</p>
+<p>Giới hạn: bỏ qua tệp ẩn và liên kết, bỏ qua tệp trên 200 MB.</p>
+<p><em>Đã thử trên máy:</em> chưa.</p>
+<h2 id="viec-can-lam-danh-sach-viec-nho">Việc cần làm: danh sách việc nhỏ</h2>
+<p><img alt="Màn hình Việc cần làm" src="img/todo-vi.png" /></p>
+<p><em>Ảnh dựng trên máy tính, không phải ảnh chụp máy thật.</em></p>
+<p>Một danh sách việc ngắn, chỉ nằm trong Kobo của bạn. Không cần tài khoản, không dùng mạng.</p>
+<h3 id="them-viec">Thêm việc</h3>
+<ol>
+<li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>Việc cần làm</strong>.</li>
+<li>Chạm ô <strong>Việc mới</strong>. Bàn phím của Kobo hiện ra.</li>
+<li>Gõ việc rồi xác nhận. Việc mới hiện ở cuối danh sách và thông báo "Đã thêm việc".</li>
+</ol>
+<p>Thanh tiêu đề cho biết số việc còn và đã xong, ví dụ "Còn 3 · xong 2".</p>
+<h3 id="anh-dau-xong-xoa-don">Đánh dấu xong, xoá, dọn</h3>
+<ul>
+<li><strong>Chạm một việc</strong> để đánh dấu xong (hiện dấu ✓). Chạm lần nữa để mở lại.</li>
+<li><strong>Giữ một việc</strong> rồi chọn <strong>Xoá...</strong> để xoá. Máy hỏi trước.</li>
+<li><strong>Xoá việc đã xong</strong> ở cuối màn hình xoá mọi việc có dấu ✓. Máy hỏi trước. Nút này mờ khi chưa có việc nào xong.</li>
+</ul>
+<p>Giới hạn: tối đa 200 việc, mỗi việc tối đa 200 ký tự. Không thêm được một việc hai lần.</p>
+<p>Danh sách được lưu ở <code>.adds/apps/todo/data/todo.json</code>. Nếu tệp đó bị hỏng, ứng dụng giữ một bản sao tên <code>todo.json.corrupt</code>, bắt đầu lại với danh sách trống và báo cho bạn.</p>
+<p><em>Đã thử trên máy:</em> chưa. Việc gõ bằng bàn phím Kobo trong màn hình ứng dụng chưa được thử trên máy; nếu bàn phím không hiện, ô nhập sẽ báo "Hãy đổi mục này từ điện thoại hoặc máy tính."</p>
+<h2 id="tinh-chinh">Tinh chỉnh</h2>
+<p>Mở <strong>Thêm</strong> → <strong>Tinh chỉnh</strong>. Một cửa sổ giống Cài đặt của Kobo hiện ra, chia hai cột. Đóng bằng <strong>✕</strong> hoặc chạm ra ngoài. Dùng nút lật trang nếu có hơn một trang.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tinh chỉnh</th>
+<th>Làm gì</th>
+<th>Khi nào có tác dụng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Màn hình chờ</strong> (Bật/Tắt)</td>
+<td>Tắt thì giấu thư mục ảnh màn hình ngủ, Kobo hiện màn hình ngủ bình thường. Ảnh vẫn được giữ. Phải Bật thì Hình nền mới hiện.</td>
+<td>Lần ngủ tới.</td>
+</tr>
+<tr>
+<td><strong>Chụp màn hình</strong> (Bật/Tắt)</td>
+<td>Cài đặt chụp màn hình ẩn của Kobo.</td>
+<td>Chưa xác nhận trên máy. Nếu không thấy thay đổi, hãy khởi động lại.</td>
+</tr>
+<tr>
+<td><strong>Tự kết nối USB</strong> (Bật/Tắt)</td>
+<td>Khi bật, Kobo kết nối với máy tính mà không hỏi <strong>Kết nối</strong>.</td>
+<td>Chưa xác nhận trên máy. Nếu không thấy thay đổi, hãy khởi động lại.</td>
+</tr>
+<tr>
+<td><strong>Chữ rõ nét</strong> (Bật/Tắt)</td>
+<td>Khoảng cách chữ và chữ ghép đẹp hơn. <strong>Chỉ với sách KEPUB</strong> (sách mua từ Kobo hoặc đã chuyển sang KEPUB); EPUB thường và PDF không đổi.</td>
+<td>Đóng sách rồi mở lại.</td>
+</tr>
+<tr>
+<td><strong>Địa chỉ IP</strong></td>
+<td>Hiện địa chỉ Wi-Fi của Kobo, hoặc "Không có Wi‑Fi". Chạm vào không làm gì.</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Đảo màu và khởi động lại</strong></td>
+<td>Đảo đen và trắng trên cả màn hình rồi khởi động lại. Chạy lần nữa để trả lại. Có hỏi trước.</td>
+<td>Sau khi khởi động lại.</td>
+</tr>
+<tr>
+<td><strong>Ngủ</strong></td>
+<td>Cho Kobo ngủ ngay.</td>
+<td>Ngay.</td>
+</tr>
+<tr>
+<td><strong>Khởi động lại</strong></td>
+<td>Khởi động lại Kobo. Có hỏi trước.</td>
+<td>Ngay.</td>
+</tr>
+<tr>
+<td><strong>Quét lại thư viện</strong></td>
+<td>Nhờ Kobo tìm sách mới hoặc sách đã đổi.</td>
+<td>Ngay.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Công tắc đổi ngay và có thông báo xác nhận, ví dụ "Đã bật Chụp màn hình".</p>
+<p>Các công tắc ghi vào tệp cài đặt của chính Kobo (<code>.kobo/Kobo/Kobo eReader.conf</code>); <strong>Màn hình chờ</strong> đổi tên thư mục <code>.kobo/screensaver</code>. Chúng giữ nguyên như bạn để sau khi gỡ NickelDrawer, nên hãy đặt lại trước nếu muốn.</p>
+<p><em>Đã thử trên máy:</em> chưa.</p>
+<h2 id="cap-nhat">Cập nhật</h2>
+<p>NickelDrawer có thể cập nhật các ứng dụng, công cụ chủ và mod Kobo qua Wi-Fi. Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.</p>
+<h3 id="thiet-lap-cap-nhat-mot-lan">Thiết lập cập nhật (một lần)</h3>
+<ol>
+<li>Cắm Kobo qua USB.</li>
+<li>
+<p>Tạo tệp <code>.adds/koboapps/data/update.json</code> với nội dung sau, trong đó <code>owner/name</code> là repo GitHub nơi phát hành NickelDrawer:</p>
+<pre><code>{"repo": "owner/name", "channel": "stable"}
+</code></pre>
+<p>Dùng <code>"channel": "beta"</code> để nhận cả bản thử nghiệm.</p>
+</li>
+<li>
+<p>Ngắt kết nối. Mục <strong>HỆ THỐNG</strong> trong Ngăn giờ có hàng <strong>Cập nhật</strong>.</p>
+</li>
+</ol>
+<h3 id="kiem-tra-va-cai">Kiểm tra và cài</h3>
+<ol>
+<li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>Cập nhật</strong>.</li>
+<li>Bấm <strong>Kiểm tra cập nhật</strong>. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Nếu có bản mới hơn, màn hình hiện <strong>Đang dùng</strong>, <strong>Mới nhất</strong> và <strong>Có gì mới</strong>, và hàng <strong>Ứng dụng</strong> hiện <strong>1 bản cập nhật</strong>.</li>
+<li>Bấm <strong>Cập nhật</strong>, rồi <strong>Cập nhật</strong> lần nữa để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình hiện "Đang cập nhật..." rồi kết quả.</li>
+<li>Nếu kết quả có câu "Hãy khởi động lại Kobo để hoàn tất.", hãy khởi động lại (<strong>Tinh chỉnh</strong> → <strong>Khởi động lại</strong>).</li>
+</ol>
+<h3 id="khoi-ong-lai-sau-cap-nhat-lam-gi">Khởi động lại sau cập nhật làm gì</h3>
+<p>Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới vào <code>.kobo/KoboRoot.tgz</code>. Kobo cài nó trong lần khởi động lại kế tiếp, giống hệt lần cài đầu. Ứng dụng và công cụ chủ đã được cập nhật xong trước khi khởi động lại.</p>
+<h3 id="neu-co-truc-trac">Nếu có trục trặc</h3>
+<ul>
+<li>Mọi tệp đều được đối chiếu với danh sách đã ký trước khi thay. Chữ ký sai hay tệp hỏng thì việc cập nhật dừng và không có gì thay đổi.</li>
+<li>Nếu có lỗi sau khi tệp đã được thay, bản cũ được tự động đưa về.</li>
+<li>Dữ liệu ứng dụng (token, cài đặt, ảnh, thùng rác) không bao giờ nằm trong bản cập nhật.</li>
+<li>Bản cũ hơn không bao giờ được cài đè lên bản mới hơn.</li>
+<li>"Đang có một bản cập nhật hệ thống chờ khởi động lại": khởi động lại Kobo rồi cập nhật lại.</li>
+</ul>
+<p><em>Đã thử trên máy:</em> chưa. Các bước cập nhật đã được kiểm trên máy tính.</p>
+<h2 id="ngon-ngu">Ngôn ngữ</h2>
+<h3 id="ngon-ngu-uoc-chon-the-nao">Ngôn ngữ được chọn thế nào</h3>
+<p>NickelDrawer dùng ngôn ngữ của Kobo (<strong>Cài đặt</strong> → <strong>Ngôn ngữ và từ điển</strong> †). Đổi ngôn ngữ của Kobo, rồi mở lại Ngăn. Nếu ngôn ngữ của bạn chưa có bản dịch, chữ tiếng Anh được dùng. Kobo đặt tiếng Bồ Đào Nha (Brazil) sẽ tìm <code>pt_BR</code>, rồi <code>pt</code>, rồi tiếng Anh.</p>
+<p>Dự án duy trì tiếng Anh và tiếng Việt. Ở ngôn ngữ khác, vài chữ do chính mod Kobo vẽ (hàng <strong>Ứng dụng</strong> và <strong>Tinh chỉnh</strong>, một số thông báo lỗi, thông báo "chưa hỗ trợ") vẫn là tiếng Anh.</p>
+<h3 id="them-mot-ngon-ngu">Thêm một ngôn ngữ</h3>
+<p>Không cần lập trình, chỉ cần trình soạn thảo văn bản. Mỗi bản dịch là một tệp nhỏ gồm các dòng <code>"khoá": "chữ"</code>.</p>
+<ol>
+<li>
+<p>Chép <code>en.json</code> thành <code>&lt;mã&gt;.json</code> (ví dụ <code>fr.json</code>) trong từng thư mục sau:</p>
+<ul>
+<li><code>.adds/koboapps/locales/</code> (Ngăn, Tinh chỉnh, cập nhật),</li>
+<li><code>.adds/koboapps/screens/updates/locales/</code> (màn hình Cập nhật),</li>
+<li><code>.adds/apps/&lt;ứng dụng&gt;/locales/</code> cho mỗi ứng dụng.</li>
+</ul>
+</li>
+<li>
+<p>Chỉ dịch phần chữ bên phải. Không bao giờ đổi khoá bên trái.</p>
+</li>
+<li>Giữ nguyên mọi <code>{chỗ_trống}</code> như đã viết, và giữ các ngắt dòng <code>\n</code>.</li>
+<li>Viết ngắn: màn hình nhỏ. Tên tối đa 24 ký tự, nhãn nút tối đa 32, và không có dấu <code>:</code> trong nhãn.</li>
+<li>Ngắt kết nối rồi mở Ngăn khi Kobo đang đặt ngôn ngữ đó.</li>
+</ol>
+<p>Muốn gửi bản dịch cho dự án, xem <a href="../TRANSLATING.md">docs/TRANSLATING.md</a>. Chưa hỗ trợ ngôn ngữ viết từ phải sang trái.</p>
+<p><a id="s-xu-ly-su-co"></a></p>
+<h2 id="xu-ly-su-co">Xử lý sự cố</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Hiện tượng</th>
+<th>Nguyên nhân thường gặp</th>
+<th>Cách xử lý</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Không có hàng <strong>Ứng dụng</strong> hay <strong>Tinh chỉnh</strong> trong <strong>Thêm</strong>.</td>
+<td>Mod chưa được cài, đang bị tắt, hoặc không hỗ trợ firmware của bạn.</td>
+<td>Kiểm <code>.kobo/KoboRoot.tgz</code> đã biến mất (Kobo xoá nó sau khi cài). Kiểm <code>.adds/nickeldrawer/</code> không có tệp <code>disable</code>. Kiểm phiên bản firmware. Chép lại <code>KoboRoot.tgz</code> và khởi động lại.</td>
+</tr>
+<tr>
+<td>Thông báo "NickelDrawer chưa hỗ trợ firmware này".</td>
+<td>Firmware không thuộc năm bản được hỗ trợ, thường do Kobo tự cập nhật.</td>
+<td>Không có gì hỏng; Kobo vẫn chạy bình thường. Đợi bản NickelDrawer hỗ trợ bản firmware của bạn.</td>
+</tr>
+<tr>
+<td>Một dòng dưới tiêu đề Ngăn: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động".</td>
+<td>Kobo đang mời lên firmware 5.x.</td>
+<td>Từ chối lời mời trên Kobo nếu bạn muốn giữ NickelDrawer.</td>
+</tr>
+<tr>
+<td>Ngăn hiện mục <strong>SỰ CỐ</strong> hoặc "Chưa cài appsctl. Hãy cài lại koboapps."</td>
+<td>Công cụ chủ bị thiếu hoặc hỏng.</td>
+<td>Chép lại thư mục <code>.adds/koboapps</code> từ tệp zip phát hành. Bấm <strong>Thử lại</strong>.</td>
+</tr>
+<tr>
+<td>Kobo không hiện trên máy tính, hoặc không hỏi <strong>Kết nối</strong>.</td>
+<td>Lúc cắm cáp, Ngăn hay một màn hình ứng dụng đang mở, hoặc một ứng dụng đang bận.</td>
+<td>Rút cáp. Bấm <strong>Trang chủ</strong>. Dừng LocalSend nếu đang nhận. Cắm lại và bấm <strong>Kết nối</strong>. Vẫn không được thì khởi động lại Kobo.</td>
+</tr>
+<tr>
+<td>Ứng dụng báo "Không thành công. Xem data/log.txt."</td>
+<td>Ứng dụng gặp lỗi.</td>
+<td>Đọc <code>.adds/apps/&lt;ứng dụng&gt;/data/log.txt</code> qua USB. Mấy dòng cuối cho biết cái gì hỏng.</td>
+</tr>
+<tr>
+<td>Ứng dụng mở ra màn hình "Không mở được ứng dụng" với <strong>Quay lại</strong> và <strong>Thử lại</strong>.</td>
+<td>Tệp của ứng dụng thiếu hoặc hỏng.</td>
+<td>Chép lại thư mục của ứng dụng đó từ tệp zip phát hành, rồi <strong>Làm mới danh sách</strong>.</td>
+</tr>
+<tr>
+<td>Ứng dụng mới không hiện.</td>
+<td>Ngăn chưa tải lại, hoặc tệp của ứng dụng sai.</td>
+<td>Bấm <strong>Làm mới danh sách</strong>. Ứng dụng hỏng được liệt kê ở mục <strong>SỰ CỐ</strong> kèm lý do.</td>
+</tr>
+<tr>
+<td>Ảnh Hình nền không hiện khi máy ngủ.</td>
+<td>Một cài đặt Kobo đang tắt, chưa có sách đang đọc, hoặc <strong>Màn hình chờ</strong> đang tắt.</td>
+<td>Bật <strong>Hiển thị sách đang đọc</strong> và <strong>Hiển thị bìa sách toàn màn hình</strong> (<strong>Cài đặt</strong> → <strong>Tiết kiệm pin và riêng tư</strong>). Mở một cuốn sách bất kỳ. Bật <strong>Tinh chỉnh</strong> → <strong>Màn hình chờ</strong>. Đặt một ảnh làm hình nền.</td>
+</tr>
+<tr>
+<td>LocalSend trên điện thoại không thấy Kobo.</td>
+<td>Khác Wi-Fi, mạng khách chặn các máy thấy nhau, việc nhận đã dừng, hoặc Kobo đã ngủ.</td>
+<td>Cho cả hai dùng cùng Wi-Fi nhà (không dùng mạng khách). Mở LocalSend trên Kobo, kiểm nó báo <strong>Đang nhận</strong>. Đánh thức Kobo. Nếu LocalSend trên điện thoại cho gửi theo địa chỉ, dùng IP hiện trên Kobo.</td>
+</tr>
+<tr>
+<td>Ghép nối GitHub báo lỗi.</td>
+<td>Xem thông báo.</td>
+<td>Xem <a href="#s-thong-bao-khi-ghep-noi-va-ong-bo">Thông báo khi ghép nối và đồng bộ</a>.</td>
+</tr>
+<tr>
+<td>Trang ghép nối không mở được trên điện thoại.</td>
+<td>Khác Wi-Fi, hoặc phiên ghép nối đã đóng.</td>
+<td>Dùng cùng Wi-Fi. Kiểm Kobo vẫn hiện mã. Bắt đầu ghép nối lại.</td>
+</tr>
+<tr>
+<td>"Chưa có Wi-Fi. Kết nối rồi thử lại."</td>
+<td>Wi-Fi tắt hoặc chưa kết nối.</td>
+<td>Bật Wi-Fi ở thanh trạng thái của Kobo rồi thử lại.</td>
+</tr>
+<tr>
+<td>Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính."</td>
+<td>Không gõ được trên Kobo ở bản firmware này, hoặc bạn đã tắt bàn phím.</td>
+<td>Xoá tệp <code>.adds/nickeldrawer/no-keyboard</code> nếu bạn đã tạo.</td>
+</tr>
+<tr>
+<td>Màu màn hình bị đảo và cứ giữ như vậy.</td>
+<td>Đã dùng <strong>Đảo màu và khởi động lại</strong>.</td>
+<td>Chạy lại <strong>Tinh chỉnh</strong> → <strong>Đảo màu và khởi động lại</strong>.</td>
+</tr>
+<tr>
+<td>Kobo bị treo.</td>
+<td>Phần mềm Kobo gặp lỗi.</td>
+<td>Giữ nút nguồn khoảng 15 giây cho đến khi màn hình đổi, thả ra, rồi bấm lại để bật.</td>
+</tr>
+<tr>
+<td>Kobo khởi động đi khởi động lại sau khi cài.</td>
+<td>Mod bị lỗi khi khởi động.</td>
+<td>Tắt Kobo trong 15 giây đầu sau khi máy lên (xem <a href="#s-luoi-an-toan-failsafe">Lưới an toàn</a>). Không được thì tạo tệp công tắc <code>uninstall</code> qua USB.</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="gui-bao-loi-co-ich">Gửi báo lỗi có ích</h3>
+<ol>
+<li>Tạo tệp rỗng <code>.adds/nickeldrawer/debug</code> qua USB rồi khởi động lại Kobo. Ngăn sẽ ghi nhật ký từng bước vào <code>.adds/nickeldrawer/debug.log</code>.</li>
+<li>Làm lại việc bị lỗi.</li>
+<li>Cắm USB, chép <code>debug.log</code> và <code>data/log.txt</code> của ứng dụng.</li>
+<li>Đọc qua trước khi gửi. Bỏ mọi thứ riêng tư (tên sách, tên người, địa chỉ Wi-Fi của bạn). Không bao giờ gửi <code>data/token</code>.</li>
+<li>Ghi rõ bản firmware, bạn đã làm gì, mong đợi gì và thực tế ra sao.</li>
+</ol>
+<p><a id="s-an-toan-va-go-cai-at"></a></p>
+<h2 id="an-toan-va-go-cai-at">An toàn và gỡ cài đặt</h2>
+<h3 id="nguyen-tac">Nguyên tắc</h3>
+<ul>
+<li>Ứng dụng chạy với toàn quyền trên Kobo, nơi chứa thư viện của bạn. Chỉ cài ứng dụng bạn tin.</li>
+<li>Sao lưu trước khi cài, cập nhật hay gỡ.</li>
+<li>Đừng tự sửa <code>KoboReader.sqlite</code>. NickelDrawer không bao giờ sửa tệp đó.</li>
+</ul>
+<h3 id="tep-cong-tac">Tệp công tắc</h3>
+<p>Tạo các tệp này dưới dạng <strong>tệp rỗng</strong> qua USB trong thư mục <code>.adds/nickeldrawer/</code> (tạo thư mục nếu chưa có). Kobo đọc chúng khi khởi động, nên hãy khởi động lại sau khi thêm hay xoá một tệp.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tệp</th>
+<th>Tác dụng</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uninstall</code></td>
+<td>Gỡ mod NickelDrawer ở lần khởi động tới, rồi tự xoá.</td>
+</tr>
+<tr>
+<td><code>disable</code></td>
+<td>Giữ mod nhưng cho nó nằm im: <strong>Thêm</strong> trông như máy gốc. Xoá tệp và khởi động lại để bật lại.</td>
+</tr>
+<tr>
+<td><code>no-screens</code></td>
+<td>Chạm một ứng dụng thì chạy thao tác chính thay vì mở màn hình của nó. Dùng khi dò lỗi.</td>
+</tr>
+<tr>
+<td><code>no-keyboard</code></td>
+<td>Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính." thay vì mở bàn phím Kobo.</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td>Ghi nhật ký từng bước vào <code>debug.log</code> trong cùng thư mục.</td>
+</tr>
+</tbody>
+</table></div>
+<p><a id="s-luoi-an-toan-failsafe"></a></p>
+<h3 id="luoi-an-toan-failsafe">Lưới an toàn (failsafe)</h3>
+<p>Mod được xây trên NickelHook, có sẵn lưới an toàn: nếu Kobo bị lỗi hoặc bị tắt trong <strong>15 giây</strong> đầu sau khi mod được nạp lúc khởi động, mod sẽ bị bỏ qua từ đó về sau và Kobo chạy như máy gốc. Muốn dùng có chủ ý: bật Kobo và tắt máy (giữ nút nguồn) ngay khi <strong>Trang chủ</strong> hiện ra.</p>
+<p><em>Đã thử trên máy:</em> lưới an toàn chưa được thử với mod NickelDrawer. Việc cài và gỡ bằng tệp <code>uninstall</code> đã được thử với một mod thử nghiệm nhỏ.</p>
+<p><a id="s-go-cai-at"></a></p>
+<h3 id="go-cai-at">Gỡ cài đặt</h3>
+<p><strong>Bằng tập lệnh cài</strong> (cách B):</p>
+<pre><code class="language-sh">tools/install-to-kobo.sh --uninstall --dry-run   # xem sẽ gỡ những gì
+tools/install-to-kobo.sh --uninstall             # hỏi có giữ thư mục data/ của ứng dụng không
+</code></pre>
+<p>Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại tệp đã nhận còn nằm trong hộp nhận, tạo tệp công tắc <code>uninstall</code>, và bật lại tab NickelMenu. Thêm <code>--purge</code> để xoá luôn thư mục <code>data/</code> của các ứng dụng. Sau đó ngắt kết nối và khởi động lại Kobo.</p>
+<p><strong>Bằng tay:</strong></p>
+<ol>
+<li>Trước tiên: trong <strong>Tinh chỉnh</strong>, đặt <strong>Màn hình chờ</strong>, <strong>Chụp màn hình</strong>, <strong>Tự kết nối USB</strong> và <strong>Chữ rõ nét</strong> theo ý bạn muốn giữ. Nếu đã dùng Thư viện, khôi phục những sách đã bỏ vào thùng rác mà bạn muốn giữ.</li>
+<li>Cắm USB. Tạo tệp rỗng <code>.adds/nickeldrawer/uninstall</code>.</li>
+<li>Ngắt kết nối và khởi động lại Kobo. Mod bị gỡ, <strong>Ứng dụng</strong> và <strong>Tinh chỉnh</strong> biến khỏi <strong>Thêm</strong>.</li>
+<li>Cắm lại và xoá các thư mục <code>.adds/koboapps</code> và <code>.adds/apps</code> (và <code>.adds/nickeldrawer</code> nếu muốn).</li>
+<li>Xoá các ảnh tên <code>nd-wallpaper-*.png</code> trong <code>.kobo/screensaver</code>, nếu không Kobo vẫn hiện chúng khi ngủ.</li>
+</ol>
+<p><strong>Cách cuối cùng:</strong> nếu Kobo không khởi động bình thường, dùng <a href="#s-luoi-an-toan-failsafe">lưới an toàn</a>. Nếu vẫn không được, dùng tệp công tắc <code>disable</code> qua USB, hoặc khôi phục Kobo theo hướng dẫn của chính Kobo.</p>
+<h3 id="nhung-gi-con-lai-sau-khi-go">Những gì còn lại sau khi gỡ</h3>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Còn lại</th>
+<th>Ở đâu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sách, tài liệu, truyện tranh và ảnh đã nhận hoặc đồng bộ</td>
+<td><code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>, và các thư mục <code>GitHub</code> bên trong</td>
+</tr>
+<tr>
+<td>Tệp đã nhận nhưng chưa được xếp</td>
+<td><code>.adds/koboapps/inbox/</code> (chỉ khi có)</td>
+</tr>
+<tr>
+<td>Dữ liệu ứng dụng, trừ khi bạn xoá hoặc dùng <code>--purge</code></td>
+<td><code>.adds/apps/&lt;ứng dụng&gt;/data/</code> (token GitHub, thư viện Hình nền, bản sao lưu và thùng rác của Thư viện)</td>
+</tr>
+<tr>
+<td>Ảnh màn hình ngủ</td>
+<td><code>.kobo/screensaver/nd-wallpaper-*.png</code></td>
+</tr>
+<tr>
+<td>Cài đặt Kobo đã đổi trong <strong>Tinh chỉnh</strong></td>
+<td><code>.kobo/Kobo/Kobo eReader.conf</code>, và <code>.kobo/screensaver.disabled</code> nếu <strong>Màn hình chờ</strong> đang tắt</td>
+</tr>
+<tr>
+<td>Bản sao lưu của tập lệnh cài</td>
+<td><code>backups/</code> trên máy tính</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="quyen-rieng-tu">Quyền riêng tư</h2>
+<ul>
+<li><strong>Không thu thập dữ liệu sử dụng.</strong> NickelDrawer không thu thập và không gửi dữ liệu sử dụng.</li>
+<li><strong>Chỉ dùng mạng khi bạn bắt đầu:</strong></li>
+<li>LocalSend nghe trên Wi-Fi của bạn khi đang nhận, và dừng khi bạn bấm dừng hoặc sau 15 phút không có tệp.</li>
+<li>Ghép nối GitHub mở một trang nhỏ trên Wi-Fi của bạn tối đa 10 phút. Đồng bộ chỉ nói chuyện với GitHub.</li>
+<li>Cập nhật chỉ nói chuyện với GitHub khi bạn bấm <strong>Kiểm tra cập nhật</strong> hoặc <strong>Cập nhật</strong>.</li>
+<li>Hình nền, Thư viện, Việc cần làm và Tinh chỉnh không bao giờ dùng mạng.</li>
+<li><strong>Token GitHub</strong> chỉ được lưu trên Kobo, ở <code>.adds/apps/ghsync/data/token</code>. Nó không bao giờ hiện trên màn hình, trong nhật ký hay trong trạng thái ứng dụng. Nhưng bộ nhớ của Kobo không khoá được từng tệp: ai cắm Kobo của bạn vào máy tính cũng đọc được tệp đó. Vì vậy token nên là loại fine-grained, chỉ cho một repo và chỉ đọc. Nếu mất Kobo, hãy thu hồi token trên GitHub.</li>
+<li><strong>Mã PIN LocalSend</strong> được lưu ở <code>.adds/apps/localsend/data/pin.txt</code>, cũng đọc được theo cách đó.</li>
+<li>Nhật ký nằm trên Kobo. Không có gì được tải lên.</li>
+</ul>
+<p><a id="s-hoi-ap"></a></p>
+<h2 id="hoi-ap">Hỏi đáp</h2>
+<p><strong>Cập nhật firmware của Kobo có xoá NickelDrawer không?</strong>
+Có thể. Bản cập nhật firmware có thể thay tệp mod, và một bản firmware NickelDrawer chưa biết sẽ khiến nó tự tắt kèm một thông báo ngắn. Ứng dụng và dữ liệu vẫn nằm trong <code>.adds</code>. Hãy cài bản NickelDrawer hỗ trợ bản firmware mới.</p>
+<p><strong>Kobo mời tôi lên "5.x". Có nên nhận không?</strong>
+Không, nếu bạn muốn giữ NickelDrawer: nó không chạy trên 5.x. Trên Libra 2, hãy bỏ qua lời mời. Cũng đừng bao giờ cài firmware dành cho dòng máy khác.</p>
+<p><strong>NickelDrawer có làm Kobo chậm hay tốn pin không?</strong>
+Nó không làm gì cho đến khi bạn mở. Ứng dụng chỉ chạy khi bạn dùng, và việc chạy nền tự kết thúc. Mức pin khi dùng lâu chưa được đo.</p>
+<p><strong>Tôi có cần NickelMenu không?</strong>
+Không. NickelDrawer chạy được dù có hay không có NickelMenu.</p>
+<p><strong>Nó có đổi tiến độ đọc, bộ sưu tập hay cơ sở dữ liệu thư viện không?</strong>
+Không. Không phần nào của NickelDrawer sửa <code>KoboReader.sqlite</code>. Thư viện chỉ sửa tệp sách (sau khi sao lưu) và nhờ Kobo quét lại.</p>
+<p><strong>Dùng được trên Kobo Clara hay Libra Colour không?</strong>
+Chưa. Chỉ hỗ trợ Libra 2.</p>
+<p><strong>Tôi có thể dùng trong cửa hàng hay công ty không?</strong>
+Không. Giấy phép chỉ cho phép dùng cá nhân, học tập, sở thích và phi lợi nhuận.</p>
+<p><strong>"Bộ giao diện" (UI Kit) là gì?</strong>
+Một ứng dụng ẩn dành cho người làm ứng dụng và người thử, hiện mọi thành phần giao diện với nội dung mẫu. Mặc định nó không hiện trong Ngăn.</p>
+<p><strong>Tệp của tôi nằm đâu?</strong>
+Sách nhận được trong <code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>. Sách GitHub trong các thư mục <code>GitHub</code> bên trong đó. Cài đặt ứng dụng trong <code>.adds/apps/&lt;ứng dụng&gt;/data/</code>.</p>
+<h2 id="bang-thuat-ngu">Bảng thuật ngữ</h2>
+<p>Tên của Kobo (các màn hình NickelDrawer làm việc cùng) và tên của NickelDrawer, trên Kobo để tiếng Việt và tiếng Anh.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Tiếng Việt</th>
+<th>Tiếng Anh</th>
+<th>Là gì</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thêm</td>
+<td>More</td>
+<td>Tab ở thanh dưới. NickelDrawer thêm hàng của nó vào đây.</td>
+</tr>
+<tr>
+<td>Trang chủ</td>
+<td>Home</td>
+<td>Tab ở thanh dưới.</td>
+</tr>
+<tr>
+<td>Thư viện (tab)</td>
+<td>My Books †</td>
+<td>Tab thư viện của Kobo. Không phải ứng dụng Thư viện của NickelDrawer.</td>
+</tr>
+<tr>
+<td>Cài đặt</td>
+<td>Settings</td>
+<td>Cài đặt của Kobo.</td>
+</tr>
+<tr>
+<td>Tiết kiệm pin và riêng tư</td>
+<td>Energy saving and privacy</td>
+<td>Trang cài đặt có các tùy chọn màn hình ngủ.</td>
+</tr>
+<tr>
+<td>Hiển thị sách đang đọc</td>
+<td>Show current read</td>
+<td>Tùy chọn màn hình ngủ mà Hình nền cần.</td>
+</tr>
+<tr>
+<td>Hiển thị bìa sách toàn màn hình</td>
+<td>Show book cover full screen</td>
+<td>Tùy chọn màn hình ngủ mà Hình nền cần.</td>
+</tr>
+<tr>
+<td>Thông tin thiết bị †</td>
+<td>Device information †</td>
+<td>Trang cài đặt có phiên bản firmware.</td>
+</tr>
+<tr>
+<td>Ngôn ngữ và từ điển †</td>
+<td>Language and dictionaries †</td>
+<td>Trang cài đặt ngôn ngữ của Kobo.</td>
+</tr>
+<tr>
+<td>Kết nối</td>
+<td>Connect</td>
+<td>Nút Kobo hiện khi bạn cắm USB.</td>
+</tr>
+<tr>
+<td>Ứng dụng</td>
+<td>Apps</td>
+<td>Hàng của NickelDrawer trong Thêm, và tiêu đề của Ngăn.</td>
+</tr>
+<tr>
+<td>Ngăn Ứng Dụng</td>
+<td>App drawer</td>
+<td>Trang danh sách ứng dụng.</td>
+</tr>
+<tr>
+<td>Tinh chỉnh</td>
+<td>Tweaks</td>
+<td>Cửa sổ cài đặt của NickelDrawer trong Thêm.</td>
+</tr>
+<tr>
+<td>ĐÃ CÀI / HỆ THỐNG</td>
+<td>INSTALLED / SYSTEM</td>
+<td>Các mục trong Ngăn.</td>
+</tr>
+<tr>
+<td>Làm mới danh sách</td>
+<td>Refresh list</td>
+<td>Tải lại Ngăn.</td>
+</tr>
+<tr>
+<td>Cập nhật</td>
+<td>Updates</td>
+<td>Màn hình cập nhật trong Ngăn.</td>
+</tr>
+<tr>
+<td>Thông tin / Gỡ…</td>
+<td>Info / Remove…</td>
+<td>Menu khi giữ một ứng dụng.</td>
+</tr>
+<tr>
+<td>Hình nền</td>
+<td>Wallpaper</td>
+<td>Ứng dụng ảnh màn hình ngủ.</td>
+</tr>
+<tr>
+<td>Thư viện (ứng dụng)</td>
+<td>Library</td>
+<td>Ứng dụng dọn sách của NickelDrawer.</td>
+</tr>
+<tr>
+<td>Việc cần làm</td>
+<td>To-do</td>
+<td>Ứng dụng danh sách việc.</td>
+</tr>
+<tr>
+<td>Bộ giao diện</td>
+<td>UI Kit</td>
+<td>Ứng dụng ẩn cho người làm ứng dụng.</td>
+</tr>
+<tr>
+<td>Firmware</td>
+<td>Firmware</td>
+<td>Phần mềm hệ thống của Kobo, phiên bản dạng 4.38.23828.</td>
+</tr>
+<tr>
+<td>Thông báo ngắn</td>
+<td>Toast</td>
+<td>Dòng thông báo ở cuối màn hình.</td>
+</tr>
+<tr>
+<td>KEPUB</td>
+<td>KEPUB</td>
+<td>Định dạng EPUB riêng của Kobo (sách từ cửa hàng Kobo).</td>
+</tr>
+<tr>
+<td>NFC</td>
+<td>NFC</td>
+<td>Cách lưu chuẩn cho chữ có dấu.</td>
+</tr>
+</tbody>
+</table></div>
+  </main>
+</div>

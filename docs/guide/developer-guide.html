@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NickelDrawer Developer Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Literata:opsz,wght@7..72,600;7..72,700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky section nav on the left (chip row on phones), long-form plan in a ~78ch column; same tokens as the overview page. */
+:root {
+  --bg: #f4f5f2; --surface: #ffffff; --ink: #17191b; --muted: #5a6066; --line: #d6d9d4;
+  --accent: #1f4f8f; --accent-soft: #e3eaf4; --mark: #fbe7b0; --mark-ink: #5c3d00;
+  --font-display: "Literata", Georgia, serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1a1d20; --ink: #e5e7e5; --muted: #9ba2a7; --line: #2d3237;
+  --accent: #8fb5ea; --accent-soft: #1d2a3b; --mark: #4a3a12; --mark-ink: #f3d79a; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15.5px; line-height: 1.65; }
+.shell { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; display: grid; gap: 2px; font-size: .86rem; max-height: calc(100vh - 40px); overflow-y: auto; }
+nav.toc .lbl { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 0 10px 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; padding: 5px 10px; border-left: 2px solid var(--line); }
+nav.toc a:hover { color: var(--ink); border-left-color: var(--accent); }
+nav.toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { min-width: 0; max-width: 82ch; }
+header.top { display: grid; gap: 14px; padding-bottom: 26px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.25; }
+h1 { font-size: clamp(1.9rem, 4.5vw, 2.7rem); margin: 0; }
+h2 { font-size: 1.55rem; margin: 56px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); scroll-margin-top: 20px; }
+h3 { font-size: 1.15rem; margin: 30px 0 8px; }
+h4 { font-size: 1rem; margin: 22px 0 6px; }
+p, ul, ol { margin: 0 0 12px; }
+li { margin-bottom: 4px; }
+a { color: var(--accent); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.facts div { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.facts b { font-size: 1.25rem; font-variant-numeric: tabular-nums; font-family: var(--font-display); }
+.facts span { font-size: .78rem; color: var(--muted); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 68ch; margin: 0; }
+code { font-family: var(--font-mono); font-size: .85em; background: var(--accent-soft); padding: .08em .32em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 14px; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: .8rem; overflow-wrap: normal; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin: 0 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { overflow-wrap: normal; white-space: nowrap; }
+mark { background: var(--mark); color: var(--mark-ink); padding: 0 .3em; border-radius: 3px; font-size: .85em; font-weight: 600; }
+hr { display: none; }
+blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-inline: 16px; }
+  nav.toc { position: static; display: flex; flex-wrap: nowrap; overflow-x: auto; max-height: none; gap: 6px; padding-bottom: 4px; }
+  nav.toc .lbl { display: none; }
+  nav.toc a { border: 1px solid var(--line); border-radius: 16px; white-space: nowrap; padding: 4px 12px; background: var(--surface); }
+}
+main img { display: block; width: 100%; max-width: 380px; height: auto; margin: 8px 0 4px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+main p > em:only-child { color: var(--muted); font-size: .85rem; }
+blockquote p:last-child { margin-bottom: 0; }
+</style>
+<div class="shell">
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#build-an-app-in-15-minutes">Build an app in 15 minutes</a><a href="#the-mental-model">The mental model</a><a href="#appjson-reference">app.json reference</a><a href="#uijson-components">ui.json components</a><a href="#navigation-and-the-back-stack">Navigation and the back stack</a><a href="#languages-i18n">Languages (i18n)</a><a href="#storage-and-safe-paths">Storage and safe paths</a><a href="#requests-rescan-and-wi-fi">Requests: rescan and Wi-Fi</a><a href="#background-jobs">Background jobs</a><a href="#testing">Testing</a><a href="#icons">Icons</a><a href="#publishing-an-app">Publishing an app</a><a href="#versioning-and-min_host">Versioning and min_host</a><a href="#common-mistakes">Common mistakes</a><a href="#known-gaps-in-this-beta">Known gaps in this beta</a><a href="#further-reading">Further reading</a></nav>
+  <main>
+    <header class="top">
+      <span class="eyebrow">NickelDrawer · developer guide</span>
+      <h1>NickelDrawer developer guide</h1>
+      <p class="lede">Build, test and ship an app for the drawer: a 15-minute tutorial, the reference, and the rules that keep a Kobo safe.</p>
+    </header>
+    
+<p>How to build, test and ship an app for the NickelDrawer app drawer on a Kobo. You need a computer with Go 1.24 or newer and a checkout of this repository. You do not need a Kobo until the last step, and you never write C++.</p>
+<p>The formats are defined in <a href="../spec/">docs/spec/</a>. This guide is the friendly path through them; when the two disagree, the spec wins.</p>
+<blockquote>
+<p><strong>Status.</strong> The format, the validator, the previewer and the protocol are tested on a computer. Earlier builds of the drawer and its app screens ran on a Kobo; the current build has not been through its full device test session yet. Treat the previewer as a layout check, not as proof that a screen works on a device.</p>
+</blockquote>
+<h2 id="build-an-app-in-15-minutes">Build an app in 15 minutes</h2>
+<p>We build <strong>My To-do</strong>, a small version of the shipped To-do app (<a href="../../apps/todo/">apps/todo</a>): a text box to add a task, a list you tap to mark tasks done, a long-press menu to delete, and a button to clear done tasks. It is plain <code>sh</code>, no binary.</p>
+<p><img alt="My To-do in the previewer" src="img/dev-mytodo.png" /></p>
+<p><em>Rendered with <code>ndpreview</code> at the Kobo's screen size.</em></p>
+<h3 id="1-scaffold">1. Scaffold</h3>
+<pre><code class="language-sh">make build                                   # host tools in build/
+build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/apps
+</code></pre>
+<p><code>appsctl new</code> copies <code>templates/app</code> into <code>/tmp/apps/mytodo/</code>: <code>app.json</code>, <code>ui.json</code>, <code>bin/run.sh</code>, <code>bin/state.sh</code>, <code>locales/en.json</code>, <code>locales/vi.json</code> and a README. It refuses an existing folder and validates the result. Delete <code>bin/run.sh</code>; we write our own scripts.</p>
+<h3 id="2-declare-the-actions-appjson">2. Declare the actions: <code>app.json</code></h3>
+<p>Every tap on the screen runs one <strong>action</strong>: a script named in <code>app.json</code>.</p>
+<pre><code class="language-json">{
+  &quot;schema&quot;: 1,
+  &quot;id&quot;: &quot;mytodo&quot;,
+  &quot;name&quot;: &quot;My To-do&quot;,
+  &quot;version&quot;: &quot;0.1.0&quot;,
+  &quot;description&quot;: &quot;A tiny to-do list kept in a text file&quot;,
+  &quot;network&quot;: false,
+  &quot;actions&quot;: [
+    { &quot;id&quot;: &quot;newitem&quot;,    &quot;label&quot;: &quot;New task&quot;,          &quot;run&quot;: &quot;bin/newitem.sh&quot;,    &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000 },
+    { &quot;id&quot;: &quot;toggle&quot;,     &quot;label&quot;: &quot;Mark done or open&quot;, &quot;run&quot;: &quot;bin/toggle.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;menu&quot;: false },
+    { &quot;id&quot;: &quot;remove&quot;,     &quot;label&quot;: &quot;Delete task&quot;,       &quot;run&quot;: &quot;bin/remove.sh&quot;,     &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000, &quot;menu&quot;: false },
+    { &quot;id&quot;: &quot;clear-done&quot;, &quot;label&quot;: &quot;Clear done tasks&quot;,  &quot;run&quot;: &quot;bin/clear-done.sh&quot;, &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 3000 },
+    { &quot;id&quot;: &quot;state&quot;,      &quot;label&quot;: &quot;State&quot;,             &quot;run&quot;: &quot;bin/state.sh&quot;,      &quot;output&quot;: &quot;show&quot;, &quot;timeout_ms&quot;: 1000, &quot;menu&quot;: false }
+  ]
+}
+</code></pre>
+<ul>
+<li>The <code>id</code> equals the folder name and never changes after a release: the user's data lives under it.</li>
+<li><code>state</code> is special: the drawer runs it to fill the screen's variables.</li>
+<li>An input control runs the action whose id equals its variable name. That is why the text box's variable and its action are both <code>newitem</code> (action ids allow no <code>_</code>).</li>
+</ul>
+<h3 id="3-describe-the-screen-uijson">3. Describe the screen: <code>ui.json</code></h3>
+<pre><code class="language-json">{
+  &quot;kit&quot;: 1,
+  &quot;start&quot;: &quot;main&quot;,
+  &quot;vars&quot;: { &quot;open&quot;: &quot;0&quot;, &quot;done&quot;: &quot;0&quot;, &quot;hasdone&quot;: false, &quot;newitem&quot;: &quot;&quot;, &quot;items&quot;: [] },
+  &quot;screens&quot;: {
+    &quot;main&quot;: {
+      &quot;title&quot;: &quot;@ui.title&quot;,
+      &quot;status&quot;: &quot;@ui.counts&quot;,
+      &quot;body&quot;: [
+        { &quot;field&quot;: &quot;@ui.new_task&quot;, &quot;bind&quot;: &quot;newitem&quot;, &quot;placeholder&quot;: &quot;@ui.new_task_hint&quot;, &quot;keyboard&quot;: &quot;text&quot; },
+        {
+          &quot;list&quot;: &quot;$items&quot;,
+          &quot;title&quot;: &quot;@ui.tasks&quot;,
+          &quot;empty_text&quot;: &quot;@ui.empty&quot;,
+          &quot;tap&quot;: &quot;toggle&quot;,
+          &quot;menu&quot;: [ { &quot;id&quot;: &quot;remove&quot;, &quot;label&quot;: &quot;@ui.delete&quot;, &quot;confirm&quot;: true } ]
+        }
+      ],
+      &quot;footer&quot;: [
+        {
+          &quot;button&quot;: &quot;@ui.clear_done&quot;,
+          &quot;action&quot;: &quot;clear-done&quot;,
+          &quot;enabled&quot;: &quot;$hasdone&quot;,
+          &quot;confirm&quot;: { &quot;text&quot;: &quot;@ui.clear_confirm&quot;, &quot;ok&quot;: &quot;@ui.clear_ok&quot;, &quot;cancel&quot;: &quot;@ui.cancel&quot; }
+        }
+      ],
+      &quot;toasts&quot;: {
+        &quot;added&quot;: &quot;@ui.toast_added&quot;,
+        &quot;removed&quot;: &quot;@ui.toast_removed&quot;,
+        &quot;cleared&quot;: &quot;@ui.toast_cleared&quot;,
+        &quot;empty&quot;: &quot;@ui.toast_empty&quot;,
+        &quot;failed&quot;: &quot;@ui.toast_failed&quot;
+      }
+    }
+  }
+}
+</code></pre>
+<ul>
+<li>Every variable a screen uses is declared in <code>vars</code> with its default.</li>
+<li><code>"@ui.title"</code> is a text from <code>locales/&lt;lang&gt;.json</code>. <code>$items</code> and <code>$hasdone</code> are bindings filled from <code>state</code>.</li>
+<li><code>toasts</code> lists every short message a script may show. A script names one by id; it never prints the text itself.</li>
+<li>A <code>failed</code> toast belongs on every screen: the helpers in <code>common.sh</code> use it.</li>
+</ul>
+<h3 id="4-write-the-texts-locales">4. Write the texts: <code>locales/</code></h3>
+<p><code>locales/en.json</code> (English is the source):</p>
+<pre><code class="language-json">{
+  &quot;msg.added&quot;: &quot;Task added.&quot;,
+  &quot;msg.removed&quot;: &quot;Task deleted.&quot;,
+  &quot;msg.cleared&quot;: &quot;Cleared {count} done tasks.&quot;,
+  &quot;msg.empty&quot;: &quot;Type the task first.&quot;,
+  &quot;ui.title&quot;: &quot;My To-do&quot;,
+  &quot;ui.counts&quot;: &quot;$open open · $done done&quot;,
+  &quot;ui.new_task&quot;: &quot;New task&quot;,
+  &quot;ui.new_task_hint&quot;: &quot;Type and confirm&quot;,
+  &quot;ui.tasks&quot;: &quot;Tasks&quot;,
+  &quot;ui.empty&quot;: &quot;Nothing to do yet&quot;,
+  &quot;ui.delete&quot;: &quot;Delete...&quot;,
+  &quot;ui.clear_done&quot;: &quot;Clear done tasks&quot;,
+  &quot;ui.clear_confirm&quot;: &quot;Delete every task that is marked done?&quot;,
+  &quot;ui.clear_ok&quot;: &quot;Delete&quot;,
+  &quot;ui.cancel&quot;: &quot;Cancel&quot;,
+  &quot;ui.toast_added&quot;: &quot;Task added&quot;,
+  &quot;ui.toast_removed&quot;: &quot;Task deleted&quot;,
+  &quot;ui.toast_cleared&quot;: &quot;Done tasks cleared&quot;,
+  &quot;ui.toast_empty&quot;: &quot;Type the task first&quot;,
+  &quot;ui.toast_failed&quot;: &quot;That did not work. See data/log.txt.&quot;
+}
+</code></pre>
+<p><code>ui.*</code> keys are screen texts. <code>msg.*</code> keys are what a script prints on the command line (tests, debugging). <code>locales/vi.json</code> has the same keys translated, plus <code>name</code>, <code>description</code> and <code>actions.&lt;id&gt;.label</code> for the manifest texts (see <a href="#languages-i18n">Languages</a>).</p>
+<h3 id="5-share-the-plumbing-binlibsh">5. Share the plumbing: <code>bin/lib.sh</code></h3>
+<pre><code class="language-sh"># Shared by the action scripts. Source it; do not execute.
+# MYTODO_COMMON lets tests on a computer point at host/lib/common.sh.
+APP_DIR=$(cd &quot;$(dirname &quot;$0&quot;)/..&quot; &amp;&amp; pwd)
+. &quot;${MYTODO_COMMON:-/mnt/onboard/.adds/koboapps/lib/common.sh}&quot;
+
+APP_ID=mytodo
+DATA_DIR=$APP_DIR/data
+TASKS=$DATA_DIR/tasks.txt   # one task per line: &quot;[ ] text&quot; or &quot;[x] text&quot;
+
+ensure_tasks_file() {
+    mkdir -p &quot;$DATA_DIR&quot; &amp;&amp; touch &quot;$TASKS&quot;
+}
+
+# The text the screen sent (typed field or tapped row), on one line.
+screen_text() {
+    printf '%s' &quot;${NICKELDRAWER_VALUE:-}&quot; | tr '\r\n\t' '   ' | sed 's/^ *//; s/ *$//'
+}
+
+# Writes stdin to a temp file next to the list, then renames it over the list:
+# a power cut never leaves a half-written file.
+replace_tasks() {
+    cat &gt;&quot;$TASKS.tmp&quot; &amp;&amp; mv &quot;$TASKS.tmp&quot; &quot;$TASKS&quot; || {
+        rm -f &quot;$TASKS.tmp&quot;
+        fail_with &quot;$APP_DIR&quot; &quot;could not rewrite $TASKS&quot;
+    }
+}
+</code></pre>
+<p>The drawer starts scripts from <code>/</code> as root with only <code>PATH</code>, <code>HOME=/</code> and <code>NICKELDRAWER=1</code> set, so find your folder from <code>$0</code> and source <code>common.sh</code> by its absolute path. An overridable path (here <code>MYTODO_COMMON</code>) lets you run the same scripts on a computer.</p>
+<h3 id="6-report-the-screen-state-binstatesh">6. Report the screen state: <code>bin/state.sh</code></h3>
+<pre><code class="language-sh">#!/bin/sh
+# Prints the ui.json variables as one JSON object. Must be fast: it runs every 5 s.
+. &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
+ensure_tasks_file || exit 1
+awk '
+function json(text) { gsub(/\\/, &quot;\\\\&quot;, text); gsub(/&quot;/, &quot;\\\&quot;&quot;, text); return &quot;\&quot;&quot; text &quot;\&quot;&quot; }
+/^\[ \] / { open++; rows = rows sep &quot;[&quot; json(substr($0, 5)) &quot;,\&quot;\&quot;]&quot;; sep = &quot;,&quot; }
+/^\[x\] / { done++; rows = rows sep &quot;[&quot; json(substr($0, 5)) &quot;,\&quot;✓\&quot;]&quot;; sep = &quot;,&quot; }
+END {
+    printf &quot;{\&quot;open\&quot;:\&quot;%d\&quot;,\&quot;done\&quot;:\&quot;%d\&quot;,\&quot;hasdone\&quot;:%s,\&quot;newitem\&quot;:\&quot;\&quot;,\&quot;items\&quot;:[%s]}\n&quot;,
+        open, done, (done &gt; 0 ? &quot;true&quot; : &quot;false&quot;), rows
+}' &quot;$TASKS&quot;
+</code></pre>
+<p>The drawer runs <code>state</code> when the screen opens and every 5 seconds while it is open, with a 1-second budget. Print one JSON object whose keys are your <code>vars</code>. A list row is a string or <code>[primary, secondary]</code>. If <code>state</code> fails, the drawer keeps showing the previous values.</p>
+<h3 id="7-answer-the-taps-the-action-scripts">7. Answer the taps: the action scripts</h3>
+<p><code>bin/newitem.sh</code>, run when the user confirms the text box:</p>
+<pre><code class="language-sh">#!/bin/sh
+# The &quot;New task&quot; field: adds the typed text as an open task.
+. &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
+ensure_tasks_file || fail_with &quot;$APP_DIR&quot; &quot;cannot create $TASKS&quot;
+task=$(screen_text)
+[ -n &quot;$task&quot; ] || report_failure empty &quot;$APP_ID&quot; msg.empty
+{ cat &quot;$TASKS&quot;; echo &quot;[ ] $task&quot;; } | replace_tasks
+report added &quot;$APP_ID&quot; msg.added
+</code></pre>
+<p><code>bin/toggle.sh</code>, run when a row is tapped (the row's text arrives in <code>NICKELDRAWER_VALUE</code>):</p>
+<pre><code class="language-sh">#!/bin/sh
+# Tap on a row: open becomes done, done becomes open. The row change is the feedback.
+. &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
+ensure_tasks_file || fail_with &quot;$APP_DIR&quot; &quot;cannot create $TASKS&quot;
+awk -v task=&quot;$(screen_text)&quot; '
+    !changed &amp;&amp; $0 == &quot;[ ] &quot; task { print &quot;[x] &quot; task; changed = 1; next }
+    !changed &amp;&amp; $0 == &quot;[x] &quot; task { print &quot;[ ] &quot; task; changed = 1; next }
+    { print }' &quot;$TASKS&quot; | replace_tasks
+</code></pre>
+<p><code>bin/remove.sh</code> (row menu <strong>Delete...</strong>) and <code>bin/clear-done.sh</code> follow the same shape:</p>
+<pre><code class="language-sh">#!/bin/sh
+# Removes every done task. The button's confirm dialog already asked.
+. &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
+ensure_tasks_file || fail_with &quot;$APP_DIR&quot; &quot;cannot create $TASKS&quot;
+count=$(grep -c '^\[x\] ' &quot;$TASKS&quot;)
+grep -v '^\[x\] ' &quot;$TASKS&quot; | replace_tasks
+report cleared &quot;$APP_ID&quot; msg.cleared count=&quot;$count&quot;
+</code></pre>
+<p><code>report &lt;toast&gt; &lt;app&gt; &lt;msg-key&gt;</code> prints <code>{"toast":"added"}</code> inside the drawer and the localized <code>msg.added</code> text on the command line. <code>report_failure</code> does the same and ends the script. <code>fail_with</code> logs the reason to <code>data/log.txt</code> and shows the <code>failed</code> toast. Make every script executable: <code>chmod +x bin/*.sh</code>.</p>
+<h3 id="8-run-the-scripts-on-your-computer">8. Run the scripts on your computer</h3>
+<pre><code class="language-sh">export MYTODO_COMMON=$PWD/host/lib/common.sh NICKELDRAWER=1
+NICKELDRAWER_VALUE='Buy milk' /tmp/apps/mytodo/bin/newitem.sh    # {&quot;toast&quot;:&quot;added&quot;}
+NICKELDRAWER_VALUE='Buy milk' /tmp/apps/mytodo/bin/toggle.sh
+/tmp/apps/mytodo/bin/state.sh    # {&quot;open&quot;:&quot;0&quot;,&quot;done&quot;:&quot;1&quot;,&quot;hasdone&quot;:true,...}
+NICKELDRAWER_VALUE='' /tmp/apps/mytodo/bin/newitem.sh            # {&quot;toast&quot;:&quot;empty&quot;}
+</code></pre>
+<p>Without <code>NICKELDRAWER=1</code> the same scripts print the localized sentences instead (they call <code>appsctl msg</code>, which needs the Kobo path or an override).</p>
+<h3 id="9-preview-the-screen">9. Preview the screen</h3>
+<pre><code class="language-sh">build/ndpreview-host serve /tmp/apps/mytodo --locale vi
+</code></pre>
+<p>Open <code>http://127.0.0.1:8790/</code>. The page draws the screen at the Libra 2 size (1264 × 1680) in black, white and greys. The sidebar switches screen and language, edits the variables (try a list of 60 tasks and long Vietnamese texts), and shows the JSON line a tap would send and which action would run. Arrow keys stand in for the page-turn buttons; "←" pops a screen. Edit, save, reload.</p>
+<p>A picture for a review or bug report:</p>
+<pre><code class="language-sh">build/ndpreview-host render /tmp/apps/mytodo --out mytodo.png --locale vi --state state.json
+</code></pre>
+<p><code>render</code> needs a TrueType font with Vietnamese letters; without <code>--font</code> it tries common system fonts and otherwise draws shapes only (with a warning).</p>
+<h3 id="10-validate">10. Validate</h3>
+<pre><code class="language-sh">build/appsctl-host validate /tmp/apps/mytodo
+# ok      mytodo (5 actions, ui.json)
+</code></pre>
+<p>Each problem prints as <code>path: [code] message</code>. The codes are listed in <a href="../spec/ui-json.md#7-error-codes">ui-json.md §7</a>. Fix every error and warning before you go on.</p>
+<h3 id="11-install-on-a-kobo">11. Install on a Kobo</h3>
+<blockquote>
+<p><strong>Kobo safety.</strong> Back up <code>.adds/apps</code> first. Never leave your shell's working directory on the Kobo volume (it blocks ejecting); use absolute paths. Do not ship or copy a <code>data/</code> folder.</p>
+</blockquote>
+<pre><code class="language-sh">cp -R /tmp/apps/mytodo /Volumes/KOBOeReader/.adds/apps/mytodo
+rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
+</code></pre>
+<p>Eject, open <strong>More</strong> → <strong>Apps</strong>, tap <strong>Refresh list</strong>. Tap <strong>My To-do</strong>. If a tap does nothing visible, read <code>.adds/apps/mytodo/data/log.txt</code> and, with the <code>debug</code> switch on, <code>.adds/nickeldrawer/debug.log</code>.</p>
+<p>That is a complete app. The shipped To-do does the same job with a small Go helper (<code>cmd/todo</code>) that stores tasks as JSON, cleans the text to Unicode NFC, refuses duplicates, caps the list at 200 tasks and recovers from a damaged file.</p>
+<h2 id="the-mental-model">The mental model</h2>
+<pre><code>tap on the Kobo ──► libnickeldrawer.so (inside Nickel, draws only)
+                        │  runs as a child process, reads one JSON reply
+                        ▼
+                    appsctl drawer screen | event | run
+                        │  runs your script with NICKELDRAWER=1
+                        ▼
+                    bin/&lt;action&gt;.sh ──► {&quot;toast&quot;:&quot;added&quot;}  (+ optional requests)
+                    bin/state.sh    ──► {&quot;open&quot;:&quot;2&quot;, ...}  (re-read every 5 s)
+</code></pre>
+<p>Three rules:</p>
+<ol>
+<li><strong>Scripts are short.</strong> Each tap runs one script. It does a quick job, or starts a detached background job, and returns at once. Inside the drawer a script is stopped after 30 s and the user sees a timeout message; aim for well under a second.</li>
+<li><strong>State is re-read.</strong> The screen's values come only from <code>state</code>. A background job shows progress by writing files that <code>state</code> reads. There is no long-running app process inside or next to Nickel.</li>
+<li><strong>Signals are declared.</strong> A script answers with JSON signals naming things the screen declared: <code>{"toast":"id"}</code>, <code>{"dialog":"id"}</code>, and requests the manifest allows: <code>{"request":"rescan"}</code>, <code>{"request":"wifi"}</code>. Anything else on stdout is logged and dropped.</li>
+</ol>
+<h3 id="the-api-only-rule-and-why">The API-only rule, and why</h3>
+<p>Inside the drawer an app never shows its own text: no prose dialogs, no log dumps, no NickelMenu output. It talks to the host only through the protocol above, and the host maps signals to Nickel's own widgets (toasts, confirm dialogs, menus, the keyboard, Wi-Fi connect, library rescan).</p>
+<p>Why:</p>
+<ul>
+<li><strong>Nickel stays safe.</strong> The less code runs inside Nickel, the fewer ways to crash the reader. All logic lives in <code>appsctl</code> and your scripts, outside Nickel.</li>
+<li><strong>It looks like a Kobo.</strong> Every app gets the same fonts, sizes, dialogs and e-ink refresh behaviour.</li>
+<li><strong>Every language works.</strong> Texts live in locale files, so a translator never touches code.</li>
+<li><strong>It is testable.</strong> The whole path from tap to reply runs on a computer.</li>
+</ul>
+<p>Rule of thumb: if you are about to <code>echo</code> a sentence, declare it as a toast instead.</p>
+<h2 id="appjson-reference">app.json reference</h2>
+<p>Full rules: <a href="../spec/app-format.md">app-format.md</a>.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema</code></td>
+<td>Always <code>1</code>.</td>
+</tr>
+<tr>
+<td><code>id</code></td>
+<td>Lowercase letters, digits and <code>-</code>, 2 to 31 characters. Equals the folder name. Never changes.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>1 to 24 characters, no <code>:</code>. English; translations in <code>locales/</code>.</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>Semver <code>MAJOR.MINOR.PATCH</code>.</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>Optional, up to 120 characters. Shown in <strong>Info</strong>.</td>
+</tr>
+<tr>
+<td><code>storage</code></td>
+<td>Optional <code>{"reads": [...], "writes": [...]}</code> of logical folders (see <a href="#storage-and-safe-paths">Storage</a>).</td>
+</tr>
+<tr>
+<td><code>network</code></td>
+<td><code>true</code> if the app uses the network. Shown in <strong>Info</strong>.</td>
+</tr>
+<tr>
+<td><code>requests</code></td>
+<td>Host services scripts may ask for: <code>rescan</code>, <code>wifi</code>.</td>
+</tr>
+<tr>
+<td><code>min_host</code></td>
+<td>Optional oldest NickelDrawer version the app needs.</td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td>Optional. <code>true</code> keeps the app out of the drawer list (it still validates and runs by id).</td>
+</tr>
+<tr>
+<td><code>actions</code></td>
+<td>1 to 12 actions.</td>
+</tr>
+<tr>
+<td><code>actions[].id</code></td>
+<td>Lowercase letters, digits and <code>-</code>. <code>state</code> and <code>status</code> are special (below).</td>
+</tr>
+<tr>
+<td><code>actions[].label</code></td>
+<td>1 to 32 characters, no <code>:</code>.</td>
+</tr>
+<tr>
+<td><code>actions[].run</code></td>
+<td>Path inside the app folder, executable.</td>
+</tr>
+<tr>
+<td><code>actions[].output</code></td>
+<td><code>show</code>: run and wait, only JSON signals reach the screen. <code>none</code>: start detached and return at once.</td>
+</tr>
+<tr>
+<td><code>actions[].timeout_ms</code></td>
+<td>With <code>show</code>: 500 to 9999, default 5000. Validated, but the drawer itself applies a fixed 30 s cap (see <a href="#known-gaps-in-this-beta">Mismatches</a>).</td>
+</tr>
+<tr>
+<td><code>actions[].wifi</code></td>
+<td><code>true</code>: the drawer makes sure Wi-Fi is connected first (it asks the user, connects and retries once).</td>
+</tr>
+<tr>
+<td><code>actions[].rescan</code></td>
+<td><code>none</code>, <code>quick</code> or <code>full</code>: the host rescans the library after the action, only when it exits 0.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Special actions:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Action id</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state</code></td>
+<td>Fills the screen's <code>vars</code>. Runs on open and every 5 s, 1 s budget.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>Optional. The status line under the app's name in the drawer list. First line plain text, or <code>{"running":true,"line":"…"}</code>. 1 s budget, cached 30 s.</td>
+</tr>
+<tr>
+<td>the first action</td>
+<td>The <strong>primary</strong> action. It runs on a tap only when the app has no <code>ui.json</code> or the user set the <code>no-screens</code> switch.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Scripts get these environment variables:</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NICKELDRAWER=1</code></td>
+<td>Always inside the drawer. Return at once and print only JSON signals.</td>
+</tr>
+<tr>
+<td><code>NICKELDRAWER_VALUE</code></td>
+<td>The control's value: toggle <code>true</code>/<code>false</code>, radio option id, field text, list row's primary text, gallery/viewer picture id.</td>
+</tr>
+<tr>
+<td><code>NICKELDRAWER_LIST</code>, <code>NICKELDRAWER_INDEX</code></td>
+<td>A list row menu: the list's variable and the zero-based row.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="uijson-components">ui.json components</h2>
+<p>Full rules: <a href="../spec/ui-json.md">ui-json.md</a>. Looks and sizes: <a href="../spec/ui-kit.md">ui-kit.md</a>. To see every component on a device, the hidden <strong>UI Kit</strong> app (<a href="../../apps/uikit/">apps/uikit</a>) shows them all with sample content; set <code>"hidden": false</code> in its <code>app.json</code> on the Kobo (back the file up first) and tap <strong>Refresh list</strong>.</p>
+<p>A screen has a header (back arrow, <code>title</code>, <code>status</code>, and one <code>action</code> text link or up to two icon <code>actions</code>), a <code>body</code> that pages, a <code>footer</code> that stays at the bottom, and declared <code>dialogs</code> and <code>toasts</code>. Texts are plain strings, <code>"@ui.key"</code> references, or <code>{"en": …, "vi": …}</code> maps.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Example</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text</code></td>
+<td><code>{ "text": "Copy books here over USB.", "style": "caption" }</code></td>
+<td><code>style</code>: <code>body</code>, <code>caption</code>, <code>heading</code>. Hidden when it resolves to empty.</td>
+</tr>
+<tr>
+<td><code>section</code></td>
+<td><code>{ "section": "Network" }</code></td>
+<td>Small-caps group label.</td>
+</tr>
+<tr>
+<td><code>kv</code></td>
+<td><code>{ "kv": [["IP", "$ip"], ["PIN", "$pin"]] }</code></td>
+<td>1 to 12 key/value rows.</td>
+</tr>
+<tr>
+<td><code>row</code></td>
+<td><code>{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }</code></td>
+<td>Tappable when it has an <code>action</code>.</td>
+</tr>
+<tr>
+<td><code>toggle</code></td>
+<td><code>{ "toggle": "Use Wi-Fi", "bind": "wifi" }</code></td>
+<td>Runs the action named like the variable with <code>true</code>/<code>false</code>.</td>
+</tr>
+<tr>
+<td><code>radio</code></td>
+<td><code>{ "radio": "How it shows", "bind": "mode", "options": [["fill", "Fill the screen", "Edges are cropped"], ["fit", "Fit inside"]] }</code></td>
+<td>1 to 8 options, optional sub-line. Sends the option id.</td>
+</tr>
+<tr>
+<td><code>field</code></td>
+<td><code>{ "field": "New task", "bind": "newitem", "placeholder": "Type and confirm", "keyboard": "text" }</code></td>
+<td>Opens Nickel's keyboard (<code>text</code>, <code>number</code>, <code>url</code>). Not for secrets: use <code>pair</code>.</td>
+</tr>
+<tr>
+<td><code>bigcode</code></td>
+<td><code>{ "bigcode": "$pin", "digits": 4 }</code></td>
+<td>Large digits, 3 to 12.</td>
+</tr>
+<tr>
+<td><code>qr</code></td>
+<td><code>{ "qr": "$url", "caption": "Scan with your phone" }</code></td>
+<td>QR code of a short value.</td>
+</tr>
+<tr>
+<td><code>pair</code></td>
+<td><code>{ "pair": { "url": "$url", "code": "$code", "title": "Open on your phone", "hint": "Use only on your own Wi-Fi.", "expires": "$expires" } }</code></td>
+<td>The phone-pairing block: QR, address, code.</td>
+</tr>
+<tr>
+<td><code>steps</code></td>
+<td><code>{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }</code></td>
+<td>Progress of a background job.</td>
+</tr>
+<tr>
+<td><code>notice</code></td>
+<td><code>{ "notice": "$notice", "title": "Last sync failed" }</code></td>
+<td>Boxed note. Hidden when the text is empty: bind it to show it conditionally.</td>
+</tr>
+<tr>
+<td><code>button</code></td>
+<td><code>{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }</code></td>
+<td>At most one <code>primary</code> per screen. <code>enabled</code> takes <code>$var</code> or <code>!$var</code>.</td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td><code>{ "list": "$received", "title": "Received", "empty_text": "Nothing yet", "max": 10, "tap": "open-item", "menu": [{ "id": "delete-item", "label": "Delete...", "confirm": true }] }</code></td>
+<td>Rows from an array; tap and long-press menu (up to 6 entries).</td>
+</tr>
+<tr>
+<td><code>empty</code></td>
+<td><code>{ "empty": "No pictures yet", "text": "Copy PNG or JPEG pictures to Pictures.", "button": "Import pictures", "action": "import" }</code></td>
+<td>Empty state; its button counts as the primary.</td>
+</tr>
+<tr>
+<td><code>gallery</code></td>
+<td><code>{ "gallery": "$pictures", "columns": 4, "rows": 3, "on_tap": { "push": "viewer" }, "on_long_press": [{ "label": "Info", "info": true }] }</code></td>
+<td>Picture grid. Items come from <code>state</code>: <code>{id, thumb, image, label, info, badge}</code>; paths must be absolute <code>.png</code> below your <code>data/</code>.</td>
+</tr>
+<tr>
+<td><code>viewer</code></td>
+<td><code>{ "viewer": "$pictures", "selected": "selected", "primary": { "label": "Set as wallpaper", "label_current": "In use", "action": "set-current" } }</code></td>
+<td>One picture at a time. Must be alone on its screen, no footer.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two details the validator enforces: a <code>list</code> menu's <code>confirm</code> may be <code>true</code>, but a gallery <code>on_long_press</code> or viewer <code>secondary</code> <code>confirm</code> must be an object (<code>{"title", "text", "ok", "cancel"}</code>); and every variable you bind must be declared in <code>vars</code>.</p>
+<p>Dialogs and toasts are per screen:</p>
+<pre><code class="language-json">&quot;dialogs&quot;: { &quot;done&quot;: { &quot;title&quot;: &quot;Synced&quot;, &quot;text&quot;: &quot;$summary&quot;, &quot;ok&quot;: &quot;OK&quot; } },
+&quot;toasts&quot;:  { &quot;saved&quot;: &quot;Saved&quot;, &quot;failed&quot;: &quot;That did not work. See data/log.txt.&quot; }
+</code></pre>
+<p>A script shows them with <code>{"dialog":"done"}</code> or <code>{"toast":"saved"}</code>. On a dialog's OK the host runs its <code>action</code>, if it has one.</p>
+<h2 id="navigation-and-the-back-stack">Navigation and the back stack</h2>
+<p>Your screens and their <code>push</code> links are the flow. There is one back stack, like Nickel's own pages:</p>
+<pre><code>More → Apps drawer → main → sub-screen → detail
+</code></pre>
+<ul>
+<li><strong>"←" goes back exactly one level</strong> and restores the previous screen at the page it was on, with fresh data. Never draw your own back button.</li>
+<li><strong>At most two levels below <code>main</code>.</strong> Deeper means the design needs a popup menu or fewer screens.</li>
+<li><strong>No cycles.</strong> A screen never pushes its own parent.</li>
+<li><strong>A bottom-tab tap clears the stack.</strong> Keep anything important in <code>data/</code> and return it from <code>state</code>; screen state does not survive.</li>
+<li><strong>Leaving a screen never cancels work.</strong> Background jobs keep running.</li>
+<li><strong>No stacked modals</strong>: no dialog on a popup, at most one dialog at a time. After an action, stay on the screen; do not push a result screen.</li>
+</ul>
+<p><code>appsctl validate</code> checks the flow: <code>main</code> exists, every screen is reachable from it, depth at most 2, no cycles, no push to a missing screen.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A place the user stays</td>
+<td>A screen</td>
+</tr>
+<tr>
+<td>Options or details of one thing</td>
+<td>A sub-screen opened with <code>push</code></td>
+</tr>
+<tr>
+<td>One of several actions on an item</td>
+<td>A long-press menu</td>
+</tr>
+<tr>
+<td>A destructive confirmation or one result</td>
+<td>A dialog</td>
+</tr>
+<tr>
+<td>"It finished"</td>
+<td>A toast</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="languages-i18n">Languages (i18n)</h2>
+<ul>
+<li>English is the source: <code>app.json</code> texts plus <code>locales/en.json</code>. Ship <code>locales/vi.json</code> too; other languages are welcome.</li>
+<li>The drawer picks the language from the Kobo's <code>CurrentLocale</code>: <code>pt_BR.json</code>, then <code>pt.json</code>, then English, key by key.</li>
+<li>Keys: <code>name</code>, <code>description</code>, <code>actions.&lt;id&gt;.label</code>, <code>ui.*</code> (screen texts), <code>msg.*</code> (script texts).</li>
+<li>Placeholders: <code>{count}</code> in <code>msg.*</code>, <code>$var</code> bindings in <code>ui.*</code>. A translation must keep the same placeholders; <code>validate</code> checks it.</li>
+<li>Never build a sentence from pieces. One string with placeholders per message.</li>
+<li>Keep texts short: e-ink, small screen, and Vietnamese runs 20 to 40 % longer than English. No <code>:</code> in labels (menus use it as a separator).</li>
+<li>Scripts never print literal text. On the command line they print <code>appsctl msg --app &lt;id&gt; msg.&lt;key&gt; name=value</code>; in the drawer they print a toast id.</li>
+<li>Check a language without a Kobo: <code>build/ndpreview-host serve &lt;app&gt; --locale vi</code>, or <code>appsctl msg --locale vi --app &lt;id&gt; msg.&lt;key&gt;</code>.</li>
+</ul>
+<p>How to add a language for users: <a href="user-guide.en.html#languages">user-guide.en.md, Languages</a> and <a href="../TRANSLATING.md">TRANSLATING.md</a>.</p>
+<h2 id="storage-and-safe-paths">Storage and safe paths</h2>
+<p>Apps run as <strong>root</strong> on the device that holds the user's library. Nothing is sandboxed, so the manifest is the contract that reviews and <code>validate</code> hold your code to.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Logical name</th>
+<th>Folder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>your <code>data/</code></td>
+<td><code>/mnt/onboard/.adds/apps/&lt;id&gt;/data</code> (no declaration needed)</td>
+</tr>
+<tr>
+<td><code>books</code></td>
+<td><code>/mnt/onboard/Books</code></td>
+</tr>
+<tr>
+<td><code>documents</code></td>
+<td><code>/mnt/onboard/Documents</code></td>
+</tr>
+<tr>
+<td><code>comics</code></td>
+<td><code>/mnt/onboard/Comics</code></td>
+</tr>
+<tr>
+<td><code>pictures</code></td>
+<td><code>/mnt/onboard/Pictures</code></td>
+</tr>
+<tr>
+<td><code>inbox</code>, <code>rejected</code></td>
+<td><code>/mnt/onboard/.adds/koboapps/inbox</code> and its <code>rejected/</code></td>
+</tr>
+<tr>
+<td><code>screensaver</code></td>
+<td><code>/mnt/onboard/.kobo/screensaver</code> (Wallpaper only)</td>
+</tr>
+</tbody>
+</table></div>
+<p>Rules:</p>
+<ul>
+<li>Touch only your <code>data/</code> and the folders you declare. Put files you create in shared folders in a sub-folder or with a prefix that shows they are yours (<code>Books/GitHub/</code>, <code>nd-wallpaper-*</code>).</li>
+<li><strong>Never delete or overwrite user files.</strong> Delete only what your app made. Move to <code>data/trash/</code> when unsure.</li>
+<li><strong>Write atomically</strong>: a temp file in the same folder, then <code>mv</code> over the target.</li>
+<li><strong>Hold no file open on <code>/mnt/onboard</code></strong> after a script exits: it blocks USB. Keep running logs in <code>/tmp</code> and copy them to <code>data/</code> at the end.</li>
+<li>Validate every path from config or the network: no <code>..</code>, no absolute paths from outside.</li>
+<li><strong>Secrets</strong> live in <code>data/</code> with mode 600 and never appear in output, logs or <code>state</code>. <code>/mnt/onboard</code> is FAT, so mode 600 is not enforced there: anyone with USB access can read the file. Ask users for the narrowest token possible, and get long or secret input from a phone with the pairing pattern (<a href="../spec/ghsync-pairing.md">ghsync-pairing.md</a>), never from the Kobo keyboard.</li>
+<li>Never edit <code>KoboReader.sqlite</code>. Ask for a rescan instead.</li>
+<li>Never ship Kobo binaries or firmware files.</li>
+</ul>
+<h2 id="requests-rescan-and-wi-fi">Requests: rescan and Wi-Fi</h2>
+<p>A script can ask the host for a Nickel service it cannot reach. Declare it in <code>app.json</code>:</p>
+<pre><code class="language-json">&quot;requests&quot;: [&quot;rescan&quot;, &quot;wifi&quot;]
+</code></pre>
+<p>Then print the request, alone or with a toast:</p>
+<pre><code class="language-sh">emit_request rescan quick     # {&quot;request&quot;:&quot;rescan&quot;,&quot;mode&quot;:&quot;quick&quot;}
+emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Request</th>
+<th>Host does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{"request":"rescan","mode":"quick"}</code></td>
+<td>Nickel's quick library rescan (<code>mode</code> omitted = <code>quick</code>).</td>
+</tr>
+<tr>
+<td><code>{"request":"rescan","mode":"full"}</code></td>
+<td>Full rescan.</td>
+</tr>
+<tr>
+<td><code>{"request":"wifi"}</code></td>
+<td>Nickel's Wi-Fi connect flow.</td>
+</tr>
+</tbody>
+</table></div>
+<p>The host does Wi-Fi first, then one rescan. A request the manifest does not list is dropped and logged. For "rescan when the action succeeded", the action's <code>rescan</code> field is simpler.</p>
+<h2 id="background-jobs">Background jobs</h2>
+<p>Anything that may take more than a second runs in the background. The pattern (see <code>apps/library/bin/lib.sh</code>):</p>
+<ol>
+<li>The action checks a pid file; if a job runs, it answers <code>{"toast":"busy"}</code>.</li>
+<li>Otherwise it starts the job <strong>detached with every file descriptor redirected</strong> (<code>start_detached</code> in <code>common.sh</code>, or <code>sh -c '…' &lt;/dev/null &gt;/tmp/out 2&gt;&amp;1 &amp;</code>), writes the pid to <code>/tmp/&lt;app&gt;.pid</code>, and answers <code>{"toast":"started"}</code> at once.</li>
+<li>The job writes its progress (<code>done</code>, <code>total</code>, current file) to a small file and its result to <code>data/</code>.</li>
+<li><code>state</code> reads those files and fills a <code>steps</code> component and a summary. The screen updates every 5 seconds.</li>
+<li>When the job changed the library, it leaves a marker. The next <code>state</code> that sees the job has ended prints <code>"requests":[{"request":"rescan","mode":"quick"}]</code> and deletes the marker, so the request is handed over exactly once.</li>
+</ol>
+<p>Rules for jobs:</p>
+<ul>
+<li>The Kobo may sleep or drop Wi-Fi at any time; no script can keep it awake. Check the connection inside long jobs, end with a clear error, and stop yourself after a time limit.</li>
+<li>No polling loops or busy waits. Do the work, then exit. Skip work that is already done.</li>
+<li>Make jobs restartable: a half-finished download is a temp file that the next run cleans up.</li>
+</ul>
+<h2 id="testing">Testing</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Command</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Format</td>
+<td><code>build/appsctl-host validate &lt;app&gt;</code></td>
+<td>Manifest, locales, <code>ui.json</code>, navigation graph.</td>
+</tr>
+<tr>
+<td>Shell</td>
+<td><code>sh -n bin/*.sh</code> and <code>shellcheck -x bin/*.sh</code></td>
+<td>Syntax and common shell mistakes.</td>
+</tr>
+<tr>
+<td>Scripts</td>
+<td>Run them with <code>NICKELDRAWER=1</code> and path overrides (step 8 above)</td>
+<td>Exit codes, signals, files written atomically.</td>
+</tr>
+<tr>
+<td>Protocol</td>
+<td><code>appsctl drawer screen &lt;app&gt; --apps-dir &lt;dir&gt;</code>; Go tests in <code>cmd/appsctl/examples_test.go</code></td>
+<td>The exact JSON the mod receives. The Go test runs the real protocol with <code>ScriptEnv</code> overrides; copy it for your app.</td>
+</tr>
+<tr>
+<td>Golden replies</td>
+<td><code>go test ./cmd/appsctl -run Golden</code> (<code>-update</code> rewrites, then review the diff)</td>
+<td>Screen replies with bindings and locales resolved, in <code>cmd/appsctl/testdata/drawer/</code>.</td>
+</tr>
+<tr>
+<td>Whole repo</td>
+<td><code>make check</code></td>
+<td><code>gofmt</code>, <code>go vet</code>, <code>go test ./...</code>, <code>shellcheck</code> if installed.</td>
+</tr>
+<tr>
+<td>Install</td>
+<td><code>tools/test-install.sh</code></td>
+<td>The installer against a fake Kobo in a temp folder, including <code>--uninstall</code>.</td>
+</tr>
+<tr>
+<td>Preview</td>
+<td><code>build/ndpreview-host render …</code></td>
+<td>A picture of each screen and language for review.</td>
+</tr>
+<tr>
+<td>Device</td>
+<td>the device checklist below</td>
+<td>What a computer cannot show.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Device checklist (with the device owner present and backups made):</p>
+<ol>
+<li><strong>Refresh list</strong> shows the app; its icon and name fit.</li>
+<li>Each tap answers within a second or two with a toast or a visible change.</li>
+<li>Texts fit in English and Vietnamese (switch the Kobo's language).</li>
+<li>Failure paths (no Wi-Fi, empty input, missing file) end in the <code>failed</code> toast, never a freeze.</li>
+<li>USB connects right after using the app (nothing held open).</li>
+<li>New files appear in the library after the rescan.</li>
+<li>Let the Kobo sleep during a background job and check that it ends cleanly.</li>
+</ol>
+<h2 id="icons">Icons</h2>
+<p>Icons come from <strong>Nickel's own resources first, then Tabler Icons (MIT)</strong>. Never draw your own: hand-drawn icons look wrong next to Nickel's.</p>
+<ul>
+<li>An app icon is <code>icon.png</code> next to <code>app.json</code>: 96 × 96 px, black outline strokes on a transparent background. The drawer scales it (52 px in a list row). SVG is not supported on the device.</li>
+<li>In this repository, icons are rendered from the vendored Tabler SVGs so the stroke weight matches Nickel: add the SVG to <code>third_party/tabler-icons/svg/</code>, add a row to <code>cmd/iconsgen/icons.go</code>, and run <code>go run ./cmd/iconsgen -repo .</code>. A test fails when a committed PNG is stale.</li>
+<li>Header icon buttons (<code>actions</code>) use the names <code>import</code>, <code>settings</code>, <code>refresh</code>, <code>add</code>; the host provides those icons.</li>
+<li>No icon file: the drawer shows a generic apps icon.</li>
+</ul>
+<h2 id="publishing-an-app">Publishing an app</h2>
+<ol>
+<li>Bump <code>version</code> (see below) and run every check in <a href="#testing">Testing</a>.</li>
+<li>
+<p>Package the folder so the folder itself is at the top level, <strong>without <code>data/</code></strong>:</p>
+<pre><code>zip -r mytodo-0.1.0.zip mytodo -x 'mytodo/data/*'
+</code></pre>
+<p>If you need a default config, ship <code>data/config.example.json</code> and let the user copy it, as GitHub sync does.</p>
+</li>
+<li>
+<p>Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.</p>
+</li>
+<li>Users install by copying the folder to <code>.adds/apps/</code> and tapping <strong>Refresh list</strong>.</li>
+</ol>
+<p>Signed over-the-air updates cover only the apps inside an official NickelDrawer release; a separate app is updated by copying the new folder over the old one (its <code>data/</code> stays). Never include Kobo binaries or firmware files.</p>
+<p>To propose an app for the main repository, follow <a href="../../CONTRIBUTING.md">CONTRIBUTING.md</a>. Code in this repository is under PolyForm Noncommercial 1.0.0.</p>
+<h2 id="versioning-and-min_host">Versioning and min_host</h2>
+<ul>
+<li><strong>PATCH</strong> for fixes, <strong>MINOR</strong> for new actions, screens or messages, <strong>MAJOR</strong> when the <code>data/</code> format changes incompatibly. On a MAJOR change, migrate old data or refuse with a clear message.</li>
+<li>Bump <code>version</code> on every release; <strong>Info</strong> shows it.</li>
+<li>If your app needs a newer NickelDrawer feature, set <code>"min_host": "1.2.0"</code>. On an older host the drawer row reads "Needs a newer version" instead of the app's status. The app still runs, so fail gracefully.</li>
+<li>The protocol is versioned (<code>"v": 1</code>). New fields are additive within v1.</li>
+</ul>
+<h2 id="common-mistakes">Common mistakes</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Mistake</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A script prints a sentence for the user.</td>
+<td>Declare a toast in <code>ui.json</code> and print <code>{"toast":"id"}</code> (<code>report</code>). Prose is dropped.</td>
+</tr>
+<tr>
+<td>A toast id the screen did not declare.</td>
+<td>Add it to that screen's <code>toasts</code>. Undeclared ids are dropped silently.</td>
+</tr>
+<tr>
+<td>A slow script (a download, a scan) in the foreground.</td>
+<td>Background job pattern. The drawer gives up after 30 s and the screen waits the whole time.</td>
+</tr>
+<tr>
+<td><code>state</code> that does real work.</td>
+<td><code>state</code> only reads small files. It runs every 5 seconds with a 1-second budget.</td>
+</tr>
+<tr>
+<td>A control does nothing when tapped.</td>
+<td>An input control runs the action whose id equals its <code>bind</code> variable. No such action means read-only.</td>
+</tr>
+<tr>
+<td>A variable used but not in <code>vars</code>.</td>
+<td>Declare it with a default. <code>validate</code> reports <code>ui.unknown_var</code>.</td>
+</tr>
+<tr>
+<td>Two primary buttons.</td>
+<td>One primary per screen, counting <code>empty</code>, gallery <code>empty</code> and <code>viewer</code> buttons.</td>
+</tr>
+<tr>
+<td><code>:</code> in a label.</td>
+<td>Reword. Menus use <code>:</code> as a separator.</td>
+</tr>
+<tr>
+<td>Writing outside <code>data/</code> and declared folders, or overwriting user files.</td>
+<td>Declare the folder, use your own sub-folder or prefix, never overwrite.</td>
+</tr>
+<tr>
+<td>A file left open on <code>/mnt/onboard</code>, or a background job without redirected fds.</td>
+<td>Log to <code>/tmp</code>; use <code>start_detached</code>. Otherwise USB connect hangs.</td>
+</tr>
+<tr>
+<td>A token typed on the Kobo or printed in a log.</td>
+<td>Pairing page on the phone; secrets only in <code>data/</code>, never printed.</td>
+</tr>
+<tr>
+<td>Relying on <code>"menu": false</code> to keep an action out of the drawer's long-press menu.</td>
+<td>Today the flag is not passed to the drawer: every action after the first, except <code>state</code> and <code>status</code>, appears in the long-press menu (up to 6) and runs <strong>without</strong> the confirm your screen declares. Order actions so the safe ones come first, and make every action safe to run with no <code>NICKELDRAWER_VALUE</code>.</td>
+</tr>
+<tr>
+<td>A hand-drawn icon.</td>
+<td>A Tabler icon rendered with <code>iconsgen</code>.</td>
+</tr>
+<tr>
+<td>Testing first on the device.</td>
+<td>Validate, run the scripts and preview on the computer first.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="known-gaps-in-this-beta">Known gaps in this beta</h2>
+<p>Places where the code today behaves differently from what the specs promise, or where nothing has run on a device yet. Design around them.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Gap</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>actions[].menu: false</code> is accepted but not sent to the drawer, so the long-press menu in the drawer lists every action after the first one except <code>state</code> and <code>status</code> (up to 6), and runs them without your screen's confirm.</td>
+<td>Put a harmless action first; make every action safe without a value; keep destructive work behind a screen button with <code>confirm</code> and re-check state inside the script.</td>
+</tr>
+<tr>
+<td><code>timeout_ms</code> is validated, but the drawer applies one fixed 30 s limit to every <code>show</code> action.</td>
+<td>Keep scripts fast; use background jobs.</td>
+</tr>
+<tr>
+<td>The current app screens, gallery and viewer have run on a Kobo only in earlier builds, and the <code>field</code> keyboard never.</td>
+<td>Treat <code>ndpreview</code> as a layout check only. Expect real fonts to be wider: long screens page earlier on the device.</td>
+</tr>
+<tr>
+<td>The mod's own texts (the More rows, a few errors) exist in English and Vietnamese only.</td>
+<td>Nothing for app authors; your app's texts follow its locale files.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="further-reading">Further reading</h2>
+<ul>
+<li><a href="../APPS.md">docs/APPS.md</a>: the original app guide with more design rules.</li>
+<li><a href="../spec/app-format.md">spec/app-format.md</a>, <a href="../spec/ui-json.md">spec/ui-json.md</a>, <a href="../spec/ui-kit.md">spec/ui-kit.md</a>, <a href="../spec/drawer-protocol.md">spec/drawer-protocol.md</a>.</li>
+<li><a href="../../apps/todo/">apps/todo</a>, <a href="../../apps/uikit/">apps/uikit</a>, <a href="../../apps/library/">apps/library</a> (background jobs), <a href="../../apps/ghsync/">apps/ghsync</a> (phone pairing), <a href="../../examples/imageview/">examples/imageview</a>.</li>
+<li><a href="../../mod/drawer/README.md">mod/drawer/README.md</a>: how the Kobo side draws your screens and how it degrades.</li>
+</ul>
+  </main>
+</div>
