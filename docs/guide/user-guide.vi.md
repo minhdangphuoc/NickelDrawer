@@ -688,6 +688,73 @@ Một ứng dụng ẩn dành cho người làm ứng dụng và người thử,
 **Tệp của tôi nằm đâu?**
 Sách nhận được trong `Books`, `Documents`, `Comics`, `Pictures`. Sách GitHub trong các thư mục `GitHub` bên trong đó. Cài đặt ứng dụng trong `.adds/apps/<ứng dụng>/data/`.
 
+<a id="s-giao-dien-tieng-viet"></a>
+
+## Cài thêm: giao diện Kobo bằng tiếng Việt
+
+Phần này **không thuộc NickelDrawer**. Đây là việc cài thêm, làm riêng, để chính menu và cài đặt của Kobo hiện bằng tiếng Việt. NickelDrawer đã có bản dịch tiếng Việt của riêng nó và chạy được dù bạn có làm phần này hay không.
+
+### Bạn được gì
+
+- Menu, cài đặt và hộp thoại của Kobo hiện bằng tiếng Việt.
+- Phông chữ có đủ dấu tiếng Việt. Nếu chưa cài bản sửa này, Kobo có thể hiện chữ có dấu thành ô vuông □.
+- Bàn phím tiếng Việt dùng được ở mọi nơi trên máy (tìm kiếm, ghi chú), từ bản `20260202` của dự án.
+
+### Công cụ: kobo-tieng-viet
+
+[kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet) của redphx. Đây là dự án của bên thứ ba, có giấy phép và người duy trì riêng; nó không phải một phần của NickelDrawer và không liên kết với Kobo. Trang dự án không nêu giấy phép; xem kho mã của họ. Mọi bước dưới đây lấy từ trang dự án (đọc ngày 2026-10-10); khi có khác biệt, **hướng dẫn của dự án là đúng**.
+
+- **Firmware hỗ trợ:** mọi Kobo chạy firmware 4.x. Firmware 3.x và 5.x **không** được hỗ trợ. Libra 2 nằm trong danh sách máy đã xác nhận.
+- **Cài đặt** (theo trang dự án):
+    1. Sao lưu máy (xem bên dưới).
+    2. Tải `KoboRoot.tgz` từ [trang phát hành](https://github.com/redphx/kobo-tieng-viet/releases). Đừng dùng Safari để tải (trang dự án nói tệp bị lỗi); dùng Firefox, Chrome hoặc tương tự.
+    3. Cắm Kobo vào máy tính, chép `KoboRoot.tgz` vào thư mục ẩn `.kobo`. Đừng giải nén, giữ nguyên tên. (macOS: Cmd + Shift + . để hiện thư mục ẩn.)
+    4. Ngắt kết nối (eject) an toàn. Kobo tự cập nhật và khởi động lại, khoảng 3 phút. Không tắt máy trong lúc này.
+    5. Nếu hiện hộp thoại, giữ nút nguồn cho đến khi máy tắt rồi bật lại.
+- **Chọn ngôn ngữ:** máy nên tự chuyển sang tiếng Việt. Nếu không, vào **Thêm** → **Cài đặt** → **Ngôn ngữ và từ điển** † → chọn ngôn ngữ → **Extra: vi** (theo trang dự án, đường dẫn bằng tiếng Anh: More > Settings > Language and dictionaries > Select your Language > Extra: vi).
+- **Gỡ cài đặt:** tạo tệp rỗng `uninstall.txt` trong `.adds/tiengviet/`, eject rồi khởi động lại Kobo. Xoá thư mục `.adds/tiengviet/` sau đó là tùy chọn. Theo trang dự án, cách này chỉ gỡ phần tự sửa lỗi và bàn phím tiếng Việt; chữ tiếng Việt vẫn hiện cho tới khi bạn đặt lại về mặc định gốc (Factory Reset) hoặc cài lại firmware.
+- **Sau khi Kobo cập nhật firmware:** mỗi bản firmware mới có thể làm lỗi hiển thị tiếng Việt quay lại. Từ bản `20260319`, dự án tự sửa lại và không cần cài lại, nhưng có thể phải khởi động lại máy thêm một lần. Dự án cũng cảnh báo các bản vá tiếng Việt khác có thể xung đột; họ khuyên về firmware gốc trước khi cài.
+
+Các thông tin về thao tác của dự án có thể đã đổi: xem hướng dẫn của dự án trước khi làm.
+
+### Cài cùng NickelDrawer
+
+- **Thứ tự nào cũng được.** Hai bên không phụ thuộc nhau; NickelDrawer được thiết kế để chạy chung với kobo-tieng-viet. Mỗi bên dùng một `KoboRoot.tgz`: cài bên này, đợi Kobo khởi động lại xong, rồi mới chép bên kia. Đừng chép cả hai cùng lúc (cái sau ghi đè cái trước).
+- **Sau khi Kobo cập nhật firmware**, kiểm lại cả hai. NickelDrawer phải có bản hỗ trợ firmware mới (xem [Hỏi đáp](#s-hoi-ap)); kobo-tieng-viet từ bản `20260319` tự sửa, nếu chữ vẫn lỗi thì cài lại theo dự án.
+- **Từ chối bản nâng cấp 5.x (Qt6)** mà Kobo mời: cả hai đều không chạy trên 5.x. Lý do và cách từ chối: [Hỏi đáp](#s-hoi-ap) và [DECISIONS.md](../DECISIONS.md).
+
+### Phông chữ để đọc sách tiếng Việt
+
+1. Chọn một phông có đủ dấu tiếng Việt. Kiểm bằng công cụ của dự án này (cần Python và `pip install fonttools`):
+    ```sh
+    python3 tools/vncheck.py đường/dẫn/phong-chu.ttf
+    ```
+    Dòng kết quả cho biết bao nhiêu chữ tiếng Việt còn thiếu; `0 missing` là đủ.
+2. Cắm Kobo, bấm **Kết nối**, chép tệp `.ttf` hoặc `.otf` vào thư mục `fonts` ở thư mục gốc của Kobo (tạo nếu chưa có; đúng tên `fonts`, không phải thư mục con của `.kobo`). Giải nén trước nếu tệp nằm trong zip. Ngắt kết nối, nếu phông chưa hiện thì khởi động lại Kobo.
+3. Khi đang đọc, bấm giữa màn hình để mở menu đọc sách, mở phần chữ †, rồi ở **Phông bổ sung** † (Supplemental) đánh dấu phông của bạn, ở **Kiểu chữ** † (Font Face) chọn tên phông đó. Tên mục theo hướng dẫn tiếng Anh của Kobo; tên tiếng Việt chưa đối chiếu trên máy thật.
+
+Một số phông có thể hiển thị không đúng; thử bản khác của cùng phông (Kobo, [Load fonts onto your Kobo eReader](https://help.kobo.com/hc/en-us/articles/13009477876631-Load-fonts-onto-your-Kobo-eReader)).
+
+Sách EPUB nhúng sẵn phông riêng có thể bỏ qua phông bạn chọn. Đây là cách làm việc của sách, không phải lỗi của máy. Kobo không nêu điều này trong bài hướng dẫn trên, nên hãy thử trên chính cuốn sách đó.
+
+### Mẹo đọc EPUB tiếng Việt cho ổn định
+
+- **Dùng KEPUB** cho sách bạn thêm vào (Kobo hiển thị bằng bộ đọc riêng của nó). Hai cách:
+    - [kepubify](https://github.com/pgaskin/kepubify) (MIT): công cụ độc lập chuyển EPUB sang KEPUB, chạy trên Windows, Linux, macOS, có thêm bản web.
+    - Calibre cùng plugin [Kobo Touch Extended](https://www.mobileread.com/forums/showthread.php?t=211135) của jgoguen: tự chuyển sang KEPUB khi gửi sách tới Kobo (bật "Enable Extended Kobo Features" ở thẻ Extended; cần Calibre 5.0 trở lên). Plugin này do người ngoài duy trì, có thể chậm cập nhật.
+- **Tên tệp và thông tin sách theo chuẩn NFC:** chữ có dấu lưu theo hai cách sẽ làm tìm kiếm và sắp xếp lỗi. Ứng dụng **Thư viện** của NickelDrawer có **Sửa tên (NFC)** (xem [Sửa tên (NFC)](#sua-ten-nfc)).
+- **Ngôn ngữ của sách là `vi`:** nếu sai, Kobo ngắt dòng và tra từ như sách tiếng Anh. **Thư viện** → **Sửa ngôn ngữ** sửa việc này (xem [Sửa ngôn ngữ](#sua-ngon-ngu)).
+
+### Từ điển Anh–Việt (tùy chọn)
+
+Kobo có cài đặt từ điển riêng ở **Ngôn ngữ và từ điển** † (xem phần trên). Từ điển của bên thứ ba là rủi ro của bạn. Một dự án có sẵn là [redphx/tudien](https://github.com/redphx/tudien) (từ điển Anh–Việt dùng nguồn Lạc Việt, TFlat, DictBox, Babylon, Laban; trang dự án nêu nhiều nghĩa có thể trùng và không nêu giấy phép). Theo trang đó: cần cài kobo-tieng-viet trước; tải `tudien-kobo-en-vi.zip` từ trang phát hành, chép vào `.kobo/custom-dict`, không giải nén, đổi tên thành `dicthtml-en-vi.zip` (xoá tệp từ điển cũ nếu cần), rồi eject. Cách chọn từ điển trên máy, xem hướng dẫn của dự án.
+
+### An toàn
+
+- **Sao lưu trước khi cài:** chép `.kobo` và `.adds` vào máy tính (xem [Sao lưu](#s-sao-luu)). Nếu muốn, chép thêm thư mục `fonts`.
+- **Khôi phục:** dùng cách gỡ của chính dự án (tệp `uninstall.txt` ở trên). Nếu Kobo không khởi động được, xem hướng dẫn của dự án.
+- **Đặt lại về mặc định gốc (Factory Reset)** là cách cuối cùng, vì nó xoá cả sách và cài đặt. Chỉ dùng khi mọi cách khác không được.
+
 ## Bảng thuật ngữ
 
 Tên của Kobo (các màn hình NickelDrawer làm việc cùng) và tên của NickelDrawer, trên Kobo để tiếng Việt và tiếng Anh.

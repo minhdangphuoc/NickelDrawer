@@ -1,33 +1,147 @@
 # NickelDrawer (Tiếng Việt)
 
-Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm mục **Ứng dụng** và bảng **Tinh chỉnh** vào tab Thêm, cùng một số công cụ nhỏ: nhận tệp từ điện thoại (LocalSend), đồng bộ sách từ GitHub, dùng ảnh của bạn làm màn hình chờ, dọn thư viện, và ghi việc cần làm. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
+Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm hàng **Ứng dụng** và bảng **Tinh chỉnh** vào tab **Thêm**, cùng một số công cụ nhỏ (nhận tệp từ điện thoại, đồng bộ sách từ GitHub, dùng ảnh của bạn làm màn hình ngủ, dọn thư viện) với giao diện giống Kobo. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
 
-**Trạng thái: 1.0.0-beta.1.** Mới thử trên một máy và một bản firmware. Bản tiếng Anh đầy đủ ở [README.md](README.md).
+**Trạng thái: 1.0.0-beta.1.** Mới thử trên một máy và một bản firmware (xem [Firmware hỗ trợ](#firmware-hỗ-trợ)). Đọc [An toàn](#an-toàn) trước khi cài. Bản tiếng Anh: [README.md](README.md). Hướng dẫn chi tiết: [user-guide.vi.html](docs/guide/user-guide.vi.html) ([.md](docs/guide/user-guide.vi.md)).
+
+| LocalSend | Hình nền |
+|---|---|
+| ![Xem trước màn hình LocalSend](docs/img/localsend.png) | ![Xem trước màn hình Hình nền](docs/img/wallpaper.png) |
+
+Đây là ảnh dựng trên máy tính bằng `ndpreview` ở kích thước màn hình e-ink, không phải ảnh chụp máy thật. Cách dựng lại:
+
+```sh
+go run ./cmd/ndpreview render apps/localsend --out docs/img/localsend.png
+go run ./cmd/ndpreview render apps/wallpaper --out docs/img/wallpaper.png
+```
+
+Dùng `--screen ID`, `--locale vi` và `--state state.json` cho màn hình, ngôn ngữ và trạng thái khác. Ghi ảnh phụ vào `build/preview/` (không đưa lên git) và chép ảnh muốn giữ vào `docs/img/`.
+
+## Bạn được gì
+
+- **Ngăn ứng dụng gốc.** Hàng Ứng dụng trong tab Thêm mở danh sách hoặc lưới ứng dụng, dùng phông, biểu tượng và hộp thoại của chính Nickel.
+- **Tinh chỉnh.** Bảng giống phần cài đặt: màn hình ngủ, chụp màn hình, tự kết nối USB, chữ rõ nét, địa chỉ IP, khởi động lại và quét lại thư viện.
+- **Ứng dụng là thư mục.** Chép một thư mục có tệp mô tả và vài tập lệnh vào `.adds/apps/` là nó hiện ra. Không cần C++ ([docs/APPS.md](docs/APPS.md)).
+- **Màn hình ứng dụng gốc.** Ứng dụng mô tả danh sách, nút gạt, nút bấm, mã QR và trạng thái trực tiếp trong tệp `ui.json`; Ngăn vẽ ra.
+- **Ứng dụng kèm theo.** LocalSend (nhận tệp từ điện thoại, xếp vào Books, Documents, Comics và Pictures), GitHub (đồng bộ sách chỉ thêm, ghép nối từ điện thoại), Hình nền (thư viện ảnh màn hình ngủ), Thư viện (dọn sách trùng, gắn ngôn ngữ, chuẩn hóa Unicode) và Việc cần làm (danh sách việc nhỏ). Ứng dụng ẩn Bộ giao diện (UI Kit) hiện mọi thành phần màn hình cho người làm ứng dụng và người thử ([apps/uikit](apps/uikit/README.md)).
+- **Cập nhật có chữ ký.** Ứng dụng và công cụ chủ cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
+- **Mọi ngôn ngữ.** Tiếng Anh là bản gốc; tiếng Việt có sẵn đầu tiên. Ngôn ngữ theo cài đặt của chính Kobo ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 
 ## Firmware hỗ trợ
 
-Kobo Libra 2, năm bản 4.38 mới nhất: 4.38.23828, 4.38.23697, 4.38.23684, 4.38.23648, 4.38.23552. Firmware 5.x **chưa** được hỗ trợ. Ngăn ứng dụng tự tắt và ghi log nếu gặp bản firmware lạ.
+Kobo Libra 2 (Mark 9, dòng firmware `kobo9`), năm bản 4.38 mới nhất. Ngăn gốc kiểm mọi ký hiệu libnickel nó cần lúc khởi động và tự tắt, kèm một dòng log, nếu gặp bản lạ hoặc thiếu ký hiệu.
+
+| Firmware | Ngăn gốc | Ghi chú |
+|---|---|---|
+| 4.38.23828 | đã thử trên máy | |
+| 4.38.23697 | kiểm ký hiệu trong CI | chưa chạy trên máy |
+| 4.38.23684 | kiểm ký hiệu trong CI | chưa chạy trên máy |
+| 4.38.23648 | kiểm ký hiệu trong CI | chưa chạy trên máy |
+| 4.38.23552 | kiểm ký hiệu trong CI | chưa chạy trên máy |
+
+Firmware 5.x **chưa** được hỗ trợ. Các mẫu Kobo khác chưa thử. Chi tiết: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## Cài đặt
 
-1. **Sao lưu trước.** Chép toàn bộ thư mục `.kobo` và `.adds` của Kobo vào máy tính.
-2. Giải nén `koboapps-<phiên bản>.zip`, chép thư mục `.adds` trong `onboard/` vào thư mục gốc của Kobo (gộp với `.adds` có sẵn).
-3. Chép `KoboRoot-nickeldrawer.tgz` vào `.kobo/KoboRoot.tgz`.
-4. Ngắt kết nối (eject) Kobo. Máy tự cài và khởi động lại; tab Thêm sẽ có mục **Ứng dụng**.
+Bạn cần Kobo Libra 2 chạy một trong các bản trên, một máy tính, cáp USB và các tệp của [bản phát hành](../../releases) mới nhất: `koboapps-<phiên bản>.zip` (ứng dụng và công cụ chủ) và `KoboRoot-nickeldrawer.tgz` (ngăn gốc).
 
-Trên macOS hoặc Linux có thể dùng `tools/install-to-kobo.sh` (tự sao lưu và không đụng vào thư mục `data/` của ứng dụng).
+1. **Sao lưu trước.** Cắm Kobo, chép toàn bộ thư mục `.kobo` và `.adds` vào máy tính. Giữ cho đến khi bạn hài lòng.
+2. Giải nén `koboapps-<phiên bản>.zip`. Chép thư mục `.adds` trong `onboard/` vào thư mục gốc của ổ Kobo và gộp với `.adds` có sẵn (thư mục ẩn: Cmd+Shift+. trong Finder của macOS, "hiện tệp ẩn" trên Windows và Linux). Tệp zip không có thư mục `data/`; có một cấu hình GitHub mẫu cạnh ứng dụng (`.adds/apps/ghsync/config.example.json`). **Finder trên macOS: nếu hỏi có Thay thế (Replace) thư mục đã có không, đừng chọn.** Thay thế xóa nội dung hiện có của thư mục (cài đặt ứng dụng, token, tệp của mod khác). Giữ phím Option rồi chọn **Gộp (Merge)**, hoặc dùng tập lệnh cài bên dưới.
+3. Chép `KoboRoot-nickeldrawer.tgz` vào `.kobo/KoboRoot.tgz` trên ổ (đổi tên khi chép).
+4. Ngắt kết nối (eject) Kobo khỏi máy tính. Máy tự cài ngăn và khởi động lại. Sau khi lên, tab Thêm có hàng **Ứng dụng**.
 
-## An toàn và gỡ cài đặt
+Trên macOS hoặc Linux, với bản checkout của kho mã này có tập lệnh cài an toàn hơn: nó sao lưu mọi thứ nó thay vào `backups/<ngày-giờ>/` và không bao giờ đụng vào thư mục `data/`:
 
-- Ngăn ứng dụng có cơ chế **failsafe**: nếu Nickel treo trong 15 giây đầu sau khi khởi động, mod tự gỡ ở lần khởi động sau và máy chạy như bản gốc.
-- **Gỡ cài đặt:** tạo tệp rỗng `.adds/nickeldrawer/uninstall`, ngắt kết nối và đợi máy khởi động lại. Sách của bạn không bị động đến.
-- Tạo tệp `.adds/nickeldrawer/disable` để tạm tắt mà không gỡ.
-- Ứng dụng chạy với quyền root. Chỉ cài ứng dụng bạn tin tưởng. Xem [SECURITY.md](SECURITY.md).
+```sh
+make check build dist
+tools/install-to-kobo.sh --dry-run     # cho xem việc sẽ làm
+tools/install-to-kobo.sh               # tìm /Volumes/KOBOeReader, /media/$USER/KOBOeReader hoặc /run/media/$USER/KOBOeReader; không thì đặt KOBO_ROOT=/đường/dẫn
+```
+
+[NickelMenu](https://github.com/pgaskin/NickelMenu) là tùy chọn. NickelDrawer không cần nó và chạy chung được với nó.
+
+### Tệp công tắc
+
+Tệp rỗng bạn tạo qua USB trong `.adds/nickeldrawer/` (tạo thư mục nếu chưa có). Chúng được đọc lúc khởi động.
+
+| Tệp | Tác dụng |
+|---|---|
+| `uninstall` | Gỡ ngăn gốc ở lần khởi động sau, rồi tự xóa |
+| `disable` | Nạp ngăn nhưng để nó không hoạt động (công tắc tắt) |
+| `no-screens` | Không dùng màn hình ứng dụng: chạm sẽ chạy tác vụ chính của ứng dụng thay vì mở màn hình `ui.json`. Màn hình ứng dụng bật sẵn (tệp `screens` cũ bị bỏ qua) |
+| `no-keyboard` | Ô nhập hiện "hãy đổi từ điện thoại" thay vì bàn phím của Nickel |
+| `debug` | Ghi log từng bước vào `.adds/nickeldrawer/debug.log` |
+| `test-unknown-fw` | Dùng để thử: giả vờ firmware lạ, ngăn tự tắt kèm một thông báo ngắn. Xóa tệp và khởi động lại để về bình thường |
+
+## An toàn
+
+Ứng dụng chạy với quyền root trên một thiết bị chứa thư viện sách của bạn. Chỉ cài ứng dụng bạn tin tưởng. Các quy tắc:
+
+- Ngăn gốc là mod [NickelHook](https://github.com/pgaskin/NickelHook) có **failsafe**: nếu Nickel treo (hoặc bạn tắt máy một lần) trong 15 giây đầu sau khi mod nạp, mod bị bỏ ở lần khởi động sau và Nickel chạy như bản gốc.
+- **Gỡ cài đặt:** tạo tệp rỗng `.adds/nickeldrawer/uninstall`, eject, đợi máy khởi động lại. Muốn xóa hết thì xóa thêm hai thư mục `.adds/koboapps` và `.adds/apps`. Sách của bạn không bao giờ bị động đến.
+- Không thu thập dữ liệu. Mạng chỉ dùng cho việc bạn bắt đầu (LocalSend, đồng bộ GitHub, kiểm tra cập nhật).
+- Bản phát hành có chữ ký (ed25519). Khóa riêng nằm trên máy của người duy trì.
+- Không có tệp nhị phân hay tài nguyên của Kobo trong kho mã này hay trong bản phát hành.
+
+Đọc [SECURITY.md](SECURITY.md) trước khi cài hoặc báo lỗi.
+
+<a id="giao-dien-tieng-viet"></a>
+
+## Cài đặt thêm: giao diện Kobo bằng tiếng Việt
+
+Phần này **tách riêng khỏi NickelDrawer** (NickelDrawer đã có bản dịch tiếng Việt của riêng nó và chạy được dù bạn có làm phần này hay không). Đây là việc cài thêm để chính menu và cài đặt của Kobo hiện bằng tiếng Việt, kèm phông chữ có đủ dấu để chữ không hiện thành ô vuông □.
+
+Công cụ: [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet) của redphx. Dự án của bên thứ ba, có giấy phép riêng (trang dự án không nêu), không thuộc NickelDrawer và không liên kết với Kobo. Tóm tắt theo trang dự án (đọc ngày 2026-10-10); khi có khác biệt, **hướng dẫn của dự án là đúng**.
+
+- **Firmware:** chỉ 4.x. 3.x và 5.x không được hỗ trợ.
+- **Cài:** sao lưu trước; tải `KoboRoot.tgz` ở [trang phát hành](https://github.com/redphx/kobo-tieng-viet/releases) (đừng tải bằng Safari); chép vào thư mục ẩn `.kobo` (không giải nén, giữ tên); eject; đợi khoảng 3 phút để máy tự cập nhật.
+- **Chọn ngôn ngữ:** máy nên tự chuyển. Nếu không: **Thêm** → **Cài đặt** → **Ngôn ngữ và từ điển** † → chọn ngôn ngữ → **Extra: vi**.
+- **Gỡ:** tạo tệp rỗng `uninstall.txt` trong `.adds/tiengviet/`, eject, khởi động lại. Chữ tiếng Việt vẫn hiện tiếp cho đến khi Factory Reset hoặc cài lại firmware.
+- **Với NickelDrawer:** thứ tự nào cũng được; cài xong một bên, đợi máy khởi động lại rồi mới cài bên kia. Sau khi Kobo cập nhật firmware, kiểm lại cả hai (kobo-tieng-viet từ bản `20260319` tự sửa lỗi hiển thị; NickelDrawer cần bản hỗ trợ firmware mới). **Từ chối lời mời nâng lên 5.x (Qt6)** của Kobo: cả hai đều không chạy trên 5.x ([giải thích](docs/DECISIONS.md)).
+- **Phông để đọc sách, mẹo đọc EPUB tiếng Việt (KEPUB, NFC, ngôn ngữ `vi`), từ điển Anh–Việt tùy chọn, cách khôi phục:** xem phần đầy đủ trong hướng dẫn: [Cài thêm: giao diện Kobo bằng tiếng Việt](docs/guide/user-guide.vi.md#s-giao-dien-tieng-viet) ([bản HTML](docs/guide/user-guide.vi.html#s-giao-dien-tieng-viet)). Công cụ kiểm phông có đủ dấu: `python3 tools/vncheck.py phong-chu.ttf` (cần `pip install fonttools`).
+
+Tên mục có dấu † chưa được đối chiếu trên máy thật; trên máy bạn có thể khác đôi chút.
+
+## Xây dựng
+
+Go 1.24 trở lên, `make`, `zip`. Ngăn gốc cần Docker (ảnh toolchain [NickelTC](https://github.com/pgaskin/NickelTC) đã ghim, xem [mod/TOOLCHAIN.md](mod/TOOLCHAIN.md)).
+
+```sh
+make check                          # gofmt, go vet, go test
+make build dist                     # tệp ARMv7, cây dist/, dist/koboapps-<phiên bản>.zip
+bash tools/test-install.sh          # thử tập lệnh cài trên một cây Kobo giả
+
+make -C mod/drawer docker-build     # build/mod/KoboRoot-nickeldrawer.tgz
+make -C mod/drawer docker-test      # kiểm thử đơn vị trên máy chủ cho phần không dùng Qt
+mod/drawer/check-symbols.sh         # kiểm tĩnh thư viện đã build
+```
+
+CI và phát hành: [docs/CI.md](docs/CI.md), [docs/RELEASING.md](docs/RELEASING.md). Đóng góp: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Viết một ứng dụng
+
+```sh
+go run ./cmd/appsctl new my-app --with-ui     # tạo khung ./my-app
+go run ./cmd/appsctl validate my-app          # kiểm app.json, locales và ui.json
+go run ./cmd/ndpreview serve my-app           # xem trước ui.json ở cỡ Kobo trên 127.0.0.1
+```
+
+Hướng dẫn: [docs/APPS.md](docs/APPS.md); định dạng trong [docs/spec/](docs/spec/); ví dụ trong [examples/](examples/README.md).
 
 ## Ngôn ngữ
 
-Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới chỉ cần một tệp JSON, xem [docs/TRANSLATING.md](docs/TRANSLATING.md).
+Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới chỉ cần một tệp JSON cho mỗi ứng dụng và một cho phần chủ, không phải sửa mã. Xem [docs/TRANSLATING.md](docs/TRANSLATING.md). Chưa hỗ trợ ngôn ngữ viết từ phải sang trái.
 
 ## Giấy phép
 
-[PolyForm Noncommercial 1.0.0](LICENSE): miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; **không dùng cho mục đích thương mại**. NickelDrawer là dự án độc lập, không liên kết với Rakuten Kobo.
+[PolyForm Noncommercial 1.0.0](LICENSE): miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; **không dùng cho mục đích thương mại**. Có thể fork và sửa theo cùng điều khoản. NickelDrawer là mã nguồn có thể xem (source-available), không phải mã nguồn mở theo chuẩn OSI. Mã của bên thứ ba giữ giấy phép riêng, liệt kê ở [third_party/README.md](third_party/README.md).
+
+## Ghi công
+
+- [NickelHook](https://github.com/pgaskin/NickelHook) và [NickelMenu](https://github.com/pgaskin/NickelMenu) của Patrick Gaskin (MIT): khung hook mà ngăn gốc dùng, và menu chạy chung với nó.
+- [NickelTC](https://github.com/pgaskin/NickelTC): bộ biên dịch chéo, và cộng đồng nghiên cứu ngược Kobo với hiểu biết về cách Nickel hoạt động.
+- [localgo](https://github.com/bethropolis/localgo) (MIT): phần cài giao thức LocalSend mà ứng dụng LocalSend dùng.
+- [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT): biểu tượng dự phòng khi không có biểu tượng của Nickel.
+- [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet): sửa giao diện và phông tiếng Việt cho Kobo. NickelDrawer được thiết kế để chạy chung với nó; không phụ thuộc vào nó.
+
+NickelDrawer là dự án độc lập. Không do Rakuten Kobo làm ra, không liên kết hay được Rakuten Kobo bảo trợ. "Kobo" và "Nickel" là nhãn hiệu của chủ sở hữu.

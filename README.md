@@ -117,6 +117,10 @@ English and Vietnamese are maintained here. A new language is one JSON file per 
 
 Tiếng Việt: xem [README.vi.md](README.vi.md).
 
+### Vietnamese system UI (optional)
+
+Separate from NickelDrawer: [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet) (third-party, by redphx; firmware 4.x only) shows Kobo's own menus in Vietnamese and fixes Vietnamese fonts. It can be installed before or after NickelDrawer. See [Cài đặt thêm: giao diện Kobo bằng tiếng Việt](README.vi.md#giao-dien-tieng-viet) and the [guide appendix](docs/guide/user-guide.vi.md#s-giao-dien-tieng-viet) (Vietnamese; English summary in the [English guide](docs/guide/user-guide.en.md#vietnamese-system-ui)).
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE): free for personal use, study, hobby projects and non-profit organisations; **no commercial use**. Forks and changes are welcome under the same terms. NickelDrawer is source-available, not OSI open source. Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).

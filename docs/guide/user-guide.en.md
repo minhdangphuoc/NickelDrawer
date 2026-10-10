@@ -674,6 +674,21 @@ A hidden app for app makers and testers that shows every screen component with s
 **Where are my files?**
 Received books in `Books`, `Documents`, `Comics`, `Pictures`. GitHub books in the `GitHub` folders inside them. App settings in `.adds/apps/<app>/data/`.
 
+<a id="vietnamese-system-ui"></a>
+
+## Optional: Vietnamese system UI
+
+This is separate from NickelDrawer, which already has its own Vietnamese translation and works with or without it. Kobo's own menus can be shown in Vietnamese, with fonts that cover Vietnamese letters (without the fix, accented letters may show as boxes), by installing the third-party project [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet) by redphx. It has its own license terms, is not part of NickelDrawer and is not affiliated with Kobo.
+
+- **Firmware:** 4.x only; 3.x and 5.x are not supported (per the project page). Decline Kobo's 5.x (Qt6) offer: see the [FAQ](#faq) and [DECISIONS.md](../DECISIONS.md).
+- **Install:** back up first, copy the project's `KoboRoot.tgz` into the hidden `.kobo` folder (do not unzip it), eject, wait about 3 minutes. Select **Extra: vi** under Settings → Language and dictionaries † if the language does not switch by itself. Uninstall: an empty `uninstall.txt` in `.adds/tiengviet/`. Follow the project's own instructions; they may change.
+- **With NickelDrawer:** either order works; install one, let the Kobo reboot, then the other. After a Kobo firmware update, check both.
+- **Fonts for reading:** copy `.ttf` or `.otf` files to a `fonts` folder at the Kobo root, then pick them in the reading menu (Supplemental, Font Face; [Kobo help](https://help.kobo.com/hc/en-us/articles/13009477876631-Load-fonts-onto-your-Kobo-eReader)). Check Vietnamese coverage with `python3 tools/vncheck.py font.ttf` (needs `pip install fonttools`). A book with embedded fonts may ignore your choice.
+- **Reading tips:** convert EPUBs to KEPUB ([kepubify](https://github.com/pgaskin/kepubify), or Calibre with the [Kobo Touch Extended](https://www.mobileread.com/forums/showthread.php?t=211135) plugin), keep file names and metadata in NFC and set the book language to `vi` (the Library app fixes both: [Library](#library-tidy-your-books)).
+- **Dictionary:** [redphx/tudien](https://github.com/redphx/tudien) is an optional English-Vietnamese dictionary; third-party dictionaries are at your own risk.
+
+The full steps are in the Vietnamese guide: [Cài thêm: giao diện Kobo bằng tiếng Việt](user-guide.vi.md#s-giao-dien-tieng-viet).
+
 ## Glossary
 
 Kobo's own names (the screens NickelDrawer works with) and NickelDrawer's names, on a Kobo set to English and to Vietnamese.
