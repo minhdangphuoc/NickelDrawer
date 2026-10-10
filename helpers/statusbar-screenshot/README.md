@@ -2,7 +2,8 @@
 
 A personal helper for the maintainer's own Kobo, not a NickelDrawer feature. It is a separate NickelHook
 mod (`libstatusbarshot.so`, plugin key `nh.statusbarshot`) with its own flags and failsafe. It is not part
-of `make dist`, `dist/`, the release zips, the README, the guide or the changelog. The design, symbols and
+of `make dist`, `dist/`, the release zips, the guide or the changelog; the main README lists it only under
+"Extra tools and setups". The design, symbols and
 the device checklist are in `re/notes/statusbar-screenshot.md`.
 
 It adds a Tabler "screenshot" button to Nickel's status bar, just left of the brightness icon. A tap blanks
