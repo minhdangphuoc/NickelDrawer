@@ -1,0 +1,46 @@
+{
+  "firmware": "4.38.23171",
+  "locale": "vi",
+  "shownote": true,
+  "hiddennote": "Ghi chú này hiện khi công tắc bật và ẩn khi chữ trống.",
+  "refreshmode": "balanced",
+  "searchtext": "Truyện Kiều",
+  "pagenumber": "12",
+  "pictures": [
+    {
+      "id": "s1",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0001.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0001.png",
+      "label": "nui-trang.png",
+      "info": "nui-trang.png"
+    },
+    {
+      "id": "s2",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0002.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0002.png",
+      "label": "bien-xanh.png",
+      "info": "bien-xanh.png"
+    },
+    {
+      "id": "s3",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0003.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0003.png",
+      "label": "hoa-sen.png",
+      "info": "hoa-sen.png"
+    },
+    {
+      "id": "s4",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0004.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0004.png",
+      "label": "rung-tram.png",
+      "info": "rung-tram.png"
+    },
+    {
+      "id": "s5",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0005.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0005.png",
+      "label": "cau-ngoi.png",
+      "info": "cau-ngoi.png"
+    }
+  ]
+}

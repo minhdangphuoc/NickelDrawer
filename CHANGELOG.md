@@ -21,6 +21,8 @@ Licensed under PolyForm Noncommercial 1.0.0: free for personal and non-profit us
   - GitHub sync details: its screen shows the repo, last sync, books added and any error; a pairing check names a missing repository, branch or folder instead of a bare 404 (an empty repository pairs); files are checked against the inbox allowlist and magic bytes, sorted into Books, Documents or Comics under `GitHub`, and never overwritten or deleted.
   - Wallpaper: a phone-style gallery with a full-screen viewer for your sleep screen pictures; tells you which Nickel setting to enable.
   - Library: dedupe, language tags and Unicode normalisation.
+  - To-do ("Việc cần làm"): add tasks with Nickel's keyboard (Vietnamese NFC-normalised), tap to mark done, long-press to delete, clear done tasks; saved atomically in `data/todo.json`, a damaged file is kept aside and the list starts empty.
+  - UI Kit ("Bộ giao diện", hidden by default): every `ui.json` component with sample content on three screens, the target of the KIT-* device cases; unhide it with `"hidden": false` in its `app.json`.
 - **Developer kit**: `appsctl new` scaffolds an app, `appsctl validate` checks manifests, locales and `ui.json`; guide in [docs/APPS.md](docs/APPS.md), examples in [examples/](examples/README.md).
 - **Signed over-the-air updates** from GitHub Releases (ed25519) with backup, self-check and rollback; `ndrelease` for maintainers. Pre-release versions such as `1.0.0-beta.1` are supported and sort before the final release; only the `beta` channel installs them.
 - **Languages**: English source and Vietnamese, chosen from the device language; a new language is one JSON file ([docs/TRANSLATING.md](docs/TRANSLATING.md)).

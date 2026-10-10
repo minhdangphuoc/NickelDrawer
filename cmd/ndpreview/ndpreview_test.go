@@ -351,15 +351,15 @@ func TestRenderRejectsUnknownScreen(t *testing.T) {
 }
 
 func TestOverlaysRender(t *testing.T) {
-	instance := newTestServer(t, serverConfig{AppDir: "../../examples/todo", Locale: "vi"})
-	body := get(t, instance, "/?confirm=screens.main.body[3]").Body.String()
-	if !strings.Contains(body, "Xóa mọi việc đã đánh dấu xong?") || !strings.Contains(body, "Hủy") {
+	instance := newTestServer(t, serverConfig{AppDir: "../../apps/todo", Locale: "vi"})
+	body := get(t, instance, "/?confirm=screens.main.footer[0]").Body.String()
+	if !strings.Contains(body, "Xoá mọi việc đã đánh dấu xong?") || !strings.Contains(body, "Huỷ") {
 		t.Error("confirm dialog not rendered in vi")
 	}
 }
 
 func TestShippedExamplesRenderEveryScreen(t *testing.T) {
-	for _, dir := range []string{"../../apps/localsend", "../../apps/wallpaper", "../../examples/todo"} {
+	for _, dir := range []string{"../../apps/localsend", "../../apps/wallpaper", "../../apps/todo"} {
 		instance := newTestServer(t, serverConfig{AppDir: dir, Locale: "vi"})
 		if recorder := get(t, instance, "/"); recorder.Code != http.StatusOK {
 			t.Errorf("%s: status %d: %s", dir, recorder.Code, recorder.Body.String())

@@ -1,6 +1,6 @@
 # NickelDrawer (Tiếng Việt)
 
-Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm mục **Ứng dụng** và bảng **Tinh chỉnh** vào tab Thêm, cùng một số công cụ nhỏ: nhận tệp từ điện thoại (LocalSend), đồng bộ sách từ GitHub, dùng ảnh của bạn làm màn hình chờ, và dọn thư viện. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
+Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm mục **Ứng dụng** và bảng **Tinh chỉnh** vào tab Thêm, cùng một số công cụ nhỏ: nhận tệp từ điện thoại (LocalSend), đồng bộ sách từ GitHub, dùng ảnh của bạn làm màn hình chờ, dọn thư viện, và ghi việc cần làm. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
 
 **Trạng thái: 1.0.0-beta.1.** Mới thử trên một máy và một bản firmware. Bản tiếng Anh đầy đủ ở [README.md](README.md).
 

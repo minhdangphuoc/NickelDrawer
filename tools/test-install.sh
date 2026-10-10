@@ -71,6 +71,17 @@ check "library installed" test -x "$ADDS/apps/library/bin/library"
 check "library scripts installed" test -x "$ADDS/apps/library/bin/scan.sh"
 check "library ui.json installed" test -f "$ADDS/apps/library/ui.json"
 check "library locales installed" test -f "$ADDS/apps/library/locales/vi.json"
+check "todo helper installed and executable" test -x "$ADDS/apps/todo/bin/todo"
+check "todo scripts installed" test -x "$ADDS/apps/todo/bin/state.sh"
+check "todo ui.json installed" test -f "$ADDS/apps/todo/ui.json"
+check "todo locales installed" test -f "$ADDS/apps/todo/locales/vi.json"
+check "todo icon installed" test -f "$ADDS/apps/todo/icon.png"
+check "todo ships no task list" test ! -e "$ADDS/apps/todo/data/todo.json"
+check "uikit scripts installed" test -x "$ADDS/apps/uikit/bin/state.sh"
+check "uikit ui.json installed" test -f "$ADDS/apps/uikit/ui.json"
+check "uikit locales installed" test -f "$ADDS/apps/uikit/locales/vi.json"
+check "uikit icon installed" test -f "$ADDS/apps/uikit/icon.png"
+check "uikit ships hidden" contains "$ADDS/apps/uikit/app.json" '"hidden": true'
 check "config.example.json installed" test -f "$ADDS/apps/ghsync/data/config.example.json"
 check "no other ghsync data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l | tr -d ' ')" = 1
 check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
@@ -115,6 +126,7 @@ echo "secret-token" >"$ADDS/apps/ghsync/data/token"
 echo '{"repo":"o/r"}' >"$ADDS/apps/ghsync/data/config.json"
 echo "1234" >"$ADDS/apps/localsend/data/pin.txt" 2>/dev/null || { mkdir -p "$ADDS/apps/localsend/data"; echo 1234 >"$ADDS/apps/localsend/data/pin.txt"; }
 echo '{"remove":["gif"]}' >"$ADDS/koboapps/data/routing.json"
+mkdir -p "$ADDS/apps/todo/data" && echo '{"version":1,"tasks":[{"text":"Mua sữa","done":false}]}' >"$ADDS/apps/todo/data/todo.json"
 echo "waiting" >"$ADDS/koboapps/inbox/pending.pdf"
 cp "$ADDS/nm/items" "$WORK/items.after-first"
 echo "stale" >"$ADDS/apps/ghsync/bin/obsolete.sh"
@@ -123,6 +135,7 @@ sleep 1
 "$INSTALLER" >"$WORK/second.out"
 check "token preserved" contains "$ADDS/apps/ghsync/data/token" "secret-token"
 check "config preserved" contains "$ADDS/apps/ghsync/data/config.json" '"o/r"'
+check "todo list preserved" contains "$ADDS/apps/todo/data/todo.json" "Mua sữa"
 check "pin preserved" contains "$ADDS/apps/localsend/data/pin.txt" "1234"
 check "user routing.json never overwritten" contains "$ADDS/koboapps/data/routing.json" '"remove":["gif"]'
 check "files waiting in the inbox kept" contains "$ADDS/koboapps/inbox/pending.pdf" "waiting"

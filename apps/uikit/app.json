@@ -1,0 +1,100 @@
+{
+  "schema": 1,
+  "id": "uikit",
+  "name": "UI Kit",
+  "version": "1.0.0",
+  "description": "Every NickelDrawer component with sample content, for developers and testers",
+  "hidden": true,
+  "storage": {
+    "reads": [
+      "pictures"
+    ]
+  },
+  "network": false,
+  "actions": [
+    {
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "refresh",
+      "label": "Rescan pictures",
+      "run": "bin/refresh.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "shownote",
+      "label": "Show note",
+      "run": "bin/shownote.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "refreshmode",
+      "label": "Refresh style",
+      "run": "bin/refreshmode.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "searchtext",
+      "label": "Search text",
+      "run": "bin/searchtext.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "pagenumber",
+      "label": "Page number",
+      "run": "bin/pagenumber.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "primary",
+      "label": "Primary button",
+      "run": "bin/primary.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "tap",
+      "label": "Tap",
+      "run": "bin/tap.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "confirmed",
+      "label": "Confirmed button",
+      "run": "bin/confirmed.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "rowopen",
+      "label": "Open row",
+      "run": "bin/rowopen.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "rowdelete",
+      "label": "Delete row",
+      "run": "bin/rowdelete.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    },
+    {
+      "id": "tilelong",
+      "label": "Picture action",
+      "run": "bin/tilelong.sh",
+      "output": "show",
+      "timeout_ms": 3000
+    }
+  ]
+}

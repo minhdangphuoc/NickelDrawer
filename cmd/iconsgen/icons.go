@@ -53,6 +53,8 @@ func buildIconTable() []icon {
 		{"apps/localsend/icon.png", "send", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"apps/wallpaper/icon.png", "photo", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"apps/library/icon.png", "books", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
+		{"apps/todo/icon.png", "list-check", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
+		{"apps/uikit/icon.png", "layout-dashboard", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"apps/ghsync/icon.png", "brand-github", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"host/icons/refresh.png", "refresh", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"host/icons/updates.png", "cloud-download", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},

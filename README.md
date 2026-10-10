@@ -23,7 +23,7 @@ Use `--screen ID`, `--locale vi` and `--state state.json` for other screens, lan
 - **Tweaks.** A settings-style panel for sleep screen, screenshots, auto USB connect, text legibility, IP address, reboot and library rescan.
 - **Apps are folders.** Copy a folder with a manifest and a few scripts to `.adds/apps/` and it appears. No C++ needed ([docs/APPS.md](docs/APPS.md)).
 - **Native app screens.** Apps describe lists, toggles, buttons, QR codes and live status in a `ui.json` file; the drawer draws them.
-- **Included apps.** LocalSend (receive files from a phone, sorted into Books, Documents, Comics and Pictures), GitHub sync (add-only book sync, paired from your phone), Wallpaper (a gallery for your sleep screen pictures) and Library (dedupe, language tags, Unicode normalisation).
+- **Included apps.** LocalSend (receive files from a phone, sorted into Books, Documents, Comics and Pictures), GitHub sync (add-only book sync, paired from your phone), Wallpaper (a gallery for your sleep screen pictures), Library (dedupe, language tags, Unicode normalisation) and To-do (a small task list). A hidden UI Kit app shows every screen component for developers and testers ([apps/uikit](apps/uikit/README.md)).
 - **Signed updates.** Apps and the host tool update over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
 - **Any language.** English is the source; Vietnamese ships first. The language follows the Kobo's own setting ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 

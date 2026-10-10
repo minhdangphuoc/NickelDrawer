@@ -16,7 +16,7 @@ Three things are kept equal by tests, so they cannot drift:
 | `screens/<id>.json` | Optional. One screen object per file, the file name is the screen id. A screen defined in both places is an error. |
 | `locales/en.json`, `locales/<lang>.json` | Texts referenced as `"@ui.key"` (section 4). |
 
-Keys starting with `_` at the top level are comments and are ignored (the To-do example uses `_preview`). Every other unknown key is an error.
+Keys starting with `_` at the top level are comments and are ignored (for example `_preview`). Every other unknown key is an error.
 
 ## 2. Top level
 

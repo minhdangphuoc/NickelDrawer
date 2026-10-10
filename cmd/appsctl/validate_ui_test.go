@@ -55,7 +55,7 @@ func TestValidateRejectsBrokenUI(t *testing.T) {
 
 func TestShippedUIScreensValidate(t *testing.T) {
 	var out, errOut bytes.Buffer
-	for _, dir := range []string{"../../apps/localsend", "../../apps/wallpaper", "../../examples/todo"} {
+	for _, dir := range []string{"../../apps/localsend", "../../apps/wallpaper", "../../apps/todo"} {
 		if code := run([]string{"validate", dir}, &out, &errOut); code != exitOK {
 			t.Fatalf("%s: exit %d\n%s%s", dir, code, out.String(), errOut.String())
 		}

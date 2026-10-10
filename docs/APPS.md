@@ -6,7 +6,7 @@ The drawer is built and NickelMenu is retired: apps no longer generate NickelMen
 
 The full format rules are in [spec/app-format.md](spec/app-format.md). This guide is the short path.
 
-Skip to [Guidelines](#guidelines) for design rules, or to the two worked examples: [To-do](../examples/todo/README.md) (pure `sh`: toggle, field, list with a row menu, buttons) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
+Skip to [Guidelines](#guidelines) for design rules, or to the worked examples: [To-do](../apps/todo/README.md) (a shipped app: field with the Nickel keyboard, list with a row menu, a tiny Go helper), [UI Kit](../apps/uikit/README.md) (every component with sample content) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
 
 ## Guidelines
 
@@ -61,8 +61,8 @@ Every script the native drawer starts (actions, events, the `state` read) has `N
 
 1. **Validate:** `build/appsctl-host validate <app>` or `go run ./cmd/appsctl validate <app>` has no errors or warnings.
 2. **Lint:** `sh -n bin/*.sh` and `shellcheck bin/*.sh`.
-3. **Mac run with temp dirs:** give every script an environment variable for each path it uses (data dir, input folder, `appsctl`), defaulting to the Kobo path. Run the scripts against a temp copy and check output length, exit codes and that nothing is left open or half written. The examples show this (`TODO_DATA_DIR`, `IMAGEVIEW_IMAGES_DIR`).
-4. **Drive it through the protocol:** `appsctl drawer screen <app>` and `appsctl drawer event <app> <action> --value ...` (with `--apps-dir` and a temp copy) print exactly what the mod would get. `cmd/appsctl/examples_test.go` does this for the examples; copy the pattern.
+3. **Mac run with temp dirs:** give every script an environment variable for each path it uses (data dir, input folder, `appsctl`), defaulting to the Kobo path. Run the scripts against a temp copy and check output length, exit codes and that nothing is left open or half written. The apps and examples show this (`TODO_DATA_DIR`, `UIKIT_DATA_DIR`, `IMAGEVIEW_IMAGES_DIR`).
+4. **Drive it through the protocol:** `appsctl drawer screen <app>` and `appsctl drawer event <app> <action> --value ...` (with `--apps-dir` and a temp copy) print exactly what the mod would get. `cmd/appsctl/examples_test.go` does this for To-do, UI Kit and the examples; copy the pattern.
 5. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir and covers the mod staging and `--uninstall`.
 6. **Device checklist** (user present, backups first): refresh list shows the app; each tap answers within a second or two with a toast; texts fit in English and Vietnamese (switch language, refresh); failure paths (no Wi-Fi, empty input, missing file) end in the `failed` toast, never a crash; eject works right after (nothing held open); a rescan shows new files; battery and sleep: let the Kobo sleep during a background job and confirm it ends cleanly.
 
@@ -97,7 +97,7 @@ Rule of thumb: if you are about to `echo` a sentence, declare it as a toast in `
 
 A native screen is a `ui.json` next to `app.json` (optionally more screens in `screens/<id>.json`). You can write and check one without a Kobo:
 
-1. **Write it.** Start from `examples/todo/ui.json` (texts as `{en, vi}` maps) or `apps/localsend/ui.json` (texts as `"@ui.key"` references into `locales/*.json`). Declare every variable a screen uses in `vars`, give buttons the id of an action from `app.json`, keep one primary button per screen, and keep labels free of `:`.
+1. **Write it.** Start from `apps/todo/ui.json` (the smallest) or `apps/localsend/ui.json` (texts as `"@ui.key"` references into `locales/*.json`). Declare every variable a screen uses in `vars`, give buttons the id of an action from `app.json`, keep one primary button per screen, and keep labels free of `:`.
 2. **Validate it.** `go run ./cmd/appsctl validate apps/myapp` (or `build/appsctl-host`) checks `app.json`, the locales and the `ui.json`. Each problem is printed as `path: [code] message`; the codes are listed in [spec/ui-json.md](spec/ui-json.md) section 7.
 3. **Preview it.** `go run ./cmd/ndpreview serve apps/myapp --locale vi` (or `build/ndpreview-host`) prints `http://127.0.0.1:8790/`. The page draws the screen at the Libra 2 size (1264 x 1680, shown at 50 %, a link switches to 100 %) in black, white and greys with the same row, button and header sizes as the kit, and no animation. It re-reads your files on every reload, so edit, save, refresh.
    - The sidebar picks the screen and language, switches to 16 grey levels, and edits the variables (the `vars` of `ui.json`, or a file you give with `--state state.json`). Use it to try long lists, long Vietnamese strings and empty states.
@@ -111,7 +111,8 @@ The preview is a layout check, not Nickel: real fonts and the real refresh behav
 
 ### Worked examples
 
-- [To-do](../examples/todo/README.md): a pure `sh` app: `toggle`, `field`, a `list` with tap and row menu, `button`s and declared toasts, data in `data/todo.txt`, and a `ui.json` you can preview with `ndpreview`.
+- [To-do](../apps/todo/README.md): a shipped app and the model for a small one: a `field` for the Nickel keyboard, a `list` with tap and row menu, a button that is disabled through a `$var`, declared toasts, tasks in `data/todo.json` written atomically by a tiny Go helper, and a `ui.json` you can preview with `ndpreview`.
+- [UI Kit](../apps/uikit/README.md): every `ui.json` component with sample content on three screens; hidden by default. To see it in the drawer, set `"hidden": false` in its `app.json` on the Kobo (back the file up first), then tap **Refresh list** in the System section. Copy its `ui.json` when you need an example of a component.
 - [Image viewer](../examples/imageview/README.md): a background job that builds `.cbz` albums so Kobo's own reader shows the photos, reports through `state`, asks the host for a rescan, and uses a Go helper for what BusyBox lacks.
 
 ### Nested views and back

@@ -4,9 +4,10 @@
   "vars": {
     "open": "0",
     "done": "0",
-    "items": [],
-    "hidedone": false,
-    "newitem": ""
+    "hasdone": false,
+    "newitem": "",
+    "notice": "",
+    "items": []
   },
   "screens": {
     "main": {
@@ -14,45 +15,40 @@
       "status": "@ui.counts",
       "body": [
         {
-          "toggle": "@ui.hide_done",
-          "bind": "hidedone"
-        },
-        {
-          "field": "@ui.new_item",
+          "field": "@ui.new_task",
           "bind": "newitem",
-          "placeholder": "@ui.new_item_hint",
+          "placeholder": "@ui.new_task_hint",
           "keyboard": "text"
         },
         {
+          "notice": "$notice"
+        },
+        {
           "list": "$items",
-          "title": "@ui.items",
+          "title": "@ui.tasks",
           "empty_text": "@ui.empty",
-          "max": 50,
+          "max": 200,
           "tap": "toggle",
           "menu": [
             {
               "id": "remove",
-              "label": "@ui.remove",
+              "label": "@ui.delete",
               "confirm": true
             }
           ]
-        },
+        }
+      ],
+      "footer": [
         {
           "button": "@ui.clear_done",
           "action": "clear-done",
           "style": "secondary",
+          "enabled": "$hasdone",
           "confirm": {
             "text": "@ui.clear_confirm",
             "ok": "@ui.clear_ok",
             "cancel": "@ui.cancel"
           }
-        }
-      ],
-      "footer": [
-        {
-          "button": "@ui.add_from_file",
-          "action": "add-from-file",
-          "style": "primary"
         }
       ],
       "toasts": {
@@ -61,7 +57,10 @@
         "cleared": "@ui.toast_cleared",
         "nothing_done": "@ui.toast_nothing_done",
         "empty": "@ui.toast_empty",
-        "inbox_empty": "@ui.toast_inbox_empty",
+        "duplicate": "@ui.toast_duplicate",
+        "full": "@ui.toast_full",
+        "missing": "@ui.toast_missing",
+        "recovered": "@ui.toast_recovered",
         "failed": "@ui.toast_failed"
       }
     }

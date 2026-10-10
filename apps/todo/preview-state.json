@@ -1,0 +1,29 @@
+{
+  "open": "3",
+  "done": "2",
+  "hasdone": true,
+  "newitem": "",
+  "notice": "",
+  "items": [
+    [
+      "Mua sữa và bánh mì",
+      ""
+    ],
+    [
+      "Gọi điện cho cô Mai",
+      ""
+    ],
+    [
+      "Trả sách thư viện",
+      "✓"
+    ],
+    [
+      "Đặt vé tàu về Huế",
+      "✓"
+    ],
+    [
+      "Đọc chương 5 Truyện Kiều",
+      ""
+    ]
+  ]
+}
