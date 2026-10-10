@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+
+- The pressed pager arrow no longer cuts a white strip into the button below it.
+
 ## [1.0.0-beta.3] - 2026-10-10
 
 ### Fixed

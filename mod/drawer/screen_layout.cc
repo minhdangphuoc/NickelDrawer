@@ -789,11 +789,17 @@ ScreenPage ScreenLayout::page(int index) const
     return result;
 }
 
-// The square a pressed pager arrow shows its circle in: the drawer footer's arrow button size,
-// centred on the chevron, so the "n / N" label never inverts with it.
+// The square a pressed pager arrow shows its circle in, centred on the chevron, so the "n / N"
+// label never inverts with it. The overlay paints the whole square (white outside the circle), so
+// it must stay inside the pager line and the RHYTHM gaps around it, or it cuts a white strip
+// into the footer button below.
+static const int PAGER_PRESS_SIDE = 96;
+static_assert(PAGER_PRESS_SIDE / 2 <= copperui::v1::PAGER_HEIGHT / 2 + copperui::v1::RHYTHM,
+              "pager press square must not reach the footer");
+
 static QRect pressCircleAround(const QRect &arrow)
 {
-    int side = copperui::v1::DRAWER_FOOTER_BUTTON;
+    int side = PAGER_PRESS_SIDE;
     QRect square(0, 0, side, side);
     square.moveCenter(arrow.center());
     return square;
