@@ -309,3 +309,23 @@ Names map to constants in `mod/drawer/screen_logic.h` (and `cmd/ndpreview/metric
 | dialog.width (changed in PlainDialog) | `DIALOG_WIDTH` | 1040 |
 | icon sizes | `SystemIcon` sizes; `ROW_ICON_SIDE` (changed) | Nickel 56 / 70 / 80; Tabler 64 / 96; row 64 |
 | refresh | `LIVE_REFRESH_MILLISECONDS` | 5000 |
+
+## Resolved (10 Oct 2026, after the conformance audit)
+
+Native-first wins every tie: where Nickel's real metrics differ from this document, Nickel's are used.
+
+| # | Question | Decision |
+|---|---|---|
+| A1 | Header divider colour | What Nickel's `TextHeader` really draws (`#666666`, level 6 = 102). `line.header` = 102. |
+| A2 | Line height ≥ 1.4 × size | Applies to every text token. Captions 32/46, headings 52/74, dialog titles 42/60, mono 32/46, grid names 32/46; uppercase section labels 28/44. |
+| A3 | Switch | Nickel's `ToggleSwitch` images (94 × 56 on the Libra 2) with its regular uppercase 29 px state word; §4.11's pill is the fallback drawing only for previews. |
+| A4 | Full-view back button | A white disc with a 2 px outline is allowed in the normal state: it is the only control over a picture and must stay visible on any image. |
+| A5 | Vietnamese tone marks | New style everywhere: Xóa, Hủy, Tùy (the mark on the main vowel). |
+| A6 | Tinh chỉnh modal | Uses the dialog tokens (1040 wide, 3 px border, 120 targets) and list-row text (sans 36); cells: one measured line, or two centred lines, then elide. No serif italic. |
+| A7 | Drawer surfaces | Row status = caption (32 muted), section = section token, hint = caption, empty state = empty-state component with icon and primary, Qt6 warning = notice. |
+| A8 | Main action impossible | Promote the possible action to primary (LocalSend idle: "Bắt đầu nhận" primary); never a disabled primary when another action is possible. |
+| A9 | Pending vs detached jobs | Quick actions (< 2 s): the button shows "Đang …" while pending. Detached jobs: the button is disabled and progress shows as `steps`. |
+| A10 | Header status length | Measured, ≤ 340 px at 32 px; the validator checks the longest locale string. |
+| A11 | Menu row text | Nickel's 34 px. |
+| A12 | Parity test | The generator writes both the C++ header and the Go constants from `copperui.tokens.json`; a test fails if either is stale. |
+| A13 | ✓ in lists | Tabler `check` icon, not a text glyph. |
