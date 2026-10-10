@@ -13,7 +13,7 @@ func readBoolean(setting booleanSetting) func(Config, *confFile) any {
 }
 
 func readLegibility(_ Config, conf *confFile) any {
-	value, found := conf.get(preferencesSection, textRenderingKey)
+	value, found := conf.get(readingSection, textRenderingKey)
 	return found && value == legibleTextRendering
 }
 
@@ -56,12 +56,12 @@ func toggleBoolean(id string, setting booleanSetting) func(Config) (Result, erro
 
 func (c Config) toggleLegibility() (Result, error) {
 	newValue, err := c.editConf(func(conf *confFile) bool {
-		value, found := conf.get(preferencesSection, textRenderingKey)
+		value, found := conf.get(readingSection, textRenderingKey)
 		enabled := !(found && value == legibleTextRendering)
 		if enabled {
-			conf.set(preferencesSection, textRenderingKey, legibleTextRendering)
+			conf.set(readingSection, textRenderingKey, legibleTextRendering)
 		} else {
-			conf.remove(preferencesSection, textRenderingKey)
+			conf.remove(readingSection, textRenderingKey)
 		}
 		return enabled
 	})
@@ -101,15 +101,15 @@ func (c Config) editConf(change func(*confFile) bool) (bool, error) {
 	return result, nil
 }
 
-// toggled builds the reply of a toggle; needsRestart adds the reboot hint to the toast.
-func (c Config) toggled(id string, enabled, needsRestart bool) Result {
+// toggled builds the reply of a toggle; needsReopen adds the reopen-the-book hint to the toast.
+func (c Config) toggled(id string, enabled, needsReopen bool) Result {
 	state := "off"
 	if enabled {
 		state = "on"
 	}
 	key := "tweak.toast." + state
-	if needsRestart {
-		key = "tweak.toast." + state + "_restart"
+	if needsReopen {
+		key = "tweak.toast." + state + "_reopen"
 	}
 	return Result{
 		V: ProtocolVersion, OK: true, Value: &enabled,

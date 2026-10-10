@@ -25,7 +25,7 @@ func newFixture(t *testing.T, conf string) fixture {
 	}
 	english := i18n.Catalog{
 		"tweak.screensaver.label": "Sleep screen", "tweak.toast.on": "{label} on", "tweak.toast.off": "{label} off",
-		"tweak.toast.on_restart": "{label} on. Reboot.", "tweak.toast.off_restart": "{label} off. Reboot.",
+		"tweak.toast.on_reopen": "{label} on. Reopen.", "tweak.toast.off_reopen": "{label} off. Reopen.",
 		"tweak.ip.none": "No Wi-Fi", "tweak.toast.reboot": "Rebooting", "tweak.toast.sleep": "Sleeping",
 		"tweak.toast.rescan": "Rescanning", "tweak.reboot.confirm": "Reboot now?",
 		"tweak.err.unknown": "No tweak '{id}'.", "tweak.err.write": "Cannot save: {detail}",
@@ -202,20 +202,20 @@ func TestToggleKeepsOtherLinesAndSections(t *testing.T) {
 	}
 }
 
-func TestLegibilityAddsAndRemovesTheLineAndMentionsReboot(t *testing.T) {
-	fix := newFixture(t, "[ApplicationPreferences]\nCurrentLocale=vi_VN\n")
+func TestLegibilityAddsAndRemovesTheLineAndMentionsReopen(t *testing.T) {
+	fix := newFixture(t, "[Reading]\nfont=Georgia\n")
 	on := mustApply(t, fix.config, IDLegibility)
-	if on.Toast != "Legibility on. Reboot." || on.Value == nil || !*on.Value {
+	if on.Toast != "Legibility on. Reopen." || on.Value == nil || !*on.Value {
 		t.Fatalf("on result = %+v", on)
 	}
-	if !strings.Contains(fix.conf(t), "webkitTextRendering=geometricPrecision") {
+	if !strings.Contains(fix.conf(t), "[Reading]\nfont=Georgia\nwebkitTextRendering=optimizeLegibility") {
 		t.Fatalf("conf = %q", fix.conf(t))
 	}
 	off := mustApply(t, fix.config, IDLegibility)
-	if off.Toast != "Legibility off. Reboot." {
+	if off.Toast != "Legibility off. Reopen." {
 		t.Fatalf("off toast = %q", off.Toast)
 	}
-	if want := "[ApplicationPreferences]\nCurrentLocale=vi_VN\n"; fix.conf(t) != want {
+	if want := "[Reading]\nfont=Georgia\n"; fix.conf(t) != want {
 		t.Fatalf("conf = %q, want %q", fix.conf(t), want)
 	}
 }

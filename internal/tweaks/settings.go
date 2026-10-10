@@ -1,18 +1,19 @@
 package tweaks
 
-// Nickel's QSettings names behind the NickelMenu nickel_setting items of the same name.
+// Nickel's QSettings names, checked against libnickel 4.38.23828 (re/notes/tweaks-modal.md).
 // Verify them on a device before trusting a new firmware (docs/spec/tweaks.md).
 const (
-	featureSection     = "FeatureSettings"
-	screenshotsKey     = "Screenshots"
-	invertScreenKey    = "InvertScreen"
-	developerSection   = "DeveloperSettings"
-	autoUsbKey         = "AutoUsbGadget"
-	preferencesSection = "ApplicationPreferences"
-	textRenderingKey   = "webkitTextRendering"
+	featureSection   = "FeatureSettings"
+	screenshotsKey   = "Screenshots"
+	invertScreenKey  = "InvertScreen"
+	developerSection = "DeveloperSettings"
+	autoUsbKey       = "AutoUsbGadget"
+	readingSection   = "Reading"
+	textRenderingKey = "webkitTextRendering"
 
-	// legibleTextRendering is the value that makes the reader's web view draw crisper text.
-	legibleTextRendering = "geometricPrecision"
+	// legibleTextRendering goes straight into the kepub page's CSS text-rendering;
+	// Nickel reads it when a book's page style is built, so reopening the book applies it.
+	legibleTextRendering = "optimizeLegibility"
 
 	trueText  = "true"
 	falseText = "false"
