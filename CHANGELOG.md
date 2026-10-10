@@ -4,6 +4,11 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Fixed
+
+- Pressing a pager arrow on an app screen shows a black circle behind the arrow, like the drawer footer, instead of inverting half the pager line over the page number.
+- The UI Kit header says "18 components" instead of "Kit 1 · 18".
+
 ## [1.0.0-beta.2] - 2026-10-10
 
 ### Added
