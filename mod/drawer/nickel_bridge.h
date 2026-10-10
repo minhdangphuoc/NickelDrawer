@@ -2,12 +2,12 @@
 #define NICKELDRAWER_NICKEL_BRIDGE_H
 
 // The only part of the mod that touches libnickel: the NickelHook symbol and
-// hook tables, the firmware check and every call into Nickel. Everything else
+// hook tables, the model and firmware checks and every call into Nickel. Everything else
 // uses plain Qt 5.2 and this interface.
 //
 // Fail soft: every symbol is optional. Each has*() tells whether a feature can
 // be used; every call checks again and logs instead of crashing. While the
-// bridge is inert (kill switch, unknown firmware, or init not run) every
+// bridge is inert (kill switch, unsupported model or firmware, or init not run) every
 // has*() is false and the More-tab hook only calls Nickel's original.
 
 #include <QObject>
@@ -32,13 +32,16 @@ namespace NickelBridge {
 extern struct nh_hook hookTable[];
 extern struct nh_dlsym symbolTable[];
 
-// Called once from init(): reads the firmware version (file closed at once),
-// and activates the bridge only on a tested firmware. Returns true when active.
+// Called once from init(): reads the device id and firmware version from
+// .kobo/version (file closed at once) and activates the bridge only on a
+// supported model with a tested firmware. Returns true when active. The live
+// screen size is checked once more on the first MoreView and can still turn
+// the bridge off.
 bool activate();
 bool isActive();
 
-// While inert because of an unknown firmware or a missing symbol (not the kill
-// switch): called from the More-tab hook, shows ONE Nickel toast a few seconds
+// While inert because of an unsupported model or firmware or a missing symbol
+// (not the kill switch): called from the More-tab hook, shows ONE Nickel toast a few seconds
 // later when the toast symbols resolved, else only logs. No-op afterwards.
 void scheduleDisabledNotice();
 

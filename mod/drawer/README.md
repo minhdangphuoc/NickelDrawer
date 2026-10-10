@@ -22,7 +22,7 @@ Toolchain: the pinned NickelTC image (`mod/TOOLCHAIN.md`). The KoboRoot installs
 ## Architecture
 
 ```
-nickeldrawer.cc ── init(): flags + firmware check ──► nickel_bridge (the ONLY libnickel user)
+nickeldrawer.cc ── init(): flags + model/firmware check ──► nickel_bridge (the ONLY libnickel user)
                                                           │  MoreView ctor hook ─► entry_row
 entry_row ── tap ─► drawer_navigator ── route A ─► drawer_controller (AbstractController, navSection 6)
                           │            └ route B ─► pushView/popView + stack watcher
@@ -40,7 +40,8 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | File | One job |
 |---|---|
 | `nickeldrawer.cc` | NickelHook declaration and the tiny `init()` |
-| `nickel_bridge.{h,cc}` | hook/dlsym tables, firmware check, fail-soft wrappers for every libnickel call, e-ink full-refresh helper |
+| `nickel_bridge.{h,cc}` | hook/dlsym tables, model, screen and firmware checks, fail-soft wrappers for every libnickel call, e-ink full-refresh helper |
+| `device_gate.{h,cc}` | pure rules: supported model ids (mirror of `supported_models` in `host/config/project.json`), screen size check, `.kobo/version` field parsing |
 | `mod_switches.{h,cc}` | flag-file paths and the boot-time switch values |
 | `drawer_logic.{h,cc}` | pure rules: paging math, key mapping, refresh policy, protocol version, exit codes, timeouts, Wi-Fi retry, locale |
 | `fallback_strings.{h,cc}` | the drawer's own en/vi strings; reads `CurrentLocale` from `Kobo eReader.conf` (read-only) |
@@ -119,6 +120,7 @@ Version `1.0.0-beta.1` (`NH_VERSION`, logged by NickelHook).
 | `.adds/nickeldrawer/no-screens` | opt-out: tapping an app runs its primary action instead of opening its `ui.json` screen. Screens are on by default |
 | `.adds/nickeldrawer/screens` | obsolete (screens used to be opt-in): still read, logged nowhere, changes nothing |
 | `.adds/nickeldrawer/test-unknown-fw` | test hook (FI-04): the firmware check fails as if the build were unknown, so the drawer disables itself and shows the one "not supported" toast. Remove it and reboot to return to normal |
+| `.adds/nickeldrawer/test-unknown-model` | test hook (FI-13): the model check fails as if this Kobo were an unsupported model, so the drawer disables itself and shows the one "does not support this model" toast. Remove it and reboot to return to normal |
 | `.adds/nickeldrawer/no-keyboard` | `field` taps show the "edit on your phone" notice instead of Nickel's keyboard |
 | `.adds/nickeldrawer/debug` | step log of row construction and the tap path in `.adds/nickeldrawer/debug.log` (append, fsync, close per line; restarts at 64 KB). Survives a Nickel crash, unlike syslog. Shared with the prototype (`mod/common/debug_log.cc`) |
 
@@ -130,6 +132,7 @@ run removes only one of them).
 | Situation | Result |
 |---|---|
 | `disable` flag | inert; hooks pass straight through |
+| model not one with the tested 1264×1680 screen (device id in `.kobo/version` not 384/388/390, or Qt reports another screen size on the first More tab) | inert, logged; no More rows. One Nickel toast a few seconds after the first More tab is built: "NickelDrawer does not support this model yet" (vi: "NickelDrawer chưa hỗ trợ máy này"), same rules as the firmware toast. Checked before the firmware; both must pass ([re/notes/device-detection.md](../../re/notes/device-detection.md)) |
 | firmware not one of the five 4.38 builds | inert, logged; no More rows. One Nickel toast a few seconds after the first More tab is built: "NickelDrawer does not support this firmware yet" (vi: "NickelDrawer chưa hỗ trợ firmware này"), only when `MainWindowController::toast` resolved, else log only. NickelMenu is not a fallback |
 | a critical symbol missing (`MoreView` hook, `IconLeftButton`, `MainWindowController::sharedInstance`, neither push route) | same as an unknown firmware: inert, logged, the one toast. Test build: `make -C mod/drawer docker-build EXTRA_CPPFLAGS=-DND_TEST_MISSING_SYM` pretends one is missing (FI-03); never install that build for real use |
 | Kobo offers 5.x (`AvailableQt6Upgrade` in `Kobo eReader.conf` is set and differs from `SkippedQt6UpgradeUrl`) | a bold notice row under the drawer header: "Kobo is offering update 5.x — NickelDrawer will stop working" (vi: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"), taking the hint line's room. Config keys, not `IOUtil::isQt6UpgradePending` (23828 only, needs a `Device`) |

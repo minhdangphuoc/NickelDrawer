@@ -1080,8 +1080,16 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <td>☐</td>
 </tr>
 <tr>
+<td>FI-13</td>
+<td>Người bảo trì (U5b): <strong>khôi phục <code>.kobo/version</code></strong> nếu đã làm FI-04; <code>flags debug screens test-unknown-model</code>; <code>eject</code>. Người dùng: khởi động lại, mở Thêm, chờ 5 giây</td>
+<td>Mẫu máy "lạ": Thêm chỉ có các hàng gốc, <strong>không</strong> hàng Ứng dụng/Tinh chỉnh; đúng <strong>một</strong> toast "NickelDrawer chưa hỗ trợ máy này" (en: "NickelDrawer does not support this model yet") vài giây sau khi mở Thêm; Nickel bình thường. Cờ được gỡ ở bước SAFE-03</td>
+<td><code>bridge: test flag /mnt/onboard/.adds/nickeldrawer/test-unknown-model present, device 00000000-0000-0000-0000-000000000388 treated as unsupported, drawer disabled (no More rows)</code>; (syslog) <code>bridge: telling the user the drawer is disabled</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
 <td>SAFE-03 (và SAFE-05, S10)</td>
-<td>Người bảo trì (U6): <strong>khôi phục <code>.kobo/version</code></strong> từ bản sao lưu nếu đã làm FI-04; <code>flags debug screens uninstall</code>; <code>eject</code>. Người dùng: khởi động lại</td>
+<td>Người bảo trì (U6): <strong>khôi phục <code>.kobo/version</code></strong> từ bản sao lưu nếu đã làm FI-04 mà chưa khôi phục; <code>flags debug screens uninstall</code>; <code>eject</code>. Người dùng: khởi động lại</td>
 <td>Không toast; cờ <code>uninstall</code> bị tiêu thụ; mod đã biến mất (Thêm chỉ có hàng gốc); <code>.adds/apps</code> còn nguyên; tab NickelMenu vẫn tắt (không quay lại)</td>
 <td>(syslog) NickelHook gỡ mod; <code>.adds/nickeldrawer/uninstall</code> không còn</td>
 <td>☐</td>
@@ -1165,8 +1173,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tbody>
 <tr>
 <td><strong>G3</strong> (Ngăn)</td>
-<td>DRW-01..05, 07, 12, 13, 14 đạt; TWK-01..12 đạt; NAV-01..03 đạt; S1 đạt; S8 đạt (LS-07); mô phỏng firmware lạ/cờ <code>disable</code> an toàn (FI-03, FI-04 hoặc FW-03 tĩnh); SAFE-03/04/06 đạt; S4 không đo (bỏ ngâm)</td>
-<td>DRW-<em>, TWK-</em>, NAV-<em>, ICO-01, API-01, SAFE-</em>, FI-03/04</td>
+<td>DRW-01..05, 07, 12, 13, 14 đạt; TWK-01..12 đạt; NAV-01..03 đạt; S1 đạt; S8 đạt (LS-07); mô phỏng firmware lạ/mẫu máy lạ/cờ <code>disable</code> an toàn (FI-03, FI-04 hoặc FW-03 tĩnh, FI-13); SAFE-03/04/06 đạt; S4 không đo (bỏ ngâm)</td>
+<td>DRW-<em>, TWK-</em>, NAV-<em>, ICO-01, API-01, SAFE-</em>, FI-03/04/13</td>
 <td>☐ Đạt ☐ Lỗi</td>
 <td>☐ go ☐ no-go</td>
 <td>____</td>

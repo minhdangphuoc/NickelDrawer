@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+
+- The native drawer now runs only on models with the tested 1264×1680 screen (Libra 2, Libra H2O, Libra Colour). It reads the model from the device id in `.kobo/version`, checks the live screen size, and on any other model stays off with one "does not support this model yet" toast; the firmware check still applies. New test flag `.adds/nickeldrawer/test-unknown-model`.
+
 ## [1.0.0-beta.1] - 2026-10-10
 
 First public beta. Tested on one Libra 2 running 4.38.23828; the other four supported builds are checked statically (symbols) only.

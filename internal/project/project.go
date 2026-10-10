@@ -1,5 +1,5 @@
 // Package project reads host/config/project.json, the one place that names the project: its
-// GitHub repo, maintainer, license and supported firmware. The settings screen, the About
+// GitHub repo, maintainer, license, supported firmware and supported models. The settings screen, the About
 // screen and the default update.json all come from it, so a fork edits a single file. The
 // version is not in it: it is the Makefile VERSION compiled into appsctl.
 package project
@@ -18,7 +18,20 @@ const FileName = "project.json"
 
 const gitHubHost = "github.com"
 
+// modelIDLength is how many trailing digits of a Kobo device id name the model.
+const modelIDLength = 3
+
 var repoPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9._-]+$`)
+
+// modelIDPattern is the last three digits of a Kobo device id (see internal/device).
+var modelIDPattern = regexp.MustCompile(`^[0-9]{3}$`)
+
+// Model is one Kobo model the drawer runs on: every one has the tested 1264x1680 screen.
+type Model struct {
+	ID       string `json:"id"`       // last three digits of the device id, e.g. "388"
+	Codename string `json:"codename"` // koboutils codename, e.g. "io"
+	Name     string `json:"name"`
+}
 
 // Info is the content of project.json.
 type Info struct {
@@ -28,6 +41,7 @@ type Info struct {
 	License           string   `json:"license"`
 	Channel           string   `json:"channel"`
 	SupportedFirmware []string `json:"supported_firmware"`
+	SupportedModels   []Model  `json:"supported_models"`
 }
 
 // Path is where project.json lives below the host folder (.adds/koboapps).
@@ -57,6 +71,13 @@ func (info Info) validate() error {
 		return fmt.Errorf("\"repo\" must look like owner/name, got %q", info.Repo)
 	case len(info.SupportedFirmware) == 0:
 		return fmt.Errorf("\"supported_firmware\" is empty; list the firmware builds the mod supports")
+	case len(info.SupportedModels) == 0:
+		return fmt.Errorf("\"supported_models\" is empty; list the Kobo models the mod supports")
+	}
+	for _, model := range info.SupportedModels {
+		if !modelIDPattern.MatchString(model.ID) || model.Codename == "" {
+			return fmt.Errorf("\"supported_models\" entry %+v needs a 3-digit \"id\" and a \"codename\"", model)
+		}
 	}
 	return nil
 }
@@ -80,6 +101,21 @@ func (info Info) FirmwareRange() string {
 func (info Info) SupportsFirmware(build string) bool {
 	for _, supported := range info.SupportedFirmware {
 		if supported == build {
+			return true
+		}
+	}
+	return false
+}
+
+// SupportsModel reports whether a device id (full, or just its last three digits) is a
+// supported model.
+func (info Info) SupportsModel(deviceID string) bool {
+	if len(deviceID) < modelIDLength {
+		return false
+	}
+	suffix := deviceID[len(deviceID)-modelIDLength:]
+	for _, model := range info.SupportedModels {
+		if model.ID == suffix {
 			return true
 		}
 	}

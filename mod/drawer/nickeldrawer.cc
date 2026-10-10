@@ -1,5 +1,5 @@
-// NickelDrawer: native app drawer for Nickel (Kobo Libra 2, firmware 4.38.x).
-// init() stays tiny: read two flag files and the firmware version. All UI work
+// NickelDrawer: native app drawer for Nickel (1264x1680 Kobo models, firmware 4.38.x).
+// init() stays tiny: read the flag files and .kobo/version. All UI work
 // happens later on Nickel's GUI thread (More-tab hook, row tap).
 
 #include <NickelHook.h>

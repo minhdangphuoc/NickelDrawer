@@ -4,5 +4,10 @@
   "repo": "minhdangphuoc/NickelDrawer",
   "license": "PolyForm Noncommercial 1.0.0",
   "channel": "stable",
-  "supported_firmware": ["4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828"]
+  "supported_firmware": ["4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828"],
+  "supported_models": [
+    {"id": "384", "codename": "storm", "name": "Kobo Libra H2O"},
+    {"id": "388", "codename": "io", "name": "Kobo Libra 2"},
+    {"id": "390", "codename": "monza", "name": "Kobo Libra Colour"}
+  ]
 }

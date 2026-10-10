@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <QApplication>
+#include <QDesktopWidget>
 #include <QDialog>
 #include <QGesture>
 #include <QLineEdit>
@@ -16,8 +18,10 @@
 #include <QWidget>
 
 #include "debug_log.h"
+#include "device_gate.h"
 #include "fallback_strings.h"
 #include "mod_switches.h"
+#include "screen_logic.h"
 
 // ---- libnickel entry points (filled by NickelHook before init; NULL if absent) ----
 
@@ -96,7 +100,9 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN22N3PowerWorkflowManager16resumedFromSleepEv
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
-static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
+// "serial,4.1.15,4.38.23828,4.1.15,4.1.15,00000000-0000-0000-0000-000000000388":
+// the build is the third field, the device id the last (re/notes/device-detection.md).
+static const int FIRMWARE_FIELD_INDEX = 2;
 static const char *const SUPPORTED_FIRMWARE[] = {
     "4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828",
 };
@@ -128,9 +134,13 @@ static const Qt::WidgetAttribute FULL_REFRESH_ATTRIBUTE = static_cast<Qt::Widget
 static const int DISABLED_NOTICE_DELAY_MILLISECONDS = 5000;
 
 static bool isBridgeActive = false;
-// Set when the bridge disables itself (unknown firmware, missing symbol), not by the kill switch.
+// Set when the bridge disables itself (unknown model or firmware, missing symbol), not by the kill switch.
 static bool isDisabledNoticePending = false;
+static FallbackStrings::Key disabledNoticeText = FallbackStrings::UNSUPPORTED_FIRMWARE;
+// The live screen size can only be read once Nickel's QApplication exists.
+static bool isScreenSizeChecked = false;
 static char firmwareVersion[32] = "unknown";
+static char deviceId[64] = "unknown";
 static NickelBridge::MoreViewCreatedHandler moreViewCreatedHandler = NULL;
 
 // ---- NickelHook tables ----
@@ -220,11 +230,13 @@ struct nh_dlsym symbolTable[] = {
 
 } // namespace NickelBridge
 
-// ---- Firmware check ----
+// ---- Model and firmware check ----
 
-static void readFirmwareVersion()
+// Reads the one line of .kobo/version into firmwareVersion and deviceId; both
+// stay "unknown" when it cannot be read.
+static void readVersionFile()
 {
-    char line[128];
+    char line[160];
     FILE *file = fopen(VERSION_FILE_PATH, "r");
     if (!file) {
         nh_log("bridge: cannot open %s", VERSION_FILE_PATH);
@@ -236,17 +248,12 @@ static void readFirmwareVersion()
         nh_log("bridge: %s is empty", VERSION_FILE_PATH);
         return;
     }
-    char *cursor = line;
-    for (int field = 0; field < FIRMWARE_FIELD_INDEX; field++) {
-        cursor = strchr(cursor, ',');
-        if (!cursor) {
-            return;
-        }
-        cursor++;
+    char field[sizeof(deviceId)];
+    if (DeviceGate::copyVersionField(line, FIRMWARE_FIELD_INDEX, field, sizeof(firmwareVersion))) {
+        snprintf(firmwareVersion, sizeof(firmwareVersion), "%s", field);
     }
-    cursor[strcspn(cursor, ",\r\n")] = '\0';
-    if (*cursor) {
-        snprintf(firmwareVersion, sizeof(firmwareVersion), "%s", cursor);
+    if (DeviceGate::copyLastVersionField(line, field, sizeof(field))) {
+        snprintf(deviceId, sizeof(deviceId), "%s", field);
     }
 }
 
@@ -300,34 +307,116 @@ static bool canToastWhileInert()
     return MainWindowController_sharedInstance && MainWindowController_toast;
 }
 
-static void disableBridge(const char *reason)
+// Always to syslog, and to debug.log too when the debug flag is on (the
+// checklist reads these lines from debug.log).
+static void logCheckResult(const char *line)
+{
+    if (DebugLog::isEnabled()) {
+        DebugLog::write("bridge: %s", line);
+    } else {
+        nh_log("bridge: %s", line);
+    }
+}
+
+static void disableBridge(FallbackStrings::Key noticeText, const char *reason)
 {
     isBridgeActive = false;
     isDisabledNoticePending = true;
-    nh_log("bridge: %s, drawer disabled (no More rows)", reason);
+    disabledNoticeText = noticeText;
+    char line[256];
+    snprintf(line, sizeof(line), "%s, drawer disabled (no More rows)", reason);
+    logCheckResult(line);
+}
+
+// Kobo's rcS exports the codename from /bin/kobo_config.sh as PRODUCT. Logged
+// as a cross-check only; the decision uses the device id (re/notes/device-detection.md).
+static const char *productCodename()
+{
+    const char *product = getenv("PRODUCT");
+    return product && *product ? product : "unset";
+}
+
+// The layout is fixed to one panel size (screen_logic.h): only models with it may run.
+static bool passesModelCheck()
+{
+    char reason[192];
+    if (ModSwitches::isUnknownModelForced()) {
+        snprintf(reason, sizeof(reason), "test flag %s present, device %s treated as unsupported",
+                 ModSwitches::TEST_UNKNOWN_MODEL_FLAG_PATH, deviceId);
+        disableBridge(FallbackStrings::UNSUPPORTED_MODEL, reason);
+        return false;
+    }
+    const DeviceGate::SupportedModel *model = DeviceGate::findSupportedModel(deviceId);
+    if (!model) {
+        snprintf(reason, sizeof(reason),
+                 "device %s (PRODUCT %s) is not a supported model, screen size not supported yet", deviceId,
+                 productCodename());
+        disableBridge(FallbackStrings::UNSUPPORTED_MODEL, reason);
+        return false;
+    }
+    char line[192];
+    snprintf(line, sizeof(line), "device %s is model %s (%s, PRODUCT %s), supported", deviceId, model->idSuffix,
+             model->codename, productCodename());
+    logCheckResult(line);
+    return true;
+}
+
+static bool passesFirmwareCheck()
+{
+    char reason[192];
+    if (ModSwitches::isUnknownFirmwareForced()) {
+        snprintf(reason, sizeof(reason), "test flag %s present, firmware %s treated as unknown",
+                 ModSwitches::TEST_UNKNOWN_FIRMWARE_FLAG_PATH, firmwareVersion);
+        disableBridge(FallbackStrings::UNSUPPORTED_FIRMWARE, reason);
+        return false;
+    }
+    if (!isSupportedFirmware(firmwareVersion)) {
+        snprintf(reason, sizeof(reason), "firmware %s not in the tested list", firmwareVersion);
+        disableBridge(FallbackStrings::UNSUPPORTED_FIRMWARE, reason);
+        return false;
+    }
+    return true;
+}
+
+// Belt and braces for the model check: the size Nickel's Qt actually reports.
+// Once, on the first MoreView (init() runs before Nickel creates QApplication).
+static void checkScreenSizeOnce()
+{
+    if (isScreenSizeChecked || !isBridgeActive) {
+        return;
+    }
+    isScreenSizeChecked = true;
+    QDesktopWidget *desktop = qApp ? QApplication::desktop() : NULL;
+    if (!desktop) {
+        disableBridge(FallbackStrings::UNSUPPORTED_MODEL, "no QApplication desktop, screen size unknown");
+        return;
+    }
+    QRect screen = desktop->screenGeometry();
+    if (!DeviceGate::isSupportedScreenSize(screen.width(), screen.height())) {
+        char reason[192];
+        snprintf(reason, sizeof(reason), "screen %dx%d is not the supported %dx%d", screen.width(), screen.height(),
+                 ScreenLogic::SCREEN_WIDTH, ScreenLogic::SCREEN_HEIGHT);
+        disableBridge(FallbackStrings::UNSUPPORTED_MODEL, reason);
+        return;
+    }
+    char line[64];
+    snprintf(line, sizeof(line), "screen %dx%d, supported", screen.width(), screen.height());
+    logCheckResult(line);
 }
 
 namespace NickelBridge {
 
 bool activate()
 {
-    readFirmwareVersion();
-    char reason[128];
-    if (ModSwitches::isUnknownFirmwareForced()) {
-        snprintf(reason, sizeof(reason), "test flag %s present, firmware %s treated as unknown",
-                 ModSwitches::TEST_UNKNOWN_FIRMWARE_FLAG_PATH, firmwareVersion);
-        disableBridge(reason);
-        return false;
-    }
-    if (!isSupportedFirmware(firmwareVersion)) {
-        snprintf(reason, sizeof(reason), "firmware %s not in the tested list", firmwareVersion);
-        disableBridge(reason);
+    readVersionFile();
+    if (!passesModelCheck() || !passesFirmwareCheck()) {
         return false;
     }
     const char *missing = missingCriticalSymbol();
     if (missing) {
+        char reason[192];
         snprintf(reason, sizeof(reason), "libnickel symbol %s missing", missing);
-        disableBridge(reason);
+        disableBridge(FallbackStrings::UNSUPPORTED_FIRMWARE, reason);
         return false;
     }
     isBridgeActive = true;
@@ -846,7 +935,7 @@ DisabledNotice::DisabledNotice() : QObject(NULL) {}
 void DisabledNotice::show()
 {
     FallbackStrings::reloadLocale();
-    QString text = FallbackStrings::text(FallbackStrings::UNSUPPORTED_FIRMWARE);
+    QString text = FallbackStrings::text(disabledNoticeText);
     void *window = canToastWhileInert() ? mainWindow() : NULL;
     if (window) {
         nh_log("bridge: telling the user the drawer is disabled");
@@ -866,11 +955,13 @@ void FullRescanFinisher::finish()
 }
 
 // NickelHook PLT hook target for MoreView::MoreView(QWidget*). Always calls
-// the original first; adds our row only while the bridge is active.
+// the original first, then the one-time screen size check; adds our row only
+// while the bridge is active.
 extern "C" __attribute__((visibility("default"))) void nickeldrawer_MoreView_construct(void *moreView, QWidget *parent)
 {
     MoreView_construct_original(moreView, parent);
     DebugLog::write("bridge: MoreView constructed %p", moreView);
+    checkScreenSizeOnce();
     if (isBridgeActive && moreViewCreatedHandler) {
         // MoreView derives from QWidget as its first base.
         moreViewCreatedHandler(reinterpret_cast<QWidget *>(moreView));

@@ -165,7 +165,7 @@ blockquote p:last-child { margin-bottom: 0; }
 <li><strong>Các dòng Kobo khác.</strong> Chưa dòng nào khác được kiểm. Đừng cài lên chúng.</li>
 </ul>
 <h3 id="cac-dong-kobo-khac">Các dòng Kobo khác</h3>
-<p>Trong 27 mẫu Kobo đã bán, chỉ Libra 2 đã được thử. 21 mẫu khác chạy firmware 4.x (từ Touch đến Clara Colour) dự kiến chạy được nhưng chưa thử. Kobo eReader, Wireless, Mini, máy tính bảng Vox và Arc, cùng mọi Kobo chạy firmware 5.x đều không được hỗ trợ. Ngăn chỉ nạp trên đúng các bản firmware ở trên, và màn hình ứng dụng được dàn trang cho màn Libra 2 (1264×1680), nên mẫu khác có thể hiện thông báo "firmware chưa được hỗ trợ" hoặc hiển thị sai. Xem bảng đầy đủ và cách giúp thêm một mẫu ở <a href="../COMPATIBILITY.md#supported-devices">Thiết bị được hỗ trợ</a>.</p>
+<p>Trong 27 mẫu Kobo đã bán, chỉ Libra 2 đã được thử. Libra H2O và Libra Colour có cùng màn 1264×1680 nên dự kiến chạy được nhưng chưa thử. Trên 19 mẫu khác chạy firmware 4.x, Ngăn tự tắt: màn hình ứng dụng được dàn trang cho màn 1264×1680, nên mod kiểm mẫu máy và hiện một lần thông báo "NickelDrawer chưa hỗ trợ máy này". Kobo eReader, Wireless, Mini, máy tính bảng Vox và Arc, cùng mọi Kobo chạy firmware 5.x đều không được hỗ trợ. Ngăn cũng chỉ nạp trên đúng các bản firmware ở trên. Xem bảng đầy đủ và cách giúp thêm một mẫu ở <a href="../COMPATIBILITY.md#supported-devices">Thiết bị được hỗ trợ</a>.</p>
 <h3 id="xem-phien-ban-firmware">Xem phiên bản firmware</h3>
 <p>Trên Kobo:</p>
 <ol>
@@ -786,6 +786,11 @@ tools/install-to-kobo.sh              # cài
 <td>Kiểm <code>.kobo/KoboRoot.tgz</code> đã biến mất (Kobo xoá nó sau khi cài). Kiểm <code>.adds/nickeldrawer/</code> không có tệp <code>disable</code>. Kiểm phiên bản firmware. Chép lại <code>KoboRoot.tgz</code> và khởi động lại.</td>
 </tr>
 <tr>
+<td>Thông báo "NickelDrawer chưa hỗ trợ máy này".</td>
+<td>Máy Kobo của bạn không có màn 1264×1680 mà Ngăn được dàn trang theo (chỉ Libra 2, Libra H2O và Libra Colour có).</td>
+<td>Không có gì hỏng; Kobo vẫn chạy bình thường. Ngăn tự tắt trên mẫu máy này. Xem docs/COMPATIBILITY.md.</td>
+</tr>
+<tr>
 <td>Thông báo "NickelDrawer chưa hỗ trợ firmware này".</td>
 <td>Firmware không thuộc năm bản được hỗ trợ, thường do Kobo tự cập nhật.</td>
 <td>Không có gì hỏng; Kobo vẫn chạy bình thường. Đợi bản NickelDrawer hỗ trợ bản firmware của bạn.</td>
@@ -995,7 +1000,7 @@ Không. NickelDrawer chạy được dù có hay không có NickelMenu.</p>
 <p><strong>Nó có đổi tiến độ đọc, bộ sưu tập hay cơ sở dữ liệu thư viện không?</strong>
 Không. Không phần nào của NickelDrawer sửa <code>KoboReader.sqlite</code>. Thư viện chỉ sửa tệp sách (sau khi sao lưu) và nhờ Kobo quét lại.</p>
 <p><strong>Dùng được trên Kobo Clara hay Libra Colour không?</strong>
-Chưa. Chỉ Libra 2 đã được thử. Các mẫu 4.x khác chưa thử và có thể hiện thông báo "firmware chưa được hỗ trợ"; xem <a href="../COMPATIBILITY.md#supported-devices">Thiết bị được hỗ trợ</a>.</p>
+Chỉ Libra 2 đã được thử. Libra H2O và Libra Colour có cùng màn hình nên dự kiến chạy được, nhưng chỉ trên các bản firmware được hỗ trợ (Libra Colour đang ở 4.45, chưa thuộc danh sách); trên mẫu khác Ngăn tự tắt và hiện "NickelDrawer chưa hỗ trợ máy này". Xem <a href="../COMPATIBILITY.md#supported-devices">Thiết bị được hỗ trợ</a>.</p>
 <p><strong>Tôi có thể dùng trong cửa hàng hay công ty không?</strong>
 Không. Giấy phép chỉ cho phép dùng cá nhân, học tập, sở thích và phi lợi nhuận.</p>
 <p><strong>"Bộ giao diện" (UI Kit) là gì?</strong>

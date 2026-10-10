@@ -679,6 +679,7 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 | FI-10 | Sleep the device (power button) with a screen open; wake after 15 min | `pause`/`resume` delivered; backend still alive (< 10 min rule) or restarted after; screen consistent | True |
 | FI-11 | 20 dummy app folders, one with a 5 MB icon and one with `app.json` of 1 MB | Drawer opens ≤ 1 s; oversize icon replaced by placeholder; oversize json rejected with error tile | True |
 | FI-12 | Both NickelMenu "Tweak" tab and our tab configured | Both buttons visible, both work, order stable across reboots | True |
+| FI-13 | Unsupported model (test hook flag `.adds/nickeldrawer/test-unknown-model`) | Drawer off, no More rows, one toast "does not support this model yet" | True |
 
 ### 9.8 Firmware-update rehearsal
 

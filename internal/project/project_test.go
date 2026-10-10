@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"koboapps/internal/device"
 )
 
 const shippedConfig = "../../host/config/project.json"
@@ -52,13 +54,40 @@ func TestSupportsFirmware(t *testing.T) {
 	}
 }
 
+func TestSupportsModel(t *testing.T) {
+	info := loadShipped(t)
+	for _, id := range []string{"00000000-0000-0000-0000-000000000388", "384", "00000000-0000-0000-0000-000000000390"} {
+		if !info.SupportsModel(id) {
+			t.Errorf("%s must be supported", id)
+		}
+	}
+	for _, id := range []string{"00000000-0000-0000-0000-000000000387", "393", "88", ""} {
+		if info.SupportsModel(id) {
+			t.Errorf("%s must not be supported", id)
+		}
+	}
+}
+
+// Names in project.json are the same as the model names appsctl prints.
+func TestSupportedModelNamesMatchTheDeviceTable(t *testing.T) {
+	for _, model := range loadShipped(t).SupportedModels {
+		if got := device.ModelName(model.ID); got != model.Name {
+			t.Errorf("model %s is %q in project.json, %q in internal/device", model.ID, model.Name, got)
+		}
+	}
+}
+
 func TestLoadRejectsAConfigThatCannotWork(t *testing.T) {
+	const models = `"supported_models":[{"id":"388","codename":"io"}]`
 	cases := map[string]string{
 		"not json":      `{`,
-		"no name":       `{"repo":"o/r","supported_firmware":["4.1"]}`,
-		"bad repo":      `{"name":"X","repo":"nope","supported_firmware":["4.1"]}`,
-		"no firmwares":  `{"name":"X","repo":"o/r"}`,
-		"repo with url": `{"name":"X","repo":"https://github.com/o/r","supported_firmware":["4.1"]}`,
+		"no name":       `{"repo":"o/r","supported_firmware":["4.1"],` + models + `}`,
+		"bad repo":      `{"name":"X","repo":"nope","supported_firmware":["4.1"],` + models + `}`,
+		"no firmwares":  `{"name":"X","repo":"o/r",` + models + `}`,
+		"repo with url": `{"name":"X","repo":"https://github.com/o/r","supported_firmware":["4.1"],` + models + `}`,
+		"no models":     `{"name":"X","repo":"o/r","supported_firmware":["4.1"]}`,
+		"bad model id":  `{"name":"X","repo":"o/r","supported_firmware":["4.1"],"supported_models":[{"id":"38","codename":"io"}]}`,
+		"no codename":   `{"name":"X","repo":"o/r","supported_firmware":["4.1"],"supported_models":[{"id":"388"}]}`,
 	}
 	for name, content := range cases {
 		path := filepath.Join(t.TempDir(), FileName)
@@ -71,6 +100,41 @@ func TestLoadRejectsAConfigThatCannotWork(t *testing.T) {
 	}
 	if _, err := Load(filepath.Join(t.TempDir(), "missing.json")); err == nil {
 		t.Error("a missing file must be an error")
+	}
+}
+
+// supportedModelPairs reads the {"388", "io"} entries of the mod's SUPPORTED_MODELS table as "388:io".
+func supportedModelPairs(t *testing.T, path string) []string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := strings.Index(string(data), "SUPPORTED_MODELS[] = {")
+	if start < 0 {
+		t.Fatalf("%s has no SUPPORTED_MODELS table", path)
+	}
+	table := string(data)[start+len("SUPPORTED_MODELS[] = {"):]
+	table = table[:strings.Index(table, "};")]
+	var result []string
+	for _, entry := range regexp.MustCompile(`\{"([0-9]{3})",\s*"([^"]+)"\}`).FindAllStringSubmatch(table, -1) {
+		result = append(result, entry[1]+":"+entry[2])
+	}
+	sort.Strings(result)
+	return result
+}
+
+// The drawer mod compiles its own model table; it must match project.json, or the mod would
+// load on a model the docs call unsupported (or refuse one they list).
+func TestModListsTheSameModelsAsTheProjectConfig(t *testing.T) {
+	var want []string
+	for _, model := range loadShipped(t).SupportedModels {
+		want = append(want, model.ID+":"+model.Codename)
+	}
+	sort.Strings(want)
+	got := supportedModelPairs(t, "../../mod/drawer/device_gate.cc")
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("mod/drawer/device_gate.cc lists %v, project.json lists %v", got, want)
 	}
 }
 

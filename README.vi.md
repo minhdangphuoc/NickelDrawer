@@ -29,7 +29,7 @@ Dùng `--screen ID`, `--locale vi` và `--state state.json` cho màn hình, ngô
 
 ## Firmware hỗ trợ
 
-Kobo Libra 2 (Mark 9, dòng firmware `kobo9`), năm bản 4.38 mới nhất. Ngăn gốc kiểm mọi ký hiệu libnickel nó cần lúc khởi động và tự tắt, kèm một dòng log, nếu gặp bản lạ hoặc thiếu ký hiệu.
+Kobo Libra 2 (Mark 9, dòng firmware `kobo9`), năm bản 4.38 mới nhất. Ngăn gốc kiểm mọi ký hiệu libnickel nó cần lúc khởi động và tự tắt, kèm một dòng log, nếu gặp bản firmware hay mẫu máy lạ hoặc thiếu ký hiệu.
 
 | Firmware | Ngăn gốc | Ghi chú |
 |---|---|---|
@@ -43,7 +43,7 @@ Firmware 5.x **chưa** được hỗ trợ. Chi tiết: [docs/COMPATIBILITY.md](
 
 ### Thiết bị được hỗ trợ
 
-Trong 27 mẫu Kobo đã bán, **1 mẫu đã thử** (Libra 2, firmware 4.38.23828), **21 mẫu dự kiến chạy được nhưng chưa thử** (mọi mẫu chạy firmware 4.x, từ Touch đến Clara Colour) và **5 mẫu không hỗ trợ** (Kobo eReader và Wireless, Mini, máy tính bảng Vox và Arc). Máy Libra Colour và Clara đã chuyển sang 5.x cũng không được hỗ trợ. Mod chỉ nạp trên đúng các bản firmware liệt kê ở trên, và màn hình ứng dụng được dàn trang cho màn Libra 2 (1264×1680), nên mẫu khác có thể hiện thông báo "firmware chưa được hỗ trợ" hoặc hiển thị sai. Bảng đầy đủ (năm ra mắt, nền tảng, mã thiết bị, cách giúp thêm một mẫu) nằm ở [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md#supported-devices).
+Trong 27 mẫu Kobo đã bán, **1 mẫu đã thử** (Libra 2, firmware 4.38.23828), **2 mẫu dự kiến chạy được nhưng chưa thử** (Libra H2O và Libra Colour, hai mẫu còn lại có cùng màn 1264×1680), **19 mẫu chạy firmware 4.x nhưng ngăn tự tắt** (chưa hỗ trợ kích thước màn hình) và **5 mẫu không hỗ trợ** (Kobo eReader và Wireless, Mini, máy tính bảng Vox và Arc). Máy Libra Colour và Clara đã chuyển sang 5.x cũng không được hỗ trợ. Màn hình ứng dụng được dàn trang cho màn 1264×1680, nên mod kiểm mẫu máy (mã thiết bị trong `.kobo/version`) và kích thước màn hình thật; trên mẫu khác nó hiện thông báo "chưa hỗ trợ máy này" rồi tự tắt. Mod cũng chỉ nạp trên đúng các bản firmware liệt kê ở trên. Bảng đầy đủ (năm ra mắt, nền tảng, mã thiết bị, cách giúp thêm một mẫu) nằm ở [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md#supported-devices).
 
 ## Cài đặt
 

@@ -20,7 +20,7 @@ override VERSION := 1.0.0-beta.1
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
-override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
+override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc device_gate.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc ../common/system_icon.cc \
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
@@ -45,7 +45,7 @@ endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
-TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests
+TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests device_gate
 # Other Qt-free units a test links besides its own (unit=dependency).
 TEST_LINKS  := tweaks_logic=drawer_logic
 TEST_BINARY := tests/unit_test.bin
