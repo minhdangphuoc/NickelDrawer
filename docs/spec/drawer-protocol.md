@@ -81,7 +81,7 @@ Runs the declared action (same `wifi`/`rescan` semantics as the manifest says) a
 
 Returns one screen of the app's `ui.json` (default: `start`), validated exactly like `appsctl validate`, with every text localized (`"@ui.key"` and `{en, vi}` maps, device language, English fallback) and every binding filled in. The mod only lays it out (`docs/spec/ui-kit.md`); it never evaluates bindings.
 
-Variables: the app's optional action with id `state` is run with the status budget (1 s, no cache). Its stdout must be one JSON object of variable values. A declared variable (`vars` in `ui.json`) takes the value from that object, else its `vars` default; a missing state action leaves the defaults. When the state action fails, times out, exits non-zero or prints bad JSON, the defaults are used and the reply carries `"stale": true` (omitted otherwise): the mod then keeps its previous model instead of showing defaults. Undeclared names are ignored.
+Variables: the app's optional action with id `state` is run with the status budget (1 s, no cache). Its stdout must be one JSON object of variable values. A declared variable (`vars` in `ui.json`) takes the value from that object, else its `vars` default; a missing state action leaves the defaults. When the state action fails, times out, exits non-zero or prints bad JSON, the defaults are used and the reply carries `"stale": true` (omitted otherwise) and `stale_reason` (English, for the debug log): the mod then keeps its previous model of that screen; with none to keep (opening the app or a sub-screen) it reads once more and then shows the error screen with Try again, never the defaults. A state action must not do heavy work: start a detached job and let the live refresh pick up its result. Undeclared names are ignored.
 
 `--value <v>` (a picture id of a gallery or viewer): the state action runs with `NICKELDRAWER_VALUE=<v>`, the variable `selected`, when declared, is set to `<v>` after the state values, and the reply echoes `"value": "<v>"` (omitted without `--value`; `--value ''` echoes an empty string).
 
@@ -105,7 +105,7 @@ Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the
 ```
 
 - `action` (header text link, optional): `label` and either `push` (screen id) or `action` (action id). `actions` (header icon buttons, 1 to 2, instead of `action`): `[{icon, label, push | action}]` with `icon` one of `import`, `settings`, `refresh`, `add`. `dialogs`, `toasts` are omitted when the screen declares none.
-- `value`: echo of `--value`. `stale`: the state action failed (see above).
+- `value`: echo of `--value`. `stale`: the state action failed (see above); `stale_reason`: why.
 - `live`: the app has a `state` action; the mod re-reads the screen every 5 s while it is visible and idle.
 - Components keep the `ui.json` order; `type` is the component key. Fields per type (empty strings and `false` may be omitted):
 

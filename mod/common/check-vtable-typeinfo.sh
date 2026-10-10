@@ -1,6 +1,6 @@
 #!/bin/sh
 # Fails when any vtable in a built mod library has a null typeinfo slot.
-#   mod/common/check-vtable-typeinfo.sh <library file name in build/mod>
+#   mod/common/check-vtable-typeinfo.sh <library file name> [build subfolder, default mod]
 # Nickel runs __dynamic_cast on objects the mod hands it (the More row's
 # children in IconButtonBase::tapGesture, controllers in push/pop). A class
 # compiled with -fno-rtti has 0 in its vtable's typeinfo slot, and
@@ -9,11 +9,12 @@
 # a relocation fills it (imported typeinfo).
 set -eu
 
-if [ $# -ne 1 ]; then
-	echo "usage: $0 <library file name in build/mod>" >&2
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+	echo "usage: $0 <library file name> [build subfolder, default mod]" >&2
 	exit 2
 fi
 library_name=$1
+build_subfolder=${2:-mod}
 repo_root=$(cd "$(dirname "$0")/../.." && pwd)
 nickeltc_image="ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840"
 
@@ -37,7 +38,7 @@ done
 echo "checked $count"
 '
 
-report=$(docker run --rm --platform linux/amd64 -v "$repo_root/build/mod:/o:ro" --entrypoint sh "$nickeltc_image" \
+report=$(docker run --rm --platform linux/amd64 -v "$repo_root/build/$build_subfolder:/o:ro" --entrypoint sh "$nickeltc_image" \
 	-c "$inspect_vtables" "$library_name")
 checked=$(echo "$report" | sed -n 's/^checked //p')
 nulls=$(echo "$report" | sed -n 's/^null //p')

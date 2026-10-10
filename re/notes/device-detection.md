@@ -4,7 +4,7 @@ Date: 2026-10-10. Decision: the drawer loads only on models with the tested Libr
 (Libra 2, Libra H2O, Libra Colour). Any other model gets the same treatment as an unknown firmware: the
 bridge stays inert, logs the reason, and shows one toast ("NickelDrawer does not support this model yet",
 vi "NickelDrawer chưa hỗ trợ máy này"). Both the model check and the firmware build check must pass.
-The model check runs first. Code: `mod/drawer/device_gate.{h,cc}` (pure rules, host-tested) and
+The model check runs first. Code: `mod/common/device_gate.{h,cc}` (pure rules, host-tested) and
 `mod/drawer/nickel_bridge.cc` (`passesModelCheck`, `checkScreenSizeOnce`).
 
 ## Why the screen size, not the firmware, decides
@@ -60,7 +60,7 @@ bridge: screen 1264x1680, supported
 ## Single source of truth
 
 `host/config/project.json` `supported_models` (id, codename, name) next to `supported_firmware`.
-`mod/drawer/device_gate.cc` `SUPPORTED_MODELS` mirrors the ids and codenames;
+`mod/common/device_gate.cc` `SUPPORTED_MODELS` mirrors the ids and codenames;
 `internal/project/project_test.go` fails when they differ, and checks the names against
 `internal/device`. To add a model: it must have the 1264×1680 panel (or the layout must first learn its
 size), then add it to both lists.

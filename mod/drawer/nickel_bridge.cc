@@ -100,12 +100,6 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN22N3PowerWorkflowManager16resumedFromSleepEv
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
-// "serial,4.1.15,4.38.23828,4.1.15,4.1.15,00000000-0000-0000-0000-000000000388":
-// the build is the third field, the device id the last (re/notes/device-detection.md).
-static const int FIRMWARE_FIELD_INDEX = 2;
-static const char *const SUPPORTED_FIRMWARE[] = {
-    "4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828",
-};
 
 static const int TOAST_DURATION_MILLISECONDS = 3000;
 static const bool PUSH_WITHOUT_ANIMATION = false;
@@ -232,39 +226,13 @@ struct nh_dlsym symbolTable[] = {
 
 // ---- Model and firmware check ----
 
-// Reads the one line of .kobo/version into firmwareVersion and deviceId; both
-// stay "unknown" when it cannot be read.
+// Reads .kobo/version into firmwareVersion and deviceId; both stay "unknown" when it cannot be read.
 static void readVersionFile()
 {
-    char line[160];
-    FILE *file = fopen(VERSION_FILE_PATH, "r");
-    if (!file) {
-        nh_log("bridge: cannot open %s", VERSION_FILE_PATH);
-        return;
+    if (!DeviceGate::readVersionFile(VERSION_FILE_PATH, firmwareVersion, sizeof(firmwareVersion), deviceId,
+                                     sizeof(deviceId))) {
+        nh_log("bridge: cannot read %s", VERSION_FILE_PATH);
     }
-    char *got = fgets(line, sizeof(line), file);
-    fclose(file); // never keep files open on /mnt/onboard
-    if (!got) {
-        nh_log("bridge: %s is empty", VERSION_FILE_PATH);
-        return;
-    }
-    char field[sizeof(deviceId)];
-    if (DeviceGate::copyVersionField(line, FIRMWARE_FIELD_INDEX, field, sizeof(firmwareVersion))) {
-        snprintf(firmwareVersion, sizeof(firmwareVersion), "%s", field);
-    }
-    if (DeviceGate::copyLastVersionField(line, field, sizeof(field))) {
-        snprintf(deviceId, sizeof(deviceId), "%s", field);
-    }
-}
-
-static bool isSupportedFirmware(const char *firmware)
-{
-    for (size_t i = 0; i < sizeof(SUPPORTED_FIRMWARE) / sizeof(SUPPORTED_FIRMWARE[0]); i++) {
-        if (!strcmp(firmware, SUPPORTED_FIRMWARE[i])) {
-            return true;
-        }
-    }
-    return false;
 }
 
 static void *mainWindow()
@@ -370,7 +338,7 @@ static bool passesFirmwareCheck()
         disableBridge(FallbackStrings::UNSUPPORTED_FIRMWARE, reason);
         return false;
     }
-    if (!isSupportedFirmware(firmwareVersion)) {
+    if (!DeviceGate::isSupportedFirmware(firmwareVersion)) {
         snprintf(reason, sizeof(reason), "firmware %s not in the tested list", firmwareVersion);
         disableBridge(FallbackStrings::UNSUPPORTED_FIRMWARE, reason);
         return false;

@@ -2,7 +2,7 @@
 // Run: make -C mod/drawer docker-test
 
 #include "../host_requests.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace HostRequests;
 

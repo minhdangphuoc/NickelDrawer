@@ -57,45 +57,89 @@ func TestEntriesRecordOriginalSizeAndAddedTime(t *testing.T) {
 	}
 }
 
-func TestStateCreatesAtMostTwoMissingThumbnailsPerCall(t *testing.T) {
+func TestStateMakesNoThumbnailAndListsTheMissingOnes(t *testing.T) {
 	r := rigWithPictures(t)
 	for id := 1; id <= 3; id++ {
 		os.Remove(r.service.Paths.Thumb(id))
 	}
-	missing := func(state ScreenState) int {
-		count := 0
+	for call := 0; call < 2; call++ {
+		state, err := r.service.ScreenState(ScreenStateFiles{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(state.MissingThumbnails) != 3 {
+			t.Fatalf("call %d: missing %v, want all 3 (the state read must not decode pictures)", call, state.MissingThumbnails)
+		}
 		for _, picture := range state.Pictures {
-			if picture.Thumb == "" {
-				count++
+			if picture.Thumb != "" {
+				t.Errorf("call %d: picture %s has a thumbnail the state must not make", call, picture.ID)
 			}
 		}
-		return count
 	}
-	state, err := r.service.ScreenState(ScreenStateFiles{})
-	if err != nil || missing(state) != 3-maxLazyThumbnails {
-		t.Fatalf("first state: %d missing, %v", missing(state), err)
-	}
-	state, err = r.service.ScreenState(ScreenStateFiles{})
-	if err != nil || missing(state) != 0 {
-		t.Fatalf("second state: %d missing, %v", missing(state), err)
+	if entries, _ := os.ReadDir(r.service.Paths.Thumbs()); len(entries) != 0 {
+		t.Errorf("state wrote %d file(s) into thumbs/", len(entries))
 	}
 }
 
-func TestModeRefitDeletesThumbnailAndStateRegeneratesIt(t *testing.T) {
+func TestThumbnailJobMakesEveryMissingThumbnail(t *testing.T) {
 	r := rigWithPictures(t)
+	for id := 1; id <= 3; id++ {
+		os.Remove(r.service.Paths.Thumb(id))
+	}
+	report, err := r.service.MakeMissingThumbnails(func() bool { return false })
+	if err != nil || report.Made != 3 || len(report.Failed) != 0 || report.IsStopped {
+		t.Fatalf("report %+v, %v", report, err)
+	}
+	state, err := r.service.ScreenState(ScreenStateFiles{})
+	if err != nil || len(state.MissingThumbnails) != 0 {
+		t.Fatalf("after the job: missing %v, %v", state.MissingThumbnails, err)
+	}
+}
+
+func TestThumbnailJobStopsWhenAnImportStarts(t *testing.T) {
+	r := rigWithPictures(t)
+	for id := 1; id <= 3; id++ {
+		os.Remove(r.service.Paths.Thumb(id))
+	}
+	checks := 0
+	report, err := r.service.MakeMissingThumbnails(func() bool { checks++; return checks > 1 })
+	if err != nil || report.Made != 1 || !report.IsStopped {
+		t.Fatalf("report %+v, %v; want 1 made then stopped", report, err)
+	}
+}
+
+func TestThumbnailJobSkipsBrokenPictureAndReportsIt(t *testing.T) {
+	r := rigWithPictures(t)
+	os.Remove(r.service.Paths.Thumb(2))
+	put(t, r.service.Paths.Image(2), []byte("not a png"))
+	report, err := r.service.MakeMissingThumbnails(func() bool { return false })
+	if err != nil || report.Made != 0 || len(report.Failed) != 1 || report.Failed[0] != 2 {
+		t.Fatalf("report %+v, %v", report, err)
+	}
+	if _, err := os.Stat(r.service.Paths.Thumb(2)); err == nil {
+		t.Error("no thumbnail may be written for a broken picture")
+	}
+}
+
+func TestModeRefitWritesFreshThumbnails(t *testing.T) {
+	r := rigWithPictures(t)
+	before, err := os.ReadFile(r.service.Paths.Thumb(1))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if _, _, err := r.service.SetMode(ModeFit); err != nil {
 		t.Fatal(err)
 	}
 	for id := 1; id <= 3; id++ {
-		if _, err := os.Stat(r.service.Paths.Thumb(id)); err == nil {
-			t.Errorf("thumbnail %d must be dropped by the re-fit", id)
+		if _, err := os.Stat(r.service.Paths.Thumb(id)); err != nil {
+			t.Errorf("the re-fit must write thumbnail %d itself: %v", id, err)
 		}
 	}
-	if _, err := r.service.ScreenState(ScreenStateFiles{}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(r.service.Paths.Thumb(1)); err != nil {
-		t.Errorf("state must regenerate a thumbnail: %v", err)
+	after, _ := os.ReadFile(r.service.Paths.Thumb(1))
+	stored, _ := os.ReadFile(r.service.Paths.Image(1))
+	want, err := MakeThumbnail(stored)
+	if err != nil || !bytes.Equal(after, want) || bytes.Equal(before, after) {
+		t.Errorf("thumbnail 1 must be the re-fitted picture's (changed %v, %v)", !bytes.Equal(before, after), err)
 	}
 }
 

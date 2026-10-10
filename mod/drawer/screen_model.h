@@ -139,6 +139,7 @@ struct ScreenModel {
     QMap<QString, QString> toasts;
     bool isLive = false;
     bool isStale = false; // the app's state action failed: values are defaults, keep the previous screen
+    QString staleReason;  // why it failed, in English, for the debug log
     QString value;        // the screen value the reply was made for (viewer: the picture id)
     QList<HeaderIconAction> headerActions;
     QList<HostRequest> requests; // from the app's state (a finished job); performed once, never kept

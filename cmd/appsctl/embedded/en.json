@@ -95,6 +95,9 @@
   "drawer.script_failed": "{label} did not work.",
   "tweak.screensaver.label": "Sleep screen",
   "tweak.screenshots.label": "Screenshots",
+  "tweak.screenshots.caption": "With the power button",
+  "tweak.statusbar-screenshot.label": "Screenshot button",
+  "tweak.statusbar-screenshot.caption": "In the status bar",
   "tweak.auto-usb.label": "Auto USB connect",
   "tweak.legibility.label": "Text legibility",
   "tweak.ip.label": "IP address",
@@ -177,6 +180,7 @@
   "mod.unsupported_model": "NickelDrawer does not support this model yet",
   "mod.qt6_upgrade_pending": "Kobo is offering update 5.x — NickelDrawer will stop working",
   "mod.pending": "Working…",
+  "mod.state_failed": "The app did not answer.",
   "format.date": "dd/MM/yyyy",
   "format.datetime": "dd/MM/yyyy HH:mm",
   "format.time": "HH:mm"

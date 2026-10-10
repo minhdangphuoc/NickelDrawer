@@ -74,7 +74,7 @@ static ScreenModel errorScreen(const DrawerItem &app, const QString &failure)
 ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, ActionRunner *actionRunner)
     : QObject(NULL), app(screenApp), runner(actionRunner), client(NULL), view(new ScreenView(screenApp.name, drawerView)),
       liveTimer(new QTimer(this)), isLoading(false), isEditingField(false), isConfirmOpen(false), isMenuOpen(false),
-      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), needsReloadAfterLoad(false), menuRow(-1), hasPendingConfirmValue(false),
+      isReloading(false), isQueuedEventRunning(false), needsReloadAfterQueue(false), needsReloadAfterLoad(false), readRetries(0), menuRow(-1), hasPendingConfirmValue(false),
       hasPendingNextValue(false)
 {
     setParent(view);
@@ -157,17 +157,20 @@ static bool isRealScreen(const ScreenModel &shown, const QString &app)
     return shown.app == app && !shown.screen.isEmpty() && shown.screen != QLatin1String("#error");
 }
 
-// A failed or stale (defaults only) reload never replaces what is on screen.
-bool ScreenSession::keepsPreviousScreen(bool isReload, bool isLoaded, const ScreenModel &screen) const
+// What to do with a reply (screen_logic.h decideReply): show it, keep the screen on view, read
+// again, or show the error screen.
+ScreenLogic::ReplyDecision ScreenSession::decideReply(bool isReload, bool isLoaded, const ScreenModel &screen) const
 {
     const ScreenModel &shown = view->screen();
-    if (!isRealScreen(shown, app.id)) {
-        return false;
-    }
-    if (!isLoaded) {
-        return isReload;
-    }
-    return screen.isStale && screen.app == shown.app && screen.screen == shown.screen;
+    bool isRealScreenShown = isRealScreen(shown, app.id);
+    ScreenLogic::ReplyFacts facts;
+    facts.isLoaded = isLoaded;
+    facts.isStale = isLoaded && screen.isStale;
+    facts.isReload = isReload;
+    facts.isRealScreenShown = isRealScreenShown;
+    facts.isSameScreenShown = isRealScreenShown && screen.app == shown.app && screen.screen == shown.screen;
+    facts.retriesDone = readRetries;
+    return ScreenLogic::decideReply(facts);
 }
 
 bool ScreenSession::isViewerEmpty(const ScreenModel &screen) const
@@ -193,13 +196,7 @@ void ScreenSession::onScreenLoaded(bool isLoaded, const ScreenModel &screen, con
         // Handed over once by the state script, so a stale reply may carry them too.
         runner->performScreenRequests(screen.requests, app.name);
     }
-    if (keepsPreviousScreen(wasReload, isLoaded, screen)) {
-        nh_log("screen: %s reply kept the previous screen (%s)", qPrintable(app.id),
-               isLoaded ? "stale: the app's state failed" : qPrintable(failure));
-        return;
-    }
-    if (!isLoaded) {
-        showLoadError(failure);
+    if (!actOnReplyDecision(decideReply(wasReload, isLoaded, screen), isLoaded, screen, failure)) {
         return;
     }
     const Navigation::Entry *top = Navigation::top();
@@ -218,9 +215,36 @@ void ScreenSession::onScreenLoaded(bool isLoaded, const ScreenModel &screen, con
     }
 }
 
+// Acts on a reply that cannot be shown and logs why; returns true when the reply should be shown.
+bool ScreenSession::actOnReplyDecision(ScreenLogic::ReplyDecision decision, bool isLoaded, const ScreenModel &screen,
+                                      const QString &failure)
+{
+    QString reason = isLoaded ? QStringLiteral("the app's state failed: ") + screen.staleReason : failure;
+    switch (decision) {
+    case ScreenLogic::REPLY_SHOW:
+        readRetries = 0;
+        return true;
+    case ScreenLogic::REPLY_KEEP_PREVIOUS:
+        readRetries = 0;
+        DebugLog::write("screen: %s reply kept the previous screen (%s)", qPrintable(app.id), qPrintable(reason));
+        return false;
+    case ScreenLogic::REPLY_RETRY:
+        readRetries++;
+        DebugLog::write("screen: %s read failed (%s); reading again", qPrintable(app.id), qPrintable(reason));
+        load(currentScreenId(), currentScreenValue());
+        return false;
+    case ScreenLogic::REPLY_SHOW_ERROR:
+        readRetries = 0;
+        DebugLog::write("screen: %s read failed again (%s); showing the error", qPrintable(app.id), qPrintable(reason));
+        showLoadError(isLoaded ? FallbackStrings::text(FallbackStrings::SCREEN_STATE_FAILED) : failure);
+        return false;
+    }
+    return false;
+}
+
 void ScreenSession::showLoadError(const QString &failure)
 {
-    nh_log("screen: %s failed to load", qPrintable(app.id));
+    DebugLog::write("screen: %s failed to load", qPrintable(app.id));
     liveTimer->stop();
     view->showScreen(errorScreen(app, failure));
 }
@@ -530,6 +554,7 @@ void ScreenSession::runAfterOptionalConfirm(const ScreenComponent &control)
 
 void ScreenSession::retryLoading()
 {
+    readRetries = 0;
     view->showScreen(loadingScreen(app));
     load(currentScreenId(), currentScreenValue());
 }

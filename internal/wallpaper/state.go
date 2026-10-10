@@ -32,6 +32,10 @@ type ScreenState struct {
 	Progress *Progress // the running job's progress, when there is one
 
 	SleepScreenReady bool
+
+	// MissingThumbnails lists the pictures shown without a thumbnail; the state command starts the
+	// background thumbnail job for them.
+	MissingThumbnails []int
 }
 
 // ScreenStateFiles are the /tmp files the action scripts leave behind; they are not part of the
@@ -44,14 +48,14 @@ type ScreenStateFiles struct {
 }
 
 // ScreenState reads the library, settings and the script leftovers. It only reads files the
-// background job replaces atomically, so it never waits for the job. Its only writes are at most
-// maxLazyThumbnails missing thumbnails and the rotate-on-wake flag when it is out of step.
+// background job replaces atomically, so it never waits for the job. It decodes no picture (that
+// takes seconds on the Kobo and the drawer gives the state 1 s); its only write is the
+// rotate-on-wake flag when it is out of step.
 func (service *Service) ScreenState(files ScreenStateFiles) (ScreenState, error) {
 	library, config, err := service.load()
 	if err != nil {
 		return ScreenState{}, err
 	}
-	library.ensureThumbnails(maxLazyThumbnails, service.Log)
 	service.syncWakeFlag(config.Rotation) // a config from before the flag existed gets it on the first visit
 	state := ScreenState{Mode: config.Mode, Rotation: config.Rotation, Pictures: []Picture{}}
 	for _, entry := range library.Entries {
@@ -60,6 +64,9 @@ func (service *Service) ScreenState(files ScreenStateFiles) (ScreenState, error)
 			state.CurrentID = picture.ID
 		}
 		state.Pictures = append(state.Pictures, picture)
+		if picture.Thumb == "" {
+			state.MissingThumbnails = append(state.MissingThumbnails, entry.ID)
+		}
 	}
 	state.LastImport = firstLine(files.LastOutput)
 	state.Busy = isProcessAlive(files.PidFile)

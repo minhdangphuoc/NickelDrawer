@@ -2,6 +2,7 @@
 #define NICKELDRAWER_DRAWER_LOGIC_H
 
 #include "copperui/tokens.h"
+#include "locale_chain.h"
 
 // Pure decision logic of the drawer: no Qt, no libnickel, no C++ standard
 // library, so tests/drawer_logic_test.cc builds it with the host compiler.
@@ -195,7 +196,7 @@ Language languageForLocale(const char *locale);
 // A locale with characters other than letters, '_' and '-' (a path, say) gives only "en".
 // Each name is written into names[i] (at most LOCALE_NAME_SIZE bytes, NUL included); the number
 // of names is returned (at most maxNames).
-static const int LOCALE_NAME_SIZE = 16;
+static const int LOCALE_NAME_SIZE = LocaleChain::LOCALE_NAME_SIZE;
 int localeFileChain(const char *locale, char names[][LOCALE_NAME_SIZE], int maxNames);
 
 // ---- Kobo 5.x (Qt6) upgrade offer ----

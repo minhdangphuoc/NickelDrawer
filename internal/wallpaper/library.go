@@ -205,18 +205,20 @@ func originalSize(content []byte) (width, height int) {
 	return config.Width, config.Height
 }
 
-// replace stores the re-fitted picture; its thumbnail is dropped and comes back lazily.
+// replace stores the re-fitted picture and its new thumbnail. This runs in the background job,
+// which has the time; the state read never makes thumbnails.
 func (library *Library) replace(position int, converted []byte, mode Mode, width, height int, report *ImportReport, log *Logger) error {
 	entry := library.Entries[position]
 	if err := writeFileAtomic(library.Paths.Image(entry.ID), ".img-", converted); err != nil {
 		return err
 	}
-	library.removeThumb(entry.ID, log)
+	library.writeThumb(entry.ID, converted, log)
 	library.Entries[position].Mode = mode
 	if entry.Width == 0 {
 		library.Entries[position].Width, library.Entries[position].Height = width, height
 	}
 	report.Reconverted++
+	log.Printf("re-fitted %s (%s) for %s", imageFileName(entry.ID), entry.Name, mode)
 	return library.save()
 }
 

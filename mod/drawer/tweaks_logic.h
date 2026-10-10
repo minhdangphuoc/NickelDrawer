@@ -19,7 +19,14 @@ namespace TweaksLogic {
 enum Kind { KIND_TOGGLE, KIND_INFO, KIND_ACTION };
 
 // The native Nickel function a reply asks for ("nickel" field).
-enum NickelAction { NICKEL_NONE, NICKEL_SLEEP, NICKEL_REBOOT, NICKEL_RESCAN_LIBRARY, NICKEL_UNKNOWN };
+enum NickelAction {
+    NICKEL_NONE,
+    NICKEL_SLEEP,
+    NICKEL_REBOOT,
+    NICKEL_RESCAN_LIBRARY,
+    NICKEL_STATUSBAR_SCREENSHOT, // tell the status-bar helper its flag file changed (no libnickel symbol)
+    NICKEL_UNKNOWN
+};
 
 static const int MAX_ITEMS = 32;
 static const int ID_SIZE = 64;
@@ -30,6 +37,7 @@ static const int MESSAGE_SIZE = 512;
 struct Item {
     char id[ID_SIZE];
     char label[LABEL_SIZE];
+    char caption[VALUE_SIZE]; // optional muted line under the label (toggle or action); empty: none
     Kind kind;
     bool isOn;                  // toggle: the current value
     char text[VALUE_SIZE];      // info: the value shown
@@ -127,6 +135,9 @@ int boxHeight(int itemCountOnFirstPage, int pageCount);
 //  INFO (label and value; IP address; not tappable): the label is one line (elided to `inner`)
 //     and under it the value, one caption line (elided to `inner`, muted); both start-aligned and
 //     the two-line block (LABEL_LINE_HEIGHT + VALUE_LINE_HEIGHT) centred vertically.
+//  CAPTION (toggle or action with a "caption"): like INFO the label is one line and the caption one muted
+//     caption line under it (both elided to the label width), the two-line block centred vertically; a
+//     toggle keeps its switch column and an action stays centred.
 //  A tappable cell pressed is inverted as a whole (PressArea).
 
 static const int LABEL_LINE_HEIGHT = copperui::v1::TYPE_ROW_LINE;
@@ -137,19 +148,19 @@ static const int TOGGLE_SWITCH_HEIGHT = copperui::v1::TOGGLE_SWITCH_HEIGHT;
 static const int TOGGLE_STATE_TOP_GAP = 4;
 static const int TOGGLE_STATE_HEIGHT = 40;
 
-// Most label lines a cell of this kind shows.
-int maxLabelLines(Kind kind);
+// Most label lines a cell of this kind shows (one when a caption stacks under the label).
+int maxLabelLines(Kind kind, bool hasCaption = false);
 
 struct CellLayout {
     Rect label;        // all label lines; height = lines * LABEL_LINE_HEIGHT
     bool isCentred;    // label lines centred (action) or start-aligned
-    Rect value;        // info: the value line; zero height otherwise
+    Rect value;        // info value or caption line; zero height otherwise
     Rect switchImage;  // toggle: Nickel's switch image; zero height otherwise
     Rect stateWord;    // toggle: the state word under it; zero height otherwise
 };
 
 // labelLineCount: the lines the label took after wrapping (1..maxLabelLines), at least 1.
-CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCount);
+CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCount, bool hasCaption = false);
 // Width the label lines are wrapped or elided to.
 int labelWidth(Kind kind, int cellWidth);
 

@@ -22,6 +22,7 @@ static TweakItem tweakItemOf(const TweaksLogic::Item &parsed)
     TweakItem item;
     item.id = QString::fromUtf8(parsed.id);
     item.label = QString::fromUtf8(parsed.label);
+    item.caption = QString::fromUtf8(parsed.caption);
     item.kind = parsed.kind;
     item.isOn = parsed.isOn;
     item.infoText = QString::fromUtf8(parsed.text);

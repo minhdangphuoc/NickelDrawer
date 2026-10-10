@@ -31,6 +31,7 @@ type commonFlags struct {
 	versionFile string
 	lastFile    string
 	pidFile     string
+	thumbsPid   string
 
 	progressFile   string
 	confirm        bool
@@ -45,7 +46,8 @@ func (common *commonFlags) register(flags *flag.FlagSet) {
 	flags.StringVar(&common.locale, "locale", "", "language code overriding the device language, e.g. vi")
 	flags.StringVar(&common.versionFile, "version-file", device.DefaultVersionFile, "Kobo .kobo/version file (device id decides the screen size)")
 	flags.StringVar(&common.lastFile, "last-file", "/tmp/wallpaper-last.txt", "text the last background import printed (state command)")
-	flags.StringVar(&common.pidFile, "pid-file", "/tmp/wallpaper.pid", "pid file of a running background import (state command)")
+	flags.StringVar(&common.pidFile, "pid-file", "/tmp/wallpaper.pid", "pid file of a running background import (state and thumbnails commands)")
+	flags.StringVar(&common.thumbsPid, "thumbs-pid-file", defaultThumbsPidFile, "pid file of the background thumbnail job (state and thumbnails commands)")
 	flags.StringVar(&common.progressFile, "progress-file", "/tmp/wallpaper-progress.json", "progress of a running import or re-fit (import, mode, state commands)")
 	flags.BoolVar(&common.confirm, "confirm", false, "remove: the user confirmed")
 	flags.BoolVar(&common.deleteOriginal, "delete-original", false, "remove: also delete the original in Pictures when it is the same file")
@@ -85,6 +87,8 @@ var commands = map[string]command{
 	"off":      {0, false, (*session).turnOff},
 	"status":   {0, false, (*session).status},
 	"state":    {0, false, (*session).state},
+
+	"thumbnails": {0, false, (*session).makeThumbnails},
 
 	"first-import-due": {0, false, (*session).firstImportDue},
 

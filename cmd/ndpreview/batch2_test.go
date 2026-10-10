@@ -632,6 +632,34 @@ func TestTweaksModalIsCentredAndRendersBothLocales(t *testing.T) {
 	}
 }
 
+func TestTweaksCaptionStacksUnderTheLabelAndKeepsTheSwitch(t *testing.T) {
+	for _, locale := range []string{"en", "vi"} {
+		cell := sampleTweaks[locale][1]
+		if cell.caption == "" || cell.kind != tweakToggle {
+			t.Fatalf("%s: sample 1 should be the captioned Screenshots toggle: %+v", locale, cell)
+		}
+		items := tweaksCellItems(cell, 0, 0, 516, locale)
+		var label, caption Item
+		var hasSwitch bool
+		for _, item := range items {
+			switch {
+			case item.Shape == "text" && item.Ink == inkMuted:
+				caption = item
+			case item.Shape == "text" && strings.Join(item.Lines, "\n") == cell.label:
+				label = item
+			case item.Shape != "text":
+				hasSwitch = true
+			}
+		}
+		if label.W == 0 || len(caption.Lines) != 1 || !strings.HasPrefix(caption.Lines[0], cell.caption[:8]) || !hasSwitch {
+			t.Fatalf("%s: label %+v, caption %+v, switch %v", locale, label, caption, hasSwitch)
+		}
+		if caption.Y != label.Y+label.H || label.X+label.W > 516-tweaksCellPadding-toggleSwitchWidth {
+			t.Errorf("%s: caption at y=%d under the label (y=%d h=%d), label must stop before the switch", locale, caption.Y, label.Y, label.H)
+		}
+	}
+}
+
 func TestDrawerCommandsWritePNGs(t *testing.T) {
 	dir := t.TempDir()
 	for _, command := range []struct {

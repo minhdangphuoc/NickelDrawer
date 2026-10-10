@@ -81,6 +81,7 @@ static const Entry TABLE[] = {
     {"mod.qt6_upgrade_pending", "Kobo is offering update 5.x — NickelDrawer will stop working",
      "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"},
     {"mod.pending", "Working…", "Đang xử lý…"},
+    {"mod.state_failed", "The app did not answer.", "Ứng dụng không trả lời."},
 };
 
 static_assert(sizeof(TABLE) / sizeof(TABLE[0]) == FallbackStrings::KEY_COUNT, "one entry per FallbackStrings::Key");

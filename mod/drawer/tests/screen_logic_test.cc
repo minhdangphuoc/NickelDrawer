@@ -4,7 +4,7 @@
 // Run: make -C mod/drawer docker-test
 
 #include "../screen_logic.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace ScreenLogic;
 
@@ -494,6 +494,34 @@ static void testReloadDecision()
     EXPECT_EQ(RELOAD_AFTER_QUEUE, decideReload(false, true));
 }
 
+static ReplyFacts replyFacts(bool isLoaded, bool isStale, bool isReload, bool isRealScreenShown, bool isSameScreenShown,
+                             int retriesDone)
+{
+    ReplyFacts facts = {isLoaded, isStale, isReload, isRealScreenShown, isSameScreenShown, retriesDone};
+    return facts;
+}
+
+static void testReplyDecision()
+{
+    // A good reply always shows, whatever is on view.
+    EXPECT_EQ(REPLY_SHOW, decideReply(replyFacts(true, false, false, false, false, 0)));
+    EXPECT_EQ(REPLY_SHOW, decideReply(replyFacts(true, false, true, true, true, 1)));
+    // Opening an app whose state timed out (device bug 2026-10-11: an empty gallery of defaults):
+    // the loading screen is on view, so retry once, then the error screen, never the defaults.
+    EXPECT_EQ(REPLY_RETRY, decideReply(replyFacts(true, true, false, false, false, 0)));
+    EXPECT_EQ(REPLY_SHOW_ERROR, decideReply(replyFacts(true, true, false, false, false, 1)));
+    // A stale live refresh of the screen on view keeps it.
+    EXPECT_EQ(REPLY_KEEP_PREVIOUS, decideReply(replyFacts(true, true, true, true, true, 0)));
+    // A stale reply for another screen (a pushed sub-screen) has nothing to keep.
+    EXPECT_EQ(REPLY_RETRY, decideReply(replyFacts(true, true, false, true, false, 0)));
+    EXPECT_EQ(REPLY_SHOW_ERROR, decideReply(replyFacts(true, true, false, true, false, 1)));
+    // No reply at all: a reload keeps the real screen; anything else retries, then errors.
+    EXPECT_EQ(REPLY_KEEP_PREVIOUS, decideReply(replyFacts(false, false, true, true, false, 0)));
+    EXPECT_EQ(REPLY_RETRY, decideReply(replyFacts(false, false, false, true, false, 0)));
+    EXPECT_EQ(REPLY_RETRY, decideReply(replyFacts(false, false, true, false, false, 0)));
+    EXPECT_EQ(REPLY_SHOW_ERROR, decideReply(replyFacts(false, false, false, false, false, 1)));
+}
+
 static void testStepsHeadline()
 {
     char out[64];
@@ -511,6 +539,7 @@ static void testStepsHeadline()
 
 int main()
 {
+    testReplyDecision();
     testStepsHeadline();
     testSampleCellWidths();
     testSampleCellIsInnerPlusGapPlusCaptionLine();

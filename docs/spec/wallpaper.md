@@ -9,16 +9,16 @@ The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](w
 | Action | Effect |
 |---|---|
 | `import` | converts every new picture (background job with a progress file), writes thumbnails, shows the newest one; pictures the user removed (`data/removed.json`) are skipped |
-| `mode` | fill or fit (value `fill`/`fit`; `toggle` from a shell). The mode is stored at once; the pictures are re-fitted in the background (thumbnails are dropped and regenerated lazily). While a job runs only the mode is stored and that job re-fits again when it ends |
+| `mode` | fill or fit (value `fill`/`fit`; `toggle` from a shell). The mode is stored at once; the pictures are re-fitted in the background (each re-fitted picture gets its new thumbnail at once). While a job runs only the mode is stored and that job re-fits again when it ends |
 | `rotation` | fixed or random, applied at once (foreground); see "Random rotation" |
 | `off` | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
 | `status` | running job or last result, picture count, mode, rotation, files on the sleep screen |
-| `state` | the screen variables as one JSON line (below) |
+| `state` | the screen variables as one JSON line (below); starts `thumbnails` detached when thumbnails are missing |
 | `set-current` | value = picture id; makes it the wallpaper and applies; prints `{"toast":"set"}` |
 | `remove` | value = picture id; removes it from Wallpaper (passes `--confirm`, never `--delete-original`); prints `{"toast":"removed"}` |
 | `remove-all` | value = picture id; the long-press menu item "Remove with original..." (own confirm dialog): passes `--confirm --delete-original --signal` and prints `{"toast":"removed_original"}` (original deleted), `{"toast":"removed_original_kept"}` (no identical original found, nothing else deleted) |
 
-Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command (the NickelDrawer mod runs it after a wake, see "Random rotation").
+Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command (the NickelDrawer mod runs it after a wake, see "Random rotation"). `thumbnails` is CLI-only too: the background job `state` starts detached when thumbnails are missing; it makes them one by one, runs once at a time (`--thumbs-pid-file`, default `/tmp/wallpaper-thumbs.pid`) and stops when the import job in `--pid-file` runs.
 
 **Requirement.** Pictures show only with a current book and both Kobo settings on: Settings → Energy saving and privacy → "Show current read" and "Show book cover full screen" (see "What Nickel does"). The app reads `[PowerOptions] ShowBookCover` and `FullscreenCoverStretch` from `Kobo eReader.conf` (read only, never written) and, when either is not true or the file is unreadable, adds a hint line to Status, the import result and the screen (state fields `sleep_screen_ready`, `sleep_screen_hint`; the notice is hidden when the hint is empty). It cannot check for a current book.
 
@@ -74,7 +74,7 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 ## State
 
 - `data/images/NNNN.png` converted pictures, `data/images/index.json` (`id`, `hash` of the original, `mode` the file was fitted for, original `name`; newer entries also `width`, `height` of the original and `added`, RFC 3339 UTC).
-- `data/thumbs/NNNN.png`: written at import (fit inside 300 x 400, 16 grey levels, atomic). `state` creates at most 2 missing ones per call; a mode re-fit deletes the picture's thumbnail.
+- `data/thumbs/NNNN.png`: written at import (fit inside 300 x 400, 16 grey levels, atomic). A mode re-fit writes the new one too. `state` never makes one: it starts the detached `thumbnails` job (below) when some are missing.
 - `data/removed.json`: JSON array of SHA-256 hashes of removed pictures.
 - `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`. Every writer changes one field on a fresh copy, so a background job never overwrites a later choice. `current` is always the picture on the sleep screen, so the gallery's ✓ badge follows a random change.
 - `data/rotation-history.json`: the last 2 pictures shown in random rotation, most recent first.
@@ -85,7 +85,7 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 
 After an import that added pictures the app queues one quick library rescan; `state` hands it over once as `"requests":[{"request":"rescan","mode":"quick"}]` when no job is running (`app.json`: `"requests": ["rescan"]`).
 
-`state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `step_label`, `step_done`, `step_total`, `step_detail`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
+`state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `step_label`, `step_done`, `step_total`, `step_detail`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only and decodes no picture, so it stays far under the drawer's 1 s state budget, also while a job runs.
 
 ## Random rotation
 

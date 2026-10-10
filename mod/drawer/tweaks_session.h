@@ -54,7 +54,7 @@ private:
     void applyTweak(const QString &tweakId);
     void setBusy(bool isBusy);
     void showResult(const TweakResult &result);
-    void runNickelAction(TweaksLogic::NickelAction action);
+    void runNickelAction(const TweakResult &result);
 
     ModelClient *client;
     QPointer<TweaksPanel> panel;

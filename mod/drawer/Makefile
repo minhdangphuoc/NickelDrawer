@@ -22,7 +22,7 @@ override VERSION := 1.0.0-beta.1
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
-override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc device_gate.cc mod_switches.cc drawer_logic.cc fallback_strings.cc \
+override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc ../common/device_gate.cc mod_switches.cc drawer_logic.cc ../common/locale_chain.cc fallback_strings.cc \
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc ../common/system_icon.cc \
                      painted_marks.cc item_widgets.cc drawer_surfaces.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
@@ -52,9 +52,9 @@ endif
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
 TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests device_gate
 # Other Qt-free units a test links besides its own (unit=dependency).
-TEST_LINKS  := tweaks_logic=drawer_logic screen_logic=$(COPPERUI_DIR)/src/pack
+TEST_LINKS  := drawer_logic=../common/locale_chain tweaks_logic=drawer_logic tweaks_logic=../common/locale_chain screen_logic=$(COPPERUI_DIR)/src/pack
 TEST_BINARY := tests/unit_test.bin
-TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -I$(COPPERUI_INCLUDE)
+TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -I$(COPPERUI_INCLUDE) -I../common
 
 .PHONY: docker-build docker-clean docker-test
 docker-build:
@@ -71,7 +71,8 @@ docker-test:
 	docker run --rm --platform linux/amd64 -v "$(REPO_ROOT):$(REPO_ROOT)" -w "$(CURDIR)" --entrypoint sh \
 		$(NICKELTC_IMAGE) -c 'status=0; for unit in $(TEST_UNITS); do \
 			links=; for link in $(TEST_LINKS); do [ "$${link%%=*}" = "$$unit" ] && links="$$links $${link#*=}.cc"; done; \
-			g++ $(TEST_FLAGS) -o $(TEST_BINARY) tests/$${unit}_test.cc $${unit}.cc $$links && ./$(TEST_BINARY) || status=1; \
+			source=$$unit.cc; [ -f $$source ] || source=../common/$$unit.cc; \
+			g++ $(TEST_FLAGS) -o $(TEST_BINARY) tests/$${unit}_test.cc $$source $$links && ./$(TEST_BINARY) || status=1; \
 		done; rm -f $(TEST_BINARY); exit $$status'
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.

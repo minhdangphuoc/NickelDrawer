@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "../drawer_logic.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace DrawerLogic;
 

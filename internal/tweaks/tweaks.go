@@ -27,25 +27,35 @@ const (
 	NickelReboot        = "reboot"
 	NickelSleep         = "sleep"
 	NickelRescanLibrary = "rescan-library"
+	// NickelStatusBarScreenshot asks the mod to tell the status-bar helper (helpers/statusbar-screenshot)
+	// that its flag file changed.
+	NickelStatusBarScreenshot = "statusbar-screenshot"
 )
 
 // Tweak ids, in display order.
 const (
-	IDScreensaver   = "screensaver"
-	IDScreenshots   = "screenshots"
-	IDAutoUSB       = "auto-usb"
-	IDLegibility    = "legibility"
-	IDIP            = "ip"
-	IDInvertReboot  = "invert-reboot"
-	IDSleep         = "sleep"
-	IDReboot        = "reboot"
-	IDLibraryRescan = "library-rescan"
+	IDScreensaver = "screensaver"
+	IDScreenshots = "screenshots"
+	// IDStatusBarScreenshot is listed only while the status-bar helper is installed.
+	IDStatusBarScreenshot = "statusbar-screenshot"
+	IDAutoUSB             = "auto-usb"
+	IDLegibility          = "legibility"
+	IDIP                  = "ip"
+	IDInvertReboot        = "invert-reboot"
+	IDSleep               = "sleep"
+	IDReboot              = "reboot"
+	IDLibraryRescan       = "library-rescan"
 )
 
 const (
 	confRelative            = ".kobo/Kobo/Kobo eReader.conf"
 	disabledScreensaverName = "screensaver.disabled"
 	wifiInterface           = "wlan0"
+
+	// NickelHook deletes exactly this file on uninstall and failsafe, so its presence is the
+	// truth about whether the helper is installed.
+	helperLibraryPath  = "/usr/local/Kobo/imageformats/libstatusbarshot.so"
+	helperFlagRelative = ".adds/helpers/screenshot/off"
 )
 
 // Item is one row of the modal. Value is a bool for toggles, a string for info rows and
@@ -53,6 +63,7 @@ const (
 type Item struct {
 	ID      string `json:"id"`
 	Label   string `json:"label"`
+	Caption string `json:"caption,omitempty"`
 	Kind    string `json:"kind"`
 	Value   any    `json:"value,omitempty"`
 	Confirm string `json:"confirm,omitempty"`
@@ -91,6 +102,9 @@ type Config struct {
 	ConfPath       string        // Kobo eReader.conf
 	ScreensaverDir string        // <root>/.kobo/screensaver; its disabled twin is a sibling
 	IPAddress      func() string // default: the first IPv4 address of wlan0
+
+	HelperLibraryPath string // the status-bar helper's library; the helper tweak is listed only while it exists
+	HelperFlagPath    string // the helper's "off" flag file; no file means the button is on
 }
 
 // DefaultConfig uses the device layout below storage.Root().
@@ -99,20 +113,26 @@ func DefaultConfig(bundle *i18n.Bundle) Config {
 		Bundle:         bundle,
 		ConfPath:       filepath.Join(storage.Root(), filepath.FromSlash(confRelative)),
 		ScreensaverDir: storage.Path(storage.Screensaver),
+
+		HelperLibraryPath: helperLibraryPath,
+		HelperFlagPath:    filepath.Join(storage.Root(), filepath.FromSlash(helperFlagRelative)),
 	}
 }
 
 // tweak describes one item: how it reads and how it is applied.
 type tweak struct {
-	id, kind string
-	read     func(Config, *confFile) any // nil for actions
-	apply    func(Config) (Result, error)
-	confirm  bool
+	id, kind  string
+	read      func(Config, *confFile) any // nil for actions
+	apply     func(Config) (Result, error)
+	confirm   bool
+	caption   bool              // a "tweak.<id>.caption" text sits under the label
+	available func(Config) bool // nil: always listed
 }
 
 var registry = []tweak{
 	{id: IDScreensaver, kind: KindToggle, read: readScreensaver, apply: Config.toggleScreensaver},
-	{id: IDScreenshots, kind: KindToggle, read: readBoolean(screenshotsSetting), apply: toggleBoolean(IDScreenshots, screenshotsSetting)},
+	{id: IDScreenshots, kind: KindToggle, caption: true, read: readBoolean(screenshotsSetting), apply: toggleBoolean(IDScreenshots, screenshotsSetting)},
+	{id: IDStatusBarScreenshot, kind: KindToggle, caption: true, read: readStatusBarScreenshot, apply: Config.toggleStatusBarScreenshot, available: Config.hasStatusBarHelper},
 	{id: IDAutoUSB, kind: KindToggle, read: readBoolean(autoUsbSetting), apply: toggleBoolean(IDAutoUSB, autoUsbSetting)},
 	{id: IDLegibility, kind: KindToggle, read: readLegibility, apply: Config.toggleLegibility},
 	{id: IDIP, kind: KindInfo, read: readIP},
@@ -131,13 +151,18 @@ func (c Config) List() Listing {
 	}
 	items := make([]Item, 0, len(registry))
 	for _, entry := range registry {
-		items = append(items, c.item(entry, conf))
+		if entry.available == nil || entry.available(c) {
+			items = append(items, c.item(entry, conf))
+		}
 	}
 	return Listing{V: ProtocolVersion, Items: items}
 }
 
 func (c Config) item(entry tweak, conf *confFile) Item {
 	item := Item{ID: entry.id, Kind: entry.kind, Label: c.text("tweak."+entry.id+".label", nil)}
+	if entry.caption {
+		item.Caption = c.text("tweak."+entry.id+".caption", nil)
+	}
 	if entry.read != nil {
 		item.Value = entry.read(c, conf)
 	}
@@ -150,7 +175,7 @@ func (c Config) item(entry tweak, conf *confFile) Item {
 // Apply runs one tweak. Info rows and unknown ids are errors.
 func (c Config) Apply(id string) (Result, error) {
 	for _, entry := range registry {
-		if entry.id == id && entry.apply != nil {
+		if entry.id == id && entry.apply != nil && (entry.available == nil || entry.available(c)) {
 			return entry.apply(c)
 		}
 	}
@@ -198,6 +223,13 @@ func wifiAddress() string {
 		}
 	}
 	return ""
+}
+
+func (c Config) hasStatusBarHelper() bool { return fileExists(c.HelperLibraryPath) }
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func directoryExists(path string) bool {

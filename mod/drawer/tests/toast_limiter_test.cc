@@ -2,7 +2,7 @@
 // Run: make -C mod/drawer docker-test
 
 #include "../toast_limiter.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace ToastLimiter;
 

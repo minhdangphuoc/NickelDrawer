@@ -745,4 +745,21 @@ ReloadDecision decideReload(bool isQueueIdle, bool isLoading)
     return isLoading ? RELOAD_AFTER_LOAD : RELOAD_NOW;
 }
 
+static ReplyDecision retryOrError(int retriesDone)
+{
+    return retriesDone < MAX_READ_RETRIES ? REPLY_RETRY : REPLY_SHOW_ERROR;
+}
+
+ReplyDecision decideReply(const ReplyFacts &facts)
+{
+    if (facts.isLoaded && !facts.isStale) {
+        return REPLY_SHOW;
+    }
+    bool isKeepable = facts.isLoaded ? facts.isSameScreenShown : facts.isRealScreenShown && facts.isReload;
+    if (isKeepable) {
+        return REPLY_KEEP_PREVIOUS;
+    }
+    return retryOrError(facts.retriesDone);
+}
+
 } // namespace ScreenLogic

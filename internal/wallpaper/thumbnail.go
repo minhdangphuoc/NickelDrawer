@@ -13,8 +13,9 @@ const (
 	thumbMaxWidth  = 300
 	thumbMaxHeight = 400
 
-	// maxLazyThumbnails keeps `state` under its time budget on the Kobo's CPU.
-	maxLazyThumbnails = 2
+	// thumbCompression: level 9 on dithered pixels takes about 6 times as long as the default
+	// for a few percent of a 300 x 400 file, and it was most of a thumbnail's time.
+	thumbCompression = png.DefaultCompression
 )
 
 // MakeThumbnail shrinks a converted picture to fit inside 300 x 400 and quantizes it to the same
@@ -28,7 +29,7 @@ func MakeThumbnail(convertedPNG []byte) ([]byte, error) {
 	size := fitInside(gray.Rect.Dx(), gray.Rect.Dy(), thumbMaxWidth, thumbMaxHeight)
 	thumb := fitToScreen(gray, size, ModeFit)
 	ditherFloydSteinberg(thumb)
-	return encodePNG(thumb)
+	return encodePNG(thumb, thumbCompression)
 }
 
 // fitInside is the largest size with the picture's aspect ratio inside maxWidth x maxHeight.
@@ -39,12 +40,17 @@ func fitInside(width, height, maxWidth, maxHeight int) Size {
 	return Size{Width: max(1, width*maxHeight/height), Height: maxHeight}
 }
 
-// writeThumb stores the thumbnail of a freshly converted picture. A failure is only logged: the
-// gallery regenerates missing thumbnails lazily.
-func (library *Library) writeThumb(id int, convertedPNG []byte, log *Logger) {
-	if err := storeThumb(library.Paths, id, convertedPNG); err != nil {
-		log.Printf("thumbnail %s not written: %v", imageFileName(id), err)
+// writeThumb stores the thumbnail of a freshly converted picture, replacing an older one. When it
+// cannot be made, the old thumbnail (of the previous fit) is removed so the gallery never shows a
+// stale picture, and the failure is logged; the background thumbnail job tries again later.
+func (library *Library) writeThumb(id int, convertedPNG []byte, log *Logger) bool {
+	err := storeThumb(library.Paths, id, convertedPNG)
+	if err == nil {
+		return true
 	}
+	log.Printf("thumbnail %s not written: %v", imageFileName(id), err)
+	library.removeThumb(id, log)
+	return false
 }
 
 func storeThumb(paths Paths, id int, convertedPNG []byte) error {
@@ -64,22 +70,14 @@ func (library *Library) removeThumb(id int, log *Logger) {
 	}
 }
 
-// ensureThumbnails creates up to limit missing thumbnails from the stored pictures.
-func (library *Library) ensureThumbnails(limit int, log *Logger) {
-	made := 0
+// MissingThumbnails lists the ids of the pictures without a thumbnail. It only stats files, so the
+// state read can afford it.
+func (library *Library) MissingThumbnails() []int {
+	var missing []int
 	for _, entry := range library.Entries {
-		if made >= limit {
-			return
+		if _, err := os.Stat(library.Paths.Thumb(entry.ID)); err != nil {
+			missing = append(missing, entry.ID)
 		}
-		if _, err := os.Stat(library.Paths.Thumb(entry.ID)); err == nil {
-			continue
-		}
-		content, err := os.ReadFile(library.Paths.Image(entry.ID))
-		if err != nil {
-			log.Printf("thumbnail %s: cannot read the picture: %v", imageFileName(entry.ID), err)
-			continue
-		}
-		library.writeThumb(entry.ID, content, log)
-		made++
 	}
+	return missing
 }

@@ -1,5 +1,6 @@
 #!/bin/sh
-# Prints the Wallpaper screen's variables as one JSON object. Reads local files only (< 1 s).
+# Prints the Wallpaper screen's variables as one JSON object. Reads local files only and decodes
+# no picture (< 1 s); the binary starts a detached job for missing thumbnails.
 . "$(dirname "$0")/lib.sh"
 require_binary
 start_first_import_if_due

@@ -2,7 +2,7 @@
 // Run: make -C mod/drawer docker-test
 
 #include "../navigation_stack.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace Navigation;
 

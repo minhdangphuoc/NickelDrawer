@@ -342,6 +342,25 @@ int stepsHeadline(const char *label, const char *done, const char *total, char *
 enum ReloadDecision { RELOAD_NOW, RELOAD_AFTER_QUEUE, RELOAD_AFTER_LOAD };
 ReloadDecision decideReload(bool isQueueIdle, bool isLoading);
 
+// What to do with the answer to a screen read. A read that failed, or a stale reply (the app's
+// state action failed or timed out, so the values are only the ui.json defaults), never replaces
+// a real screen of the same id; a failed reload keeps what is shown. With nothing to keep, the
+// read is tried again MAX_READ_RETRIES times, then the error screen with Try again shows: the
+// defaults are never shown as if they were the app's data (an empty gallery).
+enum ReplyDecision { REPLY_SHOW, REPLY_KEEP_PREVIOUS, REPLY_RETRY, REPLY_SHOW_ERROR };
+static const int MAX_READ_RETRIES = 1;
+
+struct ReplyFacts {
+    bool isLoaded;          // a reply arrived (false: appsctl failed, timed out or answered garbage)
+    bool isStale;           // the reply carries "stale": true
+    bool isReload;          // the read refreshed the screen on view (live tick, finished event)
+    bool isRealScreenShown; // a real screen of this app is on view (not loading, not the error)
+    bool isSameScreenShown; // ... and it is the screen the reply is for
+    int retriesDone;        // reads already retried for this screen
+};
+
+ReplyDecision decideReply(const ReplyFacts &facts);
+
 // A live screen (state action) is re-read this often while visible and idle;
 // the e-ink budget is at most 2 updates per second, steps at most every 5 s.
 static const int LIVE_REFRESH_MILLISECONDS = tokens::REFRESH_LIVE;

@@ -41,7 +41,8 @@ func importedGallery(t *testing.T) gallery {
 	write(t, filepath.Join(root, "Pictures", "c.png"), gradient(t, 60, 80))
 	g := gallery{root: root, appDir: appDir, common: []string{"--app-dir", appDir, "--locale", "en", "--version-file", versionFile,
 		"--conf", filepath.Join(appDir, "Kobo eReader.conf"), "--progress-file", filepath.Join(appDir, "progress.json"),
-		"--last-file", filepath.Join(appDir, "none.txt"), "--pid-file", filepath.Join(appDir, "none.pid")}}
+		"--last-file", filepath.Join(appDir, "none.txt"), "--pid-file", filepath.Join(appDir, "none.pid"),
+		"--thumbs-pid-file", filepath.Join(appDir, "thumbs.pid")}}
 	if status, output := g.run(t, "import"); status != 0 {
 		t.Fatalf("import: %s", output)
 	}

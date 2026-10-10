@@ -1,8 +1,9 @@
 #include "device_gate.h"
 
+#include <stdio.h>
 #include <string.h>
 
-#include "screen_logic.h"
+#include "copperui/tokens.h"
 
 namespace DeviceGate {
 
@@ -13,6 +14,10 @@ static const SupportedModel SUPPORTED_MODELS[] = {
     {"384", "storm"}, // Libra H2O
     {"388", "io"},    // Libra 2 (tested)
     {"390", "monza"}, // Libra Colour
+};
+
+static const char *const SUPPORTED_FIRMWARE[] = {
+    "4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828",
 };
 
 static const char *const LINE_END_CHARACTERS = "\r\n";
@@ -45,10 +50,23 @@ const SupportedModel *findSupportedModel(const char *deviceId)
     return NULL;
 }
 
+bool isSupportedFirmware(const char *firmware)
+{
+    if (!firmware) {
+        return false;
+    }
+    for (size_t i = 0; i < sizeof(SUPPORTED_FIRMWARE) / sizeof(SUPPORTED_FIRMWARE[0]); i++) {
+        if (!strcmp(firmware, SUPPORTED_FIRMWARE[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool isSupportedScreenSize(int width, int height)
 {
-    bool isPortrait = width == ScreenLogic::SCREEN_WIDTH && height == ScreenLogic::SCREEN_HEIGHT;
-    bool isLandscape = width == ScreenLogic::SCREEN_HEIGHT && height == ScreenLogic::SCREEN_WIDTH;
+    bool isPortrait = width == copperui::v1::SCREEN_WIDTH && height == copperui::v1::SCREEN_HEIGHT;
+    bool isLandscape = width == copperui::v1::SCREEN_HEIGHT && height == copperui::v1::SCREEN_WIDTH;
     return isPortrait || isLandscape;
 }
 
@@ -105,6 +123,28 @@ bool copyLastVersionField(const char *line, char *out, size_t outSize)
         }
     }
     return copySpan(start, line + lineLength - start, out, outSize);
+}
+
+bool readVersionFile(const char *path, char *firmware, size_t firmwareSize, char *deviceId, size_t deviceIdSize)
+{
+    char line[160];
+    FILE *file = fopen(path, "r");
+    if (!file) {
+        return false;
+    }
+    char *got = fgets(line, sizeof(line), file);
+    fclose(file); // never keep files open on /mnt/onboard
+    if (!got) {
+        return false;
+    }
+    char field[64];
+    if (copyVersionField(line, FIRMWARE_FIELD_INDEX, field, sizeof(field)) && strlen(field) < firmwareSize) {
+        strcpy(firmware, field);
+    }
+    if (copyLastVersionField(line, field, sizeof(field)) && strlen(field) < deviceIdSize) {
+        strcpy(deviceId, field);
+    }
+    return true;
 }
 
 } // namespace DeviceGate

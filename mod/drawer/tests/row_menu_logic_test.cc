@@ -2,7 +2,7 @@
 // Run: make -C mod/drawer docker-test
 
 #include "../row_menu_logic.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace RowMenuLogic;
 

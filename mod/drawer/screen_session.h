@@ -8,6 +8,7 @@
 #include "event_queue.h"
 
 #include "drawer_model.h"
+#include "screen_logic.h"
 #include "screen_model.h"
 
 class ActionRunner;
@@ -89,7 +90,9 @@ private:
     void pushSubScreen(const QString &screenId, const QString &value);
     bool leaveSubScreen();
     void queueEvent(const QString &key, const QString &action, const QString &value);
-    bool keepsPreviousScreen(bool isReload, bool isLoaded, const ScreenModel &screen) const;
+    ScreenLogic::ReplyDecision decideReply(bool isReload, bool isLoaded, const ScreenModel &screen) const;
+    bool actOnReplyDecision(ScreenLogic::ReplyDecision decision, bool isLoaded, const ScreenModel &screen,
+                           const QString &failure);
     bool isViewerEmpty(const ScreenModel &screen) const;
     QString currentScreenValue() const;
     void close();
@@ -108,6 +111,7 @@ private:
     bool isQueuedEventRunning;
     bool needsReloadAfterQueue;
     bool needsReloadAfterLoad;
+    int readRetries; // reads of the current screen retried after a failed or stale reply
     EventQueue::Queue eventQueue;
     // Copies taken when the tile menu opened: the screen may reload under it.
     PictureTile menuTile;

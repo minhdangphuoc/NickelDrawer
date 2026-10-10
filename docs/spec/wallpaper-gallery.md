@@ -235,8 +235,12 @@ its confirm) sends the shown id.
 ## 6. Wallpaper backend
 
 - Import writes `data/thumbs/NNNN.png` (300 x 400, fitted, 16 grey levels) next to `data/images/`.
-  `state` generates at most 2 missing thumbnails per call (lazy, keeps it under the 1 s budget).
-  A mode change that re-fits a picture deletes its thumbnail (regenerated lazily).
+  A mode change that re-fits a picture writes its new thumbnail too. `state` never decodes a
+  picture (one thumbnail takes seconds on the Kobo; the state budget is 1 s): when thumbnails are
+  missing it starts `wallpaper thumbnails` detached (own session, lock `/tmp/wallpaper-thumbs.pid`,
+  not while an import or re-fit runs, which stops it) and lists those tiles without `thumb`; they
+  show the picture placeholder until the live refresh (5 s) finds the file. Ids the job could not
+  make are kept in `/tmp/wallpaper-thumbs.pid.failed`, so a broken picture does not restart it.
 - Import progress: `/tmp/wallpaper-progress.json` `{"done": 3, "total": 7, "name": "bien-xanh.jpg"}`
   while running (temp file + rename), removed at the end.
 - `state` prints: `status`, `summary`, `pictures` (§3.2 items, ids `NNNN`), `current_id`, `count`,
@@ -285,5 +289,12 @@ go run ./cmd/ndpreview render apps/wallpaper --locale vi --state apps/wallpaper/
   logged, and a failed event shows a short host toast.
 - **Dropped second tap.** Radio and toggle events are applied optimistically and queued in order (a
   newer tap on the same control replaces its queued event), so two quick taps both apply.
-- **Defaults after a failed state read.** `drawer screen` marks the reply `"stale": true` when the
-  state action failed; the mod keeps the previous model of that screen.
+- **Defaults after a failed state read.** `drawer screen` marks the reply `"stale": true` (and
+  `stale_reason`) when the state action failed; the mod keeps the previous model of that screen.
+- **Empty gallery after a re-fit (device, 11 Oct 2026).** A mode change re-fitted every picture and
+  deleted its thumbnail; `state` then tried to make two thumbnails per read, which takes seconds on
+  the Kobo, so every read hit the 1 s budget and was killed before it wrote one. With nothing to
+  keep, the mod showed the `ui.json` defaults: "No pictures" while the list row said 7. Fix: a
+  re-fit writes the new thumbnail itself; `state` never decodes a picture and starts the detached
+  `wallpaper thumbnails` job instead; on opening, a stale or failed read is retried once and then
+  shows the error screen with Try again, never the defaults; every failure is in debug.log.

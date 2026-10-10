@@ -39,7 +39,7 @@ func Convert(content []byte, size Size, mode Mode) ([]byte, error) {
 	fitted := fitToScreen(gray, size, mode)
 	gray = nil
 	ditherFloydSteinberg(fitted)
-	return encodePNG(fitted)
+	return encodePNG(fitted, png.BestCompression)
 }
 
 func decode(content []byte) (image.Image, error) {
@@ -59,6 +59,9 @@ func decode(content []byte) (image.Image, error) {
 
 // toGray flattens transparency onto white, then takes luma, so the result is a plain gray plane.
 func toGray(source image.Image) *image.Gray {
+	if gray, isGray := source.(*image.Gray); isGray {
+		return copyGray(gray) // our own converted pictures: no per-pixel colour conversion
+	}
 	bounds := source.Bounds()
 	gray := image.NewGray(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
 	for y := 0; y < bounds.Dy(); y++ {
@@ -71,6 +74,18 @@ func toGray(source image.Image) *image.Gray {
 		}
 	}
 	return gray
+}
+
+// copyGray returns the pixels of gray in a fresh image whose origin is 0, 0 (callers index Pix
+// from there and change it in place).
+func copyGray(gray *image.Gray) *image.Gray {
+	width, height := gray.Rect.Dx(), gray.Rect.Dy()
+	copied := image.NewGray(image.Rect(0, 0, width, height))
+	for y := 0; y < height; y++ {
+		from := gray.PixOffset(gray.Rect.Min.X, gray.Rect.Min.Y+y)
+		copy(copied.Pix[y*copied.Stride:y*copied.Stride+width], gray.Pix[from:from+width])
+	}
+	return copied
 }
 
 // fitToScreen scales gray into a size-sized image: fill covers and crops, fit letterboxes on white.
@@ -185,9 +200,9 @@ func nearestLevel(value int) int {
 	return min(max(level, 0), grayLevels-1) * levelStep
 }
 
-func encodePNG(gray *image.Gray) ([]byte, error) {
+func encodePNG(gray *image.Gray, level png.CompressionLevel) ([]byte, error) {
 	var buffer bytes.Buffer
-	encoder := png.Encoder{CompressionLevel: png.BestCompression}
+	encoder := png.Encoder{CompressionLevel: level}
 	if err := encoder.Encode(&buffer, gray); err != nil {
 		return nil, i18n.NewError("msg.err_encode").WithCause(err)
 	}

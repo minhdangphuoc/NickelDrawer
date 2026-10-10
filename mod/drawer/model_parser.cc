@@ -461,6 +461,7 @@ bool parseScreen(const QByteArray &json, ScreenModel *screen, QString *failure)
     }
     screen->isLive = boolField(object, "live");
     screen->isStale = boolField(object, "stale");
+    screen->staleReason = stringField(object, "stale_reason");
     screen->value = stringField(object, "value");
     QJsonArray icons = object.value(QLatin1String("actions")).toArray();
     for (int i = 0; i < icons.size() && i < MAX_HEADER_ICONS; i++) {

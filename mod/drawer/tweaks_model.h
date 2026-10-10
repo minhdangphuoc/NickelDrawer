@@ -12,12 +12,15 @@
 struct TweakItem {
     QString id;
     QString label;
+    QString caption;     // optional muted line under the label
     TweaksLogic::Kind kind = TweaksLogic::KIND_ACTION;
     bool isOn = false;   // toggle
     QString infoText;    // info
     QString confirm;     // action: asked first when not empty
 
     bool isTappable() const { return kind != TweaksLogic::KIND_INFO; }
+    // Info cells stack label and value; others stack label and caption when there is one.
+    bool hasCaption() const { return kind != TweaksLogic::KIND_INFO && !caption.isEmpty(); }
 };
 
 // Reply of `drawer tweaks`.

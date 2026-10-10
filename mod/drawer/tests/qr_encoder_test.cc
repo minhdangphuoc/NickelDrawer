@@ -3,7 +3,7 @@
 //   make -C mod/drawer docker-test
 
 #include "../qr_encoder.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 struct QrVector {
     const char *text;

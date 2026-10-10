@@ -132,9 +132,9 @@ func TestModListsTheSameModelsAsTheProjectConfig(t *testing.T) {
 		want = append(want, model.ID+":"+model.Codename)
 	}
 	sort.Strings(want)
-	got := supportedModelPairs(t, "../../mod/drawer/device_gate.cc")
+	got := supportedModelPairs(t, "../../mod/common/device_gate.cc")
 	if strings.Join(got, ",") != strings.Join(want, ",") {
-		t.Errorf("mod/drawer/device_gate.cc lists %v, project.json lists %v", got, want)
+		t.Errorf("mod/common/device_gate.cc lists %v, project.json lists %v", got, want)
 	}
 }
 
@@ -165,7 +165,7 @@ func quotedBuilds(t *testing.T, path string) []string {
 func TestModsListTheSameFirmwareAsTheProjectConfig(t *testing.T) {
 	want := append([]string{}, loadShipped(t).SupportedFirmware...)
 	sort.Strings(want)
-	for _, source := range []string{"../../mod/drawer/nickel_bridge.cc", "../../mod/drawer-proto/device_state.cc"} {
+	for _, source := range []string{"../../mod/common/device_gate.cc", "../../mod/drawer-proto/device_state.cc"} {
 		got := quotedBuilds(t, source)
 		if strings.Join(got, ",") != strings.Join(want, ",") {
 			t.Errorf("%s lists %v, project.json lists %v", source, got, want)

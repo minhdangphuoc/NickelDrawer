@@ -402,6 +402,9 @@ bool onItemKey(Cursor *cursor, const char *key, ParsedItem *parsed)
     if (!strcmp(key, "label")) {
         return readOptionalString(cursor, item->label, sizeof(item->label));
     }
+    if (!strcmp(key, "caption")) {
+        return readOptionalString(cursor, item->caption, sizeof(item->caption));
+    }
     if (!strcmp(key, "kind")) {
         return readOptionalString(cursor, parsed->kind, sizeof(parsed->kind));
     }
@@ -556,7 +559,10 @@ TweaksLogic::NickelAction nickelActionFromName(const char *name)
     if (!strcmp(name, "reboot")) {
         return TweaksLogic::NICKEL_REBOOT;
     }
-    return !strcmp(name, "rescan-library") ? TweaksLogic::NICKEL_RESCAN_LIBRARY : TweaksLogic::NICKEL_UNKNOWN;
+    if (!strcmp(name, "rescan-library")) {
+        return TweaksLogic::NICKEL_RESCAN_LIBRARY;
+    }
+    return !strcmp(name, "statusbar-screenshot") ? TweaksLogic::NICKEL_STATUSBAR_SCREENSHOT : TweaksLogic::NICKEL_UNKNOWN;
 }
 
 // The whole text is one object and nothing follows it.
@@ -656,9 +662,9 @@ int boxHeight(int itemCountOnFirstPage, int pageCount)
     return 2 * BOX_BORDER + TITLE_ROW_HEIGHT + panelHeight(itemCountOnFirstPage, pageCount);
 }
 
-int maxLabelLines(Kind kind)
+int maxLabelLines(Kind kind, bool hasCaption)
 {
-    return kind == KIND_INFO ? 1 : LABEL_MAX_LINES;
+    return kind == KIND_INFO || hasCaption ? 1 : LABEL_MAX_LINES;
 }
 
 int labelWidth(Kind kind, int cellWidth)
@@ -673,9 +679,10 @@ static Rect makeRect(int x, int y, int width, int height)
     return rect;
 }
 
-CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCount)
+CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCount, bool hasCaption)
 {
-    int lines = labelLineCount < 1 ? 1 : labelLineCount;
+    bool isStacked = kind == KIND_INFO || hasCaption;
+    int lines = isStacked ? 1 : (labelLineCount < 1 ? 1 : labelLineCount);
     CellLayout layout;
     layout.isCentred = kind == KIND_ACTION;
     layout.value = makeRect(0, 0, 0, 0);
@@ -683,13 +690,13 @@ CellLayout cellLayout(Kind kind, int cellWidth, int cellHeight, int labelLineCou
     layout.stateWord = makeRect(0, 0, 0, 0);
     int width = labelWidth(kind, cellWidth);
     int labelHeight = lines * LABEL_LINE_HEIGHT;
-    if (kind == KIND_INFO) {
+    if (isStacked) {
         int blockTop = (cellHeight - LABEL_LINE_HEIGHT - VALUE_LINE_HEIGHT) / 2;
         layout.label = makeRect(CELL_PADDING, blockTop, width, LABEL_LINE_HEIGHT);
         layout.value = makeRect(CELL_PADDING, blockTop + LABEL_LINE_HEIGHT, width, VALUE_LINE_HEIGHT);
-        return layout;
+    } else {
+        layout.label = makeRect(CELL_PADDING, (cellHeight - labelHeight) / 2, width, labelHeight);
     }
-    layout.label = makeRect(CELL_PADDING, (cellHeight - labelHeight) / 2, width, labelHeight);
     if (kind == KIND_TOGGLE) {
         int blockHeight = TOGGLE_SWITCH_HEIGHT + TOGGLE_STATE_TOP_GAP + TOGGLE_STATE_HEIGHT;
         int blockTop = (cellHeight - blockHeight) / 2;

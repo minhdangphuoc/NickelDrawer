@@ -3,7 +3,7 @@
 // event; and a second tap while one ran was dropped. Run: make -C mod/drawer docker-test
 
 #include "../event_queue.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace EventQueue;
 

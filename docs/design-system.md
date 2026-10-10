@@ -4,7 +4,7 @@ CopperUI is the design system of NickelDrawer and of software built on it: this 
 
 Status: approved on the design canvas, 10 Oct 2026. It replaces the sizes in `docs/spec/ui-kit.md` §2. The numbers live in `lib/copperui/tokens/copperui.tokens.json`; `make tokens` generates `lib/copperui/include/copperui/tokens.h` (used by `mod/drawer/screen_logic.h`), `internal/copperui/tokens.go` (used by `cmd/ndpreview/metrics.go`) and the table `docs/copperui-tokens.md`, and `make check` fails when one of them is stale. The `ui.json` contract (`docs/spec/ui-json.md`) does not change except where §6 says "schema".
 
-Every number is a device pixel on the Kobo Libra 2 panel: 1264 × 1680, 300 ppi, 1 mm = 11.8 px, 16 grey levels. Other models with the same panel (Libra H2O, Libra Colour) get the same numbers; the drawer refuses any other panel (`mod/drawer/device_gate.cc`).
+Every number is a device pixel on the Kobo Libra 2 panel: 1264 × 1680, 300 ppi, 1 mm = 11.8 px, 16 grey levels. Other models with the same panel (Libra H2O, Libra Colour) get the same numbers; the drawer refuses any other panel (`mod/common/device_gate.cc`).
 
 ## 1. Principles
 

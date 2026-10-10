@@ -3,7 +3,7 @@
 // and the 2-column grid of the Tweaks modal. Run: make -C mod/drawer docker-test
 
 #include "../tweaks_logic.h"
-#include "test_expect.h"
+#include "../../common/test_expect.h"
 
 using namespace TweaksLogic;
 
@@ -23,7 +23,8 @@ static ParseStatus parseReplyText(const char *json, Reply *reply)
 static const char SPEC_LIST[] =
     "{\"v\":1,\"items\":[\n"
     "  {\"id\":\"screensaver\",\"label\":\"Sleep screen\",\"kind\":\"toggle\",\"value\":true},\n"
-    "  {\"id\":\"screenshots\",\"label\":\"Screenshots\",\"kind\":\"toggle\",\"value\":false},\n"
+    "  {\"id\":\"screenshots\",\"label\":\"Screenshots\",\"caption\":\"With the power button\",\"kind\":\"toggle\","
+    "\"value\":false},\n"
     "  {\"id\":\"auto-usb\",\"label\":\"Auto USB connect\",\"kind\":\"toggle\",\"value\":false},\n"
     "  {\"id\":\"legibility\",\"label\":\"Text legibility\",\"kind\":\"toggle\",\"value\":false},\n"
     "  {\"id\":\"ip\",\"label\":\"IP address\",\"kind\":\"info\",\"value\":\"192.168.1.5\"},\n"
@@ -44,6 +45,8 @@ static void testSpecListIsReadInOrder()
     EXPECT_EQ(KIND_TOGGLE, list.items[0].kind);
     EXPECT_EQ(1, list.items[0].isOn);
     EXPECT_EQ(0, list.items[1].isOn);
+    EXPECT_STREQ("With the power button", list.items[1].caption);
+    EXPECT_STREQ("", list.items[0].caption); // no caption: the label alone
     EXPECT_EQ(KIND_INFO, list.items[4].kind);
     EXPECT_STREQ("192.168.1.5", list.items[4].text);
     EXPECT_EQ(KIND_ACTION, list.items[5].kind);
@@ -145,6 +148,16 @@ static void testNickelActionReplies()
     EXPECT_EQ(NICKEL_RESCAN_LIBRARY, reply.nickel);
     EXPECT_EQ(PARSE_OK, parseReplyText("{\"v\":1,\"ok\":true,\"nickel\":\"self-destruct\"}", &reply));
     EXPECT_EQ(NICKEL_UNKNOWN, reply.nickel);
+}
+
+static void testStatusBarScreenshotReply()
+{
+    Reply reply;
+    EXPECT_EQ(PARSE_OK, parseReplyText("{\"v\":1,\"ok\":true,\"toast\":\"Screenshot button off\",\"value\":false,"
+                                       "\"nickel\":\"statusbar-screenshot\"}", &reply));
+    EXPECT_EQ(NICKEL_STATUSBAR_SCREENSHOT, reply.nickel);
+    EXPECT_EQ(1, reply.hasValue);
+    EXPECT_EQ(0, reply.value);
 }
 
 static void testErrorReplies()
@@ -289,6 +302,28 @@ static void testInfoCellStacksLabelAndValue()
     EXPECT_EQ(56, cellLayout(KIND_INFO, 517, 128, 2).label.height);
 }
 
+static void testCaptionStacksUnderAOneLineLabel()
+{
+    EXPECT_EQ(1, maxLabelLines(KIND_TOGGLE, true));
+    EXPECT_EQ(1, maxLabelLines(KIND_ACTION, true));
+    EXPECT_EQ(2, maxLabelLines(KIND_TOGGLE, false));
+    CellLayout toggle = cellLayout(KIND_TOGGLE, 516, 128, 2, true);
+    EXPECT_EQ(0, toggle.isCentred);
+    EXPECT_EQ(56, toggle.label.height); // one line, whatever the wrap said
+    EXPECT_EQ((128 - 56 - 46) / 2, toggle.label.y);
+    EXPECT_EQ(toggle.label.y + 56, toggle.value.y);
+    EXPECT_EQ(46, toggle.value.height);
+    EXPECT_EQ(labelWidth(KIND_TOGGLE, 516), toggle.value.width);
+    EXPECT_EQ(94, toggle.switchImage.width); // the switch column is unchanged
+    EXPECT_EQ(1, toggle.value.x + toggle.value.width + 24 <= toggle.switchImage.x);
+    CellLayout action = cellLayout(KIND_ACTION, 516, 128, 1, true);
+    EXPECT_EQ(1, action.isCentred);
+    EXPECT_EQ(action.label.y + 56, action.value.y);
+    EXPECT_EQ(0, action.switchImage.height);
+    // Without a caption nothing changes.
+    EXPECT_EQ(0, cellLayout(KIND_TOGGLE, 516, 128, 1, false).value.height);
+}
+
 int main()
 {
     testSpecListIsReadInOrder();
@@ -299,6 +334,7 @@ int main()
     testLongLabelIsCutAtACharacterBoundary();
     testToggleReply();
     testNickelActionReplies();
+    testStatusBarScreenshotReply();
     testErrorReplies();
     testGridRowsAndCells();
     testGridHeightAndRightCells();
@@ -308,5 +344,6 @@ int main()
     testActionCellCentresItsLines();
     testToggleCellPutsTheSwitchAndStateWordAtTheRight();
     testInfoCellStacksLabelAndValue();
+    testCaptionStacksUnderAOneLineLabel();
     return finishTests("tweaks_logic");
 }

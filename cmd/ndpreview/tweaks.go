@@ -18,7 +18,9 @@ import (
 //   - toggle cell: the label at the left (one or two lines), Nickel's switch image at the right
 //     with the state word under it, both vertically centred (a 516 px cell has no room for the
 //     word beside the switch as Settings rows have it);
-//   - info cell (IP address): the label on one line with the value as a muted caption under it.
+//   - info cell (IP address): the label on one line with the value as a muted caption under it;
+//   - any cell with a caption (Screenshots): the label on one line and the caption muted under it,
+//     as the info cell stacks them; a toggle keeps its switch at the right, an action stays centred.
 const (
 	tweaksCellHeight  = copperui.TweaksCellHeight
 	tweaksCellPadding = copperui.TweaksCellPadding
@@ -41,33 +43,67 @@ type tweakCell struct {
 	label, value string
 	kind         tweakKind
 	isOn         bool
+	caption      string // optional second line under the label (docs/spec/tweaks.md)
 }
 
 var sampleTweaks = map[string][]tweakCell{
-	"en": {{"Sleep screen", "", tweakToggle, true}, {"Screenshots", "", tweakToggle, false}, {"Auto USB connect", "", tweakToggle, false},
-		{"Text legibility", "", tweakToggle, false}, {"IP address", "192.168.1.5", tweakInfo, false}, {"Invert and reboot", "", tweakAction, false},
-		{"Sleep", "", tweakAction, false}, {"Reboot", "", tweakAction, false}, {"Rescan library", "", tweakAction, false}},
-	"vi": {{"Màn hình chờ", "", tweakToggle, true}, {"Chụp màn hình", "", tweakToggle, false}, {"Tự động kết nối USB", "", tweakToggle, false},
-		{"Làm rõ chữ", "", tweakToggle, false}, {"Địa chỉ IP", "192.168.1.5", tweakInfo, false}, {"Đảo màu và khởi động lại", "", tweakAction, false},
-		{"Ngủ", "", tweakAction, false}, {"Khởi động lại", "", tweakAction, false}, {"Quét lại thư viện", "", tweakAction, false}},
+	"en": {
+		{label: "Sleep screen", kind: tweakToggle, isOn: true},
+		{label: "Screenshots", kind: tweakToggle, caption: "With the power button"},
+		{label: "Screenshot button", kind: tweakToggle, isOn: true, caption: "In the status bar"},
+		{label: "Auto USB connect", kind: tweakToggle},
+		{label: "Text legibility", kind: tweakToggle},
+		{label: "IP address", value: "192.168.1.5", kind: tweakInfo},
+		{label: "Invert and reboot", kind: tweakAction},
+		{label: "Sleep", kind: tweakAction},
+		{label: "Reboot", kind: tweakAction},
+		{label: "Rescan library", kind: tweakAction},
+	},
+	"vi": {
+		{label: "Màn hình chờ", kind: tweakToggle, isOn: true},
+		{label: "Chụp màn hình", kind: tweakToggle, caption: "Bằng nút nguồn"},
+		{label: "Nút chụp màn hình", kind: tweakToggle, isOn: true, caption: "Trên thanh trạng thái"},
+		{label: "Tự động kết nối USB", kind: tweakToggle},
+		{label: "Làm rõ chữ", kind: tweakToggle},
+		{label: "Địa chỉ IP", value: "192.168.1.5", kind: tweakInfo},
+		{label: "Đảo màu và khởi động lại", kind: tweakAction},
+		{label: "Ngủ", kind: tweakAction},
+		{label: "Khởi động lại", kind: tweakAction},
+		{label: "Quét lại thư viện", kind: tweakAction},
+	},
 }
 
 // tweaksCellItems draws one cell whose top-left corner is (cellX, cellY) and whose width is cellWidth.
 func tweaksCellItems(cell tweakCell, cellX, cellY, cellWidth int, locale string) []Item {
 	inner := cellWidth - 2*tweaksCellPadding
 	left := cellX + tweaksCellPadding
-	switch cell.kind {
-	case tweakToggle:
+	switch {
+	case cell.kind == tweakToggle:
 		return tweakToggleItems(cell, left, cellY, inner, locale)
-	case tweakInfo:
+	case cell.kind == tweakInfo:
 		return tweakInfoItems(cell, left, cellY, inner)
+	case cell.caption != "":
+		return tweakCaptionedItems(cell.label, cell.caption, left, cellY, inner, "center")
 	}
 	return []Item{tweakLabelItem(cell.label, left, cellY, inner, "center")}
 }
 
+// tweakCaptionedItems stacks a one-line label and its muted one-line caption, the pair centred
+// vertically (the info cell's block).
+func tweakCaptionedItems(label, caption string, left, cellY, width int, align string) []Item {
+	top := cellY + (tweaksCellHeight-rowLabelHeight-captionLineH)/2
+	labelItem := textItem(left, top, width, rowLabelHeight, elide(label, width, regular(rowTextSize, familySans), false), rowTextSize, familySans, align)
+	captionItem := textItem(left, top+rowLabelHeight, width, captionLineH, elide(caption, width, regular(captionSize, familySans), false), captionSize, familySans, align)
+	captionItem.Ink = inkMuted
+	return []Item{labelItem, captionItem}
+}
+
 // tweakLabelItem is the label as one block of at most two lines, vertically centred in the cell.
 func tweakLabelItem(label string, left, cellY, width int, align string) Item {
-	lines := wrapLimited(label, width, regular(rowTextSize, familySans), tweaksLabelLines)
+	return tweakLabelLines(wrapLimited(label, width, regular(rowTextSize, familySans), tweaksLabelLines), left, cellY, width, align)
+}
+
+func tweakLabelLines(lines []string, left, cellY, width int, align string) Item {
 	height := len(lines) * rowLabelHeight
 	return Item{Shape: "text", X: left, Y: cellY + (tweaksCellHeight-height)/2, W: width, H: height, Lines: lines, Size: rowTextSize,
 		LineH: rowLabelHeight, Family: familySans, Align: align, Ink: inkBlack, Fill: noFill}
@@ -82,16 +118,19 @@ func tweakToggleItems(cell tweakCell, left, cellY, inner int, locale string) []I
 		state = hostText(locale, "on")
 	}
 	word := textItem(switchX, switchY+toggleSwitchHeight+tweaksStateGap, toggleSwitchWidth, tweaksStateHeight, strings.ToUpper(state), toggleStateSize, familySans, "center")
-	items := []Item{tweakLabelItem(cell.label, left, cellY, inner-toggleSwitchWidth-rhythm, "start"), word}
+	labelWidth := inner - toggleSwitchWidth - rhythm
+	var texts []Item
+	if cell.caption != "" {
+		texts = tweakCaptionedItems(cell.label, cell.caption, left, cellY, labelWidth, "start")
+	} else {
+		texts = []Item{tweakLabelItem(cell.label, left, cellY, labelWidth, "start")}
+	}
+	items := append(texts, word)
 	return append(items, switchItems(switchX, switchY, cell.isOn, inkBlack)...)
 }
 
 func tweakInfoItems(cell tweakCell, left, cellY, inner int) []Item {
-	top := cellY + (tweaksCellHeight-rowLabelHeight-captionLineH)/2
-	label := textItem(left, top, inner, rowLabelHeight, elide(cell.label, inner, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start")
-	value := textItem(left, top+rowLabelHeight, inner, captionLineH, elide(cell.value, inner, regular(captionSize, familySans), false), captionSize, familySans, "start")
-	value.Ink = inkMuted
-	return []Item{label, value}
+	return tweakCaptionedItems(cell.label, cell.value, left, cellY, inner, "start")
 }
 
 // tweaksPage draws the modal centred on the whole screen, over the white page.
@@ -146,7 +185,7 @@ func tweaksPage(cells []tweakCell, title, locale string, pageIndex int) Page {
 }
 
 func runTweaks(args []string, stdout, stderr io.Writer) int {
-	flags, ok := parseDrawerFlags("tweaks", args, stderr, 9)
+	flags, ok := parseDrawerFlags("tweaks", args, stderr, len(sampleTweaks["en"]))
 	if !ok {
 		return exitFailure
 	}

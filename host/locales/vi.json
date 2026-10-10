@@ -95,6 +95,9 @@
   "drawer.script_failed": "{label} không thành công.",
   "tweak.screensaver.label": "Màn hình chờ",
   "tweak.screenshots.label": "Chụp màn hình",
+  "tweak.screenshots.caption": "Bằng nút nguồn",
+  "tweak.statusbar-screenshot.label": "Nút chụp màn hình",
+  "tweak.statusbar-screenshot.caption": "Trên thanh trạng thái",
   "tweak.auto-usb.label": "Tự kết nối USB",
   "tweak.legibility.label": "Chữ rõ nét",
   "tweak.ip.label": "Địa chỉ IP",
@@ -177,6 +180,7 @@
   "mod.unsupported_model": "NickelDrawer chưa hỗ trợ máy này",
   "mod.qt6_upgrade_pending": "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động",
   "mod.pending": "Đang xử lý…",
+  "mod.state_failed": "Ứng dụng không trả lời.",
   "format.date": "dd/MM/yyyy",
   "format.datetime": "dd/MM/yyyy HH:mm",
   "format.time": "HH:mm"

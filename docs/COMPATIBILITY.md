@@ -79,14 +79,14 @@ Reading the table:
 
 The app screens are drawn for the Libra 2 panel: `SCREEN_WIDTH` 1264 and `SCREEN_HEIGHT` 1680 in `mod/drawer/screen_logic.h`. On another resolution they would be clipped, off-centre or too small, so the drawer refuses to run there. Two checks, and whichever fails first turns the drawer off:
 
-1. **Model.** At boot the mod reads the device id, the last field of `.kobo/version` (the same line it reads the firmware build from). Its last three digits name the model; only 384 (Libra H2O), 388 (Libra 2) and 390 (Libra Colour) pass. The list is `supported_models` in `host/config/project.json`, mirrored in `mod/drawer/device_gate.cc` and kept equal by a test.
+1. **Model.** At boot the mod reads the device id, the last field of `.kobo/version` (the same line it reads the firmware build from). Its last three digits name the model; only 384 (Libra H2O), 388 (Libra 2) and 390 (Libra Colour) pass. The list is `supported_models` in `host/config/project.json`, mirrored in `mod/common/device_gate.cc` and kept equal by a test.
 2. **Screen.** When the More tab is first built, the mod asks Nickel's Qt for the screen size and accepts only 1264×1680 (or 1680×1264 rotated). This catches a model whose real panel differs from the spec sheet.
 
 A refused model gets the same treatment as an unknown firmware: no Apps or Tweaks rows, one toast "NickelDrawer does not support this model yet" (vi: "NickelDrawer chưa hỗ trợ máy này"), a log line with the device id. The firmware build check still runs too; both must pass. Why the device id and not other sources: [re/notes/device-detection.md](../re/notes/device-detection.md). To rehearse it on a supported Kobo, create the flag `.adds/nickeldrawer/test-unknown-model` and reboot (checklist case FI-13); delete it to go back to normal.
 
 ### Why 🟡 is not a promise
 
-- **Exact build list.** The mod reads the build from `.kobo/version` and loads only on the five builds in `host/config/project.json` and `mod/drawer/nickel_bridge.cc`. On any other build it shows the "unsupported firmware" toast and turns itself off; the Kobo works as normal. The Libra H2O can run 4.38.23828, the same string as the Libra 2, but the mod's symbols were verified only against Libra 2 libnickel. Every libnickel symbol is looked up at boot and a missing one switches off just the feature that needs it. Do not rely on this: it is untested.
+- **Exact build list.** The mod reads the build from `.kobo/version` and loads only on the five builds in `host/config/project.json` and `mod/common/device_gate.cc`. On any other build it shows the "unsupported firmware" toast and turns itself off; the Kobo works as normal. The Libra H2O can run 4.38.23828, the same string as the Libra 2, but the mod's symbols were verified only against Libra 2 libnickel. Every libnickel symbol is looked up at boot and a missing one switches off just the feature that needs it. Do not rely on this: it is untested.
 - **Newer 4.x lines.** The Libra Colour is on 4.45, which is not on our list, so it gets the firmware toast. Do not install packages meant for another model (a 4.39 package once boot-looped Libra 2 devices).
 - **Same pixels, other panel.** The Libra H2O and Libra Colour have the 1264×1680 size of the Libra 2 and should lay out the same; the Libra Colour's colour screen has not been looked at.
 - **Colour model.** The Libra Colour has extra Nickel parts (stylus notebooks, colour screen). Whether the same symbols exist is unknown.
@@ -99,7 +99,7 @@ Libra Colour and Clara BW/Colour (and their Tolino twins) can be converted to th
 
 1. Find your build: **Settings** → **Device information**, or the third field of `.kobo/version`.
 2. Check the symbols off the device: get the matching update package for your model from Kobo (it is never committed here), then run `re/scripts/fetch-fw.sh` and `tools/symcheck.py` as `tools/fw-watch.sh --fetch` does for the Libra 2. `tools/fw-watch.sh` itself is hard-wired to the Libra 2 device id; for another model you pass your own id and package.
-3. A model with another screen size also needs the layout in `mod/drawer/screen_logic.h` to learn that size before it can join `supported_models` in `host/config/project.json` (and `mod/drawer/device_gate.cc`).
+3. A model with another screen size also needs the layout in `mod/drawer/screen_logic.h` to learn that size before it can join `supported_models` in `host/config/project.json` (and `mod/common/device_gate.cc`).
 4. Open an issue with the "Bug report" template: model, build, symbol-check result. Add only text, never Kobo files.
 5. A device run needs the maintainer's uninstall drill first (gate G1). Do not test it on your only reader.
 

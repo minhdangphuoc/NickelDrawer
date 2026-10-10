@@ -68,6 +68,8 @@ func buildIconTable() []icon {
 		{"apps/todo/icon-64.png", "list-check", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
 		{"apps/uikit/icon-64.png", "layout-dashboard", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
 		{"apps/ghsync/icon-64.png", "brand-github", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		// The status-bar helper (helpers/statusbar-screenshot): beside Nickel's own status-bar icons.
+		{"helpers/statusbar-screenshot/icons/screenshot-64.png", "screenshot", uiIconSmall, tablerStroke * uiIconSmall / tablerGrid, 0},
 		{"host/icons/refresh.png", "refresh", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"host/icons/updates.png", "cloud-download", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		// The "Apps" row in Nickel's More tab (mod/drawer/entry_row.cc), next to Nickel's own rows.

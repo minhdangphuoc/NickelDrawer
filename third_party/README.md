@@ -11,7 +11,7 @@
 |---|---|---|---|
 | `tabler-icons/` | https://github.com/tabler/tabler-icons (npm `@tabler/icons`) | `3.49.0` (tag `v3.49.0`; npm tarball sha512 `l+GnSkFE...c6lw==` verified) | MIT, see `tabler-icons/LICENSE` |
 
-Only the outline SVGs we use are vendored in `tabler-icons/svg/`: `adjustments-horizontal`, `apps`, `arrow-left`, `books`, `brand-github`, `check`, `chevron-left`, `chevron-right`, `cloud-download`, `download`, `layout-dashboard`, `layout-grid`, `layout-list`, `list-check`, `photo`, `photo-off`, `plus`, `refresh`, `send`, `settings`, `toggle-left`, `toggle-right`, `x`. `cmd/iconsgen` rasterizes them to the PNGs under `apps/*/icon.png` and `host/icons/`.
+Only the outline SVGs we use are vendored in `tabler-icons/svg/`: `adjustments-horizontal`, `apps`, `arrow-left`, `books`, `brand-github`, `check`, `chevron-left`, `chevron-right`, `cloud-download`, `download`, `layout-dashboard`, `layout-grid`, `layout-list`, `list-check`, `photo`, `photo-off`, `plus`, `refresh`, `screenshot`, `send`, `settings`, `toggle-left`, `toggle-right`, `x`. `cmd/iconsgen` rasterizes them to the PNGs under `apps/*/icon.png`, `host/icons/` and `helpers/statusbar-screenshot/icons/`.
 
 ## Go modules (build tools only, not shipped to the device)
 

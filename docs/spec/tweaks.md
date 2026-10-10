@@ -7,7 +7,7 @@ The native "Tinh chỉnh" modal (More tab, "Thêm") replaces the NickelMenu twea
 ```json
 {"v":1,"items":[
   {"id":"screensaver","label":"Sleep screen","kind":"toggle","value":true},
-  {"id":"screenshots","label":"Screenshots","kind":"toggle","value":false},
+  {"id":"screenshots","label":"Screenshots","caption":"With the power button","kind":"toggle","value":false},
   {"id":"auto-usb","label":"Auto USB connect","kind":"toggle","value":false},
   {"id":"legibility","label":"Text legibility","kind":"toggle","value":false},
   {"id":"ip","label":"IP address","kind":"info","value":"192.168.1.5"},
@@ -18,7 +18,9 @@ The native "Tinh chỉnh" modal (More tab, "Thêm") replaces the NickelMenu twea
 ]}
 ```
 
-- Items come in the order above; all `label` and `confirm` texts are localized by `appsctl` (device `CurrentLocale`).
+- Items come in the order above; all `label`, `caption` and `confirm` texts are localized by `appsctl` (device `CurrentLocale`).
+- `caption` (optional, any kind except `info`): a short muted line the mod draws under the label (one line, elided). Absent: the label alone, as before. A mod that does not know the field ignores it.
+- An item can be absent when the thing it controls is not installed (see `statusbar-screenshot` below); the mod draws whatever is listed.
 - `kind`:
   - `toggle`: `value` is a JSON boolean (the mod shows On/Off and flips it with `tweak`).
   - `info`: `value` is a string shown read-only (tapping does nothing). `ip` is the first non-loopback IPv4 address, or the localized "No Wi-Fi" text.
@@ -34,7 +36,7 @@ Applies one tweak (toggles flip their current value) and replies:
 {"v":1,"ok":true,"toast":"Rebooting","nickel":"reboot"}
 ```
 
-- `toast`: localized text to show. `value`: the new boolean, only for toggles. `nickel`: optional native action the mod performs after the toast: `reboot`, `sleep`, `rescan-library`. Without `nickel` the mod does nothing else.
+- `toast`: localized text to show. `value`: the new boolean, only for toggles. `nickel`: optional native action the mod performs after the toast: `reboot`, `sleep`, `rescan-library`, `statusbar-screenshot` (the mod sets the dynamic property `nhScreenshotButton` to `value` on Nickel's status bar; nothing happens when no helper listens). Without `nickel` the mod does nothing else.
 - After a toggle the mod updates the row from `value`; it does not re-read the list.
 - Error (exit code 2, same shape as the rest of the protocol, plus `ok:false` for convenience):
 
@@ -51,6 +53,7 @@ Applies one tweak (toggles flip their current value) and replies:
 |---|---|---|
 | `screensaver` | `<root>/.kobo/screensaver` (on) ⇄ `<root>/.kobo/screensaver.disabled` (off), by rename | Off keeps the pictures, Nickel then shows its own sleep screen. Toggling with neither folder present is an error. |
 | `screenshots` | `Kobo eReader.conf` `[FeatureSettings]` `Screenshots=true/false` | |
+| `statusbar-screenshot` | Flag file `<root>/.adds/helpers/screenshot/off` (present = off, absent = on) | Listed, right after `screenshots`, only while `/usr/local/Kobo/imageformats/libstatusbarshot.so` exists (the maintainer's status-bar helper, not part of the releases). Replies with `nickel: statusbar-screenshot`. |
 | `auto-usb` | `Kobo eReader.conf` `[DeveloperSettings]` `AutoUsbGadget=true/false` | Same setting NickelMenu's `auto_usb_gadget` toggled. |
 | `legibility` | `Kobo eReader.conf` `[Reading]` `webkitTextRendering=optimizeLegibility` (on) / line removed (off) | kepub books only; toast says to reopen the book. Keys verified against libnickel 4.38.23828. |
 | `invert-reboot` | `Kobo eReader.conf` `[FeatureSettings]` `InvertScreen=true/false` | Flips, then `nickel: reboot`. |

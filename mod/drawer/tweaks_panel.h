@@ -14,7 +14,7 @@ class QLabel;
 // One tweak, painted with measured text in Nickel's sans (cell geometry: tweaks_logic.h): an
 // action is its label, centred; a toggle its label at the left and, at the right, Nickel's switch
 // image with the state word under it; an info item its label and, under it, the value as a
-// caption. Toggles and actions invert while pressed; info cells take no presses.
+// caption; a toggle or action with a caption stacks it muted under a one-line label the same way. Toggles and actions invert while pressed; info cells take no presses.
 class TweakCell : public PressArea {
 public:
     TweakCell(const TweakItem &item, QWidget *parent);

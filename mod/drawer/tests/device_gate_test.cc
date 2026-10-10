@@ -1,8 +1,11 @@
 // Host unit tests for device_gate (no Qt, no C++ standard library).
 // Run: make -C mod/drawer docker-test
 
-#include "../device_gate.h"
-#include "test_expect.h"
+#include "../../common/device_gate.h"
+#include "../../common/test_expect.h"
+
+#include <stdlib.h>
+#include <unistd.h>
 
 using namespace DeviceGate;
 
@@ -78,6 +81,36 @@ static void testMissingOrOversizedFieldsFail()
     EXPECT_EQ(false, copyLastVersionField(NULL, field, sizeof(field)));
 }
 
+static void testOnlyTheFiveTestedBuildsAreSupported()
+{
+    EXPECT_EQ(true, isSupportedFirmware("4.38.23552"));
+    EXPECT_EQ(true, isSupportedFirmware("4.38.23828"));
+    EXPECT_EQ(false, isSupportedFirmware("4.38.23829"));
+    EXPECT_EQ(false, isSupportedFirmware("5.0.0"));
+    EXPECT_EQ(false, isSupportedFirmware(""));
+    EXPECT_EQ(false, isSupportedFirmware(NULL));
+}
+
+static void testVersionFileIsReadAndClosed()
+{
+    char path[] = "/tmp/device_gate_test_XXXXXX";
+    int descriptor = mkstemp(path);
+    EXPECT_EQ(true, descriptor >= 0);
+    EXPECT_EQ((long)strlen(LIBRA_2_LINE), (long)write(descriptor, LIBRA_2_LINE, strlen(LIBRA_2_LINE)));
+    close(descriptor);
+    char firmware[32] = "unknown";
+    char deviceId[64] = "unknown";
+    EXPECT_EQ(true, readVersionFile(path, firmware, sizeof(firmware), deviceId, sizeof(deviceId)));
+    EXPECT_STREQ("4.38.23828", firmware);
+    EXPECT_STREQ("00000000-0000-0000-0000-000000000388", deviceId);
+    char tooSmall[4] = "x";
+    EXPECT_EQ(true, readVersionFile(path, tooSmall, sizeof(tooSmall), deviceId, sizeof(deviceId)));
+    EXPECT_STREQ("x", tooSmall); // does not fit: left as it was
+    unlink(path);
+    EXPECT_EQ(false, readVersionFile(path, firmware, sizeof(firmware), deviceId, sizeof(deviceId)));
+    EXPECT_STREQ("4.38.23828", firmware);
+}
+
 int main()
 {
     testModelsWithTheTestedPanelAreSupported();
@@ -87,5 +120,7 @@ int main()
     testVersionFieldsAreRead();
     testCarriageReturnIsNotPartOfTheLastField();
     testMissingOrOversizedFieldsFail();
+    testOnlyTheFiveTestedBuildsAreSupported();
+    testVersionFileIsReadAndClosed();
     return finishTests("device_gate");
 }

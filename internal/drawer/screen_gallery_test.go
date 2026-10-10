@@ -203,14 +203,14 @@ func TestScreenMarksFailedStateAsStale(t *testing.T) {
 			config, _ := testConfig(t, runner)
 			writeGalleryApp(t, config.AppsDir)
 			reply, err := config.Screen("pics", "", nil)
-			if err != nil || !reply.Stale {
-				t.Errorf("want stale, got %+v %v", reply, err)
+			if err != nil || !reply.Stale || reply.StaleReason == "" {
+				t.Errorf("want stale with a reason, got %+v %v", reply, err)
 			}
 		})
 	}
 	config, _ := testConfig(t, stateRunner(`{"summary":"ok"}`, ""))
 	writeGalleryApp(t, config.AppsDir)
-	if reply, _ := config.Screen("pics", "", nil); reply.Stale {
+	if reply, _ := config.Screen("pics", "", nil); reply.Stale || reply.StaleReason != "" {
 		t.Error("a good state is not stale")
 	}
 	writeScreenApp(t, config.AppsDir)
@@ -218,6 +218,25 @@ func TestScreenMarksFailedStateAsStale(t *testing.T) {
 	config.RunScript = failing
 	if reply, _ := config.Screen("demo", "", nil); !reply.Stale {
 		t.Error("demo has a state action that failed")
+	}
+}
+
+func TestStaleReasonNamesTimeoutExitAndBadOutput(t *testing.T) {
+	cases := []struct {
+		runner ScriptRunner
+		want   string
+	}{
+		{func(context.Context, string) ScriptOutput { return ScriptOutput{TimedOut: true, ExitCode: -1} }, "took longer than"},
+		{func(context.Context, string) ScriptOutput { return ScriptOutput{ExitCode: 3, Stderr: "boom\nmore"} }, "exited with 3: boom"},
+		{stateRunner("not json", ""), "did not print one JSON object"},
+	}
+	for _, tc := range cases {
+		config, _ := testConfig(t, tc.runner)
+		writeGalleryApp(t, config.AppsDir)
+		reply, err := config.Screen("pics", "", nil)
+		if err != nil || !strings.Contains(reply.StaleReason, tc.want) {
+			t.Errorf("stale reason %q, want it to contain %q (%v)", reply.StaleReason, tc.want, err)
+		}
 	}
 }
 

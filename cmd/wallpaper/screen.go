@@ -45,7 +45,8 @@ type screenJSON struct {
 }
 
 // state prints the variables of the app screen as one JSON object. Texts are localized here;
-// the last import line was written in the device language by the import run.
+// the last import line was written in the device language by the import run. Missing thumbnails
+// are made by a detached job afterwards; the live screen's next read shows them.
 func (current *session) state([]string) error {
 	state, err := current.service.ScreenState(current.stateFiles)
 	if err != nil {
@@ -55,7 +56,11 @@ func (current *session) state([]string) error {
 	if !state.Busy {
 		screen.Requests = current.service.TakeRequests()
 	}
-	return json.NewEncoder(current.out).Encode(screen)
+	if err := json.NewEncoder(current.out).Encode(screen); err != nil {
+		return err
+	}
+	current.startThumbnailJobIfNeeded(state)
+	return nil
 }
 
 func (current *session) screenOf(state wallpaper.ScreenState) screenJSON {

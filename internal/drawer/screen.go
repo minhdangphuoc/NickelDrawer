@@ -3,9 +3,11 @@ package drawer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"koboapps/internal/i18n"
 	"koboapps/internal/manifest"
@@ -37,6 +39,8 @@ type ScreenReply struct {
 	Live    bool                    `json:"live"`            // the app has a state action: refresh while open
 	Value   *string                 `json:"value,omitempty"` // echo of --value, the screen's value (a picture id)
 	Stale   bool                    `json:"stale,omitempty"` // the state action failed: keep the previous model
+	// StaleReason says why the state action failed, in English, for the mod's debug log.
+	StaleReason string `json:"stale_reason,omitempty"`
 	// Services a finished background job asks the mod for, from the state's "requests" array;
 	// the state script emits each one once (docs/spec/drawer-protocol.md).
 	Requests []Request `json:"requests,omitempty"`
@@ -153,7 +157,7 @@ func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, erro
 		return ScreenReply{}, newError(CodeInvalidApp, "app", appID, "detail", "no screen '"+screenID+"' in ui.json")
 	}
 	_, isLive := findAction(app, stateActionID)
-	vars, requests, isStale := c.withValue(value).screenVars(app, doc)
+	vars, requests, staleReason := c.withValue(value).screenVars(app, doc)
 	if value != nil {
 		setSelected(vars, *value)
 	}
@@ -165,7 +169,8 @@ func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, erro
 		context.hiddenApps = c.hiddenAppRows()
 	}
 	reply := context.reply(appID, screen, isLive)
-	reply.Stale = isStale
+	reply.Stale = staleReason != ""
+	reply.StaleReason = staleReason
 	reply.Requests = requests
 	reply.Value = value
 	return reply, nil
@@ -237,41 +242,63 @@ func screenLocale(appDir, locale string) string {
 }
 
 // screenVars starts from the declared defaults and overlays the state action's values for
-// declared variables only (a binding can only name a declared variable). isStale is true when
-// the app has a state action that failed, so the mod keeps its previous model.
-func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[string]any, requests []Request, isStale bool) {
+// declared variables only (a binding can only name a declared variable). staleReason is set when
+// the app has a state action that failed, so the mod keeps its previous model or, with nothing
+// to keep, shows an error instead of the defaults.
+func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[string]any, requests []Request, staleReason string) {
 	vars = make(map[string]any, len(doc.Vars))
 	for name, value := range doc.Vars {
 		vars[name] = value
 	}
-	state, hasState := c.readState(app)
+	state, staleReason := c.readState(app)
 	for name, value := range state {
 		if _, declared := vars[name]; declared {
 			vars[name] = value
 		}
 	}
-	_, isLive := findAction(app, stateActionID)
-	return vars, c.acceptedRequests(app, stateRequests(state)), isLive && !hasState
+	return vars, c.acceptedRequests(app, stateRequests(state)), staleReason
 }
 
 // readState runs the optional "state" action with the status budget. A missing action returns
-// no state and true; a slow, failing or malformed state returns false.
-func (c Config) readState(app manifest.App) (state map[string]any, isOK bool) {
+// no state and no failure; a slow, failing or malformed state returns why it failed.
+func (c Config) readState(app manifest.App) (state map[string]any, failure string) {
 	if IsHostID(app.ID) {
-		return c.hostState(app.ID), true
+		return c.hostState(app.ID), ""
 	}
 	action, found := findAction(app, stateActionID)
 	if !found {
-		return nil, true
+		return nil, ""
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), c.statusTimeout())
+	budget := c.statusTimeout()
+	ctx, cancel := context.WithTimeout(context.Background(), budget)
 	defer cancel()
 	output := c.runScript()(ctx, filepath.Join(app.Dir, filepath.FromSlash(action.Run)))
-	if output.Err != nil || output.TimedOut || output.ExitCode != 0 {
-		return nil, false
+	if failure := stateFailure(output, budget); failure != "" {
+		return nil, failure
 	}
 	state = parseState(output.Stdout)
-	return state, state != nil
+	if state == nil {
+		return nil, "the state action did not print one JSON object"
+	}
+	return state, ""
+}
+
+// stateFailure describes a state run that did not succeed ("" when it did).
+func stateFailure(output ScriptOutput, budget time.Duration) string {
+	switch {
+	case output.TimedOut:
+		return fmt.Sprintf("the state action took longer than %s", budget)
+	case output.Err != nil:
+		return "the state action could not start: " + output.Err.Error()
+	case output.ExitCode != 0:
+		return fmt.Sprintf("the state action exited with %d: %s", output.ExitCode, firstOutputLine(output.Stderr))
+	}
+	return ""
+}
+
+func firstOutputLine(text string) string {
+	line, _, _ := strings.Cut(strings.TrimSpace(text), "\n")
+	return line
 }
 
 // parseState reads one JSON object from the state script's stdout.

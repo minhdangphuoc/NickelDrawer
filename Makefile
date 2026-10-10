@@ -41,7 +41,7 @@ check: sync-embedded
 	@$(MAKE) --no-print-directory shellcheck
 
 # shellcheck is optional: without it the check says so and moves on.
-SHELL_SOURCES = tools/*.sh tools/lib/*.sh host/bin/*.sh host/lib/common.sh apps/*/bin/*.sh examples/*/bin/*.sh
+SHELL_SOURCES = tools/*.sh helpers/statusbar-screenshot/*.sh tools/lib/*.sh host/bin/*.sh host/lib/common.sh apps/*/bin/*.sh examples/*/bin/*.sh
 shellcheck:
 	@if command -v shellcheck >/dev/null 2>&1; then \
 		shellcheck -x -S warning $(SHELL_SOURCES) && echo "shellcheck: ok"; \

@@ -41,7 +41,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 |---|---|
 | `nickeldrawer.cc` | NickelHook declaration and the tiny `init()` |
 | `nickel_bridge.{h,cc}` | hook/dlsym tables, model, screen and firmware checks, fail-soft wrappers for every libnickel call, e-ink full-refresh helper |
-| `device_gate.{h,cc}` | pure rules: supported model ids (mirror of `supported_models` in `host/config/project.json`), screen size check, `.kobo/version` field parsing |
+| `../common/device_gate.{h,cc}` | pure rules: supported model ids (mirror of `supported_models` in `host/config/project.json`), screen size check, `.kobo/version` field parsing |
 | `mod_switches.{h,cc}` | flag-file paths and the boot-time switch values |
 | `drawer_logic.{h,cc}` | pure rules: paging math, key mapping, refresh policy, protocol version, exit codes, timeouts, Wi-Fi retry, locale |
 | `fallback_strings.{h,cc}` | the drawer's own strings: the `mod.*` keys of `.adds/koboapps/locales/<locale>.json` (exact locale, language, en), with a compiled en/vi table as the last resort; reads `CurrentLocale` from `Kobo eReader.conf` (read-only) |

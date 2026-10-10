@@ -73,17 +73,20 @@ void TweakCell::measureText()
     TextRun valueRun = {ScreenLogic::CAPTION_SIZE, ScreenLogic::FAMILY_SANS, false};
     TextRun stateRun = {ScreenLogic::TOGGLE_STATE_SIZE, ScreenLogic::FAMILY_SANS, false};
     int labelWidth = TweaksLogic::labelWidth(shown.kind, width());
-    if (shown.kind == TweaksLogic::KIND_INFO) {
+    bool isStacked = shown.kind == TweaksLogic::KIND_INFO || shown.hasCaption();
+    if (isStacked) {
         labelLines = QStringList(QtTextMeter::elideLine(shown.label, labelWidth, labelRun));
-        valueLine = QtTextMeter::elideLine(shown.infoText, labelWidth, valueRun);
+        const QString &secondLine = shown.kind == TweaksLogic::KIND_INFO ? shown.infoText : shown.caption;
+        valueLine = QtTextMeter::elideLine(secondLine, labelWidth, valueRun);
     } else {
+        valueLine = QString();
         labelLines = QtTextMeter::wrapLines(shown.label, labelWidth, labelRun, TweaksLogic::maxLabelLines(shown.kind));
     }
     if (shown.kind == TweaksLogic::KIND_TOGGLE) {
         QString word = FallbackStrings::text(shown.isOn ? FallbackStrings::SCREEN_ON : FallbackStrings::SCREEN_OFF);
         stateWord = QtTextMeter::elideLine(word.toUpper(), TweaksLogic::TOGGLE_COLUMN_WIDTH, stateRun);
     }
-    cellGeometry = TweaksLogic::cellLayout(shown.kind, width(), height(), labelLines.size());
+    cellGeometry = TweaksLogic::cellLayout(shown.kind, width(), height(), labelLines.size(), shown.hasCaption());
 }
 
 void TweakCell::resizeEvent(QResizeEvent *event)
@@ -109,10 +112,10 @@ void TweakCell::paintEvent(QPaintEvent *)
         QRect line(label.x(), label.y() + i * TweaksLogic::LABEL_LINE_HEIGHT, label.width(), TweaksLogic::LABEL_LINE_HEIGHT);
         painter.drawText(line, labelAlignment, labelLines[i]);
     }
-    if (shown.kind == TweaksLogic::KIND_INFO) {
+    if (!valueLine.isEmpty()) {
         painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, ScreenLogic::CAPTION_SIZE, false));
         painter.setPen(grey(ScreenLogic::INK_MUTED));
-        painter.drawText(toQRect(cellGeometry.value), Qt::AlignLeft | Qt::AlignVCenter | Qt::TextSingleLine, valueLine);
+        painter.drawText(toQRect(cellGeometry.value), labelAlignment, valueLine);
     }
     if (shown.kind == TweaksLogic::KIND_TOGGLE) {
         // Nickel's switch image (never drawn by us); without it the state word alone shows the state.
