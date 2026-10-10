@@ -133,12 +133,13 @@ func TestGalleryDrawsTwelveTilesPerPageAndAPager(t *testing.T) {
 	if second.Index != 1 || countItems(second, isTileFrame) != 2 {
 		t.Fatalf("page 2 has %d tiles, want 2", countItems(second, isTileFrame))
 	}
-	pager := countItems(first, func(item Item) bool { return len(item.Lines) == 1 && item.Lines[0] == "‹ 1 / 2 ›" })
-	if pager != 1 {
-		t.Errorf("want one pager text, got %d", pager)
+	pager := countItems(first, func(item Item) bool { return len(item.Lines) == 1 && item.Lines[0] == "1 / 2" })
+	arrows := countItems(first, func(item Item) bool { return item.Shape == "icon" && strings.HasPrefix(item.Label, "chevron-") })
+	if pager != 1 || arrows != 2 {
+		t.Errorf("want one pager text with two chevron icons, got %d and %d", pager, arrows)
 	}
 	// The thumbnail is black on white: its pixel is dark, the 1 px border of the next tile is not wide.
-	if got := canvas.GrayAt(gutter+131, 213-68+rhythm+174).Y; got != 0 {
+	if got := canvas.GrayAt(gutter+131, insetStatusBar+213-68+rhythm+174).Y; got != 0 {
 		t.Errorf("thumbnail centre pixel = %d, want 0 (black picture)", got)
 	}
 }
@@ -220,7 +221,7 @@ func TestViewerChromeShownAndHidden(t *testing.T) {
 		t.Error("a1 is not current: no status and no disabled primary")
 	}
 	picture := firstItem(shown, func(item Item) bool { return item.Shape == "image" })
-	if picture.Y < headerHeight || picture.Y+picture.H > screenHeight-bottomMargin-viewerBarHeight {
+	if picture.Y < insetStatusBar+headerHeight || picture.Y+picture.H > insetStatusBar+viewHeight-bottomMargin-viewerBarHeight {
 		t.Errorf("picture %+v must lie between header and bottom bar", picture)
 	}
 	confirm := firstItem(shown, func(item Item) bool { return item.Label == "Remove" && item.Shape == "rect" })
@@ -229,19 +230,28 @@ func TestViewerChromeShownAndHidden(t *testing.T) {
 	}
 
 	hidden, _ := renderFixture(t, appDir, statePath, renderOptions{Screen: "viewer", Value: &value, Chrome: chromeHidden})
-	if len(hidden.Items) != 3 || hidden.Items[0].Shape != "image" {
-		t.Fatalf("chrome hidden must draw the picture and the back button, got %d items", len(hidden.Items))
+	hiddenItems := withoutChrome(hidden)
+	if len(hiddenItems) != 4 || hiddenItems[0].Shape != "image" {
+		t.Fatalf("chrome hidden must draw the picture, the disc, the back target and the back icon, got %d items", len(hiddenItems))
 	}
-	disc, arrow := hidden.Items[1], hidden.Items[2]
+	disc, arrow := hiddenItems[1], hiddenItems[2]
 	if disc.Shape != "ellipse" || disc.W != viewerBackDisc || disc.Fill != paperFull || disc.Border != viewerBackOutline {
 		t.Errorf("back disc %+v: want a white %d px disc with a %d px outline", disc, viewerBackDisc, viewerBackOutline)
 	}
-	if strings.Join(arrow.Lines, "") != "←" || arrow.X+arrow.W/2 != gutter+headerIconWidth/2 || arrow.W != viewerBackTarget {
-		t.Errorf("back arrow %+v: want a %d px target centred on the header's arrow", arrow, viewerBackTarget)
+	if arrow.X+arrow.W/2 != gutter+headerIconWidth/2 || arrow.W != viewerBackTarget {
+		t.Errorf("back target %+v: want a %d px target centred on the header's arrow", arrow, viewerBackTarget)
 	}
-	if hidden.Items[0].H != screenHeight && hidden.Items[0].W != screenWidth {
-		t.Errorf("picture %dx%d must fill the area in one direction", hidden.Items[0].W, hidden.Items[0].H)
+	if icon := hiddenItems[3]; icon.Shape != "icon" || icon.Label != "back" || icon.W != headerIconWidth {
+		t.Errorf("back icon %+v: want the Tabler back arrow at %d px inside the disc", icon, headerIconWidth)
 	}
+	if hiddenItems[0].H != viewHeight && hiddenItems[0].W != screenWidth {
+		t.Errorf("picture %dx%d must fill the area in one direction", hiddenItems[0].W, hiddenItems[0].H)
+	}
+}
+
+// withoutChrome drops the status-bar and tab-bar strips finishPage puts first.
+func withoutChrome(page Page) []Item {
+	return page.Items[len(nickelChromeItems()):]
 }
 
 func firstItem(page Page, match func(Item) bool) Item {
@@ -270,7 +280,7 @@ func TestHeaderIconActionsRadioDetailAndPictureGlyph(t *testing.T) {
 	appDir, statePath := writeGalleryFixture(t, 1, 0)
 	main, _ := renderFixture(t, appDir, statePath, renderOptions{})
 	targets := countItems(main, func(item Item) bool {
-		return item.Shape == "rect" && item.W == headerIconTarget && item.H == headerIconTarget && item.Y == 0 && item.Event != ""
+		return item.Shape == "rect" && item.W == headerIconTarget && item.H == headerIconTarget && item.Y == insetStatusBar && item.Event != ""
 	})
 	if targets != 2 {
 		t.Errorf("want 2 icon tap targets of 120x120, got %d", targets)
@@ -319,7 +329,7 @@ func TestServePageEmbedsPicturesAndKeepsValue(t *testing.T) {
 		t.Error("hidden chrome page must embed the picture and omit the bar")
 	}
 	grid := get(t, instance, "/").Body.String()
-	if strings.Count(grid, "data:image/png;base64,") != 3 || !strings.Contains(grid, "&#34;event&#34;:&#34;screen&#34;") {
+	if strings.Count(grid, "data:image/png;base64,") < 3 || !strings.Contains(grid, "&#34;event&#34;:&#34;screen&#34;") {
 		t.Error("main page must embed 3 thumbnails and carry the tile tap event")
 	}
 }

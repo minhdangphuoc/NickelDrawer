@@ -10,11 +10,13 @@
 #include "drawer_logic.h"
 #include "nickel_fonts.h"
 #include "painted_marks.h"
+#include "system_icon.h"
 #include "text_meter.h"
 
 // Sizes in device pixels: the CopperUI tokens (docs/copperui-tokens.md).
 static const int ROW_HEIGHT = copperui::v1::ROW_DRAWER;
-static const int ROW_ICON_SIDE = copperui::v1::LEGACY_DRAWER_ROW_ICON; // icon.drawerRow (64) in fix 2.9
+static const int ROW_ICON_SIDE = copperui::v1::ICON_DRAWER_ROW; // drawn 1:1
+static const int CHEVRON_SIDE = copperui::v1::ICON_CHEVRON;
 static const int SPACING = copperui::v1::RHYTHM;
 static const int TILE_NAME_SIZE = copperui::v1::TYPE_GRID_NAME_SIZE;
 static const int TILE_NAME_INSET = copperui::v1::DRAWER_GRID_NAME_INSET;
@@ -84,7 +86,8 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
     layout->addLayout(texts, 1);
     layout->addWidget(updateDot, 0, Qt::AlignVCenter);
     if (item.hasPrimaryAction()) {
-        layout->addWidget(createLabel(QString::fromUtf8("›"), "drawerChevron", this), 0, Qt::AlignVCenter);
+        layout->addWidget(new IconMark(SystemIcon::CHEVRON_RIGHT, CHEVRON_SIDE, QString::fromUtf8("›"), this), 0,
+                          Qt::AlignVCenter);
     }
     applyLiveState(item);
 }

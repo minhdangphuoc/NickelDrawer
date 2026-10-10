@@ -1,0 +1,26 @@
+{
+  "status": "Receiving",
+  "running": true,
+  "pin": "4821",
+  "device": "Kobo Libra 2",
+  "ip": "192.168.1.23",
+  "summary": "Books 2 · Documents 1 · Rejected 1",
+  "received": [
+    [
+      "Dune.epub",
+      "Book · 1.8 MB"
+    ],
+    [
+      "Q3 report.pdf",
+      "Document · 420.0 KB"
+    ],
+    [
+      "Comic vol 1.cbz",
+      "Comic · 24.3 MB"
+    ],
+    [
+      "Tieng Viet Co Dau.epub",
+      "Book · 2.1 MB"
+    ]
+  ]
+}

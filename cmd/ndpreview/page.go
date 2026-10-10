@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html"
+	"image"
 	"image/png"
 	"net/url"
 	"strings"
@@ -124,6 +125,9 @@ func itemHTML(item Item) string {
 		style += "border-radius:50%;"
 	}
 	classes := "i"
+	if item.Shape == "icon" && item.Ink > 0 {
+		style += fmt.Sprintf("opacity:%.2f;", 1-float64(item.Ink)/255)
+	}
 	attributes := ""
 	if item.Shape == "text" {
 		style += textStyleCSS(item)
@@ -140,11 +144,15 @@ func itemHTML(item Item) string {
 // itemContentHTML is the text of a text item, or the picture of an image item as a data URI so
 // the page needs no file server.
 func itemContentHTML(item Item) string {
-	if item.Shape != "image" {
+	if item.Shape != "image" && item.Shape != "icon" {
 		return html.EscapeString(strings.Join(item.Lines, "\n"))
 	}
 	var encoded bytes.Buffer
-	if item.Picture == nil || png.Encode(&encoded, item.Picture) != nil {
+	var source image.Image = item.Picture
+	if item.Shape == "icon" {
+		source = item.Icon
+	}
+	if item.Picture == nil && item.Icon == nil || png.Encode(&encoded, source) != nil {
 		return ""
 	}
 	return `<img alt="" style="width:100%;height:100%;display:block" src="data:image/png;base64,` + base64.StdEncoding.EncodeToString(encoded.Bytes()) + `">`

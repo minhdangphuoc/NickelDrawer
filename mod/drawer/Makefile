@@ -1,14 +1,15 @@
 # Build the NickelDrawer NickelHook mod. From the repo root:
 #   make -C mod/drawer docker-build     # build/mod/libnickeldrawer.so, build/mod/KoboRoot-nickeldrawer.tgz
 #   make -C mod/drawer docker-build EXTRA_CPPFLAGS=-DND_TEST_MISSING_SYM   # FI-03 test build: the bridge pretends a symbol is missing
-#   make -C mod/drawer docker-test      # host unit tests of the Qt-free units (container's native g++)
+#   make -C mod/drawer docker-test      # host unit tests of the Qt-free units and of lib/copperui (container's native g++)
 #   mod/drawer/check-symbols.sh         # static checks of the built library
 
 REPO_ROOT       := $(abspath $(CURDIR)/../..)
 NICKELTC_IMAGE  ?= ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840
 OUTPUT_DIR      := $(REPO_ROOT)/build/mod
 NICKELHOOK_DIR  := ../../third_party/NickelHook
-COPPERUI_INCLUDE := ../../lib/copperui/include
+COPPERUI_DIR     := ../../lib/copperui
+COPPERUI_INCLUDE := $(COPPERUI_DIR)/include
 GENERATED_IN_VENDOR := nhplugin.json nhplugin.moc nhplugin.moc.o nh.o
 LIBRARY_NAME    := libnickeldrawer.so
 
@@ -42,13 +43,16 @@ override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common -I$(COPPERUI_INCLUDE) $(EXT
 
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
+# CopperUI's pure components (packing, pager, button, list row) as a static library, linked into the mod.
+include $(COPPERUI_DIR)/copperui.mk
+
 endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
 TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests device_gate
 # Other Qt-free units a test links besides its own (unit=dependency).
-TEST_LINKS  := tweaks_logic=drawer_logic
+TEST_LINKS  := tweaks_logic=drawer_logic screen_logic=$(COPPERUI_DIR)/src/pack
 TEST_BINARY := tests/unit_test.bin
 TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -I$(COPPERUI_INCLUDE)
 
@@ -63,6 +67,7 @@ docker-build:
 
 # -nostdinc++ proves the pure logic needs no C++ standard library headers.
 docker-test:
+	$(MAKE) -C $(COPPERUI_DIR) docker-test
 	docker run --rm --platform linux/amd64 -v "$(REPO_ROOT):$(REPO_ROOT)" -w "$(CURDIR)" --entrypoint sh \
 		$(NICKELTC_IMAGE) -c 'status=0; for unit in $(TEST_UNITS); do \
 			links=; for link in $(TEST_LINKS); do [ "$${link%%=*}" = "$$unit" ] && links="$$links $${link#*=}.cc"; done; \
@@ -71,5 +76,5 @@ docker-test:
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.
 docker-clean:
-	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o ../common/*.moc $(TEST_BINARY)
+	rm -f *.o *.moc *.so KoboRoot.tgz ../common/*.o ../common/*.moc $(TEST_BINARY) $(COPPERUI_DIR)/src/*.o $(COPPERUI_DIR)/libcopperui.a
 	cd $(NICKELHOOK_DIR) && rm -f $(GENERATED_IN_VENDOR)

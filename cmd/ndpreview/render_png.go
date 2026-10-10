@@ -13,6 +13,7 @@ import (
 
 	xfont "golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 )
 
@@ -49,9 +50,10 @@ var fontPaths = map[string][]string{
 // fontSet holds the parsed fonts and a cache of faces per family and size. It is also the
 // textMeasurer of layout, so lines break where the rendered glyphs really end.
 type fontSet struct {
-	fonts map[string]*opentype.Font
-	mutex sync.Mutex // the preview server lays out screens from several requests
-	faces map[string]xfont.Face
+	fonts    map[string]*opentype.Font
+	warnings []string   // fonts that lack Vietnamese letters, told by useFonts
+	mutex    sync.Mutex // the preview server lays out screens from several requests
+	faces    map[string]xfont.Face
 }
 
 // loadFonts parses the given font files; an empty path falls back to the system candidates.
@@ -67,6 +69,9 @@ func loadFonts(sansPath, serifPath, monoPath string) (*fontSet, error) {
 		}
 		if loaded != nil {
 			set.fonts[family] = loaded
+			if family != familyMono && !coversVietnamese(loaded) {
+				set.warnings = append(set.warnings, fmt.Sprintf("the %s font lacks some Vietnamese letters; vi previews will show gaps (pass --font / --font-serif with a font that has them)", family))
+			}
 		}
 	}
 	for _, family := range []string{familySerif, familyMono} {
@@ -77,18 +82,43 @@ func loadFonts(sansPath, serifPath, monoPath string) (*fontSet, error) {
 	return set, nil
 }
 
+// loadFamily parses the explicit font, else the first system candidate that has the Vietnamese
+// letters, else the first candidate that parses at all (the caller warns about the gaps).
 func loadFamily(explicit string, candidates []string) (*opentype.Font, error) {
 	if explicit != "" {
 		return parseFontFile(explicit)
 	}
+	var fallback *opentype.Font
 	for _, path := range candidates {
-		if _, err := os.Stat(path); err == nil {
-			if parsed, parseErr := parseFontFile(path); parseErr == nil {
-				return parsed, nil
-			}
+		if _, err := os.Stat(path); err != nil {
+			continue
+		}
+		parsed, parseErr := parseFontFile(path)
+		if parseErr != nil {
+			continue
+		}
+		if coversVietnamese(parsed) {
+			return parsed, nil
+		}
+		if fallback == nil {
+			fallback = parsed
 		}
 	}
-	return nil, nil
+	return fallback, nil
+}
+
+// vietnameseLetters are the letters with their marks that tools/vncheck.py checks.
+const vietnameseLetters = "ĂăÂâĐđÊêÔôƠơƯưÀàẢảÃãÁáẠạẰằẲẳẴẵẮắẶặẦầẨẩẪẫẤấẬậÈèẺẻẼẽÉéẸẹỀềỂểỄễẾếỆệÌìỈỉĨĩÍíỊịÒòỎỏÕõÓóỌọỒồỔổỖỗỐốỘộỜờỞởỠỡỚớỢợÙùỦủŨũÚúỤụỪừỬửỮữỨứỰựỲỳỶỷỸỹÝýỴỵ"
+
+// coversVietnamese reports whether the font has a glyph for every Vietnamese letter.
+func coversVietnamese(font *opentype.Font) bool {
+	var buffer sfnt.Buffer
+	for _, letter := range vietnameseLetters {
+		if index, err := font.GlyphIndex(&buffer, letter); err != nil || index == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func parseFontFile(path string) (*opentype.Font, error) {
@@ -153,6 +183,30 @@ func drawShape(canvas *image.Gray, item Item) {
 		drawEllipse(canvas, item)
 	case "image":
 		drawPicture(canvas, item)
+	case "icon":
+		drawIcon(canvas, item)
+	}
+}
+
+// drawIcon composites a Tabler PNG over what is on the canvas. The strokes are black (or white
+// for the check on a black disc); a lighter Ink fades black strokes to that grey.
+func drawIcon(canvas *image.Gray, item Item) {
+	if item.Icon == nil {
+		return
+	}
+	bounds := item.Icon.Bounds()
+	for y := 0; y < bounds.Dy(); y++ {
+		for x := 0; x < bounds.Dx(); x++ {
+			target := image.Pt(item.X+x, item.Y+y)
+			pixel := item.Icon.NRGBAAt(bounds.Min.X+x, bounds.Min.Y+y)
+			if pixel.A == 0 || !target.In(canvas.Bounds()) {
+				continue
+			}
+			colour := float64(pixel.R) + float64(item.Ink)*(1-float64(pixel.R)/255)
+			alpha := float64(pixel.A) / 255
+			below := float64(canvas.GrayAt(target.X, target.Y).Y)
+			canvas.SetGray(target.X, target.Y, color.Gray{Y: uint8(math.Round(below*(1-alpha) + colour*alpha))})
+		}
 	}
 }
 

@@ -3,9 +3,10 @@ package main
 import "strconv"
 
 const (
-	drawerIconSize = 96 // app icons and host item icons
-	uiIconSmall    = 64
-	uiIconLarge    = 96
+	drawerIconSize    = 96 // app icons and host item icons (grid cells, empty states)
+	drawerRowIconSize = 64 // the same icons in a drawer list row, drawn 1:1 (icon.drawerRow)
+	uiIconSmall       = 64
+	uiIconLarge       = 96
 
 	// A bit lighter than Tabler's default 1.5 on its 24-unit grid, closer to Nickel's thin line icons.
 	tablerStroke = 1.25
@@ -40,6 +41,8 @@ var uiIcons = []uiIcon{
 	{"list", "layout-list"},
 	{"grid", "layout-grid"},
 	{"check", "check"},
+	{"chevron-left", "chevron-left"},
+	{"chevron-right", "chevron-right"},
 	{"picture", "photo"},
 	{"picture-off", "photo-off"},
 	{"tweaks", "adjustments-horizontal"},
@@ -59,6 +62,12 @@ func buildIconTable() []icon {
 		{"apps/todo/icon.png", "list-check", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"apps/uikit/icon.png", "layout-dashboard", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"apps/ghsync/icon.png", "brand-github", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
+		{"apps/localsend/icon-64.png", "send", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		{"apps/wallpaper/icon-64.png", "photo", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		{"apps/library/icon-64.png", "books", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		{"apps/todo/icon-64.png", "list-check", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		{"apps/uikit/icon-64.png", "layout-dashboard", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
+		{"apps/ghsync/icon-64.png", "brand-github", drawerRowIconSize, tablerStroke * drawerRowIconSize / tablerGrid, 0},
 		{"host/icons/refresh.png", "refresh", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		{"host/icons/updates.png", "cloud-download", drawerIconSize, tablerStroke * drawerIconSize / tablerGrid, 0},
 		// The "Apps" row in Nickel's More tab (mod/drawer/entry_row.cc), next to Nickel's own rows.

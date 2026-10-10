@@ -174,5 +174,6 @@
   "mod.action_unavailable": "Not available on this firmware.",
   "mod.unsupported_firmware": "NickelDrawer does not support this firmware yet",
   "mod.unsupported_model": "NickelDrawer does not support this model yet",
-  "mod.qt6_upgrade_pending": "Kobo is offering update 5.x — NickelDrawer will stop working"
+  "mod.qt6_upgrade_pending": "Kobo is offering update 5.x — NickelDrawer will stop working",
+  "mod.pending": "Working…"
 }

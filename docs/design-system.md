@@ -37,7 +37,7 @@ The token file is the source of the numbers. Where the tables below and the "Res
 | `margin.bottom` | 72 | Below the footer or the last block. |
 | `footer.primary` | 120 | The primary button sits at `viewHeight − 72 − 120`. |
 | `pager.height` | 56 | "1 / 3" line, caption size, 24 px above the footer; only when the body has more than one page. |
-| `tabBar` | Nickel's | Nickel's `MainNavView` stays below the view (G2 findings Q2). The view height is what Nickel gives us; `ScreenLogic::layoutBody` pages against it, never against 1680. `ndpreview` must use the same view height (gap G-14). |
+| `tabBar` | 126 px (`tabBar.height`) | Nickel's `MainNavView` stays below the view (G2 findings Q2). Measured on 4.38.23828: the view is 1264 × 1554 (`view.height`, tab bar 126), the status bar covers 126 px and we inset 128, so an app screen is laid out in a 1264 × 1426 canvas (`page.height`). The view height is what Nickel gives us; `copperui::v1::layoutBody` pages against it, never against 1680. `ndpreview` uses the same canvas inside the 1680 px picture, between a status strip and a tab strip drawn as context (gap G-14, done). |
 | `dialog.width` | 1040 | Centred box, 3 px black border (Nickel `N3Dialog` when available). |
 | `menu.width` | 760 | Nickel `NickelTouchMenu` look: 3 px border, 120 px rows, 1 px level-6 dividers. |
 | `toast.bottom` | 260 | Nickel's own toast; position is Nickel's. |
@@ -342,3 +342,21 @@ Native-first wins every tie: where Nickel's real metrics differ from this docume
 | A11 | Menu row text | Nickel's 34 px. |
 | A12 | Parity test | The generator writes both the C++ header and the Go constants from `copperui.tokens.json`; a test fails if either is stale. |
 | A13 | ✓ in lists | Tabler `check` icon, not a text glyph. |
+
+## Implemented in Batch 2 (components)
+
+| Item | Where it lives |
+|---|---|
+| Dividers: row 2 px `line.row`, section rule black, drawer rows and section labels | `lib/copperui` `divider.h`; `screen_layout.cc`, `drawer_view.cc` |
+| Heading in the serif (52 / 74 bold) on `text`, `empty`, `pair`, gallery empty | `screen_layout.cc`, `cmd/ndpreview/components.go` |
+| Button: ≤ 2 centred lines, 120 → 168, pending label "Working…" for quick actions (A9), rows and empty buttons too | `button.h`; `screen_session.cc` (`showPendingIfActionStarted`), `screen_view.cc` (`showPending`), host key `mod.pending` |
+| Disabled toggle, radio and field (dim, no target); `field.enabled` | `screen_layout.cc`, `internal/uikit/spec.go`, schema |
+| List row component (primary full width, muted caption, middle-elided file names, `✓` as the check icon) | `list_row.h`, `screen_layout.cc` |
+| Pager with Tabler chevrons, hidden at one page (drawer too; the drawer footer keeps its height) | `pager.h`, `drawer_view.cc`, `screen_layout.cc` |
+| Keep-with-next packing: section label + first row, field caption + box, pair title + QR + address, steps headline + detail, radio caption + all options | `pack.h` (vectors `pack-vectors.json`), `cmd/ndpreview/layout.go` |
+| PlainDialog and fallback menu on tokens (1040, 3 px border, 36 text, serif 42 title, 120 buttons, cancel left, A11 menu rows) | `plain_dialog.cc` |
+| Icons: empty-state icon 96, drawer row icon 64 drawn 1:1, row and pager chevrons and the list check as Tabler icons | `system_icon.cc`, `painted_marks.cc`, `item_widgets.cc` |
+| Big code regular, radio title as a caption | `screen_layout.cc` |
+| `ndpreview` parity: real page area, Tabler PNGs, drawer list and grid, Tinh chỉnh modal, English fixtures | `cmd/ndpreview` |
+
+Still open: the drawer's own surfaces (hint, empty state, Qt6 row, problem status; Batch 3.1) and the Tinh chỉnh modal's tokens (3.2). The `✓` in the Settings key-value rows stays a text value (A13 covers lists).

@@ -60,9 +60,24 @@ private:
     QString label; // shown only when no icon is available
 };
 
+// A system icon (system_icon.h) centred at its own size in a side x side box, or fallbackText
+// in the row font when the icon is not installed (the chevron of a drawer row, the pager arrows).
+class IconMark : public QWidget {
+public:
+    IconMark(int iconId, int side, const QString &fallbackText, QWidget *parent);
+
+protected:
+    void paintEvent(QPaintEvent *event);
+
+private:
+    int iconId;
+    QString fallbackText;
+};
+
 // An app's outline icon (from its icon file) or, without one, the generic
 // "apps" icon (system_icon.h); nothing when neither is readable. Reads the
-// icon file once when built.
+// icon file once when built. Icons are never scaled when a file of the wanted size sits beside
+// the app's icon: "icon.png" is also looked up as "icon-<side>.png" (the 64 px row icon).
 class AppMark : public QWidget {
 public:
     AppMark(const QString &iconPath, int side, QWidget *parent);

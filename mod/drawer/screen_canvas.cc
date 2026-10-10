@@ -36,6 +36,7 @@ static HostTexts hostTexts()
     HostTexts texts;
     texts.on = FallbackStrings::text(FallbackStrings::SCREEN_ON);
     texts.off = FallbackStrings::text(FallbackStrings::SCREEN_OFF);
+    texts.pending = FallbackStrings::text(FallbackStrings::SCREEN_PENDING);
     return texts;
 }
 
@@ -642,11 +643,23 @@ static void paintBackArrow(QPainter *painter, const PaintItem &item)
     paintIcon(painter, item.rect, SystemIcon::icon(SystemIcon::BACK).normal, item.ink);
 }
 
-// Nickel's switch image at its own size; without it the state word alone shows the state.
+// Nickel's switch image at its own size; without it the state word alone shows the state. A
+// disabled toggle (ink lighter than black) shows the same image dimmed.
 static void paintSwitch(QPainter *painter, const PaintItem &item)
 {
     SystemIcon::Id id = item.isOn ? SystemIcon::SWITCH_ON : SystemIcon::SWITCH_OFF;
-    SystemIcon::drawCentred(painter, item.rect, SystemIcon::icon(id).normal);
+    paintIcon(painter, item.rect, SystemIcon::icon(id).normal, item.ink);
+}
+
+// An icon of system_icon.h; the fallback text (a chevron glyph) when it is not installed.
+static void paintIconShape(QPainter *painter, const PaintItem &item)
+{
+    const SystemIcon::Icon &icon = SystemIcon::icon(static_cast<SystemIcon::Id>(item.iconId));
+    if (!icon.isNull()) {
+        paintIcon(painter, item.rect, icon.normal, item.ink);
+    } else if (!item.lines.isEmpty() && !item.lines[0].isEmpty()) {
+        paintText(painter, item);
+    }
 }
 
 // The picture centred in its box (it was decoded to fit); the glyph when it is missing.
@@ -685,8 +698,11 @@ static void paintItem(QPainter *painter, const PaintItem &item, const QPixmap *p
     case PaintItem::SHAPE_CHECK:
         paintCheck(painter, item);
         break;
-    case PaintItem::SHAPE_PICTURE_GLYPH:
+    case PaintItem::SHAPE_PICTURE_ICON:
         paintPictureIcon(painter, item.rect, item.ink);
+        break;
+    case PaintItem::SHAPE_ICON:
+        paintIconShape(painter, item);
         break;
     case PaintItem::SHAPE_BACK_ARROW:
         paintBackArrow(painter, item);

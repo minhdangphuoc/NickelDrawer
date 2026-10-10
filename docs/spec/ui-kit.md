@@ -101,7 +101,7 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 - **Primary:** 120 px, full width, black fill, white text, sits in `footer`. One per screen; the validator rejects two.
 - **Secondary:** 120 px, 2 px outline, in the body or footer above the primary.
 - Event: `{"event":"action","name":…}`. Debounced 500 ms. Disabled while an action is pending unless `async: true`.
-- States: enabled, disabled, pending (label may switch to "Working…"). `enabled` is `true`, `false` or bound from state (`"$running"`, `"!$running"`); the variable must be declared in `vars`. Disabled: no fill, outline and label dimmed (grey 140), no press feedback, taps ignored; add the reason in a Text line when the cause is not obvious. Example (LocalSend): Start `"enabled": "!$running"`, Stop `"enabled": "$running"`.
+- States: enabled, disabled, pending. A quick action (not `async`) that was just tapped shows the generic "Working…" (host key `mod.pending`, vi "Đang xử lý…") in the normal look until it returns; a detached job is disabled by the app (`enabled: "!$running"`) and shows its progress as `steps` (A9). The label wraps to at most two centred lines (button 168 px high), then is elided. `enabled` is `true`, `false` or bound from state (`"$running"`, `"!$running"`); the variable must be declared in `vars`. Disabled: no fill, outline and label dimmed (grey 136), no press feedback, taps ignored; add the reason in a Text line when the cause is not obvious. Example (LocalSend): Start `"enabled": "!$running"`, Stop `"enabled": "$running"`.
 - Refresh: press feedback is a partial refresh of the button; a result repaints the button label only.
 
 ### 3.8 Toggle
@@ -112,13 +112,14 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 - The **whole row** (104 px or more) is tappable, not just the switch. Pressed, the whole row inverts.
 - Looks like Nickel's own settings switch (`ToggleSwitch`, as in Wi-Fi and Bluetooth settings): at the right end of the row, the state word in Nickel's style (uppercase, regular, 29 px sans: "ON" / "OFF", vi "BẬT" / "TẮT"), 25 px, then **Nickel's switch image** (`:/images/widgets/switch_on.png` / `switch_off.png`, 94 x 56 on the Libra 2; `re/notes/system-icons.md`). We never draw the switch: without Nickel's image the mod uses the Tabler `toggle-on` / `toggle-off` PNG, and without either the state word alone shows the state. `ndpreview` draws an approximation of the image.
 - **Detail line** (`detail`, optional, text 60): caption style, muted, under the label **inside the row**, above the row divider, like a radio sub-line (§3.9); the row is then 128 px instead of 104. Use it for a hint that belongs to the toggle instead of a separate text component.
+- Disabled (`enabled` false): label, detail, state word and the switch image are dimmed to grey 136 and the row has no target.
 - Event: `{"event":"toggle","bind":…,"value":bool}`. Host updates the var at once; the backend may set it back.
 
 ### 3.9 Radio list
 
 **New.** `{ "radio": "Language", "bind": "lang", "options": [["en", "English"], ["vi", "Tiếng Việt"]] }`
 
-- One row per option, whole row tappable, filled ring on the chosen one. Up to 8 options; more goes to a List screen.
+- The title is a caption (32, muted) above the options, not a section label; it stays on the page with all its options. One row per option, whole row tappable, filled ring on the chosen one. Up to 8 options; more goes to a List screen. Disabled: title, rings, dot and labels dimmed, no targets.
 - An option may have a **sub-line** (third entry, text 60): caption style under the label; the row is 128 px instead of 104.
 - Event: `{"event":"input","bind":"lang","value":"vi"}`.
 
@@ -128,6 +129,8 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 
 - Short values only (about 40 characters). Opens Nickel's keyboard; Go/Enter or blur commits.
 - `secret: true` is **not allowed in kit 1** for tokens or long secrets: the validator warns and the app should use QR pairing (§3.11). A short secret (a 4-digit PIN to set) may use `secret: true`; it shows dots and is never logged (KIT-05).
+- `enabled` (flag, like the toggle's): a disabled field dims its caption, border and value to grey 136 and has no target. A field without an app action named like its variable is shown the same way.
+- The caption and the box are never split across pages.
 - Event: `{"event":"input","bind":…,"value":…}`.
 
 ### 3.11 QR pairing
@@ -149,7 +152,7 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 
 `{ "list": "$received", "title": "Received", "empty_text": "Nothing yet", "max": 50, "tap": "open" }`
 
-As plan §7.2. `tap` names an app.json action; a tap runs it and also sends the `tap` event with the row to a running backend. A list keeps the last `max` items. Rows are 104 px, primary text left, secondary right. Appends redraw only the new rows. Page-turn keys flip pages (§5.3).
+As plan §7.2. `tap` names an app.json action; a tap runs it and also sends the `tap` event with the row to a running backend. A list keeps the last `max` items. Rows are 104 px (the list row component, not a key-value row): the primary text takes the row width less the secondary text and is elided at the end (file names in the middle); the secondary text is a 32 px muted caption at the right edge (at most 400 px); a secondary text of exactly `✓` is drawn as the Tabler check icon. Appends redraw only the new rows. Page-turn keys flip pages (§5.3).
 
 ### 3.13 Notices and states
 
@@ -188,7 +191,7 @@ Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. 
 - A grid of picture tiles, 4 columns x 3 rows by default (`columns`, `rows` 1 to 6). The grid spans the content width (same gutters as the header), gutter 24 px; with 4 columns a tile is 262 x 349 px (3:4, the screen's aspect, a leftover pixel split between the sides), 1 px black border, the thumbnail fitted inside on white, no caption. When the rows do not fit the free height, fewer rows are drawn.
 - The current picture (`badge: current`): 4 px border and a black 56 px circle with a white check at the top-right corner (12 px inset).
 - `pending` adds that many dashed placeholder tiles (2 px dashes, grey 140, no fill) after the items. A tile whose thumbnail is missing keeps the border and shows a small outline picture glyph in dim grey.
-- More than one page: pager `‹ 1 / 2 ›` at the bottom; page-turn keys flip grid pages. Components before the gallery repeat on every grid page.
+- More than one page: pager `‹ 1 / 2 ›` (Tabler chevron icons) at the bottom; page-turn keys flip grid pages. Components before the gallery repeat on every grid page.
 - Tap: `on_tap` (push a screen or run an action; the tile id is the value). Long press: Nickel's popup menu from `on_long_press` (title row: the tile label); `info: true` opens a plain dialog with the tile's `info` text; an item with `confirm` asks first.
 - Empty (no tiles and no pending): the `empty` object draws a picture icon, heading, text and a primary button.
 - Tiles repaint partially when a thumbnail or badge changes; a page change is a full refresh.
@@ -228,9 +231,9 @@ Default is **list**. The choice is remembered (written on change, small file in 
 
 **List view**
 - Sections **INSTALLED** (vi "ĐÃ CÀI") and **SYSTEM** (vi "HỆ THỐNG"), small caps label.
-- Row: 152 px. Outline icon (52 px), app name, status line under it, chevron at the right, optional black update dot.
+- Row: 152 px. Outline icon (64 px, drawn 1:1: an app's `icon-64.png` beside `icon.png`, else the icon scaled), app name, status line under it, Tabler chevron icon at the right, optional black update dot.
 - Hint line at the bottom: "Long-press an app for info or remove" (vi "Nhấn giữ một ứng dụng để xem thông tin hoặc gỡ").
-- Page indicator "1 / N" (centred, below the hint).
+- Pager "1 / N" with Tabler chevrons (centred, below the hint); hidden when there is a single page.
 - 7 rows per page.
 
 **Grid view (optional)**, a phone-launcher grid

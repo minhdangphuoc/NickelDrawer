@@ -220,6 +220,7 @@ install_folder() {
     [ ! -f "$source/app.json" ] || act cp "$source/app.json" "$target/app.json"
     [ ! -f "$source/ui.json" ] || act cp "$source/ui.json" "$target/ui.json"
     [ ! -f "$source/icon.png" ] || act cp "$source/icon.png" "$target/icon.png"
+    [ ! -f "$source/icon-64.png" ] || act cp "$source/icon-64.png" "$target/icon-64.png"
     act mkdir -p "$target/data"
 }
 

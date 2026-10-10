@@ -65,6 +65,10 @@ public slots:
     // the handler would free the component the handler still reads.
     void showToggleState(int component, bool isOn);
     void showRadioValue(int component, const QString &value);
+    // A quick action started from a button, row or empty-state button: its label is replaced by
+    // the pending text until clearPending() (design-system.md A9). Queued by the tap handler.
+    void showPending(int component);
+    void clearPending();
 
 signals:
     void backRequested();

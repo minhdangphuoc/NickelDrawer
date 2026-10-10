@@ -152,7 +152,7 @@ static void testLineHeightsAreAtLeastOnePointFourTimesTheSize()
 
 static void testPackPages()
 {
-    Block blocks[] = {{200, 24}, {200, 24}, {200, 0}, {104, 0}};
+    Block blocks[] = {{200, 24, false}, {200, 24, false}, {200, 0, false}, {104, 0, false}};
     int pages[4];
     EXPECT_EQ(1, packPages(blocks, 4, 1000, pages));
     EXPECT_EQ(2, packPages(blocks, 4, 450, pages));
@@ -160,27 +160,30 @@ static void testPackPages()
     EXPECT_EQ(1, pages[2]);
     EXPECT_EQ(1, pages[3]);
     EXPECT_EQ(1, packPages(blocks, 0, 100, pages)); // an empty body still has one page
-    Block tall[] = {{900, 24}, {900, 24}};
+    Block tall[] = {{900, 24, false}, {900, 24, false}};
     EXPECT_EQ(2, packPages(tall, 2, 500, pages)); // a block taller than a page gets a page of its own
     EXPECT_EQ(424, blocksHeight(blocks, 0, 2));
 }
 
 static void testLayoutBody()
 {
-    Block footer[] = {{BUTTON_HEIGHT, RHYTHM}};
+    Block footer[] = {{BUTTON_HEIGHT, RHYTHM, false}};
     int footerHeight = blocksHeight(footer, 0, 1);
     Block body[12];
     for (int i = 0; i < 12; i++) {
         body[i].height = ROW_HEIGHT;
         body[i].gap = 0;
+        body[i].keepWithNext = false;
     }
     int pages[12];
-    // 1680 - 72 - 144 (footer + rhythm) - 145 (header 121 + rhythm) = 1319 px: 12 rows fit.
-    BodyFrame frame = layoutBody(body, 12, footerHeight, SCREEN_HEIGHT, pages);
+    // The page area is 1426 px (view 1554 less the 128 px status-bar inset): 1426 - 72 - 144
+    // (footer + rhythm) - 145 (header 121 + rhythm) = 1065 px, so 10 rows fit on one page.
+    BodyFrame frame = layoutBody(body, 10, footerHeight, PAGE_HEIGHT, pages);
     EXPECT_EQ(HEADER_HEIGHT + RHYTHM, frame.top);
-    EXPECT_EQ(1319 + frame.top, frame.bottom);
-    EXPECT_EQ(SCREEN_HEIGHT - BOTTOM_MARGIN - BUTTON_HEIGHT, frame.footerTop);
+    EXPECT_EQ(1065 + frame.top, frame.bottom);
+    EXPECT_EQ(PAGE_HEIGHT - BOTTOM_MARGIN - BUTTON_HEIGHT, frame.footerTop);
     EXPECT_EQ(1, frame.pageCount);
+    EXPECT_EQ(2, layoutBody(body, 11, footerHeight, PAGE_HEIGHT, pages).pageCount);
     // On a shorter view (Nickel's status and tab bars) the page bar takes room from each page.
     frame = layoutBody(body, 12, footerHeight, 1300, pages);
     EXPECT_EQ(2, frame.pageCount);

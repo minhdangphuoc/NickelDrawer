@@ -13,9 +13,7 @@
 #include "nickel_fonts.h"
 #include "press_area.h"
 
-// The dialog's width, text size and button border are "legacy" tokens until PlainDialog moves
-// to the dialog tokens (fix 2.8).
-static const int DIALOG_WIDTH = copperui::v1::LEGACY_DIALOG_WIDTH;
+static const int DIALOG_WIDTH = copperui::v1::DIALOG_WIDTH;
 static const int MENU_WIDTH = copperui::v1::MENU_WIDTH;
 static const int PADDING = copperui::v1::SPACE_DIALOG_PADDING;
 static const int MENU_SIDE_PADDING = copperui::v1::SPACE_MENU_SIDE;
@@ -25,18 +23,19 @@ static const int MENU_ROW_HEIGHT = copperui::v1::TARGET_MIN;
 static const int DIVIDER_HEIGHT = copperui::v1::STROKE_HAIRLINE;
 static const int BOX_BORDER = copperui::v1::STROKE_BUTTON;
 
-// Menu look from Nickel's NickelTouchMenu.qss: 3 px black border, white box,
-// 1 px separators in the row line grey; the title row bold.
+// Dialog look (docs/design-system.md 4.9): 1040 wide, 3 px black border, serif 42 title, 36 text
+// and buttons, 120 px buttons with a 3 px border. Menu look from Nickel's NickelTouchMenu.qss:
+// 3 px black border, white box, 1 px separators in the row line grey; the title row bold.
 static const char *const DIALOG_STYLE =
     "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
     "#plainDialogBox { background: " COPPERUI_GREY_PAPER_WHITE "; border: " COPPERUI_PX_STROKE_BUTTON " solid "
     COPPERUI_GREY_INK_BLACK "; }"
     "#plainDialogTitle { font-family: @TITLE_FAMILY@; font-size: " COPPERUI_PX_TYPE_DIALOG_TITLE_SIZE "; font-weight: bold; }"
-    "#plainDialogText { font-size: " COPPERUI_PX_LEGACY_DIALOG_TEXT_SIZE "; }"
-    "#plainDialogButton { border: " COPPERUI_PX_LEGACY_DIALOG_BUTTON_BORDER " solid " COPPERUI_GREY_INK_BLACK
+    "#plainDialogText { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; }"
+    "#plainDialogButton { border: " COPPERUI_PX_STROKE_BUTTON " solid " COPPERUI_GREY_INK_BLACK
     "; background: " COPPERUI_GREY_PAPER_WHITE "; }"
-    "#plainDialogButtonLabel { font-size: " COPPERUI_PX_LEGACY_DIALOG_TEXT_SIZE "; }"
+    "#plainDialogButtonLabel { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; }"
     "#plainMenuTitle { font-size: " COPPERUI_PX_TYPE_MENU_SIZE "; font-weight: bold; }"
     "#plainMenuRow { background: " COPPERUI_GREY_PAPER_WHITE "; }"
     "#plainMenuRowLabel { font-size: " COPPERUI_PX_TYPE_MENU_SIZE "; }"

@@ -8,9 +8,19 @@ import "koboapps/internal/copperui"
 const (
 	screenWidth  = copperui.ScreenWidth
 	screenHeight = copperui.ScreenHeight
-	gutter       = copperui.Gutter
-	contentWidth = copperui.ContentWidth
-	rhythm       = copperui.Rhythm
+
+	// The page area. Nickel gives a pushed view screenHeight - tabBarHeight (1554 on firmware
+	// 4.38.23828, measured in debug.log: "view 1264x1554") and its status bar overlays the top
+	// insetStatusBar px of it, so an app screen is laid out in viewHeight = 1426 px (debug.log:
+	// "canvas 1264x1426"), starting right below the inset. The preview lays out in that height
+	// and shifts everything down by the inset when it draws (finishPage); the tab bar is
+	// assumed to be exactly 126 px, the Libra 2 measurement.
+	insetStatusBar = copperui.InsetStatusBar
+	tabBarHeight   = copperui.TabBarHeight
+	viewHeight     = copperui.PageHeight
+	gutter         = copperui.Gutter
+	contentWidth   = copperui.ContentWidth
+	rhythm         = copperui.Rhythm
 
 	// The header is Nickel's page header (TextHeader, as the drawer's): a 120 px row with the
 	// back arrow, the title in Nickel's header sans and the status/action at the right, then a
@@ -25,26 +35,43 @@ const (
 	headerDividerInk = copperui.LineHeader
 	separatorPx      = copperui.StrokeRule
 
-	rowHeight       = copperui.RowCompact // key-value, list, toggle and radio rows
-	tapRowHeight    = copperui.RowTall    // a tappable "row" component: above the 120 px tap target
-	fieldHeight     = copperui.FieldHeight
-	fieldTextHeight = copperui.FieldTextHeight
-	buttonHeight    = copperui.ButtonHeight
-	buttonTallHt    = copperui.ButtonTallHeight // a button whose label wraps to two lines
-	buttonLines     = copperui.ButtonMaxLines
-	sectionHeight   = copperui.SectionHeight
-	bottomMargin    = copperui.MarginBottom
-	pageBarHeight   = copperui.PagerHeight
+	rowHeight        = copperui.RowCompact // key-value, list, toggle and radio rows
+	tapRowHeight     = copperui.RowTall    // a tappable "row" component: above the 120 px tap target
+	fieldHeight      = copperui.FieldHeight
+	fieldTextHeight  = copperui.FieldTextHeight
+	buttonHeight     = copperui.ButtonHeight
+	buttonTallHt     = copperui.ButtonTallHeight // a button whose label wraps to two lines
+	buttonLines      = copperui.ButtonMaxLines
+	sectionHeight    = copperui.SectionHeight
+	bottomMargin     = copperui.MarginBottom
+	pageBarHeight    = copperui.PagerHeight
+	pagerLabelWidth  = copperui.PagerLabelWidth
+	pagerArrowGap    = copperui.PagerArrowGap
+	chevronIconSize  = copperui.IconChevron
+	listSecondaryMax = copperui.ListRowSecondaryMax
+	gridIconBox      = copperui.IconGrid
+	rowIconSize      = copperui.IconDrawerRow
 
-	bodySize     = copperui.TypeBodySize
-	bodyLineH    = copperui.TypeBodyLine
-	captionSize  = copperui.TypeCaptionSize
-	captionLineH = copperui.TypeCaptionLine
-	headingSize  = copperui.TypeHeadingSize
-	headingLineH = copperui.TypeHeadingLine
-	rowTextSize  = copperui.TypeRowSize
-	sectionSize  = copperui.TypeSectionSize
-	sectionLineH = copperui.TypeSectionLine
+	bodySize         = copperui.TypeBodySize
+	bodyLineH        = copperui.TypeBodyLine
+	captionSize      = copperui.TypeCaptionSize
+	captionLineH     = copperui.TypeCaptionLine
+	headingSize      = copperui.TypeHeadingSize
+	headingLineH     = copperui.TypeHeadingLine
+	dialogTitleSize  = copperui.TypeDialogTitleSize
+	dialogTitleLineH = copperui.TypeDialogTitleLine
+	menuTextSize     = copperui.TypeMenuSize
+	menuWidth        = copperui.MenuWidth
+	dialogPadding    = copperui.SpaceDialogPadding
+	targetMin        = copperui.TargetMin
+	hairline         = copperui.StrokeHairline
+	menuSide         = copperui.SpaceMenuSide
+	copperuiMenuLine = copperui.TypeMenuLine
+	updateDotSide    = copperui.DotUpdate
+	hostDotInset     = copperui.DrawerHostDotInset
+	rowTextSize      = copperui.TypeRowSize
+	sectionSize      = copperui.TypeSectionSize
+	sectionLineH     = copperui.TypeSectionLine
 
 	bigCodeSize   = copperui.TypeBigCodeSize
 	bigCodeHeight = copperui.TypeBigCodeLine
@@ -52,31 +79,29 @@ const (
 	noticePadding = copperui.NoticePadding
 	noticeBorder  = copperui.StrokeRule
 	keyColumn     = copperui.SpaceKeyColumn
-	iconBoxSize   = copperui.LegacyDrawerRowIcon
 
 	// Spacing inside rows.
-	rowTextInset        = copperui.SpaceRowText
-	rowTextInsetTall    = copperui.SpaceRowTextTall
-	rowLabelWithDetail  = copperui.SpaceRowLabelWithDetail
-	rowDetailTop        = copperui.SpaceRowDetailTop
-	rowLabelHeight      = copperui.RowLabelHeight
-	rowTapTextInset     = copperui.RowTapTextInset
-	fieldCaptionGap     = copperui.SpaceFieldCaption
-	rowDetailWidth      = copperui.RowDetailWidth
-	rowDetailRight      = copperui.RowDetailRight
-	sectionTopInset     = copperui.SpaceSection
-	fieldBorder         = copperui.StrokeRule
-	radioRingBorder     = copperui.StrokeSelect
-	radioRingSide       = copperui.RadioRing
-	radioDotSide        = copperui.RadioDot
-	radioDotInset       = copperui.RadioDotInset
-	buttonBorder        = copperui.StrokeButton
-	dialogBorder        = copperui.StrokeButton
-	qrFrameBorder       = copperui.StrokeRule
-	emptySpacerHeight   = copperui.EmptySpacer
-	galleryEmptySpacer  = copperui.GalleryEmptySpacer
-	pictureStroke       = copperui.StrokeSelect
-	badgeCheckThickness = 6
+	rowTextInset       = copperui.SpaceRowText
+	rowTextInsetTall   = copperui.SpaceRowTextTall
+	rowLabelWithDetail = copperui.SpaceRowLabelWithDetail
+	rowDetailTop       = copperui.SpaceRowDetailTop
+	rowLabelHeight     = copperui.RowLabelHeight
+	rowTapTextInset    = copperui.RowTapTextInset
+	fieldCaptionGap    = copperui.SpaceFieldCaption
+	rowDetailWidth     = copperui.RowDetailWidth
+	rowDetailRight     = copperui.RowDetailRight
+	sectionTopInset    = copperui.SpaceSection
+	fieldBorder        = copperui.StrokeRule
+	radioRingBorder    = copperui.StrokeSelect
+	radioRingSide      = copperui.RadioRing
+	radioDotSide       = copperui.RadioDot
+	radioDotInset      = copperui.RadioDotInset
+	buttonBorder       = copperui.StrokeButton
+	dialogBorder       = copperui.StrokeButton
+	qrFrameBorder      = copperui.StrokeRule
+	emptySpacerHeight  = copperui.EmptySpacer
+	galleryEmptySpacer = copperui.GalleryEmptySpacer
+	pictureStroke      = copperui.StrokeSelect
 
 	dialogWidth = copperui.DialogWidth
 	toastBottom = copperui.ToastBottom

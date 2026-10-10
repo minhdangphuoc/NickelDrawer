@@ -64,6 +64,7 @@ private slots:
     void onFieldCommitted(const QString &value);
     void onFieldFinished();
     void onBusyChanged(bool isBusy);
+    void markPending(int component);
     void onLiveTimeout();
 
 private:
@@ -71,6 +72,7 @@ private:
     void showLoadError(const QString &failure);
     void runAction(const QString &actionId);
     void runWithValue(const QString &actionId, const QString &value);
+    void showPendingIfActionStarted(int index, const ScreenComponent &component, const QString &value);
     void runEvent(const ScreenEvent &event);
     void tapButton(const ScreenComponent &button);
     void tapToggle(int index, const ScreenComponent &toggle);

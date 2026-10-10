@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "copperui/pager.h"
 #include "debug_log.h"
 
 #include "fallback_strings.h"
@@ -36,16 +37,14 @@ static const char *const VIEW_STYLE =
     "#drawerHeader { background: " COPPERUI_GREY_PAPER_WHITE "; }"
     "QWidget { font-family: @BODY_FAMILY@; }"
     "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
-    "#drawerGlyph { font-size: " COPPERUI_PX_ICON_TOOLBAR "; }"
     "#drawerRow { border-bottom: " COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_LINE_ROW "; background: "
     COPPERUI_GREY_PAPER_WHITE "; }"
     "#drawerTile { background: " COPPERUI_GREY_PAPER_WHITE "; }"
     "#drawerItemName { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; }"
     "#drawerProblemName { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; font-weight: bold; }"
     "#drawerItemStatus { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
-    "#drawerChevron { font-size: " COPPERUI_PX_LEGACY_DRAWER_CHEVRON_SIZE "; }"
     "#drawerSectionLabel { font-size: " COPPERUI_PX_TYPE_SECTION_SIZE "; font-weight: bold; color: "
-    COPPERUI_GREY_INK_MUTED "; }"
+    COPPERUI_GREY_INK_MUTED "; border-bottom: " COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_LINE_SECTION "; }"
     "#drawerHint { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
     "#drawerQt6Notice { font-size: " COPPERUI_PX_LEGACY_DRAWER_QT6_NOTICE_SIZE "; font-weight: bold; border-bottom: "
     COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_INK_BLACK "; padding: " COPPERUI_PX_SPACE_UNIT " 0px; }"
@@ -64,7 +63,7 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 
 DrawerView::DrawerView()
     : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
-      hintLabel(NULL), pageIndicator(NULL), refreshButton(NULL), settingsButton(NULL), settingsDot(NULL),
+      hintLabel(NULL), pageIndicator(NULL), previousArrow(NULL), nextArrow(NULL), refreshButton(NULL), settingsButton(NULL), settingsDot(NULL),
       viewMode(ViewSettings::load()), gridRows(DrawerLogic::GRID_DEFAULT_ROWS), currentPage(0), isInputBlocked(false),
       hasModel(false), isUpdateAvailable(false), hasLoggedLayout(false), hasQt6Notice(false)
 {
@@ -105,18 +104,18 @@ DrawerView::DrawerView()
     DebugLog::write("drawer view: constructed %p, header %p", static_cast<void *>(this), static_cast<void *>(header));
 }
 
-PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent)
+// A pager arrow: the Tabler chevron icon (never a text glyph) in a 120 px target; the glyph is
+// shown only when the icon is not installed.
+PressArea *DrawerView::createArrow(SystemIcon::Id icon, const char *fallbackGlyph, const char *slotOrSignal, QWidget *parent)
 {
     PressArea *button = new PressArea(parent);
-    button->setObjectName(QString::fromUtf8(glyph));
+    button->setObjectName(QString::fromUtf8(icon == SystemIcon::CHEVRON_LEFT ? "drawerPreviousPage" : "drawerNextPage"));
     button->setFixedSize(FOOTER_BUTTON_SIDE, FOOTER_BUTTON_SIDE);
     button->setPressHighlight(PressArea::HIGHLIGHT_CIRCLE); // an icon button, like Nickel's *_hit icons
-    QLabel *label = createTextLabel(QString::fromUtf8(glyph), "drawerGlyph", button);
-    label->setAlignment(Qt::AlignCenter);
-    label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
     QHBoxLayout *layout = new QHBoxLayout(button);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(label);
+    layout->addWidget(new IconMark(icon, copperui::v1::ICON_CHEVRON, QString::fromUtf8(fallbackGlyph), button), 0,
+                      Qt::AlignCenter);
     connect(button, SIGNAL(tapped()), this, slotOrSignal);
     pressables.append(button);
     return button;
@@ -184,17 +183,27 @@ void DrawerView::addQt6NoticeIfPending()
     hasQt6Notice = true;
 }
 
+// The pager. The footer keeps its height when there is a single page (the arrows and the label
+// are hidden, updateFooter), so the page area, and with it the number of grid rows that fit,
+// does not depend on the page count.
 QWidget *DrawerView::createFooter()
 {
     QWidget *footer = new QWidget(this);
+    footer->setFixedHeight(FOOTER_BUTTON_SIDE);
     pageIndicator = createTextLabel(QString(), "drawerPageIndicator", footer);
     pageIndicator->setAlignment(Qt::AlignCenter);
 
+    previousArrow = createArrow(SystemIcon::CHEVRON_LEFT, "‹", SLOT(onPreviousTapped()), footer);
+    nextArrow = createArrow(SystemIcon::CHEVRON_RIGHT, "›", SLOT(onNextTapped()), footer);
     QHBoxLayout *layout = new QHBoxLayout(footer);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->addWidget(createArrow("‹", SLOT(onPreviousTapped()), footer));
-    layout->addWidget(pageIndicator, 1);
-    layout->addWidget(createArrow("›", SLOT(onNextTapped()), footer));
+    // A centred cluster like copperui/pager.h: arrow, "n / N", arrow.
+    pageIndicator->setFixedWidth(copperui::v1::PAGER_LABEL_WIDTH);
+    layout->addStretch(1);
+    layout->addWidget(previousArrow);
+    layout->addWidget(pageIndicator);
+    layout->addWidget(nextArrow);
+    layout->addStretch(1);
     return footer;
 }
 
@@ -513,6 +522,10 @@ void DrawerView::updateFooter()
 {
     int pages = DrawerLogic::pageCount(shownIndices.size(), perPage());
     pageIndicator->setText(QStringLiteral("%1 / %2").arg(currentPage + 1).arg(pages));
+    bool isPagerShown = copperui::v1::pagerIsShown(pages);
+    pageIndicator->setVisible(isPagerShown);
+    previousArrow->setVisible(isPagerShown);
+    nextArrow->setVisible(isPagerShown);
 }
 
 void DrawerView::scheduleRefresh(DrawerLogic::RefreshKind kind)

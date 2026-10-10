@@ -1,0 +1,29 @@
+{
+  "open": "3",
+  "done": "2",
+  "hasdone": true,
+  "newitem": "",
+  "notice": "",
+  "items": [
+    [
+      "Buy milk and bread",
+      ""
+    ],
+    [
+      "Call Aunt Mai",
+      ""
+    ],
+    [
+      "Return library books",
+      "✓"
+    ],
+    [
+      "Book a train ticket home",
+      "✓"
+    ],
+    [
+      "Read chapter 5 of Moby Dick",
+      ""
+    ]
+  ]
+}

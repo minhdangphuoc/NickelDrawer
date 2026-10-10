@@ -1,0 +1,23 @@
+{
+  "status": "Ready",
+  "configured": true,
+  "guide": "",
+  "repo": "me/my-books",
+  "branch": "Default",
+  "folder": "epub",
+  "last_sync": "2026-10-10 08:14",
+  "added": "3",
+  "summary": "3 new, 120 already there, 0 failed",
+  "last_error": "",
+  "running": false,
+  "can_sync": true,
+  "step_detail": "",
+  "pairing": false,
+  "pair_row": "",
+  "pair_url": "",
+  "pair_code": "",
+  "pair_expires": "",
+  "pair_hint": "Start pairing to get an address and a code.",
+  "pair_note": "Paired with me/my-books. Tap 'Sync now'.",
+  "progress": ""
+}

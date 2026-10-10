@@ -232,6 +232,7 @@ void ScreenSession::onBusyChanged(bool isBusy)
     }
     view->setInputBlocked(isBusy && !isQueuedEventRunning);
     if (!isBusy) {
+        view->clearPending(); // a reload that follows replaces the screen anyway
         QTimer::singleShot(RUN_FROM_EVENT_LOOP, this, SLOT(pumpEventQueue()));
     }
 }
@@ -399,6 +400,27 @@ void ScreenSession::onComponentTapped(int index, const QString &value)
         tapGallery(component, value);
     } else if (type == QLatin1String("viewer")) {
         tapViewerButton(component, value);
+    }
+    showPendingIfActionStarted(index, component, value);
+}
+
+// A tapped button, row or empty-state button whose action is now running shows "Working…"
+// (design-system.md A9). Queued: the layout must not be rebuilt inside the tap handler. A tile
+// tap is not a button; only the gallery's empty-state button (empty value) is.
+void ScreenSession::showPendingIfActionStarted(int index, const ScreenComponent &component, const QString &value)
+{
+    const QString &type = component.type;
+    bool isActionControl = type == QLatin1String("button") || type == QLatin1String("row") ||
+                           type == QLatin1String("empty") || (type == QLatin1String("gallery") && value.isEmpty());
+    if (isActionControl && runner->isRunning()) {
+        QMetaObject::invokeMethod(this, "markPending", Qt::QueuedConnection, Q_ARG(int, index));
+    }
+}
+
+void ScreenSession::markPending(int component)
+{
+    if (runner->isRunning()) {
+        view->showPending(component);
     }
 }
 

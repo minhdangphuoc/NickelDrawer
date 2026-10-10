@@ -2,13 +2,19 @@
 
 #include <QVector>
 
+#include "copperui/button.h"
+#include "copperui/divider.h"
+#include "copperui/list_row.h"
+#include "copperui/pager.h"
 #include "qr_encoder.h"
 #include "row_menu_logic.h"
 #include "text_meter.h"
 
 using namespace ScreenLogic;
 
-static const char *const CHEVRON_GLYPH = "\xE2\x80\xBA"; // ›
+// Shown only when the Tabler chevron PNGs are not installed (the control keeps working).
+static const char *const CHEVRON_NEXT_FALLBACK = "\xE2\x80\xBA"; // ›
+static const char *const CHEVRON_PREVIOUS_FALLBACK = "\xE2\x80\xB9"; // ‹
 static const int FIELD_CAPTION_GAP = tokens::SPACE_FIELD_CAPTION;
 static const int RADIO_RING_BORDER = tokens::STROKE_SELECT;
 static const int RADIO_DOT = tokens::RADIO_DOT;
@@ -19,12 +25,19 @@ static const int TAP_ROW_TEXT_INSET = tokens::ROW_TAP_TEXT_INSET;
 static const int FIELD_BORDER = tokens::STROKE_RULE;
 static const int QR_FRAME_BORDER = tokens::STROKE_RULE;
 static const int GALLERY_EMPTY_SPACER_HEIGHT = tokens::GALLERY_EMPTY_SPACER;
-static const int GALLERY_PICTURE_STROKE = tokens::STROKE_SELECT;
-static const int CHEVRON_WIDTH = 32;
+static const int CHEVRON_SIDE = tokens::ICON_CHEVRON;
 
 // ---- Text helpers (Qt strings over the UTF-8 rules of screen_logic) ----
 
 // Paragraphs wrap freely (maxLines 0); a button label keeps BUTTON_MAX_LINES lines and elides the rest.
+static int widthOf(const QString &text, int size, Family family, bool isBold = false)
+{
+    QByteArray utf8 = text.toUtf8();
+    TextMeter meter = QtTextMeter::meter();
+    TextRun run = {size, family, isBold};
+    return meter.measure(meter.context, utf8.constData(), utf8.size(), run);
+}
+
 static QStringList wrap(const QString &text, int width, int size, Family family, bool isBold = false, int maxLines = 0)
 {
     QByteArray utf8 = text.toUtf8();
@@ -73,7 +86,8 @@ bool PaintItem::operator==(const PaintItem &other) const
            lines == other.lines && size == other.size && lineHeight == other.lineHeight && family == other.family &&
            isBold == other.isBold && isUnderlined == other.isUnderlined && align == other.align && ink == other.ink &&
            qrSide == other.qrSide && qrModules == other.qrModules && imagePath == other.imagePath &&
-           isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph && isOn == other.isOn;
+           isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph && isOn == other.isOn &&
+           iconId == other.iconId;
 }
 
 static PaintItem rectItem(int x, int y, int width, int height, int fill, int border)
@@ -107,24 +121,56 @@ static PaintItem textItem(int x, int y, int width, int height, const QString &te
     return item;
 }
 
+// The two divider kinds of copperui/divider.h as paint items.
+static PaintItem dividerItem(copperui::v1::DividerKind kind, int y)
+{
+    copperui::v1::Divider line = copperui::v1::divider(kind, y);
+    return rectItem(line.rect.x, line.rect.y, line.rect.width, line.rect.height, line.ink, 0);
+}
+
 // A row divider: 2 px in the row line grey.
 static PaintItem separatorItem(int y)
 {
-    return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, LINE_ROW, 0);
+    return dividerItem(copperui::v1::DIVIDER_ROW, y);
 }
 
 // The 2 px rule under a section label stays black.
 static PaintItem sectionRuleItem(int y)
 {
-    return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, LINE_SECTION, 0);
+    return dividerItem(copperui::v1::DIVIDER_SECTION, y);
 }
 
-static PaintItem pictureGlyph(const QRect &rect, int ink)
+static PaintItem pictureIcon(const QRect &rect, int ink)
 {
-    PaintItem item = rectItem(rect.x(), rect.y(), rect.width(), rect.height(), NO_FILL, GALLERY_PICTURE_STROKE);
-    item.shape = PaintItem::SHAPE_PICTURE_GLYPH;
+    PaintItem item = rectItem(rect.x(), rect.y(), rect.width(), rect.height(), NO_FILL, 0);
+    item.shape = PaintItem::SHAPE_PICTURE_ICON;
     item.ink = ink;
     return item;
+}
+
+// A Tabler / Nickel icon from system_icon.h at its own size, centred in rect; fallbackText is
+// drawn instead when the icon is not installed ("" for nothing).
+static PaintItem iconItem(const QRect &rect, SystemIcon::Id id, int ink, const char *fallbackText)
+{
+    PaintItem item = rectItem(rect.x(), rect.y(), rect.width(), rect.height(), NO_FILL, 0);
+    item.shape = PaintItem::SHAPE_ICON;
+    item.iconId = id;
+    item.ink = ink;
+    item.size = ROW_TEXT_SIZE;
+    item.lineHeight = rect.height();
+    item.align = PaintItem::ALIGN_CENTER;
+    item.lines << QString::fromUtf8(fallbackText);
+    return item;
+}
+
+static QRect toQRect(const IntRect &rect)
+{
+    return QRect(rect.x, rect.y, rect.width, rect.height);
+}
+
+static QRect toQRect(const copperui::v1::Rect &rect)
+{
+    return QRect(rect.x, rect.y, rect.width, rect.height);
 }
 
 static void addTarget(ScreenPage *page, const QRect &rect, int component, const QString &value, int listRow = -1)
@@ -147,6 +193,14 @@ static LayoutBlock block(LayoutBlock::Kind kind, int component, int height, int 
     result.component = component;
     result.size.height = height;
     result.size.gap = gap;
+    result.size.keepWithNext = false;
+    return result;
+}
+
+// The block stays on the page of the one after it (copperui/pack.h).
+static LayoutBlock keptWithNext(LayoutBlock result)
+{
+    result.size.keepWithNext = true;
     return result;
 }
 
@@ -169,7 +223,7 @@ static LayoutBlock sectionBlock(int component, const QString &label)
 {
     LayoutBlock result = block(LayoutBlock::KIND_SECTION, component, SECTION_HEIGHT, 0);
     result.primary = label;
-    return result;
+    return keptWithNext(result); // a section label is never alone at the bottom of a page
 }
 
 static LayoutBlock valueRow(int component, const QString &key, const QString &value, bool isMiddleElided)
@@ -222,7 +276,9 @@ static LayoutBlock qrBlock(int component, const QString &value)
 
 static void addQrBlocks(int component, const QString &address, const QString &caption, QList<LayoutBlock> *blocks)
 {
-    blocks->append(qrBlock(component, address));
+    LayoutBlock code = qrBlock(component, address);
+    code.size.keepWithNext = !address.isEmpty(); // the code and the address under it
+    blocks->append(code);
     if (!address.isEmpty()) {
         blocks->append(singleLine(component, LayoutBlock::KIND_LINE, address, STYLE_CAPTION, FAMILY_MONO, INK_BLACK));
         blocks->last().align = PaintItem::ALIGN_CENTER;
@@ -232,13 +288,33 @@ static void addQrBlocks(int component, const QString &address, const QString &ca
     }
 }
 
-static LayoutBlock buttonBlock(int component, const QString &label, bool isPrimary, bool isEnabled)
+// What decides how a button looks: its flags and the text that replaces its label while it works.
+struct ButtonState {
+    bool isEnabled;
+    bool isPending;
+    bool isAsync;
+    const QString *pendingLabel;
+};
+
+static ButtonState buttonStateOf(const ScreenComponent &c, const HostTexts &texts, bool isEnabled)
 {
+    ButtonState state = {isEnabled, c.isPending, c.isAsync, &texts.pending};
+    return state;
+}
+
+// The label wraps to at most BUTTON_MAX_LINES centred lines; a pending quick action shows the
+// generic "Working…" instead (A9), in the normal look and without a target.
+static LayoutBlock buttonBlock(int component, const QString &label, bool isPrimary, const ButtonState &state)
+{
+    copperui::v1::ButtonPresentation look =
+        copperui::v1::buttonPresentation(state.isEnabled, state.isPending, state.isAsync);
     LayoutBlock result = block(LayoutBlock::KIND_BUTTON, component, 0, RHYTHM);
-    result.lines = wrap(label, CONTENT_WIDTH - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, true, BUTTON_MAX_LINES);
+    const QString &shown = look.showsPendingLabel ? *state.pendingLabel : label;
+    result.lines = wrap(shown, CONTENT_WIDTH - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, true, BUTTON_MAX_LINES);
     result.size.height = buttonHeight(result.lines.size());
     result.isOn = isPrimary;
-    result.isTappable = isEnabled;
+    result.isTappable = look.isTappable;
+    result.isDimmed = look.isDimmed;
     return result;
 }
 
@@ -261,10 +337,14 @@ static void addKeyValueBlocks(int component, const ScreenComponent &c, QList<Lay
     withTrailingGap(blocks, first);
 }
 
+// The title is a caption above the options (not a section label), kept on the page with them.
 static void addRadioBlocks(int component, const ScreenComponent &c, QList<LayoutBlock> *blocks)
 {
     int first = blocks->size();
-    blocks->append(sectionBlock(component, c.text));
+    int titleInk = c.isEnabled ? INK_MUTED : INK_DIM;
+    LayoutBlock title = paragraph(component, c.text, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_START, titleInk);
+    title.size.gap = FIELD_CAPTION_GAP;
+    blocks->append(keptWithNext(title));
     for (int i = 0; i < c.options.size(); i++) {
         QString detail = i < c.optionDetails.size() ? c.optionDetails[i] : QString();
         LayoutBlock option = block(LayoutBlock::KIND_RADIO_OPTION, component, detail.isEmpty() ? ROW_HEIGHT : TAP_ROW_HEIGHT, 0);
@@ -273,6 +353,8 @@ static void addRadioBlocks(int component, const ScreenComponent &c, QList<Layout
         option.tapValue = c.options[i].first;
         option.isOn = c.options[i].first == c.value;
         option.isTappable = c.isEnabled;
+        option.isDimmed = !c.isEnabled;
+        option.size.keepWithNext = i < c.options.size() - 1; // all options stay with the title
         blocks->append(option);
     }
     withTrailingGap(blocks, first);
@@ -280,21 +362,23 @@ static void addRadioBlocks(int component, const ScreenComponent &c, QList<Layout
 
 static void addFieldBlocks(int component, const ScreenComponent &c, QList<LayoutBlock> *blocks)
 {
-    LayoutBlock caption = paragraph(component, c.text, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_START, INK_MUTED);
+    LayoutBlock caption = paragraph(component, c.text, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_START,
+                                    c.isEnabled ? INK_MUTED : INK_DIM);
     caption.size.gap = FIELD_CAPTION_GAP;
-    blocks->append(caption);
+    blocks->append(keptWithNext(caption)); // the caption and its box are never split
     LayoutBlock box = block(LayoutBlock::KIND_FIELD_BOX, component, FIELD_HEIGHT, RHYTHM);
     bool isEmpty = c.value.isEmpty();
     box.primary = isEmpty ? c.placeholder : c.value;
-    box.ink = isEmpty ? INK_DIM : INK_BLACK;
+    box.ink = isEmpty || !c.isEnabled ? INK_DIM : INK_BLACK;
     box.isTappable = c.isEnabled;
+    box.isDimmed = !c.isEnabled;
     blocks->append(box);
 }
 
 static void addPairBlocks(int component, const ScreenComponent &c, QList<LayoutBlock> *blocks)
 {
     if (!c.title.isEmpty()) {
-        blocks->append(paragraph(component, c.title, STYLE_HEADING, FAMILY_SANS, true, PaintItem::ALIGN_CENTER, INK_BLACK));
+        blocks->append(keptWithNext(paragraph(component, c.title, STYLE_HEADING, FAMILY_SERIF, true, PaintItem::ALIGN_CENTER, INK_BLACK)));
     }
     addQrBlocks(component, c.url, QString(), blocks);
     blocks->append(bigCodeBlock(component, c.code, c.digits));
@@ -312,6 +396,7 @@ static void addStepsBlocks(int component, const ScreenComponent &c, QList<Layout
     QString headline = QStringLiteral("%1 %2 / %3").arg(c.label, c.done, c.total);
     LayoutBlock line = singleLine(component, LayoutBlock::KIND_LINE, headline, STYLE_BODY, FAMILY_SANS, INK_BLACK);
     line.size.gap = c.detail.isEmpty() ? RHYTHM : 0;
+    line.size.keepWithNext = !c.detail.isEmpty();
     blocks->append(line);
     if (!c.detail.isEmpty()) {
         blocks->append(singleLine(component, LayoutBlock::KIND_DETAIL_LINE, c.detail, STYLE_CAPTION, FAMILY_SANS, INK_MUTED));
@@ -332,7 +417,12 @@ static void addListBlocks(int component, const ScreenComponent &c, QList<LayoutB
     int first = blocks->size();
     for (int i = 0; i < c.items.size(); i++) {
         const QString &primary = c.items[i].first;
-        LayoutBlock row = valueRow(component, primary, c.items[i].second, isFileName(primary));
+        const QString &secondary = c.items[i].second;
+        LayoutBlock row = block(LayoutBlock::KIND_LIST_ROW, component, ROW_HEIGHT, 0);
+        row.primary = primary;
+        row.secondary = secondary;
+        row.hasCheckMark = copperui::v1::isCheckMarkText(secondary.toUtf8().constData());
+        row.isMiddleElided = isFileName(primary);
         row.isTappable = RowMenuLogic::isRowTarget(!c.tap.isEmpty(), c.menu.size());
         row.tapValue = primary;
         row.listRow = i;
@@ -341,15 +431,15 @@ static void addListBlocks(int component, const ScreenComponent &c, QList<LayoutB
     withTrailingGap(blocks, first);
 }
 
-static void addEmptyBlocks(int component, const ScreenComponent &c, QList<LayoutBlock> *blocks)
+static void addEmptyBlocks(int component, const ScreenComponent &c, const HostTexts &texts, QList<LayoutBlock> *blocks)
 {
     blocks->append(block(LayoutBlock::KIND_SPACER, component, EMPTY_SPACER_HEIGHT, 0));
-    blocks->append(paragraph(component, c.text, STYLE_HEADING, FAMILY_SANS, true, PaintItem::ALIGN_CENTER, INK_BLACK));
+    blocks->append(paragraph(component, c.text, STYLE_HEADING, FAMILY_SERIF, true, PaintItem::ALIGN_CENTER, INK_BLACK));
     if (!c.caption.isEmpty()) {
         blocks->append(paragraph(component, c.caption, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_CENTER, INK_MUTED));
     }
     if (!c.button.isEmpty()) {
-        blocks->append(buttonBlock(component, c.button, true, true));
+        blocks->append(buttonBlock(component, c.button, true, buttonStateOf(c, texts, true)));
     }
 }
 
@@ -361,13 +451,13 @@ void ScreenLayout::addGalleryEmptyBlocks(int component, QList<LayoutBlock> *bloc
         return;
     }
     blocks->append(block(LayoutBlock::KIND_SPACER, component, GALLERY_EMPTY_SPACER_HEIGHT, 0));
-    blocks->append(block(LayoutBlock::KIND_PICTURE_ICON, component, GALLERY_EMPTY_ICON_SIDE, RHYTHM));
-    blocks->append(paragraph(component, empty.title, STYLE_HEADING, FAMILY_SANS, true, PaintItem::ALIGN_CENTER, INK_BLACK));
+    blocks->append(block(LayoutBlock::KIND_PICTURE_ICON, component, GALLERY_EMPTY_ICON_SIDE, RHYTHM)); // icon.grid
+    blocks->append(paragraph(component, empty.title, STYLE_HEADING, FAMILY_SERIF, true, PaintItem::ALIGN_CENTER, INK_BLACK));
     if (!empty.text.isEmpty()) {
         blocks->append(paragraph(component, empty.text, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_CENTER, INK_MUTED));
     }
     if (!empty.button.isEmpty() && !empty.action.isEmpty()) {
-        blocks->append(buttonBlock(component, empty.button, true, true));
+        blocks->append(buttonBlock(component, empty.button, true, buttonStateOf(components[component], hostTexts, true)));
     }
 }
 
@@ -377,7 +467,8 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
     const QString &type = c.type;
     if (type == QLatin1String("text")) {
         TextStyle style = styleOf(c.style);
-        blocks->append(paragraph(index, c.text, style, FAMILY_SANS, style == STYLE_HEADING, alignOf(c.align),
+        Family family = style == STYLE_HEADING ? FAMILY_SERIF : FAMILY_SANS; // in-page titles are serif
+        blocks->append(paragraph(index, c.text, style, family, style == STYLE_HEADING, alignOf(c.align),
                                  style == STYLE_CAPTION ? INK_MUTED : INK_BLACK));
     } else if (type == QLatin1String("section")) {
         blocks->append(sectionBlock(index, c.text));
@@ -385,9 +476,11 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         addKeyValueBlocks(index, c, blocks);
     } else if (type == QLatin1String("row")) {
         LayoutBlock row = block(LayoutBlock::KIND_TAP_ROW, index, TAP_ROW_HEIGHT, RHYTHM);
-        row.primary = c.text;
-        row.secondary = c.detail;
-        row.isTappable = !c.action.isEmpty() || !c.push.isEmpty();
+        bool isTappable = !c.action.isEmpty() || !c.push.isEmpty();
+        bool isPendingRow = isTappable && c.isPending && !c.isAsync; // A9: label replaced, no target, no chevron
+        row.primary = isPendingRow ? hostTexts.pending : c.text;
+        row.secondary = isPendingRow ? QString() : c.detail;
+        row.isTappable = isTappable && !isPendingRow;
         blocks->append(row);
     } else if (type == QLatin1String("toggle")) {
         LayoutBlock toggle = block(LayoutBlock::KIND_TOGGLE, index, toggleRow(0, !c.detail.isEmpty()).height, RHYTHM);
@@ -395,6 +488,7 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         toggle.secondary = c.detail;
         toggle.isOn = c.isOn;
         toggle.isTappable = c.isEnabled;
+        toggle.isDimmed = !c.isEnabled;
         blocks->append(toggle);
     } else if (type == QLatin1String("radio")) {
         addRadioBlocks(index, c, blocks);
@@ -411,11 +505,11 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
     } else if (type == QLatin1String("notice")) {
         blocks->append(noticeBlock(index, c.text, c.title));
     } else if (type == QLatin1String("button")) {
-        blocks->append(buttonBlock(index, c.text, c.isPrimaryButton(), c.isEnabled));
+        blocks->append(buttonBlock(index, c.text, c.isPrimaryButton(), buttonStateOf(c, hostTexts, c.isEnabled)));
     } else if (type == QLatin1String("list")) {
         addListBlocks(index, c, blocks);
     } else if (type == QLatin1String("empty")) {
-        addEmptyBlocks(index, c, blocks);
+        addEmptyBlocks(index, c, hostTexts, blocks);
     } else if (type == QLatin1String("gallery")) {
         addGalleryEmptyBlocks(index, blocks); // a gallery with pictures is a grid, not blocks
     }
@@ -433,7 +527,7 @@ static QVector<Block> sizesOf(const QList<LayoutBlock> &blocks)
 }
 
 ScreenLayout::ScreenLayout()
-    : height(SCREEN_HEIGHT), galleryIndex(-1), hasGrid(false), gridTop(0), viewerIndex(-1), shownIndex(-1),
+    : height(PAGE_HEIGHT), galleryIndex(-1), hasGrid(false), gridTop(0), viewerIndex(-1), shownIndex(-1),
       isChromeShown(true)
 {
     frame.top = frame.bottom = frame.footerTop = frame.pageBarTop = 0;
@@ -576,24 +670,24 @@ ScreenPage ScreenLayout::page(int index) const
     return result;
 }
 
+// The pager (copperui/pager.h): "n / N" between two Tabler chevrons; the two halves of the line
+// are the touch targets (design-system.md 4.19). Only drawn when the screen has more than one page.
 void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
 {
-    // The gallery's pager shows its tap arrows: "‹ 1 / 2 ›".
-    QString text = QStringLiteral("%1 / %2").arg(index + 1).arg(frame.pageCount);
-    if (hasGrid) {
-        text = QString::fromUtf8("\xE2\x80\xB9  ") + text + QString::fromUtf8("  \xE2\x80\xBA");
-    }
-    PaintItem bar = textItem(GUTTER, frame.pageBarTop, CONTENT_WIDTH, PAGE_BAR_HEIGHT, text, CAPTION_SIZE, FAMILY_SANS,
-                             PaintItem::ALIGN_CENTER);
-    bar.ink = INK_MUTED;
-    page->items.append(bar);
-    // Touch paging: the left and right halves of the page bar (ui-kit §5.3).
+    copperui::v1::PagerGeometry pager = copperui::v1::pagerGeometry(frame.pageBarTop);
+    PaintItem label = textItem(pager.label.x, pager.label.y, pager.label.width, pager.label.height,
+                               QStringLiteral("%1 / %2").arg(index + 1).arg(frame.pageCount), CAPTION_SIZE, FAMILY_SANS,
+                               PaintItem::ALIGN_CENTER);
+    label.ink = INK_MUTED;
+    page->items.append(label);
+    page->items.append(iconItem(toQRect(pager.previousArrow), SystemIcon::CHEVRON_LEFT, INK_BLACK, CHEVRON_PREVIOUS_FALLBACK));
+    page->items.append(iconItem(toQRect(pager.nextArrow), SystemIcon::CHEVRON_RIGHT, INK_BLACK, CHEVRON_NEXT_FALLBACK));
     TapTarget previous;
     previous.kind = TapTarget::TAP_PREVIOUS_PAGE;
-    previous.rect = QRect(GUTTER, frame.pageBarTop, CONTENT_WIDTH / 2, PAGE_BAR_HEIGHT + RHYTHM);
-    TapTarget next = previous;
+    previous.rect = toQRect(pager.previousTarget);
+    TapTarget next;
     next.kind = TapTarget::TAP_NEXT_PAGE;
-    next.rect.moveLeft(GUTTER + CONTENT_WIDTH / 2);
+    next.rect = toQRect(pager.nextTarget);
     page->targets << previous << next;
 }
 
@@ -610,6 +704,31 @@ static void drawValueRow(const LayoutBlock &b, int y, ScreenPage *page)
                                ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
     value.isBold = true;
     page->items.append(value);
+    page->items.append(separatorItem(y + ROW_HEIGHT - SEPARATOR));
+    if (b.isTappable) {
+        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, b.tapValue, b.listRow);
+    }
+}
+
+// A list row (copperui/list_row.h): the primary text takes the row less the muted secondary
+// caption; a file name is elided in the middle; "✓" is the check icon.
+static void drawListRow(const LayoutBlock &b, int y, ScreenPage *page)
+{
+    int secondaryWidth = b.hasCheckMark || b.secondary.isEmpty() ? 0 : widthOf(b.secondary, CAPTION_SIZE, FAMILY_SANS);
+    copperui::v1::ListRowGeometry row = copperui::v1::listRowGeometry(y, secondaryWidth, b.hasCheckMark);
+    page->items.append(textItem(row.primary.x, row.primary.y, row.primary.width, row.primary.height,
+                                elided(b.primary, row.primary.width, ROW_TEXT_SIZE, FAMILY_SANS, b.isMiddleElided),
+                                ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START));
+    if (row.secondary.width > 0) {
+        PaintItem secondary = textItem(row.secondary.x, row.secondary.y, row.secondary.width, row.secondary.height,
+                                       elided(b.secondary, row.secondary.width, CAPTION_SIZE, FAMILY_SANS, false),
+                                       CAPTION_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
+        secondary.ink = INK_MUTED;
+        page->items.append(secondary);
+    }
+    if (row.checkIcon.width > 0) {
+        page->items.append(iconItem(toQRect(row.checkIcon), SystemIcon::CHECK, INK_BLACK, ""));
+    }
     page->items.append(separatorItem(y + ROW_HEIGHT - SEPARATOR));
     if (b.isTappable) {
         addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, b.tapValue, b.listRow);
@@ -643,16 +762,11 @@ static void drawTapRow(const LayoutBlock &b, int y, ScreenPage *page)
         page->items.append(detail);
     }
     if (b.isTappable) {
-        page->items.append(textItem(SCREEN_WIDTH - GUTTER - CHEVRON_WIDTH, y + TAP_ROW_TEXT_TOP, CHEVRON_WIDTH,
-                                    ROW_LABEL_HEIGHT, QString::fromUtf8(CHEVRON_GLYPH), ROW_TEXT_SIZE, FAMILY_SANS,
-                                    PaintItem::ALIGN_END));
+        QRect chevron(SCREEN_WIDTH - GUTTER - CHEVRON_SIDE, y + (TAP_ROW_HEIGHT - CHEVRON_SIDE) / 2, CHEVRON_SIDE,
+                      CHEVRON_SIDE);
+        page->items.append(iconItem(chevron, SystemIcon::CHEVRON_RIGHT, INK_BLACK, CHEVRON_NEXT_FALLBACK));
         addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, TAP_ROW_HEIGHT), b.component, QString());
     }
-}
-
-static QRect toQRect(const IntRect &rect)
-{
-    return QRect(rect.x, rect.y, rect.width, rect.height);
 }
 
 // A label (detail line under it, inside the row) and, at the right, Nickel's
@@ -660,24 +774,30 @@ static QRect toQRect(const IntRect &rect)
 static void drawToggle(const LayoutBlock &b, int y, const HostTexts &texts, ScreenPage *page)
 {
     ToggleRow row = toggleRow(y, !b.secondary.isEmpty());
-    page->items.append(textItem(row.label.x, row.label.y, row.label.width, row.label.height,
-                                elided(b.primary, row.label.width, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
-                                FAMILY_SANS, PaintItem::ALIGN_START));
+    int labelInk = b.isDimmed ? INK_DIM : INK_BLACK; // disabled: label, detail, word and switch at ink.dim
+    PaintItem label = textItem(row.label.x, row.label.y, row.label.width, row.label.height,
+                               elided(b.primary, row.label.width, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
+                               FAMILY_SANS, PaintItem::ALIGN_START);
+    label.ink = labelInk;
+    page->items.append(label);
     if (!b.secondary.isEmpty()) {
         PaintItem detail = textItem(row.detail.x, row.detail.y, row.detail.width, row.detail.height,
                                     elided(b.secondary, row.detail.width, CAPTION_SIZE, FAMILY_SANS, false),
                                     CAPTION_SIZE, FAMILY_SANS, PaintItem::ALIGN_START);
-        detail.ink = INK_MUTED;
+        detail.ink = b.isDimmed ? INK_DIM : INK_MUTED;
         page->items.append(detail);
     }
     QString state = (b.isOn ? texts.on : texts.off).toUpper();
-    page->items.append(textItem(row.state.x, row.state.y, row.state.width, row.state.height,
-                                elided(state, row.state.width, TOGGLE_STATE_SIZE, FAMILY_SANS, false),
-                                TOGGLE_STATE_SIZE, FAMILY_SANS, PaintItem::ALIGN_END));
+    PaintItem word = textItem(row.state.x, row.state.y, row.state.width, row.state.height,
+                              elided(state, row.state.width, TOGGLE_STATE_SIZE, FAMILY_SANS, false), TOGGLE_STATE_SIZE,
+                              FAMILY_SANS, PaintItem::ALIGN_END);
+    word.ink = labelInk;
+    page->items.append(word);
     PaintItem image;
     image.shape = PaintItem::SHAPE_SWITCH;
     image.rect = toQRect(row.switchBox);
     image.isOn = b.isOn;
+    image.ink = labelInk;
     page->items << image << separatorItem(y + row.height - SEPARATOR);
     if (b.isTappable) {
         addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, row.height), b.component, QString());
@@ -687,10 +807,13 @@ static void drawToggle(const LayoutBlock &b, int y, const HostTexts &texts, Scre
 static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
 {
     bool hasDetail = !b.secondary.isEmpty();
+    int ink = b.isDimmed ? INK_DIM : INK_BLACK; // disabled: ring, dot, label and detail at ink.dim
     int ringTop = y + (b.size.height - RADIO_RING_SIDE) / 2;
-    page->items.append(ellipseItem(GUTTER, ringTop, RADIO_RING_SIDE, NO_FILL, RADIO_RING_BORDER));
+    PaintItem ring = ellipseItem(GUTTER, ringTop, RADIO_RING_SIDE, NO_FILL, RADIO_RING_BORDER);
+    ring.ink = ink;
+    page->items.append(ring);
     if (b.isOn) {
-        page->items.append(ellipseItem(GUTTER + RADIO_DOT_INSET, ringTop + RADIO_DOT_INSET, RADIO_DOT, INK_BLACK, 0));
+        page->items.append(ellipseItem(GUTTER + RADIO_DOT_INSET, ringTop + RADIO_DOT_INSET, RADIO_DOT, ink, 0));
     }
     int textWidth = CONTENT_WIDTH - RADIO_RING_SIDE - RHYTHM;
     int textLeft = GUTTER + RADIO_RING_SIDE + RHYTHM;
@@ -698,12 +821,13 @@ static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
                                ROW_LABEL_HEIGHT, elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false, b.isOn),
                                ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START);
     label.isBold = b.isOn;
+    label.ink = ink;
     page->items.append(label);
     if (hasDetail) {
         PaintItem detail = textItem(textLeft, y + ROW_DETAIL_TOP, textWidth, CAPTION_LINE_HEIGHT,
                                     elided(b.secondary, textWidth, CAPTION_SIZE, FAMILY_SANS, false), CAPTION_SIZE,
                                     FAMILY_SANS, PaintItem::ALIGN_START);
-        detail.ink = INK_MUTED;
+        detail.ink = b.isDimmed ? INK_DIM : INK_MUTED;
         page->items.append(detail);
     }
     page->items.append(separatorItem(y + b.size.height - SEPARATOR));
@@ -719,7 +843,9 @@ static void drawFieldBox(const LayoutBlock &b, int y, ScreenPage *page)
                               elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                               FAMILY_SANS, PaintItem::ALIGN_START);
     text.ink = b.ink;
-    page->items << rectItem(GUTTER, y, CONTENT_WIDTH, FIELD_HEIGHT, NO_FILL, FIELD_BORDER) << text;
+    PaintItem box = rectItem(GUTTER, y, CONTENT_WIDTH, FIELD_HEIGHT, NO_FILL, FIELD_BORDER);
+    box.ink = b.isDimmed ? INK_DIM : INK_BLACK; // disabled: border and text at ink.dim, no target
+    page->items << box << text;
     if (b.isTappable) {
         addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, FIELD_HEIGHT), b.component, QString());
     }
@@ -760,10 +886,11 @@ static void drawNotice(const LayoutBlock &b, int y, ScreenPage *page)
     page->items.append(text);
 }
 
-// A bordered button in box: filled black when primary, dimmed and without a
-// target when disabled. value tells the session which button was tapped.
-static void paintButton(const QRect &box, const QStringList &lines, bool isPrimary, bool isEnabled, int component,
-                        const QString &value, ScreenPage *page)
+// A bordered button in box: filled black when primary; dimmed when disabled; without a target when
+// it is dimmed or pending (the label then already says "Working…"). value tells the session which
+// button was tapped.
+static void paintButton(const QRect &box, const QStringList &lines, bool isPrimary, bool isDimmed, bool isTappable,
+                        int component, const QString &value, ScreenPage *page)
 {
     PaintItem outline = rectItem(box.x(), box.y(), box.width(), box.height(), NO_FILL, BUTTON_BORDER);
     int ink = INK_BLACK;
@@ -771,7 +898,7 @@ static void paintButton(const QRect &box, const QStringList &lines, bool isPrima
         outline.fill = INK_BLACK;
         ink = PAPER_WHITE;
     }
-    if (!isEnabled) {
+    if (isDimmed) {
         // Disabled: outline and label dimmed, no target (no press, taps ignored).
         outline.fill = NO_FILL;
         outline.ink = INK_DIM;
@@ -785,15 +912,15 @@ static void paintButton(const QRect &box, const QStringList &lines, bool isPrima
     text.isBold = true;
     text.ink = ink;
     page->items << outline << text;
-    if (isEnabled) {
+    if (isTappable) {
         addTarget(page, box, component, value);
     }
 }
 
 static void drawButton(const LayoutBlock &b, int y, ScreenPage *page)
 {
-    paintButton(QRect(GUTTER, y, CONTENT_WIDTH, b.size.height), b.lines, b.isOn, b.isTappable, b.component, QString(),
-                page);
+    paintButton(QRect(GUTTER, y, CONTENT_WIDTH, b.size.height), b.lines, b.isOn, b.isDimmed, b.isTappable, b.component,
+                QString(), page);
 }
 
 static void drawLine(const LayoutBlock &b, int y, bool isMiddleElided, ScreenPage *page)
@@ -825,6 +952,9 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
     case LayoutBlock::KIND_VALUE_ROW:
         drawValueRow(b, y, page);
         break;
+    case LayoutBlock::KIND_LIST_ROW:
+        drawListRow(b, y, page);
+        break;
     case LayoutBlock::KIND_TAP_ROW:
         drawTapRow(b, y, page);
         break;
@@ -840,8 +970,7 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
     case LayoutBlock::KIND_BIG_CODE: {
         PaintItem code = textItem(GUTTER, y, CONTENT_WIDTH, BIG_CODE_HEIGHT, b.primary, BIG_CODE_SIZE, FAMILY_MONO,
                                   PaintItem::ALIGN_CENTER);
-        code.isBold = true;
-        page->items.append(code);
+        page->items.append(code); // regular weight (type.bigCode)
         break;
     }
     case LayoutBlock::KIND_QR:
@@ -868,9 +997,9 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
         drawButton(b, y, page);
         break;
     case LayoutBlock::KIND_PICTURE_ICON:
-        page->items.append(pictureGlyph(QRect((SCREEN_WIDTH - GALLERY_EMPTY_ICON_SIDE) / 2, y, GALLERY_EMPTY_ICON_SIDE,
-                                              GALLERY_EMPTY_ICON_SIDE),
-                                        INK_DIM));
+        page->items.append(pictureIcon(QRect((SCREEN_WIDTH - GALLERY_EMPTY_ICON_SIDE) / 2, y, GALLERY_EMPTY_ICON_SIDE,
+                                             GALLERY_EMPTY_ICON_SIDE),
+                                       INK_DIM));
         break;
     }
 }
@@ -985,7 +1114,7 @@ void ScreenLayout::drawViewerPage(ScreenPage *page) const
     if (viewer.secondary.isDefined()) {
         QRect secondaryBox = toQRect(viewerSecondaryRect(height));
         QStringList label(elided(viewer.secondary.label, secondaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false, true));
-        paintButton(secondaryBox, label, false, true, viewerIndex, QStringLiteral("secondary"), page);
+        paintButton(secondaryBox, label, false, false, true, viewerIndex, QStringLiteral("secondary"), page);
     } else {
         primaryBox.setLeft(GUTTER);
     }
@@ -993,6 +1122,6 @@ void ScreenLayout::drawViewerPage(ScreenPage *page) const
         bool isCurrent = tile->isCurrent;
         const QString &text = isCurrent && !viewer.primary.labelCurrent.isEmpty() ? viewer.primary.labelCurrent : viewer.primary.label;
         QStringList label(elided(text, primaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false, true));
-        paintButton(primaryBox, label, true, !isCurrent, viewerIndex, QStringLiteral("primary"), page);
+        paintButton(primaryBox, label, true, isCurrent, !isCurrent, viewerIndex, QStringLiteral("primary"), page);
     }
 }

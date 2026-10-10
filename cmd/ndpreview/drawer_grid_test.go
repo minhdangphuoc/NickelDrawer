@@ -13,8 +13,8 @@ func TestGridCellsSitOnTheContentGutters(t *testing.T) {
 			t.Fatalf("cell %d is %dx%d, want identical cells", index, cell.Dx(), cell.Dy())
 		}
 	}
-	if gridRows() != 5 {
-		t.Fatalf("rows = %d, want 5 on the Libra 2", gridRows())
+	if gridRows() != 4 {
+		t.Fatalf("rows = %d, want 4 in the 1139 px page area of the Libra 2", gridRows())
 	}
 }
 

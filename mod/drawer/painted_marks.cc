@@ -1,5 +1,6 @@
 #include "painted_marks.h"
 
+#include <QFileInfo>
 #include <QFontMetrics>
 #include <QPainter>
 #include <QPixmap>
@@ -138,6 +139,33 @@ void HeaderIconButton::paintEvent(QPaintEvent *)
     SystemIcon::drawCentred(&painter, rect(), isPressedImage ? image.pressed : image.normal);
 }
 
+IconMark::IconMark(int id, int side, const QString &text, QWidget *parent)
+    : QWidget(parent), iconId(id), fallbackText(text)
+{
+    setFixedSize(side, side);
+    setAttribute(Qt::WA_TransparentForMouseEvents, true);
+}
+
+void IconMark::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    const SystemIcon::Icon &icon = SystemIcon::icon(static_cast<SystemIcon::Id>(iconId));
+    if (!icon.isNull()) {
+        SystemIcon::drawCentred(&painter, rect(), icon.normal);
+        return;
+    }
+    painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, copperui::v1::TYPE_ROW_SIZE, false));
+    painter.setPen(Qt::black);
+    painter.drawText(rect(), Qt::AlignCenter, fallbackText);
+}
+
+// "icon.png" -> "icon-64.png" beside it.
+static QString sizedSibling(const QString &path, int side)
+{
+    QFileInfo info(path);
+    return QStringLiteral("%1/%2-%3.%4").arg(info.path(), info.completeBaseName()).arg(side).arg(info.suffix());
+}
+
 AppMark::AppMark(const QString &iconPath, int side, QWidget *parent) : QWidget(parent)
 {
     setFixedSize(side, side);
@@ -145,12 +173,16 @@ AppMark::AppMark(const QString &iconPath, int side, QWidget *parent) : QWidget(p
     if (!iconPath.isEmpty()) {
         // QPixmap reads the whole file and closes it (SVG needs Nickel's svg
         // image plugin; without it the generic icon is shown instead).
-        icon = QPixmap(iconPath);
+        icon = QPixmap(sizedSibling(iconPath, side));
+        if (icon.isNull()) {
+            icon = QPixmap(iconPath);
+        }
     }
     if (icon.isNull()) {
-        icon = SystemIcon::icon(SystemIcon::APP).normal;
+        bool isRowIcon = side == copperui::v1::ICON_DRAWER_ROW;
+        icon = SystemIcon::icon(isRowIcon ? SystemIcon::APP_ROW : SystemIcon::APP).normal;
     }
-    if (!icon.isNull()) {
+    if (!icon.isNull() && icon.size() != QSize(side, side)) {
         icon = icon.scaled(side, side, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     }
 }

@@ -31,7 +31,7 @@ private:
     QString id;
 };
 
-// List row, 152 px: icon (52 px), name, status line under it, chevron, dot.
+// List row, 152 px: icon (64 px, 1:1), name, status line under it, chevron icon, dot.
 class AppRow : public ItemWidget {
 public:
     AppRow(const DrawerItem &item, QWidget *parent);

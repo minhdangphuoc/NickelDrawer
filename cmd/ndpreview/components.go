@@ -87,7 +87,11 @@ func (rc renderContext) textBlocks(c uikit.Component) []block {
 	if c.Prop("style") == "caption" {
 		ink = inkMuted
 	}
-	return []block{paragraphBlock(rc.text(c.Main()), size, lineH, familySans, bold, align, ink)}
+	family := familySans
+	if c.Prop("style") == "heading" {
+		family = familySerif // in-page titles use Nickel's serif (design-system 2.2)
+	}
+	return []block{paragraphBlock(rc.text(c.Main()), size, lineH, family, bold, align, ink)}
 }
 
 func paragraphBlock(text string, size, lineH int, family string, bold bool, align string, ink int) block {
@@ -100,7 +104,7 @@ func paragraphBlock(text string, size, lineH int, family string, bold bool, alig
 }
 
 func (rc renderContext) sectionBlock(label string) block {
-	return block{height: sectionHeight, gap: 0, draw: func(y int) []Item {
+	return block{height: sectionHeight, gap: 0, keepWithNext: true, draw: func(y int) []Item {
 		upper := strings.ToUpper(label) // uppercase first: capitals are wider than the lower case they replace
 		item := textItem(gutter, y+sectionTopInset, contentWidth, sectionLineH, elide(upper, contentWidth, bold(sectionSize, familySans), false), sectionSize, familySans, "start")
 		item.Ink = inkMuted
@@ -169,7 +173,7 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 			items = append(items, item)
 		}
 		if event != "" {
-			items = append(items, textItem(screenWidth-gutter-32, y+rowTextInsetTall, 32, rowLabelHeight, "›", rowTextSize, familySans, "end"))
+			items = append(items, iconCentred("chevron-right", chevronIconSize, screenWidth-gutter-chevronIconSize, y, chevronIconSize, tapRowHeight, inkBlack)...)
 			items = append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: tapRowHeight, Fill: noFill, Event: event, Label: label})
 		}
 		return items
@@ -183,8 +187,11 @@ func (rc renderContext) toggleBlock(c uikit.Component) block {
 	isOn := uikit.Truthy("$"+bind, rc.vars)
 	isEnabled := uikit.Truthy(c.Prop("enabled"), rc.vars)
 	event := ""
+	ink := inkBlack // a disabled toggle is dimmed as a whole and has no event
 	if isEnabled {
 		event = eventLine(map[string]any{"event": "toggle", "bind": bind, "value": !isOn})
+	} else {
+		ink = inkDim
 	}
 	height := rowHeight
 	if detail != "" {
@@ -203,39 +210,48 @@ func (rc renderContext) toggleBlock(c uikit.Component) block {
 		if detail != "" {
 			labelY = y + rowLabelWithDetail
 		}
-		items := []Item{
-			textItem(gutter, labelY, textWidth, rowLabelHeight, elide(label, textWidth, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start"),
-			textItem(stateX, switchY, toggleStateWidth, toggleSwitchHeight, strings.ToUpper(state), toggleStateSize, familySans, "end"),
-		}
+		labelItem := textItem(gutter, labelY, textWidth, rowLabelHeight, elide(label, textWidth, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start")
+		labelItem.Ink = ink
+		stateItem := textItem(stateX, switchY, toggleStateWidth, toggleSwitchHeight, strings.ToUpper(state), toggleStateSize, familySans, "end")
+		stateItem.Ink = ink
+		items := []Item{labelItem, stateItem}
 		if detail != "" {
 			sub := textItem(gutter, y+rowDetailTop, textWidth, captionLineH, elide(detail, textWidth, regular(captionSize, familySans), false), captionSize, familySans, "start")
 			sub.Ink = inkMuted
+			if !isEnabled {
+				sub.Ink = inkDim
+			}
 			items = append(items, sub)
 		}
-		items = append(items, switchItems(switchX, switchY, isOn)...)
+		items = append(items, switchItems(switchX, switchY, isOn, ink)...)
 		items = append(items, separator(y+height-separatorPx))
 		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: height, Fill: noFill, Event: event, Label: label})
 	}}
 }
 
 // switchItems approximates Nickel's switch image (94 x 56; the preview cannot ship Kobo
-// images): outline with the knob left (off), or filled with the knob right (on).
-func switchItems(x, y int, isOn bool) []Item {
+// images, the device draws Nickel's own switch_on / switch_off, faded when disabled): outline
+// with the knob left (off), or filled with the knob right (on), in ink (dim when disabled).
+func switchItems(x, y int, isOn bool, ink int) []Item {
 	const border, knob, inset = buttonBorder, 44, 6
-	track := Item{Shape: "rect", X: x, Y: y, W: toggleSwitchWidth, H: toggleSwitchHeight, Fill: noFill, Border: border}
-	knobX, knobFill := x+inset, paperFull
+	track := Item{Shape: "rect", X: x, Y: y, W: toggleSwitchWidth, H: toggleSwitchHeight, Fill: noFill, Border: border, Ink: ink}
+	knobX := x + inset
 	if isOn {
-		track.Fill = inkBlack
+		track.Fill = ink
 		knobX = x + toggleSwitchWidth - inset - knob
 	}
-	knobItem := Item{Shape: "ellipse", X: knobX, Y: y + inset, W: knob, H: knob, Fill: knobFill, Border: border}
+	knobItem := Item{Shape: "ellipse", X: knobX, Y: y + inset, W: knob, H: knob, Fill: paperFull, Border: border, Ink: ink}
 	return []Item{track, knobItem}
 }
 
 func (rc renderContext) radioBlocks(c uikit.Component) []block {
 	bind, _ := c.Prop("bind").(string)
 	selected := uikit.FormatValue(lookupVar(rc.vars, bind))
-	blocks := []block{rc.sectionBlock(rc.text(c.Main()))}
+	// The title is a caption above the options, not a section label (design-system 2.11).
+	title := paragraphBlock(rc.text(c.Main()), captionSize, captionLineH, familySans, false, "start", inkMuted)
+	title.gap, title.keepWithNext = fieldCaptionGap, true
+	blocks := []block{title}
+	isEnabled := uikit.Truthy(c.Prop("enabled"), rc.vars)
 	options, _ := c.Prop("options").([]any)
 	for _, raw := range options {
 		pair, _ := raw.([]any)
@@ -247,7 +263,10 @@ func (rc renderContext) radioBlocks(c uikit.Component) []block {
 		if len(pair) > 2 {
 			detail = rc.text(pair[2])
 		}
-		blocks = append(blocks, rc.radioOption(bind, value, rc.text(pair[1]), detail, value == selected))
+		blocks = append(blocks, rc.radioOption(bind, value, rc.text(pair[1]), detail, value == selected, isEnabled))
+	}
+	for index := 1; index < len(blocks)-1; index++ {
+		blocks[index].keepWithNext = true // the options stay with their title; the last one ends the group
 	}
 	return withTrailingGap(blocks)
 }
@@ -259,16 +278,20 @@ func lookupVar(vars map[string]any, path string) any {
 
 // radioOption is one row; an option with a sub-line is radioDetailRow high and shows the
 // sub-line in caption style under the label.
-func (rc renderContext) radioOption(bind, value, label, detail string, isSelected bool) block {
+func (rc renderContext) radioOption(bind, value, label, detail string, isSelected, isEnabled bool) block {
 	height := rowHeight
 	if detail != "" {
 		height = radioDetailRow
 	}
 	return block{height: height, gap: 0, draw: func(y int) []Item {
+		ink, detailInk := inkBlack, inkMuted
+		if !isEnabled { // dimmed as a whole, no event
+			ink, detailInk = inkDim, inkDim
+		}
 		ringY := y + (height-radioRingSide)/2
-		items := []Item{{Shape: "ellipse", X: gutter, Y: ringY, W: radioRingSide, H: radioRingSide, Fill: noFill, Border: radioRingBorder}}
+		items := []Item{{Shape: "ellipse", X: gutter, Y: ringY, W: radioRingSide, H: radioRingSide, Fill: noFill, Border: radioRingBorder, Ink: ink}}
 		if isSelected {
-			items = append(items, Item{Shape: "ellipse", X: gutter + radioDotInset, Y: ringY + radioDotInset, W: radioDotSide, H: radioDotSide, Fill: inkBlack})
+			items = append(items, Item{Shape: "ellipse", X: gutter + radioDotInset, Y: ringY + radioDotInset, W: radioDotSide, H: radioDotSide, Fill: ink, Ink: ink})
 		}
 		textWidth := contentWidth - radioRingSide - rhythm
 		textX := gutter + radioRingSide + rhythm
@@ -281,15 +304,18 @@ func (rc renderContext) radioOption(bind, value, label, detail string, isSelecte
 			labelFace = bold(rowTextSize, familySans)
 		}
 		text := textItem(textX, labelY, textWidth, rowLabelHeight, elide(label, textWidth, labelFace, false), rowTextSize, familySans, "start")
-		text.Bold = isSelected
+		text.Bold, text.Ink = isSelected, ink
 		items = append(items, text)
 		if detail != "" {
 			sub := textItem(textX, labelY+rowLabelHeight, textWidth, captionLineH, elide(detail, textWidth, regular(captionSize, familySans), false), captionSize, familySans, "start")
-			sub.Ink = inkMuted
+			sub.Ink = detailInk
 			items = append(items, sub)
 		}
 		items = append(items, separator(y+height-separatorPx))
-		event := eventLine(map[string]any{"event": "input", "bind": bind, "value": value})
+		event := ""
+		if isEnabled {
+			event = eventLine(map[string]any{"event": "input", "bind": bind, "value": value})
+		}
 		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: height, Fill: noFill, Event: event, Label: label})
 	}}
 }
@@ -304,10 +330,17 @@ func (rc renderContext) fieldBlocks(c uikit.Component) []block {
 	} else if c.Prop("secret") == true {
 		value = strings.Repeat("•", len([]rune(value)))
 	}
+	isEnabled := uikit.Truthy(c.Prop("enabled"), rc.vars)
+	if !isEnabled {
+		ink = inkDim // a disabled field is dimmed as a whole and has no target
+	}
 	caption := paragraphBlock(label, captionSize, captionLineH, familySans, false, "start", inkMuted)
-	caption.gap = fieldCaptionGap
+	caption.gap, caption.keepWithNext = fieldCaptionGap, true
 	input := block{height: fieldHeight, gap: rhythm, draw: func(y int) []Item {
-		box := Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: fieldHeight, Fill: noFill, Border: fieldBorder}
+		box := Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: fieldHeight, Fill: noFill, Border: fieldBorder, Ink: inkBlack}
+		if !isEnabled {
+			box.Ink = inkDim
+		}
 		text := textItem(gutter+rhythm, y+(fieldHeight-fieldTextHeight)/2, contentWidth-2*rhythm, fieldTextHeight, elide(value, contentWidth-2*rhythm, regular(rowTextSize, familySans), false), rowTextSize, familySans, "start")
 		text.Ink = ink
 		return []Item{box, text}
@@ -324,9 +357,7 @@ func (rc renderContext) bigCodeBlock(code string, c uikit.Component) block {
 		code = strings.Repeat("-", digits)
 	}
 	return block{height: bigCodeHeight, gap: rhythm, draw: func(y int) []Item {
-		item := textItem(gutter, y, contentWidth, bigCodeHeight, code, bigCodeSize, familyMono, "center")
-		item.Bold = true
-		return []Item{item}
+		return []Item{textItem(gutter, y, contentWidth, bigCodeHeight, code, bigCodeSize, familyMono, "center")}
 	}}
 }
 
@@ -336,6 +367,7 @@ func (rc renderContext) qrBlocks(address, caption string) []block {
 		return qrPlaceholder((screenWidth-qrSide)/2, y)
 	}}}
 	if address != "" {
+		blocks[0].keepWithNext = true // the code stays with its address line
 		blocks = append(blocks, singleLine(address, captionSize, familyMono, "center", inkBlack, captionLineH))
 	}
 	if caption != "" {
@@ -376,7 +408,9 @@ func (rc renderContext) pairBlocks(c uikit.Component) []block {
 	fields, _ := c.Main().(map[string]any)
 	var blocks []block
 	if title := rc.text(fields["title"]); title != "" {
-		blocks = append(blocks, paragraphBlock(title, headingSize, headingLineH, familySans, true, "center", inkBlack))
+		heading := paragraphBlock(title, headingSize, headingLineH, familySerif, true, "center", inkBlack)
+		heading.keepWithNext = true // the title stays with the QR code
+		blocks = append(blocks, heading)
 	}
 	blocks = append(blocks, rc.qrBlocks(rc.text(fields["url"]), "")...)
 	blocks = append(blocks, rc.bigCodeBlock(rc.text(fields["code"]), uikit.Component{Props: map[string]any{}}))
@@ -395,6 +429,7 @@ func (rc renderContext) stepsBlocks(c uikit.Component) []block {
 	blocks[0].gap = 0
 	detail := rc.text(fields["detail"])
 	if detail != "" {
+		blocks[0].keepWithNext = true
 		blocks = append(blocks, block{height: captionLineH, gap: rhythm, draw: func(y int) []Item {
 			item := textItem(gutter, y, contentWidth, captionLineH, elide(detail, contentWidth, regular(captionSize, familySans), true), captionSize, familySans, "start")
 			item.Ink = inkMuted
@@ -494,24 +529,52 @@ func (rc renderContext) listBlocks(c uikit.Component) []block {
 	tap, _ := c.Prop("tap").(string)
 	for index, item := range items {
 		primary, secondary := listTexts(item)
-		row := valueRow(primary, secondary, "", primary, looksLikeFileName(primary))
+		event := ""
 		if tap != "" {
-			row = tappableRow(row, eventLine(map[string]any{"event": "tap", "list": varName, "index": index, "item": item}), tap)
+			event = eventLine(map[string]any{"event": "tap", "list": varName, "index": index, "item": item})
 		}
-		blocks = append(blocks, row)
+		blocks = append(blocks, listRowBlock(primary, secondary, event, tap))
 	}
 	return withTrailingGap(blocks)
 }
 
-// listTexts reads a list item: a plain string or [primary, secondary].
-// tappableRow adds a tap target over a drawn row.
-func tappableRow(row block, event, action string) block {
-	draw := row.draw
-	row.draw = func(y int) []Item {
-		hit := Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: rowHeight, Fill: noFill, Event: event, Action: action}
-		return append(draw(y), hit)
-	}
-	return row
+const checkMark = "✓" // U+2713: a list row's secondary text that is drawn as the Tabler check icon
+
+// listRowBlock is a row of a list (lib/copperui/src/list_row.cc): the primary text on the left
+// takes the whole row less the secondary caption (a file name needs the room and is elided in the
+// middle); the secondary text is a muted caption at the right edge, or the check icon.
+func listRowBlock(primary, secondary, event, action string) block {
+	return block{height: rowHeight, gap: 0, draw: func(y int) []Item {
+		hasCheck := secondary == checkMark
+		secondaryWidth := 0
+		if secondary != "" && !hasCheck {
+			secondaryWidth = min(textMeter.width(secondary, regular(captionSize, familySans)), listSecondaryMax)
+		}
+		reserved := 0
+		switch {
+		case hasCheck:
+			reserved = chevronIconSize + rhythm
+		case secondaryWidth > 0:
+			reserved = secondaryWidth + rhythm
+		}
+		primaryWidth := contentWidth - reserved
+		items := []Item{textItem(gutter, y+rowTextInset, primaryWidth, rowLabelHeight,
+			elide(primary, primaryWidth, regular(rowTextSize, familySans), looksLikeFileName(primary)), rowTextSize, familySans, "start")}
+		switch {
+		case hasCheck:
+			items = append(items, iconAt("check", chevronIconSize, gutter+contentWidth-chevronIconSize, y+(rowHeight-chevronIconSize)/2, inkBlack)...)
+		case secondaryWidth > 0:
+			caption := textItem(gutter+contentWidth-secondaryWidth, y+(rowHeight-captionLineH)/2, secondaryWidth, captionLineH,
+				elide(secondary, secondaryWidth, regular(captionSize, familySans), false), captionSize, familySans, "end")
+			caption.Ink = inkMuted
+			items = append(items, caption)
+		}
+		items = append(items, separator(y+rowHeight-separatorPx))
+		if event != "" {
+			items = append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: rowHeight, Fill: noFill, Event: event, Action: action, Label: primary})
+		}
+		return items
+	}}
 }
 
 func listTexts(item any) (primary, secondary string) {
@@ -537,7 +600,7 @@ func singleLineCentered(text string, height int) block {
 
 func (rc renderContext) emptyBlocks(c uikit.Component) []block {
 	spacer := block{height: emptySpacerHeight, gap: 0, draw: func(int) []Item { return nil }}
-	blocks := []block{spacer, paragraphBlock(rc.text(c.Main()), headingSize, headingLineH, familySans, true, "center", inkBlack)}
+	blocks := []block{spacer, paragraphBlock(rc.text(c.Main()), headingSize, headingLineH, familySerif, true, "center", inkBlack)}
 	if caption := rc.text(c.Prop("text")); caption != "" {
 		blocks = append(blocks, paragraphBlock(caption, captionSize, captionLineH, familySans, false, "center", inkMuted))
 	}

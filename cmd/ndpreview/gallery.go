@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"strconv"
 	"strings"
@@ -79,11 +78,7 @@ func (g galleryView) isEmpty() bool { return len(g.tiles) == 0 && g.pending == 0
 func (rc renderContext) layoutGalleryScreen(screen *uikit.Screen, index, pageIndex int, overlay Overlay) Page {
 	footer := rc.blocksFor(screen.Footer)
 	footerHeight := blocksHeight(footer)
-	bodyTop := headerHeight + rhythm
-	bodyBottom := screenHeight - bottomMargin
-	if footerHeight > 0 {
-		bodyBottom -= footerHeight + rhythm
-	}
+	bodyTop, bodyBottom := bodyBounds(footerHeight)
 	before := rc.blocksFor(screen.Body[:index])
 	gridTop := bodyTop + blocksHeight(before)
 	if len(before) > 0 {
@@ -99,8 +94,8 @@ func (rc renderContext) layoutGalleryScreen(screen *uikit.Screen, index, pageInd
 		gridItems, page.Index, page.Count = rc.gridItems(gallery, pageIndex, gridTop, bodyBottom)
 		items = append(items, gridItems...)
 	}
-	items = append(items, drawBlocks(footer, screenHeight-bottomMargin-footerHeight)...)
-	page.Items = append(items, rc.overlayItems(screen, overlay)...)
+	items = append(items, drawBlocks(footer, viewHeight-bottomMargin-footerHeight)...)
+	page.Items = finishPage(items, rc.overlayItems(screen, overlay))
 	return page
 }
 
@@ -124,15 +119,9 @@ func (rc renderContext) gridItems(gallery galleryView, pageIndex, top, bottom in
 		}
 	}
 	if geometry.pages > 1 {
-		items = append(items, galleryPager(bottom-galleryPagerHeight, pageIndex+1, geometry.pages))
+		items = append(items, pageBar(bottom-galleryPagerHeight, pageIndex+1, geometry.pages)...)
 	}
 	return items, pageIndex, geometry.pages
-}
-
-func galleryPager(y, current, total int) Item {
-	item := textItem(gutter, y, contentWidth, galleryPagerHeight, fmt.Sprintf("‹ %d / %d ›", current, total), captionSize, familySans, "center")
-	item.Ink = inkMuted
-	return item
 }
 
 // placeholderItem is the dashed tile of a picture that is being imported.
@@ -166,9 +155,13 @@ func (rc renderContext) tileItems(gallery galleryView, tile pictureTile, box ima
 // badgeItems is the black circle with a white check mark of the current picture.
 func badgeItems(x, y int) []Item {
 	circle := Item{Shape: "ellipse", X: x, Y: y, W: galleryBadgeSize, H: galleryBadgeSize, Fill: inkBlack, Ink: inkBlack}
-	check := textItem(x, y, galleryBadgeSize, galleryBadgeSize, "✓", 36, familySans, "center")
-	check.Ink = paperFull
-	return []Item{circle, check}
+	items := []Item{circle}
+	icon, loaded := loadIcon("check", chevronIconSize, true) // white strokes on the black disc
+	if loaded {
+		items = append(items, Item{Shape: "icon", X: x + (galleryBadgeSize-chevronIconSize)/2, Y: y + (galleryBadgeSize-chevronIconSize)/2,
+			W: chevronIconSize, H: chevronIconSize, Fill: noFill, Icon: icon, Label: "current"})
+	}
+	return items
 }
 
 // tapEvent is the protocol line (and the app action) of a tap on a tile; both are empty when
@@ -191,10 +184,11 @@ func (rc renderContext) galleryEmptyBlocks(gallery galleryView) []block {
 	if empty == nil {
 		return nil
 	}
-	blocks := []block{{height: 280, gap: 0, draw: func(y int) []Item {
-		return pictureGlyphItems(screenWidth/2, y+200, inkDim)
-	}}}
-	blocks = append(blocks, paragraphBlock(rc.text(empty["title"]), headingSize, headingLineH, familySans, true, "center", inkBlack))
+	blocks := []block{{height: galleryEmptySpacer, gap: 0, draw: func(int) []Item { return nil }},
+		{height: gridIconBox, gap: rhythm, draw: func(y int) []Item {
+			return pictureGlyphItems(screenWidth/2, y+gridIconBox/2, inkDim)
+		}}}
+	blocks = append(blocks, paragraphBlock(rc.text(empty["title"]), headingSize, headingLineH, familySerif, true, "center", inkBlack))
 	if caption := rc.text(empty["text"]); caption != "" {
 		blocks = append(blocks, paragraphBlock(caption, captionSize, captionLineH, familySans, false, "center", inkMuted))
 	}

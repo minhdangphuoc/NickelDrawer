@@ -9,8 +9,17 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 - **CopperUI tokens** (`lib/copperui/`): one token file for every size, grey, line height and type setting; `make tokens` generates the C++ header, the Go constants and `docs/copperui-tokens.md`, and `make check` fails when one is stale. `mod/drawer` and `ndpreview` read the same numbers.
 - The drawer's own texts are now `mod.*` keys in `host/locales/<lang>.json`, read when the drawer opens (exact locale, language, English): a new language needs no rebuild. The compiled English and Vietnamese table remains as the last resort.
 
+### Added (components)
+
+- Pager arrows are Tabler chevron icons on every paged screen, gallery included, and the pager is hidden when there is one page (drawer too).
+- Keep-with-next paging: a section label, a field caption, a pair title and QR, steps and a radio group are never split across pages.
+- Buttons show "Working…" ("Đang xử lý…") while a quick action runs; disabled toggles, radios and fields are dimmed; `field` accepts `enabled`.
+- List rows are their own component (full-width primary text, muted secondary caption, `✓` as the check icon).
+- `lib/copperui` is built into the mod as a static library; `ndpreview` renders in the real page area (status bar, tab bar), uses the Tabler icons, and has drawer list and Tinh chỉnh renderers and English fixtures.
+
 ### Changed
 
+- Headings use the serif, the big code is regular weight, radio titles are captions, dialogs and menus follow the dialog tokens (1040 wide, 3 px border, 36 px text), the drawer row icon is drawn 1:1 at 64 px (apps may ship `icon-64.png`), chevrons are icons.
 - Greys sit on the panel's 16-level grid (muted 85, dim 136, notice fill 238); row and menu dividers are Nickel's row grey instead of black, the header divider is Nickel's own, and the drawer's status, section label, hint and pager are muted at the scale sizes (32 / 28 / 32 / 32).
 - Line heights are at least 1.4 times the size (caption 46, heading 74, dialog title 60, grid name 46, section 44) so stacked Vietnamese diacritics do not clip.
 - Text wraps and elides by measured width in the real font (drawer, app screens and `ndpreview`) instead of an average-width guess: bold labels are no longer cut early, buttons keep at most two centred lines.

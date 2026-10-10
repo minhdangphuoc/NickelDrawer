@@ -215,18 +215,31 @@ func TestLongListPages(t *testing.T) {
 	"screens":{"main":{"title":"Files","body":[{"list":"$files","title":"Files"}],"footer":[{"button":"Go","action":"go","style":"primary"}]}}}`)
 	instance := newTestServer(t, serverConfig{AppDir: appDir, Locale: "en"})
 
+	loaded, err := instance.loadApp()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rc := renderContext{doc: loaded.doc, locale: "en", vars: instance.currentVars(loaded.doc)}
+	laidOut, err := layoutScreen(rc, "main", 0, Overlay{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pages := laidOut.Count // 40 rows of 104 px under a section label in the 1426 px page area
+	if pages < 3 {
+		t.Fatalf("40 rows must need at least 3 pages, got %d", pages)
+	}
 	first := screenOnly(get(t, instance, "/").Body.String())
 	if !strings.Contains(first, "File 01.epub") || strings.Contains(first, "File 40.epub") {
 		t.Error("page 1 should hold the first rows only")
 	}
-	if !strings.Contains(first, `id="next"`) || strings.Contains(first, `id="prev"`) || !strings.Contains(first, "1 / 4") {
+	if !strings.Contains(first, `id="next"`) || strings.Contains(first, `id="prev"`) || !strings.Contains(first, fmt.Sprintf("1 / %d", pages)) {
 		t.Error("page 1 arrows or indicator wrong")
 	}
-	last := screenOnly(get(t, instance, "/?page=3").Body.String())
+	last := screenOnly(get(t, instance, fmt.Sprintf("/?page=%d", pages-1)).Body.String())
 	if !strings.Contains(last, "File 40.epub") || !strings.Contains(last, `id="prev"`) || strings.Contains(last, `id="next"`) {
 		t.Error("last page should hold the last rows with only a previous arrow")
 	}
-	if beyond := get(t, instance, "/?page=99").Body.String(); !strings.Contains(beyond, "4 / 4") {
+	if beyond := get(t, instance, "/?page=99").Body.String(); !strings.Contains(beyond, fmt.Sprintf("%d / %d", pages, pages)) {
 		t.Error("a page number past the end is clamped to the last page")
 	}
 }

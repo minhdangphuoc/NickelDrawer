@@ -4,28 +4,35 @@
 package copperui
 
 // Version is the CopperUI version the tokens belong to.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // Page metrics
 const (
-	ScreenWidth      = 1264 // px: The panel.
-	ScreenHeight     = 1680 // px: The panel.
-	InsetStatusBar   = 128  // px: Nickel's status bar overlays the view; every page leaves this margin.
-	HeaderRow        = 120  // px: Nickel TextHeader row: back target 120 x 120 at the left.
-	HeaderDivider    = 1    // px: Nickel's own 1 px line under the header.
-	HeaderHeight     = 121  // px: header.row + header.divider.
-	HeaderIcon       = 64   // px: Nickel's headerIconWidth on the Libra 2 class.
-	HeaderIconTarget = 120  // px: Tap target of a header icon action.
-	HeaderSideWidth  = 340  // px: Status text and header action, each at most.
-	Gutter           = 72   // px: Left and right page edge; same as Nickel's header title and divider.
-	ContentWidth     = 1120 // px: screen.width - 2 x gutter. Every block spans it.
-	BodyTop          = 273  // px: inset.statusBar + header.height + rhythm.
-	MarginBottom     = 72   // px: Below the footer or the last block.
-	FooterPrimary    = 120  // px: The primary button sits at viewHeight - margin.bottom - footer.primary.
-	PagerHeight      = 56   // px: "1 / 3" line in caption size, only when the body has more than one page.
-	DialogWidth      = 1040 // px: Centred box (Nickel N3Dialog when available).
-	MenuWidth        = 760  // px: Nickel NickelTouchMenu look.
-	ToastBottom      = 260  // px: Nickel's own toast position.
+	ScreenWidth       = 1264 // px: The panel.
+	ScreenHeight      = 1680 // px: The panel.
+	InsetStatusBar    = 128  // px: Nickel's status bar overlays the view; every page leaves this margin.
+	HeaderRow         = 120  // px: Nickel TextHeader row: back target 120 x 120 at the left.
+	HeaderDivider     = 1    // px: Nickel's own 1 px line under the header.
+	HeaderHeight      = 121  // px: header.row + header.divider.
+	HeaderIcon        = 64   // px: Nickel's headerIconWidth on the Libra 2 class.
+	HeaderIconTarget  = 120  // px: Tap target of a header icon action.
+	HeaderSideWidth   = 340  // px: Status text and header action, each at most.
+	Gutter            = 72   // px: Left and right page edge; same as Nickel's header title and divider.
+	ContentWidth      = 1120 // px: screen.width - 2 x gutter. Every block spans it.
+	BodyTop           = 273  // px: inset.statusBar + header.height + rhythm.
+	MarginBottom      = 72   // px: Below the footer or the last block.
+	FooterPrimary     = 120  // px: The primary button sits at viewHeight - margin.bottom - footer.primary.
+	TabBarHeight      = 126  // px: Nickel's tab bar (MainNavView) below the view: 1680 - 1554, measured on firmware 4.38.23828 (debug.log: view 1264x1554).
+	ViewHeight        = 1554 // px: screen.height - tabBar.height: what Nickel gives a pushed view.
+	PageHeight        = 1426 // px: view.height - inset.statusBar: the canvas an app screen is laid out in (debug.log: canvas 1264x1426).
+	PagerHeight       = 56   // px: "1 / 3" line in caption size, only when the body has more than one page.
+	PagerTargetWidth  = 560  // px: Each half of the pager line is a touch target of this width.
+	PagerTargetHeight = 80   // px: Pager touch target: pager.height + rhythm.
+	PagerLabelWidth   = 200  // px: Room for "99 / 99" between the two arrows.
+	PagerArrowGap     = 24   // px: Label to arrow.
+	DialogWidth       = 1040 // px: Centred box (Nickel N3Dialog when available).
+	MenuWidth         = 760  // px: Nickel NickelTouchMenu look.
+	ToastBottom       = 260  // px: Nickel's own toast position.
 )
 
 // Type scale
@@ -136,9 +143,10 @@ const (
 // Icons
 const (
 	IconToolbar         = 64 // px: List / grid toggles, apps, picture, tweaks (Tabler, 1:1).
-	IconDrawerRow       = 64 // px: Drawer row icon, drawn 1:1. Not yet used: see legacy.drawerRowIcon.
-	IconGrid            = 96 // px: Grid cell icon and empty-state icon.
+	IconDrawerRow       = 64 // px: Drawer row icon, drawn 1:1 (an app's icon-64.png, else the Tabler apps-64).
+	IconGrid            = 96 // px: Grid cell icon and empty-state icon (Tabler picture / apps).
 	IconBadge           = 56 // px: Gallery current badge.
+	IconChevron         = 64 // px: Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1.
 	IconMoreRow         = 50 // px: Nickel's More-tab row icon on the Libra 2 class.
 	UnderlineHeight     = 4  // px: Underline of the active list / grid toggle.
 	UnderlineGap        = 6  // px: Gap between that icon and its underline.
@@ -147,31 +155,32 @@ const (
 
 // Targets and rows
 const (
-	TargetMin          = 120  // px: Minimum touch target (10 mm).
-	RowCompact         = 104  // px: kv, list, toggle rows.
-	RowTall            = 128  // px: row, radio with sub-line, toggle with detail.
-	RowDrawer          = 152  // px: Drawer list row.
-	RowDetailWidth     = 280  // px: Right-aligned detail text of a list row.
-	RowDetailRight     = 320  // px: Distance of that detail from the page edge.
-	RowTapTextInset    = 360  // px: Width kept free beside a tappable row's text.
-	RowLabelHeight     = 56   // px: Height of a row label line (type.row.line).
-	SectionHeight      = 64   // px: Section label block; the 2 px rule sits at its bottom.
-	ButtonHeight       = 120  // px: Primary and secondary buttons.
-	ButtonTallHeight   = 168  // px: A button whose label wraps to two lines.
-	ButtonMaxLines     = 2    // count: Lines a button label may take before it is elided.
-	FieldHeight        = 120  // px: Field box.
-	FieldTextHeight    = 60   // px: Height of the value line inside the field box; centred.
-	ToggleSwitchWidth  = 94   // px: Nickel's ToggleSwitch image on the Libra 2 class.
-	ToggleSwitchHeight = 56   // px
-	ToggleStateGap     = 25   // px: State word to switch.
-	ToggleStateWidth   = 140  // px: Width of the state word column.
-	NoticePadding      = 24   // px: Padding inside the notice box.
-	QrSide             = 480  // px: QR code box.
-	QrQuietZone        = 4    // count: Quiet zone, in modules.
-	EmptySpacer        = 240  // px: Space above an empty-state block.
-	PressedLongPress   = 600  // ms: Long press.
-	PressedDebounce    = 400  // ms: Debounce per target.
-	RefreshLive        = 5000 // ms: Live screens re-read their state this often while visible and idle.
+	TargetMin           = 120  // px: Minimum touch target (10 mm).
+	RowCompact          = 104  // px: kv, list, toggle rows.
+	RowTall             = 128  // px: row, radio with sub-line, toggle with detail.
+	RowDrawer           = 152  // px: Drawer list row.
+	RowDetailWidth      = 280  // px: Right-aligned detail text of a tappable row.
+	RowDetailRight      = 368  // px: Distance of that detail's left edge from the page edge: the row chevron (icon.chevron) and rhythm stay free at the right.
+	ListRowSecondaryMax = 400  // px: Widest secondary caption of a list row; the primary text takes the rest of the row.
+	RowTapTextInset     = 368  // px: Width kept free beside a tappable row's text (detail and chevron).
+	RowLabelHeight      = 56   // px: Height of a row label line (type.row.line).
+	SectionHeight       = 64   // px: Section label block; the 2 px rule sits at its bottom.
+	ButtonHeight        = 120  // px: Primary and secondary buttons.
+	ButtonTallHeight    = 168  // px: A button whose label wraps to two lines.
+	ButtonMaxLines      = 2    // count: Lines a button label may take before it is elided.
+	FieldHeight         = 120  // px: Field box.
+	FieldTextHeight     = 60   // px: Height of the value line inside the field box; centred.
+	ToggleSwitchWidth   = 94   // px: Nickel's ToggleSwitch image on the Libra 2 class.
+	ToggleSwitchHeight  = 56   // px
+	ToggleStateGap      = 25   // px: State word to switch.
+	ToggleStateWidth    = 140  // px: Width of the state word column.
+	NoticePadding       = 24   // px: Padding inside the notice box.
+	QrSide              = 480  // px: QR code box.
+	QrQuietZone         = 4    // count: Quiet zone, in modules.
+	EmptySpacer         = 240  // px: Space above an empty-state block.
+	PressedLongPress    = 600  // ms: Long press.
+	PressedDebounce     = 400  // ms: Debounce per target.
+	RefreshLive         = 5000 // ms: Live screens re-read their state this often while visible and idle.
 )
 
 // Gallery and viewer
@@ -205,12 +214,6 @@ const (
 
 // Legacy (pending later batches)
 const (
-	LegacyDrawerRowIcon         = 52   // px: Replaced by icon.drawerRow in fix 2.9 (F15).
-	LegacyEmptyIcon             = 160  // px: Replaced by icon.grid in fix 2.9 (F14).
-	LegacyDialogWidth           = 1000 // px: PlainDialog; becomes dialog.width in fix 2.8 (F18).
-	LegacyDialogTextSize        = 32   // px: PlainDialog text and buttons; becomes type.row in fix 2.8.
-	LegacyDialogButtonBorder    = 2    // px: PlainDialog button border; becomes stroke.button in fix 2.8.
-	LegacyDrawerChevronSize     = 56   // px: Text chevron of a drawer row; a Nickel icon in fix 2.9 (F14).
 	LegacyDrawerQt6NoticeSize   = 28   // px: Qt6 warning text; becomes a notice in fix 3.1.
 	LegacyDrawerEmptyTextSize   = 30   // px: Drawer empty-state text; the empty-state component replaces it in fix 3.1 (F16).
 	LegacyTweaksBoxWidth        = 1140 // px: Tinh chinh modal; dialog tokens in fix 3.2 (F19).

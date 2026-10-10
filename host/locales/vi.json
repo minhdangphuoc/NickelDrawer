@@ -174,5 +174,6 @@
   "mod.action_unavailable": "Không dùng được trên firmware này.",
   "mod.unsupported_firmware": "NickelDrawer chưa hỗ trợ firmware này",
   "mod.unsupported_model": "NickelDrawer chưa hỗ trợ máy này",
-  "mod.qt6_upgrade_pending": "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"
+  "mod.qt6_upgrade_pending": "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động",
+  "mod.pending": "Đang xử lý…"
 }

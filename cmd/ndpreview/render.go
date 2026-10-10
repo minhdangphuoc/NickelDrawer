@@ -6,14 +6,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type renderOptions struct {
-	AppDir, OutPath, Screen, Locale, StatePath string
-	Page, Grey                                 int
-	Value                                      *string // --value: the screen value (viewer picture id)
-	Chrome                                     string  // --chrome shown|hidden (viewer)
-	FontSans, FontSerif, FontMono              string
+	AppDir, OutPath, Screen, Locale, StatePath, IconsDir string
+	Page, Grey                                           int
+	Value                                                *string // --value: the screen value (viewer picture id)
+	Chrome                                               string  // --chrome shown|hidden (viewer)
+	FontSans, FontSerif, FontMono                        string
 }
 
 func renderToFile(options renderOptions, stdout, stderr io.Writer) int {
@@ -22,6 +23,8 @@ func renderToFile(options renderOptions, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "ndpreview:", err)
 		return exitInvalid
 	}
+	options.StatePath = localizedStatePath(options.StatePath, options.Locale)
+	setIconDir(options.IconsDir)
 	overrides, err := readStateFile(options.StatePath)
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)
@@ -91,4 +94,18 @@ func saveCanvas(path string, canvas *image.Gray) error {
 		return fmt.Errorf("cannot finish writing %s: %w", path, err)
 	}
 	return nil
+}
+
+// localizedStatePath picks the English fixture next to a state file: for --locale en,
+// preview-state.json becomes preview-state.en.json when that file exists (sample data in the
+// language of the preview). Other locales, and files without an English sibling, are unchanged.
+func localizedStatePath(path, locale string) string {
+	if path == "" || locale != "en" || strings.HasSuffix(path, ".en.json") {
+		return path
+	}
+	english := strings.TrimSuffix(path, ".json") + ".en.json"
+	if _, err := os.Stat(english); err == nil {
+		return english
+	}
+	return path
 }

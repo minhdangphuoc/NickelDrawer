@@ -37,30 +37,72 @@ func toastItems(message string) []Item {
 	return []Item{box, text}
 }
 
-// dialogItems draws a modal: white box, 4 px border, title, text and two buttons (cancel left).
+// dialogItems draws a modal on the dialog tokens (docs/design-system.md 4.9): a 1040 px box with
+// a 3 px black border and 48 px padding, serif title (42 / 60), 36 px text, and two 120 px buttons
+// with the cancel button LEFT and the confirm button RIGHT. It is centred on the whole screen.
 func (rc renderContext) dialogItems(dialog DialogSpec) []Item {
-	textLines := wrapText(dialog.Text, dialogWidth-2*rhythm*2, regular(bodySize, familySans))
-	height := 48 + headingLineH + rhythm + len(textLines)*bodyLineH + rhythm*2 + buttonHeight + 48
+	innerW := dialogWidth - 2*dialogPadding
+	textLines := wrapText(dialog.Text, innerW, regular(rowTextSize, familySans))
+	height := 2*dialogPadding + buttonHeight
+	if dialog.Title != "" {
+		height += dialogTitleLineH + rhythm
+	}
+	if len(textLines) > 0 {
+		height += len(textLines)*rowLabelHeight + rhythm
+	}
 	x, y := (screenWidth-dialogWidth)/2, (screenHeight-height)/2
-	innerX, innerW := x+2*rhythm, dialogWidth-4*rhythm
-	title := textItem(innerX, y+48, innerW, headingLineH, elide(dialog.Title, innerW, bold(headingSize, familySans), false), headingSize, familySans, "start")
-	title.Bold = true
-	body := Item{Shape: "text", X: innerX, Y: y + 48 + headingLineH + rhythm, W: innerW, H: len(textLines) * bodyLineH, Lines: textLines,
-		Size: bodySize, LineH: bodyLineH, Family: familySans, Ink: inkBlack, Fill: noFill}
-	buttonsY := y + height - 48 - buttonHeight
+	innerX := x + dialogPadding
+	items := []Item{{Shape: "rect", X: x, Y: y, W: dialogWidth, H: height, Fill: paperFull, Border: dialogBorder, Ink: inkBlack}}
+	top := y + dialogPadding
+	if dialog.Title != "" {
+		title := textItem(innerX, top, innerW, dialogTitleLineH, elide(dialog.Title, innerW, bold(dialogTitleSize, familySerif), false), dialogTitleSize, familySerif, "start")
+		title.Bold = true
+		items = append(items, title)
+		top += dialogTitleLineH + rhythm
+	}
+	if len(textLines) > 0 {
+		items = append(items, Item{Shape: "text", X: innerX, Y: top, W: innerW, H: len(textLines) * rowLabelHeight, Lines: textLines,
+			Size: rowTextSize, LineH: rowLabelHeight, Family: familySans, Ink: inkBlack, Fill: noFill})
+	}
+	buttonsY := y + height - dialogPadding - buttonHeight
 	half := (innerW - rhythm) / 2
-	items := []Item{{Shape: "rect", X: x, Y: y, W: dialogWidth, H: height, Fill: paperFull, Border: dialogBorder}, title, body}
 	items = append(items, dialogButton(innerX, buttonsY, half, dialog.Cancel, false, "", true)...)
 	return append(items, dialogButton(innerX+half+rhythm, buttonsY, half, dialog.Ok, true, dialog.OkEvent, true)...)
 }
 
 func dialogButton(x, y, width int, label string, isFilled bool, event string, closes bool) []Item {
-	box := Item{Shape: "rect", X: x, Y: y, W: width, H: buttonHeight, Fill: noFill, Border: buttonBorder, Event: event, Close: closes, Label: label}
+	box := Item{Shape: "rect", X: x, Y: y, W: width, H: buttonHeight, Fill: noFill, Border: buttonBorder, Ink: inkBlack, Event: event, Close: closes, Label: label}
 	ink := inkBlack
 	if isFilled {
 		box.Fill, ink = inkBlack, paperFull
 	}
-	text := textItem(x, y+32, width, 56, elide(label, width, bold(bodySize, familySans), false), bodySize, familySans, "center")
+	text := textItem(x, y+(buttonHeight-rowLabelHeight)/2, width, rowLabelHeight, elide(label, width-2*rhythm, bold(rowTextSize, familySans), false), rowTextSize, familySans, "center")
 	text.Bold, text.Ink = true, ink
 	return []Item{box, text}
+}
+
+// menuItems draws Nickel's popup menu look (A11): 760 px wide, 3 px black border, a bold title
+// row, 120 px rows of 34 px text separated by 1 px dividers in the row line grey. The box is
+// centred on the point (centreX, centreY).
+func menuItems(title string, rows []string, centreX, centreY int) []Item {
+	height := 2*dialogBorder + targetMin*(1+len(rows)) + hairline*len(rows)
+	x, y := centreX-menuWidth/2, centreY-height/2
+	items := []Item{{Shape: "rect", X: x, Y: y, W: menuWidth, H: height, Fill: paperFull, Border: dialogBorder, Ink: inkBlack}}
+	innerX, innerW := x+dialogBorder+menuSide, menuWidth-2*dialogBorder-2*menuSide
+	rowTop := y + dialogBorder
+	label := func(text string, isBold bool) Item {
+		item := textItem(innerX, rowTop+(targetMin-copperuiMenuLine)/2, innerW, copperuiMenuLine,
+			elide(text, innerW, textFace{size: menuTextSize, family: familySans, isBold: isBold}, false), menuTextSize, familySans, "start")
+		item.Bold = isBold
+		return item
+	}
+	items = append(items, label(title, true))
+	rowTop += targetMin
+	for _, row := range rows {
+		items = append(items, Item{Shape: "rect", X: x + dialogBorder, Y: rowTop, W: menuWidth - 2*dialogBorder, H: hairline, Fill: lineRow})
+		rowTop += hairline
+		items = append(items, label(row, false))
+		rowTop += targetMin
+	}
+	return items
 }

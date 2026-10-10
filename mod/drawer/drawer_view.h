@@ -9,6 +9,7 @@
 #include "drawer_logic.h"
 #include "drawer_model.h"
 #include "painted_marks.h"
+#include "system_icon.h"
 
 class ItemWidget;
 class PageHeader;
@@ -74,7 +75,7 @@ private:
     void applyStatusBarInset();
     void addQt6NoticeIfPending();
     QWidget *createFooter();
-    PressArea *createArrow(const char *glyph, const char *slotOrSignal, QWidget *parent);
+    PressArea *createArrow(SystemIcon::Id icon, const char *fallbackGlyph, const char *slotOrSignal, QWidget *parent);
 
     void flatten(const DrawerModel &model);
     bool hasSameItems(const DrawerModel &model) const;
@@ -111,6 +112,8 @@ private:
     QList<ItemWidget *> pageWidgets;
     QLabel *hintLabel;
     QLabel *pageIndicator;
+    PressArea *previousArrow;
+    PressArea *nextArrow;
     QList<PressArea *> pressables;
     HeaderIconButton *refreshButton;  // stands for the "_refresh" host item
     HeaderIconButton *settingsButton; // stands for "_settings"

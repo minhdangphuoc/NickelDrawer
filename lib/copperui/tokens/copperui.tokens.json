@@ -1,6 +1,6 @@
 {
   "name": "CopperUI",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "comment": "Source of truth for every CopperUI constant. `make tokens` writes lib/copperui/include/copperui/tokens.h, internal/copperui/tokens.go and docs/copperui-tokens.md from this file; make check fails when one of them is stale. Units: px (device pixels, Kobo Libra 2 panel 1264 x 1680 at 300 ppi), grey (0 black .. 255 white, on the 16-level grid), ms, count, weight (400 regular, 700 bold), text, flag.",
   "groups": [
     {
@@ -20,7 +20,14 @@
         {"id": "body.top", "value": 273, "unit": "px", "doc": "inset.statusBar + header.height + rhythm."},
         {"id": "margin.bottom", "value": 72, "unit": "px", "doc": "Below the footer or the last block."},
         {"id": "footer.primary", "value": 120, "unit": "px", "doc": "The primary button sits at viewHeight - margin.bottom - footer.primary."},
+        {"id": "tabBar.height", "value": 126, "unit": "px", "doc": "Nickel's tab bar (MainNavView) below the view: 1680 - 1554, measured on firmware 4.38.23828 (debug.log: view 1264x1554)."},
+        {"id": "view.height", "value": 1554, "unit": "px", "doc": "screen.height - tabBar.height: what Nickel gives a pushed view."},
+        {"id": "page.height", "value": 1426, "unit": "px", "doc": "view.height - inset.statusBar: the canvas an app screen is laid out in (debug.log: canvas 1264x1426)."},
         {"id": "pager.height", "value": 56, "unit": "px", "doc": "\"1 / 3\" line in caption size, only when the body has more than one page."},
+        {"id": "pager.targetWidth", "value": 560, "unit": "px", "doc": "Each half of the pager line is a touch target of this width."},
+        {"id": "pager.targetHeight", "value": 80, "unit": "px", "doc": "Pager touch target: pager.height + rhythm."},
+        {"id": "pager.labelWidth", "value": 200, "unit": "px", "doc": "Room for \"99 / 99\" between the two arrows."},
+        {"id": "pager.arrowGap", "value": 24, "unit": "px", "doc": "Label to arrow."},
         {"id": "dialog.width", "value": 1040, "unit": "px", "doc": "Centred box (Nickel N3Dialog when available)."},
         {"id": "menu.width", "value": 760, "unit": "px", "doc": "Nickel NickelTouchMenu look."},
         {"id": "toast.bottom", "value": 260, "unit": "px", "doc": "Nickel's own toast position."}
@@ -139,9 +146,10 @@
       "name": "Icons",
       "tokens": [
         {"id": "icon.toolbar", "value": 64, "unit": "px", "doc": "List / grid toggles, apps, picture, tweaks (Tabler, 1:1)."},
-        {"id": "icon.drawerRow", "value": 64, "unit": "px", "doc": "Drawer row icon, drawn 1:1. Not yet used: see legacy.drawerRowIcon."},
-        {"id": "icon.grid", "value": 96, "unit": "px", "doc": "Grid cell icon and empty-state icon."},
+        {"id": "icon.drawerRow", "value": 64, "unit": "px", "doc": "Drawer row icon, drawn 1:1 (an app's icon-64.png, else the Tabler apps-64)."},
+        {"id": "icon.grid", "value": 96, "unit": "px", "doc": "Grid cell icon and empty-state icon (Tabler picture / apps)."},
         {"id": "icon.badge", "value": 56, "unit": "px", "doc": "Gallery current badge."},
+        {"id": "icon.chevron", "value": 64, "unit": "px", "doc": "Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1."},
         {"id": "icon.moreRow", "value": 50, "unit": "px", "doc": "Nickel's More-tab row icon on the Libra 2 class."},
         {"id": "underline.height", "value": 4, "unit": "px", "doc": "Underline of the active list / grid toggle."},
         {"id": "underline.gap", "value": 6, "unit": "px", "doc": "Gap between that icon and its underline."},
@@ -155,9 +163,10 @@
         {"id": "row.compact", "value": 104, "unit": "px", "doc": "kv, list, toggle rows."},
         {"id": "row.tall", "value": 128, "unit": "px", "doc": "row, radio with sub-line, toggle with detail."},
         {"id": "row.drawer", "value": 152, "unit": "px", "doc": "Drawer list row."},
-        {"id": "row.detailWidth", "value": 280, "unit": "px", "doc": "Right-aligned detail text of a list row."},
-        {"id": "row.detailRight", "value": 320, "unit": "px", "doc": "Distance of that detail from the page edge."},
-        {"id": "row.tapTextInset", "value": 360, "unit": "px", "doc": "Width kept free beside a tappable row's text."},
+        {"id": "row.detailWidth", "value": 280, "unit": "px", "doc": "Right-aligned detail text of a tappable row."},
+        {"id": "row.detailRight", "value": 368, "unit": "px", "doc": "Distance of that detail's left edge from the page edge: the row chevron (icon.chevron) and rhythm stay free at the right."},
+        {"id": "listRow.secondaryMax", "value": 400, "unit": "px", "doc": "Widest secondary caption of a list row; the primary text takes the rest of the row."},
+        {"id": "row.tapTextInset", "value": 368, "unit": "px", "doc": "Width kept free beside a tappable row's text (detail and chevron)."},
         {"id": "row.labelHeight", "value": 56, "unit": "px", "doc": "Height of a row label line (type.row.line)."},
         {"id": "section.height", "value": 64, "unit": "px", "doc": "Section label block; the 2 px rule sits at its bottom."},
         {"id": "button.height", "value": 120, "unit": "px", "doc": "Primary and secondary buttons."},
@@ -212,12 +221,6 @@
     {
       "name": "Legacy (pending later batches)",
       "tokens": [
-        {"id": "legacy.drawerRowIcon", "value": 52, "unit": "px", "doc": "Replaced by icon.drawerRow in fix 2.9 (F15)."},
-        {"id": "legacy.emptyIcon", "value": 160, "unit": "px", "doc": "Replaced by icon.grid in fix 2.9 (F14)."},
-        {"id": "legacy.dialogWidth", "value": 1000, "unit": "px", "doc": "PlainDialog; becomes dialog.width in fix 2.8 (F18)."},
-        {"id": "legacy.dialogTextSize", "value": 32, "unit": "px", "doc": "PlainDialog text and buttons; becomes type.row in fix 2.8."},
-        {"id": "legacy.dialogButtonBorder", "value": 2, "unit": "px", "doc": "PlainDialog button border; becomes stroke.button in fix 2.8."},
-        {"id": "legacy.drawerChevronSize", "value": 56, "unit": "px", "doc": "Text chevron of a drawer row; a Nickel icon in fix 2.9 (F14)."},
         {"id": "legacy.drawerQt6NoticeSize", "value": 28, "unit": "px", "doc": "Qt6 warning text; becomes a notice in fix 3.1."},
         {"id": "legacy.drawerEmptyTextSize", "value": 30, "unit": "px", "doc": "Drawer empty-state text; the empty-state component replaces it in fix 3.1 (F16)."},
         {"id": "legacy.tweaksBoxWidth", "value": 1140, "unit": "px", "doc": "Tinh chinh modal; dialog tokens in fix 3.2 (F19)."},

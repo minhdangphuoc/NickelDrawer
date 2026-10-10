@@ -1,6 +1,7 @@
 #ifndef NICKELDRAWER_SCREEN_LOGIC_H
 #define NICKELDRAWER_SCREEN_LOGIC_H
 
+#include "copperui/pack.h"
 #include "copperui/tokens.h"
 
 // Pure layout rules of an app screen (docs/design-system.md). They are a port of
@@ -19,6 +20,9 @@ namespace tokens = copperui::v1;
 
 static const int SCREEN_WIDTH = tokens::SCREEN_WIDTH;
 static const int SCREEN_HEIGHT = tokens::SCREEN_HEIGHT;
+// What an app screen is laid out in: the view Nickel gives (screen less its tab bar) less the
+// status-bar inset. The canvas is this high on the device (debug.log "canvas 1264x1426").
+static const int PAGE_HEIGHT = tokens::PAGE_HEIGHT;
 static const int GUTTER = tokens::GUTTER;
 static const int CONTENT_WIDTH = tokens::CONTENT_WIDTH;
 static const int RHYTHM = tokens::RHYTHM;
@@ -121,32 +125,15 @@ int wrapText(const char *utf8, int width, const TextRun &run, const TextMeter &m
 void elideText(const char *utf8, int width, const TextRun &run, const TextMeter &meter, bool isMiddle, char *out,
                int outSize);
 
-// ---- Blocks and pages (layout.go packPages) ----
+// ---- Blocks and pages ----
+// Paging with keep-with-next lives in CopperUI (lib/copperui/src/pack.cc, pinned by
+// lib/copperui/tests/pack-vectors.json, also read by cmd/ndpreview's layout.go).
 
-// A vertical slice of a screen; blocks never split across pages.
-struct Block {
-    int height;
-    int gap; // space after the block when another follows on the page
-};
-
-// Fills pageOfBlock[i] and returns the page count (at least 1).
-int packPages(const Block *blocks, int count, int available, int *pageOfBlock);
-
-// Height of blocks [first, first + count): the gap of the last one is not counted.
-int blocksHeight(const Block *blocks, int first, int count);
-
-// Body area of a screen whose visible height is screenHeight.
-struct BodyFrame {
-    int top;
-    int bottom;        // first pixel below the body (above the footer)
-    int footerTop;     // y of the first footer block
-    int pageBarTop;    // y of the "1 / N" line; only drawn when pageCount > 1
-    int pageCount;
-};
-
-// Pages the body blocks; when they need more than one page the page bar takes
-// room from every page (layout.go layoutScreen).
-BodyFrame layoutBody(const Block *body, int bodyCount, int footerHeight, int screenHeight, int *pageOfBlock);
+using copperui::v1::Block;
+using copperui::v1::BodyFrame;
+using copperui::v1::blocksHeight;
+using copperui::v1::layoutBody;
+using copperui::v1::packPages;
 
 // ---- Component sizes (components.go) ----
 
@@ -188,7 +175,7 @@ static const int GALLERY_BADGE_SIDE = tokens::ICON_BADGE;
 static const int GALLERY_BADGE_INSET = tokens::GALLERY_BADGE_INSET;
 static const int GALLERY_PLACEHOLDER_BORDER = tokens::STROKE_RULE;
 static const int GALLERY_BOTTOM_MARGIN = RHYTHM;
-static const int GALLERY_EMPTY_ICON_SIDE = tokens::LEGACY_EMPTY_ICON;
+static const int GALLERY_EMPTY_ICON_SIDE = tokens::ICON_GRID;
 
 static const int VIEWER_BAR_HEIGHT = tokens::VIEWER_BAR;
 static const int VIEWER_SECONDARY_WIDTH = tokens::VIEWER_SECONDARY;

@@ -79,6 +79,7 @@ static const Entry TABLE[] = {
     {"mod.unsupported_model", "NickelDrawer does not support this model yet", "NickelDrawer chưa hỗ trợ máy này"},
     {"mod.qt6_upgrade_pending", "Kobo is offering update 5.x — NickelDrawer will stop working",
      "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"},
+    {"mod.pending", "Working…", "Đang xử lý…"},
 };
 
 static_assert(sizeof(TABLE) / sizeof(TABLE[0]) == FallbackStrings::KEY_COUNT, "one entry per FallbackStrings::Key");

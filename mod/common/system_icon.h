@@ -24,7 +24,11 @@ enum Id {
     VIEW_LIST,   // drawer header list toggle
     VIEW_GRID,   // drawer header grid toggle
     PICTURE,     // gallery: picture missing, empty gallery
-    APP,         // drawer: an app without its own icon file
+    APP,         // drawer grid and empty states: an app without its own icon file (96 px)
+    APP_ROW,     // drawer list row: the same icon at 64 px, drawn 1:1
+    CHECK,       // list rows: the "done" mark (Tabler check, 64 px)
+    CHEVRON_LEFT,  // pager: previous page
+    CHEVRON_RIGHT, // pager: next page; row chevron
     SWITCH_ON,   // app screens: a toggle that is on (Nickel's settings switch)
     SWITCH_OFF,  // app screens: a toggle that is off
     ID_COUNT

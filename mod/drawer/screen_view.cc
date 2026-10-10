@@ -308,6 +308,35 @@ void ScreenView::showRadioValue(int index, const QString &value)
     }
 }
 
+// A quick action (not async) shows the pending label; async buttons stay as they are.
+void ScreenView::showPending(int index)
+{
+    ScreenModel next = model;
+    ScreenComponent *component = componentIn(&next, index);
+    bool isActionControl = component && (component->type == QLatin1String("button") ||
+                                         component->type == QLatin1String("row") ||
+                                         component->type == QLatin1String("empty") ||
+                                         component->type == QLatin1String("gallery"));
+    if (isActionControl && !component->isAsync && !component->isPending) {
+        component->isPending = true;
+        showScreen(next);
+    }
+}
+
+void ScreenView::clearPending()
+{
+    ScreenModel next = model;
+    bool hadPending = false;
+    for (int i = 0; i < next.body.size() + next.footer.size(); i++) {
+        ScreenComponent *component = componentIn(&next, i);
+        hadPending = hadPending || component->isPending;
+        component->isPending = false;
+    }
+    if (hadPending) {
+        showScreen(next);
+    }
+}
+
 void ScreenView::setInputBlocked(bool isBlocked)
 {
     isInputBlocked = isBlocked;

@@ -88,6 +88,8 @@ check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
 check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
 check "UI icon installed" test -f "$ADDS/koboapps/icons/ui/settings-64.png"
 check "app icon installed" test -f "$ADDS/apps/localsend/icon.png"
+check "drawer row icon (64 px) installed" test -f "$ADDS/apps/localsend/icon-64.png"
+check "chevron icon installed" test -f "$ADDS/koboapps/icons/ui/chevron-right-64.png"
 check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
 check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
 check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'

@@ -2,7 +2,7 @@
 
 The design system of NickelDrawer and of software built on it: design tokens, the text-fit rule and, as they move here from `mod/drawer`, the Qt 5.2 Widgets components that draw Nickel-native pages on Kobo e-readers. The rules behind the numbers are in [`docs/design-system.md`](../../docs/design-system.md).
 
-Status: 0.1.0, tokens only. The widget code still lives in `mod/drawer` and `mod/common` and moves here before 1.0, when this folder becomes its own repository.
+Status: 0.2.0. Tokens plus the first pure components. The canvas and widget code (layout blocks, text fit, painters) still live in `mod/drawer` and `mod/common` and move here before 1.0, when this folder becomes its own repository.
 
 ## Layout
 
@@ -10,8 +10,17 @@ Status: 0.1.0, tokens only. The widget code still lives in `mod/drawer` and `mod
 |---|---|
 | `tokens/copperui.tokens.json` | The source of truth for every size, grey and type setting. |
 | `include/copperui/tokens.h` | Generated. C++11 constants in `copperui::v1` and string macros for style sheets. |
+| `include/copperui/pack.h`, `src/pack.cc` | Paging with keep-with-next, body frame. Vectors: `tests/pack-vectors.json`. |
+| `include/copperui/pager.h`, `src/pager.cc` | Pager visibility and geometry (label, chevron icons, touch halves). |
+| `include/copperui/button.h`, `src/button.cc` | Button presentation: disabled, pending, async. |
+| `include/copperui/list_row.h`, `src/list_row.cc` | List row geometry; the `✓` check mark. |
+| `include/copperui/divider.h`, `src/divider.cc` | Row divider and section rule. |
+| `include/copperui/geometry.h` | `Rect`. |
+| `copperui.mk`, `Makefile` | `copperui.mk` builds `libcopperui.a` inside the NickelTC build (included by `mod/drawer/Makefile`, linked into the mod); `make -C lib/copperui docker-test` runs the host tests. |
 | `tests/text-vectors.json` | Wrap and elide cases that every implementation of the text-fit rule must reproduce. |
 | `VERSION`, `CHANGELOG.md` | Semantic version of the tokens and library. |
+
+What moved and what remains: the sources above are the library; `mod/drawer/screen_logic.{h,cc}` (text fit, component sizes, gallery math) and `screen_layout.cc` / `screen_canvas.cc` (blocks to paint items, painting) stay in the mod for now because they are tied to Qt strings and `ScreenModel`. `screen_logic.h` re-exports the library's packing under `ScreenLogic::`.
 
 In the NickelDrawer repository the same token file also generates `internal/copperui/tokens.go` and `docs/copperui-tokens.md`. Run `make tokens` after editing the token file or the vectors; `make check` fails when a generated file is stale.
 

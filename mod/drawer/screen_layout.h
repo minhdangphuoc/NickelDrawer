@@ -14,14 +14,18 @@
 
 #include "screen_logic.h"
 #include "screen_model.h"
+#include "system_icon.h"
 
 struct PaintItem {
     // SHAPE_IMAGE: the picture at imagePath fitted inside rect; the picture glyph
     // when the path is empty or unreadable (unless showsMissingGlyph is off).
     // SHAPE_CHECK: a check mark in ink inside rect, drawn only when isOn.
-    // SHAPE_PICTURE_GLYPH: an outline picture icon in ink, border = stroke width.
-    // SHAPE_BACK_ARROW: the header's drawn "←" in ink inside rect, border = stroke width.
-    // SHAPE_SWITCH: Nickel's on or off switch image (isOn) centred in rect, never drawn by us.
+    // SHAPE_PICTURE_ICON: the picture icon (Tabler) centred in rect, in ink.
+    // SHAPE_ICON: iconId (SystemIcon::Id) centred in rect at its own size, in ink; lines[0] is
+    //   the text shown when that icon is not installed (a chevron glyph), empty for none.
+    // SHAPE_BACK_ARROW: the header's back icon in ink inside rect.
+    // SHAPE_SWITCH: Nickel's on or off switch image (isOn) centred in rect, never drawn by us;
+    //   dimmed to ink when that is not black (a disabled toggle).
     enum Shape {
         SHAPE_RECT,
         SHAPE_ELLIPSE,
@@ -29,7 +33,8 @@ struct PaintItem {
         SHAPE_QR,
         SHAPE_IMAGE,
         SHAPE_CHECK,
-        SHAPE_PICTURE_GLYPH,
+        SHAPE_PICTURE_ICON,
+        SHAPE_ICON,
         SHAPE_BACK_ARROW,
         SHAPE_SWITCH
     };
@@ -53,6 +58,7 @@ struct PaintItem {
     bool isDashed = false;        // SHAPE_RECT border drawn dashed
     bool showsMissingGlyph = true;
     bool isOn = false;            // SHAPE_SWITCH: the on image
+    int iconId = -1;              // SHAPE_ICON: a SystemIcon::Id
 
     bool operator==(const PaintItem &other) const;
     bool operator!=(const PaintItem &other) const { return !(*this == other); }
@@ -95,6 +101,7 @@ struct LayoutBlock {
         KIND_PARAGRAPH,
         KIND_SECTION,
         KIND_VALUE_ROW,
+        KIND_LIST_ROW,
         KIND_TAP_ROW,
         KIND_TOGGLE,
         KIND_RADIO_OPTION,
@@ -123,6 +130,8 @@ struct LayoutBlock {
     QString secondary;
     QString title;
     bool isOn = false; // toggle on, radio option selected, button primary
+    bool isDimmed = false; // disabled: label, outline and control at ink.dim
+    bool hasCheckMark = false; // list row: the secondary text is the check mark, drawn as an icon
     bool isTappable = false;
     int listRow = -1; // list rows: index in the list's items, for the row menu
     bool isMiddleElided = false;
@@ -135,6 +144,7 @@ struct LayoutBlock {
 struct HostTexts {
     QString on;
     QString off;
+    QString pending; // replaces the label of a button whose quick action is running
 };
 
 class ScreenLayout {

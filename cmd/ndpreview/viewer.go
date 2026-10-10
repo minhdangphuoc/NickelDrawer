@@ -41,13 +41,12 @@ func (rc renderContext) layoutViewer(screen *uikit.Screen, viewer uikit.Componen
 	shownIndex := rc.shownIndex(tiles)
 	var items []Item
 	if rc.chrome == chromeHidden {
-		items = rc.viewerPicture(tiles, shownIndex, image.Rect(0, 0, screenWidth, screenHeight))
+		items = rc.viewerPicture(tiles, shownIndex, image.Rect(0, 0, screenWidth, viewHeight))
 		items = append(items, rc.viewerBackButton()...)
 	} else {
 		items = rc.viewerChrome(screen, viewer, tiles, shownIndex)
 	}
-	items = append(items, rc.overlayItems(screen, overlay)...)
-	return Page{ScreenID: screen.ID, Items: items, Index: 0, Count: 1}
+	return Page{ScreenID: screen.ID, Items: finishPage(items, rc.overlayItems(screen, overlay)), Index: 0, Count: 1}
 }
 
 func (rc renderContext) viewerPicture(tiles []pictureTile, shownIndex int, area image.Rectangle) []Item {
@@ -67,9 +66,9 @@ func (rc renderContext) viewerBackButton() []Item {
 	inset := (viewerBackTarget - viewerBackDisc) / 2
 	disc := Item{Shape: "ellipse", X: x + inset, Y: y + inset, W: viewerBackDisc, H: viewerBackDisc,
 		Fill: paperFull, Border: viewerBackOutline, Ink: inkBlack}
-	arrow := textItem(x, y, viewerBackTarget, viewerBackTarget, "←", headerTitleSz+8, familySans, "center")
-	arrow.Label = rc.host("back")
-	return []Item{disc, arrow}
+	hit := Item{Shape: "rect", X: x, Y: y, W: viewerBackTarget, H: viewerBackTarget, Fill: noFill, Label: rc.host("back")}
+	items := []Item{disc, hit}
+	return append(items, iconCentred("back", headerIconWidth, x, y, viewerBackTarget, viewerBackTarget, inkBlack)...)
 }
 
 func (rc renderContext) viewerChrome(screen *uikit.Screen, viewer uikit.Component, tiles []pictureTile, shownIndex int) []Item {
@@ -82,7 +81,7 @@ func (rc renderContext) viewerChrome(screen *uikit.Screen, viewer uikit.Componen
 	if isCurrent {
 		shown.Status = viewer.Prop("current_status")
 	}
-	barTop := screenHeight - bottomMargin - viewerBarHeight
+	barTop := viewHeight - bottomMargin - viewerBarHeight
 	area := image.Rect(0, headerHeight, screenWidth, barTop-rhythm)
 	items := rc.headerItems(&shown)
 	items = append(items, rc.viewerPicture(tiles, shownIndex, area)...)

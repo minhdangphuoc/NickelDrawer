@@ -96,6 +96,7 @@ struct ScreenComponent {
     bool hasConfirm = false;
     DeclaredDialog confirm;
     bool isAsync = false;
+    bool isPending = false; // the tapped quick action is still running: it shows the pending label (A9)
     QString emptyText;
     QString tap;
     QList<TextPair> items; // list: primary, secondary

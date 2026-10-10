@@ -1,0 +1,54 @@
+{
+  "status": "Importing 5/7",
+  "summary": "5 pictures · In use: hoa-sen · Fill",
+  "pictures": [
+    {
+      "id": "0001",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0001.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0001.png",
+      "label": "nui-trang",
+      "info": "Name: nui-trang.png\nSize: 1600 × 1200\nImported: 08/10/2026"
+    },
+    {
+      "id": "0002",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0002.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0002.png",
+      "label": "bien-xanh",
+      "info": "Name: bien-xanh.jpg\nSize: 1200 × 1600\nImported: 08/10/2026"
+    },
+    {
+      "id": "0003",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0003.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0003.png",
+      "label": "hoa-sen",
+      "info": "Name: hoa-sen.png\nSize: 2000 × 2000\nImported: 08/10/2026",
+      "badge": "current"
+    },
+    {
+      "id": "0004",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0004.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0004.png",
+      "label": "rung-thong",
+      "info": "Name: rung-thong.jpg\nSize: 1200 × 1600\nImported: 08/10/2026"
+    },
+    {
+      "id": "0005",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0005.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0005.png",
+      "label": "pho-co",
+      "info": "Name: pho-co.png\nSize: 1600 × 1200\nImported: 08/10/2026"
+    }
+  ],
+  "current_id": "0003",
+  "count": 5,
+  "mode": "fill",
+  "rotation": "fixed",
+  "busy": true,
+  "pending": 2,
+  "import_step": "Converting 5/7 · hoang-hon.png",
+  "sleep_screen_ready": false,
+  "sleep_screen_hint": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
+  "sleep_screen_notice": "Sleep screen is off · See Options",
+  "sleep_screen_line": "Turn on in Settings → Battery and privacy: \"Show current read\" and \"Show book cover full screen\".",
+  "last_import": ""
+}

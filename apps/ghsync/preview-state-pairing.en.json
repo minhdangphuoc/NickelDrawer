@@ -1,0 +1,23 @@
+{
+  "status": "Pairing",
+  "configured": true,
+  "guide": "",
+  "repo": "me/my-books",
+  "branch": "Default",
+  "folder": "epub",
+  "last_sync": "2026-10-10 08:14",
+  "added": "3",
+  "summary": "3 new, 120 already there, 0 failed",
+  "last_error": "",
+  "running": false,
+  "can_sync": true,
+  "step_detail": "",
+  "pairing": true,
+  "pair_row": "Open: see the code",
+  "pair_url": "http://192.168.1.23:8765",
+  "pair_code": "482913",
+  "pair_expires": "Open for 9 more minutes, until 21:30",
+  "pair_hint": "Scan the code or open the address on your phone, then enter the code. Use only on your home Wi-Fi.",
+  "pair_note": "",
+  "progress": ""
+}

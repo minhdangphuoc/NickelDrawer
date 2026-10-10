@@ -31,10 +31,19 @@ commands:
   render  headless PNG of one screen
           --out FILE (required)  --screen ID  --locale en|vi  --state FILE  --page N  --grey 16
           --value ID (screen value, e.g. the picture a viewer opens on)  --chrome shown|hidden (viewer)
-          --font FILE  --font-serif FILE  --font-mono FILE
+          --font FILE  --font-serif FILE  --font-mono FILE  --icons DIR
 
   drawer-grid  headless PNG of the drawer's grid view with sample apps
-          --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --font FILE
+  drawer-list  headless PNG of the drawer's list view with sample apps
+  tweaks       headless PNG of the "Tweaks" modal (as the mod draws it today)
+          --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --font FILE  --icons DIR
+
+Every command lays out in the real page area (1264x1426 below Nickel's 128 px status bar, a 126 px
+tab bar under it; both drawn as plain strips) and draws icons from the repository's Tabler PNGs
+(host/icons/ui, found by walking up from the working directory; --icons DIR overrides).
+
+State files: with --locale en, --state preview-state.json uses preview-state.en.json when that file
+exists next to it (English sample data); other locales use the file as given.
 
 --exec runs the app's action scripts on this computer inside a temporary folder when you tap
 a button. Without a font file render draws shapes only and prints a warning.
@@ -56,6 +65,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runRender(args[1:], stdout, stderr)
 	case "drawer-grid":
 		return runDrawerGrid(args[1:], stdout, stderr)
+	case "drawer-list":
+		return runDrawerList(args[1:], stdout, stderr)
+	case "tweaks":
+		return runTweaks(args[1:], stdout, stderr)
 	case "-h", "--help", "help":
 		fmt.Fprint(stdout, usage)
 		return exitOK
@@ -92,6 +105,7 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	locale := flags.String("locale", "en", "language of the preview (en or vi)")
 	statePath := flags.String("state", "", "JSON file with variable values")
+	iconsDir := flags.String("icons", "", "folder with the Tabler PNGs (default: host/icons/ui of the repository)")
 	port := flags.Int("port", defaultPort, "port on 127.0.0.1")
 	isExec := flags.Bool("exec", false, "run the app's action scripts when a button is tapped")
 	positional, err := parseInterspersed(flags, args)
@@ -102,13 +116,14 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return exitFailure
 	}
+	setIconDir(*iconsDir)
 	fonts, err := loadFonts("", "", "") // system fonts: the layout measures with what the PNG preview draws with
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)
 		return exitFailure
 	}
 	useFonts(fonts, stderr)
-	instance, err := newServer(serverConfig{AppDir: appDir, Locale: *locale, StatePath: *statePath, ExecEnabled: *isExec})
+	instance, err := newServer(serverConfig{AppDir: appDir, Locale: *locale, StatePath: localizedStatePath(*statePath, *locale), ExecEnabled: *isExec})
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)
 		return exitFailure
@@ -146,6 +161,7 @@ func runRender(args []string, stdout, stderr io.Writer) int {
 	flags.StringVar(&options.Screen, "screen", "", "screen id (default: the start screen)")
 	flags.StringVar(&options.Locale, "locale", "en", "language of the preview (en or vi)")
 	flags.StringVar(&options.StatePath, "state", "", "JSON file with variable values")
+	flags.StringVar(&options.IconsDir, "icons", "", "folder with the Tabler PNGs (default: host/icons/ui of the repository)")
 	flags.Func("value", "screen value, e.g. the picture id a viewer opens on (sets the variable selected)", func(text string) error {
 		options.Value = &text
 		return nil

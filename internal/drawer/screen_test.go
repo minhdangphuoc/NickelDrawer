@@ -239,3 +239,47 @@ func TestModelMarksAppsWithScreens(t *testing.T) {
 		t.Errorf("screen flags: %v", screens)
 	}
 }
+
+const fieldManifest = `{"schema":1,"id":"demo","name":"Demo","version":"1.0.0","actions":[
+ {"id":"name","label":"Name","run":"bin/go.sh","output":"show","menu":false},
+ {"id":"state","label":"State","run":"bin/state.sh","output":"show","menu":false}]}`
+
+const fieldUI = `{"kit":1,"start":"main","vars":{"name":"","auto":false,"other":""},
+ "screens":{"main":{"title":"Demo","body":[
+  {"field":"Name","bind":"name","enabled":"$auto"},
+  {"field":"No action","bind":"other"}]}}}`
+
+func writeFieldApp(t *testing.T, appsDir string) {
+	t.Helper()
+	dir := filepath.Join(appsDir, "demo")
+	for path, content := range map[string]string{
+		"app.json": fieldManifest, "ui.json": fieldUI, "bin/go.sh": "#!/bin/sh\n", "bin/state.sh": "#!/bin/sh\n",
+	} {
+		full := filepath.Join(dir, filepath.FromSlash(path))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// A field follows its `enabled` flag, and is read-only without an action named like its variable.
+func TestFieldEnabledFollowsItsFlagAndNeedsAnAction(t *testing.T) {
+	for state, wantEnabled := range map[string]bool{`{"auto":false}`: false, `{"auto":true}`: true} {
+		config, _ := testConfig(t, stateRunner(state, ""))
+		writeFieldApp(t, config.AppsDir)
+		reply, err := config.Screen("demo", "", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		field := findComponent(t, reply.Body, "field", 0)
+		if field.Enabled == nil || *field.Enabled != wantEnabled {
+			t.Errorf("state %s: field enabled = %v, want %v", state, field.Enabled, wantEnabled)
+		}
+		if readOnly := findComponent(t, reply.Body, "field", 1); readOnly.Enabled == nil || *readOnly.Enabled {
+			t.Errorf("state %s: a field without an action must be read-only: %+v", state, readOnly)
+		}
+	}
+}

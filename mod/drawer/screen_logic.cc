@@ -399,54 +399,6 @@ int wrapText(const char *utf8, int width, const TextRun &run, const TextMeter &m
     return maxLines;
 }
 
-// ---- Blocks and pages ----
-
-int packPages(const Block *blocks, int count, int available, int *pageOfBlock)
-{
-    int page = 0;
-    int used = 0;
-    int onPage = 0;
-    for (int i = 0; i < count; i++) {
-        int needed = blocks[i].height + (onPage > 0 ? blocks[i - 1].gap : 0);
-        if (onPage > 0 && used + needed > available) {
-            page++;
-            used = 0;
-            onPage = 0;
-            needed = blocks[i].height;
-        }
-        pageOfBlock[i] = page;
-        used += needed;
-        onPage++;
-    }
-    return page + 1;
-}
-
-int blocksHeight(const Block *blocks, int first, int count)
-{
-    int total = 0;
-    for (int i = first; i < first + count; i++) {
-        total += blocks[i].height + (i < first + count - 1 ? blocks[i].gap : 0);
-    }
-    return total;
-}
-
-BodyFrame layoutBody(const Block *body, int bodyCount, int footerHeight, int screenHeight, int *pageOfBlock)
-{
-    BodyFrame frame;
-    frame.top = HEADER_HEIGHT + RHYTHM;
-    frame.footerTop = screenHeight - BOTTOM_MARGIN - footerHeight;
-    frame.bottom = screenHeight - BOTTOM_MARGIN;
-    if (footerHeight > 0) {
-        frame.bottom -= footerHeight + RHYTHM;
-    }
-    frame.pageCount = packPages(body, bodyCount, frame.bottom - frame.top, pageOfBlock);
-    if (frame.pageCount > 1) {
-        frame.pageCount = packPages(body, bodyCount, frame.bottom - frame.top - PAGE_BAR_HEIGHT - RHYTHM, pageOfBlock);
-    }
-    frame.pageBarTop = frame.bottom - PAGE_BAR_HEIGHT;
-    return frame;
-}
-
 // ---- Component sizes ----
 
 int textBlockHeight(int lineCount, int lineHeightPx)

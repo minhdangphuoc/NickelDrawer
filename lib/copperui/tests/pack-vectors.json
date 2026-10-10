@@ -1,0 +1,19 @@
+{
+  "comment": "Shared paging vectors. cmd/ndpreview (Go layout.go) and lib/copperui/src/pack.cc (C++, through the generated lib/copperui/tests/pack_vectors.inc) must give these pages. A block is [height, gap, keepWithNext]; available is the height of a page body. pages[i] is the page index of block i.",
+  "cases": [
+    {"name": "no keep: blocks fill pages in order", "available": 250, "blocks": [[100, 10, 0], [100, 10, 0], [100, 10, 0]], "pages": [0, 0, 1]},
+    {"name": "an empty body has one page", "available": 100, "blocks": [], "pages": []},
+    {"name": "a block taller than a page gets a page of its own", "available": 500, "blocks": [[600, 0, 0], [100, 0, 0]], "pages": [0, 1]},
+    {"name": "a section label moves with its first row", "available": 250, "blocks": [[100, 10, 0], [64, 0, 1], [104, 24, 0]], "pages": [0, 1, 1]},
+    {"name": "a section label with room stays on the page", "available": 400, "blocks": [[100, 10, 0], [64, 0, 1], [104, 24, 0]], "pages": [0, 0, 0]},
+    {"name": "a field caption stays with its box", "available": 300, "blocks": [[200, 10, 0], [46, 8, 1], [120, 24, 0]], "pages": [0, 1, 1]},
+    {"name": "three blocks are kept together", "available": 200, "blocks": [[60, 10, 0], [50, 0, 1], [50, 0, 1], [50, 0, 0]], "pages": [0, 1, 1, 1]},
+    {"name": "keepWithNext on the last block is ignored", "available": 300, "blocks": [[100, 10, 0], [100, 0, 1]], "pages": [0, 0]},
+    {"name": "a group taller than a page is packed block by block", "available": 250, "blocks": [[100, 0, 1], [100, 0, 1], [100, 0, 1], [100, 0, 0]], "pages": [0, 0, 1, 1]},
+    {"name": "the gap inside a group counts: it fits", "available": 250, "blocks": [[100, 50, 1], [100, 0, 0]], "pages": [0, 0]},
+    {"name": "the gap inside a group counts: it does not", "available": 240, "blocks": [[100, 50, 1], [100, 0, 0]], "pages": [0, 1]},
+    {"name": "two groups on one page", "available": 450, "blocks": [[100, 10, 1], [100, 10, 0], [100, 10, 1], [100, 0, 0]], "pages": [0, 0, 0, 0]},
+    {"name": "two groups on two pages", "available": 400, "blocks": [[100, 10, 1], [100, 10, 0], [100, 10, 1], [100, 0, 0]], "pages": [0, 0, 1, 1]},
+    {"name": "a radio title stays with all its options", "available": 400, "blocks": [[100, 24, 0], [44, 8, 1], [104, 0, 1], [104, 0, 1], [104, 24, 0]], "pages": [0, 1, 1, 1, 1]}
+  ]
+}

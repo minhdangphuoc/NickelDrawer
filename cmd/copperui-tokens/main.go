@@ -18,6 +18,8 @@ import (
 const (
 	tokensPath  = "lib/copperui/tokens/copperui.tokens.json"
 	vectorsPath = "lib/copperui/tests/text-vectors.json"
+	packPath    = "lib/copperui/tests/pack-vectors.json"
+	packIncPath = "lib/copperui/tests/pack_vectors.inc"
 	headerPath  = "lib/copperui/include/copperui/tokens.h"
 	goPath      = "internal/copperui/tokens.go"
 	docPath     = "docs/copperui-tokens.md"
@@ -61,11 +63,16 @@ func generateAll(root string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	packVectors, err := loadPackVectors(filepath.Join(root, packPath))
+	if err != nil {
+		return nil, err
+	}
 	return map[string][]byte{
-		headerPath: emitCpp(spec),
-		goPath:     goSource,
-		docPath:    emitMarkdown(spec),
-		incPath:    emitVectors(vectors),
+		packIncPath: emitPackVectors(packVectors),
+		headerPath:  emitCpp(spec),
+		goPath:      goSource,
+		docPath:     emitMarkdown(spec),
+		incPath:     emitVectors(vectors),
 	}, nil
 }
 

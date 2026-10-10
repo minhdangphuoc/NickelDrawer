@@ -249,6 +249,7 @@ var Components = []ComponentSpec{
 		optionalKey("keyboard", enum("text", "number", "url")),
 		optionalKey("placeholder", text(40)),
 		optionalKey("secret", boolean),
+		optionalKey("enabled", flagShape),
 	}},
 	{Key: "bigcode", Main: expr(16), Props: []Prop{
 		optionalKey("digits", Shape{Kind: KindInt, Min: 3, Max: 12}),

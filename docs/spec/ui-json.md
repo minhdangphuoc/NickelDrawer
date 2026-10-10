@@ -98,7 +98,7 @@ A component is one object with one component key; its other keys are properties 
 | `row` | label text (60) | `detail` (60), `action` (action id; makes the row tappable) | `action` |
 | `toggle` | label text (60) | `bind` (required), `enabled`, `detail` (hint line inside the row, 60) | `toggle` |
 | `radio` | label text (60) | `bind` and `options` (both required), `enabled`. `options` is 1 to 8 entries `[value, label]` or `[value, label, sub-line]`; values are ids (`^[a-z0-9][a-z0-9_-]{0,31}$`), unique; label text (40), sub-line text (60, makes the row 128 px) | `input` |
-| `field` | label text (40) | `bind` (required), `keyboard`: `text` / `number` / `url`, `placeholder` (40), `secret` (bool; a warning when `bind` looks like a token or key: use `pair`) | `input` |
+| `field` | label text (40) | `bind` (required), `keyboard`: `text` / `number` / `url`, `placeholder` (40), `enabled` (flag; a disabled field is dimmed and has no target), `secret` (bool; a warning when `bind` looks like a token or key: use `pair`) | `input` |
 | `bigcode` | binding or literal (16) | `digits`: 3 to 12 | none |
 | `qr` | binding or literal (200) | `caption` (60) | none |
 | `pair` | object `{url, code, title, hint, expires}`; `url` (120) and `code` (16) required | none | none |
@@ -113,7 +113,7 @@ A component is one object with one component key; its other keys are properties 
 Details:
 
 - `button.confirm` is `{ "text": ..., "ok": ..., "cancel": ..., "title": ... }`. `text` (160) and `ok` (24, no `:`) are required. The host shows the confirm dialog first and sends the event only on OK.
-- `list` items are strings or `[primary, secondary]` arrays. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` names an app.json action (checked); a long-press on a row opens the menu and runs that action as `drawer event <app> <id> --list <bind> --index <n> --value <row text>` (`confirm: true` asks first). See drawer-protocol.md.
+- `list` items are strings or `[primary, secondary]` arrays; a secondary text of exactly `✓` is drawn as the check icon. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` names an app.json action (checked); a long-press on a row opens the menu and runs that action as `drawer event <app> <id> --list <bind> --index <n> --value <row text>` (`confirm: true` asks first). See drawer-protocol.md.
 - `list.tap` names an app.json action. A tap runs that action with the row's primary text in `NICKELDRAWER_VALUE`.
 - `gallery` and `viewer` items come from the `state` action, not from `ui.json`: `{ id, thumb, image, label, info, badge }` (`id` matches `^[A-Za-z0-9_-]{1,32}$`, `badge` is `current`). `thumb` and `image` are absolute `.png` paths below the app's `data/`; the drawer drops any other path. Looks and behaviour: [ui-kit.md](ui-kit.md) sections 3.19 and 3.20, contract: [wallpaper-gallery.md](wallpaper-gallery.md).
 - A `text` whose text resolves to empty is left out, like a `notice`, so `"$summary"` hides when the variable is empty. A `kv` row whose key and value both resolve to empty is left out, and a `kv` with no rows left is hidden, so `["$label", "$value"]` shows a row only while its variables are set.

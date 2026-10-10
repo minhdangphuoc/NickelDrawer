@@ -44,6 +44,7 @@ func TestValidDocumentsPass(t *testing.T) {
 		"list":                       screenJSON(`[{"list":"$items","max":10,"tap":"stop","menu":[{"id":"stop","label":"Remove","confirm":true}]}]`, ""),
 		"primary button":             screenJSON(`[]`, `[{"button":"Go","action":"start","style":"primary","enabled":"!$on"}]`),
 		"buttons enabled from state": screenJSON(`[]`, `[{"button":"Start","action":"start","enabled":"!$on"},{"button":"Stop","action":"stop","style":"primary","enabled":"$on"}]`),
+		"field with an enabled flag": screenJSON(`[{"field":"Name","bind":"on","enabled":"!$on"}]`, ""),
 		"comment key":                `{"_note":"x","kit":1,"start":"main","screens":{"main":{"title":"Main"}}}`,
 	}
 	for name, document := range cases {
@@ -75,6 +76,8 @@ func TestRulesRejectWithCode(t *testing.T) {
 		{"bare dollar", screenJSON(`[{"text":"costs $5"}]`, ""), CodeBadBinding},
 		{"index binding", screenJSON(`[{"text":"$items[0]"}]`, ""), CodeBadBinding},
 		{"bad flag", screenJSON(`[{"toggle":"x","bind":"on","enabled":"yes"}]`, ""), CodeBadBinding},
+		{"field flag without $", screenJSON(`[{"field":"Name","bind":"on","enabled":"yes"}]`, ""), CodeBadBinding},
+		{"field flag on undeclared var", screenJSON(`[{"field":"Name","bind":"on","enabled":"$ghost"}]`, ""), CodeUnknownVar},
 		{"button flag without $", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":"on"}]`), CodeBadBinding},
 		{"button flag on undeclared var", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":"$ghost"}]`), CodeUnknownVar},
 		{"button flag not a flag", screenJSON(`[]`, `[{"button":"Go","action":"start","enabled":1}]`), CodeWrongType},

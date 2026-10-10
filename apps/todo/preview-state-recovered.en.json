@@ -1,0 +1,8 @@
+{
+  "open": "0",
+  "done": "0",
+  "hasdone": false,
+  "newitem": "",
+  "notice": "The saved list was damaged. A copy is in data/todo.json.corrupt and the list starts empty.",
+  "items": []
+}
