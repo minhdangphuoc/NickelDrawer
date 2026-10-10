@@ -2,6 +2,8 @@
 
 For maintainers. Nothing here is automated: signing and publishing are manual steps on the maintainer's Mac.
 
+**Shortcut for a drawer release:** after the CHANGELOG section, the `Makefile` version and the release commit are pushed, `tools/publish-release.sh X.Y.Z [--prerelease]` runs `make release`, verifies, writes `SHA256SUMS.txt` and the notes, and creates the GitHub release (the tag is made on GitHub at `main`). The steps below are what it does.
+
 ## The signing key
 
 The ed25519 private key lives only at `~/.config/nickeldrawer/release-ed25519.key` (mode 600) on the maintainer's Mac. It never goes in the repo, CI, chat, logs or a release. The public key is `spec/release-ed25519.pub`; `appsctl` embeds it. If the key is lost or leaked, follow the key-loss paragraph in [UPDATES.md](UPDATES.md).
