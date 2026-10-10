@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"strings"
 )
@@ -112,9 +113,14 @@ func runDrawerList(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return exitFailure
 	}
+	items, err := drawerItemsFor(flags, "icon.png")
+	if err != nil {
+		fmt.Fprintln(stderr, "ndpreview:", err)
+		return exitFailure
+	}
 	build := func() Page {
 		extras := drawerListExtras{hasProblem: flags.problems, hasQt6Notice: flags.qt6Notice}
-		return drawerListPage(sampleDrawerItems(flags.appsDir, flags.locale, flags.count, "icon.png"), chromeFor(flags.locale), 0, extras)
+		return drawerListPage(items, chromeFor(flags.locale), 0, extras)
 	}
 	return renderDrawerPage("drawer list", flags, build, stdout, stderr)
 }

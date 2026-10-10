@@ -1,21 +1,21 @@
 # NickelDrawer (Tiếng Việt)
 
-Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm hàng **Ứng dụng** và bảng **Tinh chỉnh** vào tab **Thêm**, cùng một số công cụ nhỏ (nhận tệp từ điện thoại, đồng bộ sách từ GitHub, dùng ảnh của bạn làm màn hình ngủ, dọn thư viện) với giao diện giống Kobo. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
+Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm hàng **Ứng dụng** và bảng **Tinh chỉnh** vào tab **Thêm**, giúp các ứng dụng nhỏ có giao diện giống Kobo. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
 
-**Trạng thái: 1.0.0-beta.1.** Mới thử trên một máy và một bản firmware (xem [Firmware hỗ trợ](#firmware-hỗ-trợ)). Đọc [An toàn](#an-toàn) trước khi cài. Bản tiếng Anh: [README.md](README.md). Hướng dẫn chi tiết: [user-guide.vi.html](docs/guide/user-guide.vi.html) ([.md](docs/guide/user-guide.vi.md)).
+**Trạng thái: 1.0.0 beta** ([bản phát hành](../../releases)). Mới thử trên một máy và một bản firmware (xem [Firmware hỗ trợ](#firmware-hỗ-trợ)). Đọc [An toàn](#an-toàn) trước khi cài. Bản tiếng Anh: [README.md](README.md). Hướng dẫn chi tiết: [user-guide.vi.html](docs/guide/user-guide.vi.html) ([.md](docs/guide/user-guide.vi.md)).
 
-| LocalSend | Hình nền |
+| Dạng danh sách | Dạng lưới |
 |---|---|
-| ![Xem trước màn hình LocalSend](docs/img/localsend.png) | ![Xem trước màn hình Hình nền](docs/img/wallpaper.png) |
+| ![Ngăn ứng dụng dạng danh sách](docs/img/drawer-list.vi.png) | ![Ngăn ứng dụng dạng lưới](docs/img/drawer-grid.vi.png) |
 
-Đây là ảnh dựng trên máy tính bằng `ndpreview` ở kích thước màn hình e-ink, không phải ảnh chụp máy thật. Cách dựng lại:
+Ngăn ứng dụng dạng danh sách (tên, biểu tượng và trạng thái trực tiếp của từng ứng dụng) hoặc dạng lưới; hai nút trên thanh tiêu đề chuyển qua lại. Đây là ảnh dựng trên máy tính bằng `ndpreview` ở kích thước màn hình e-ink, không phải ảnh chụp máy thật. Cách dựng lại:
 
 ```sh
-go run ./cmd/ndpreview render apps/localsend --out docs/img/localsend.png
-go run ./cmd/ndpreview render apps/wallpaper --out docs/img/wallpaper.png
+go run ./cmd/ndpreview drawer-list --installed --locale vi --out docs/img/drawer-list.vi.png
+go run ./cmd/ndpreview drawer-grid --installed --locale vi --out docs/img/drawer-grid.vi.png
 ```
 
-Dùng `--screen ID`, `--locale vi` và `--state state.json` cho màn hình, ngôn ngữ và trạng thái khác. Ghi ảnh phụ vào `build/preview/` (không đưa lên git) và chép ảnh muốn giữ vào `docs/img/`.
+`ndpreview render <thư-mục-ứng-dụng>` vẽ màn hình riêng của một ứng dụng. Ghi ảnh phụ vào `build/preview/` (không đưa lên git) và chép ảnh muốn giữ vào `docs/img/`.
 
 ## Bạn được gì
 
@@ -23,7 +23,6 @@ Dùng `--screen ID`, `--locale vi` và `--state state.json` cho màn hình, ngô
 - **Tinh chỉnh.** Bảng giống phần cài đặt: màn hình ngủ, chụp màn hình, tự kết nối USB, chữ rõ nét, địa chỉ IP, khởi động lại và quét lại thư viện.
 - **Ứng dụng là thư mục.** Chép một thư mục có tệp mô tả và vài tập lệnh vào `.adds/apps/` là nó hiện ra. Không cần C++ ([docs/APPS.md](docs/APPS.md)).
 - **Màn hình ứng dụng gốc.** Ứng dụng mô tả danh sách, nút gạt, nút bấm, mã QR và trạng thái trực tiếp trong tệp `ui.json`; Ngăn vẽ ra.
-- **Ứng dụng kèm theo.** LocalSend (nhận tệp từ điện thoại, xếp vào Books, Documents, Comics và Pictures), GitHub (đồng bộ sách chỉ thêm, ghép nối từ điện thoại), Hình nền (thư viện ảnh màn hình ngủ), Thư viện (dọn sách trùng, gắn ngôn ngữ, chuẩn hóa Unicode) và Việc cần làm (danh sách việc nhỏ). Ứng dụng ẩn Bộ giao diện (UI Kit) hiện mọi thành phần màn hình cho người làm ứng dụng và người thử ([apps/uikit](apps/uikit/README.md)).
 - **Cập nhật có chữ ký.** Ứng dụng và công cụ chủ cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
 - **Mọi ngôn ngữ.** Tiếng Anh là bản gốc; tiếng Việt có sẵn đầu tiên. Ngôn ngữ theo cài đặt của chính Kobo ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 
@@ -83,7 +82,7 @@ Tệp rỗng bạn tạo qua USB trong `.adds/nickeldrawer/` (tạo thư mục n
 
 - Ngăn gốc là mod [NickelHook](https://github.com/pgaskin/NickelHook) có **failsafe**: nếu Nickel treo (hoặc bạn tắt máy một lần) trong 15 giây đầu sau khi mod nạp, mod bị bỏ ở lần khởi động sau và Nickel chạy như bản gốc.
 - **Gỡ cài đặt:** tạo tệp rỗng `.adds/nickeldrawer/uninstall`, eject, đợi máy khởi động lại. Muốn xóa hết thì xóa thêm hai thư mục `.adds/koboapps` và `.adds/apps`. Sách của bạn không bao giờ bị động đến.
-- Không thu thập dữ liệu. Mạng chỉ dùng cho việc bạn bắt đầu (LocalSend, đồng bộ GitHub, kiểm tra cập nhật).
+- Không thu thập dữ liệu. Mạng chỉ dùng cho việc bạn bắt đầu (tính năng mạng của một ứng dụng, kiểm tra cập nhật).
 - Bản phát hành có chữ ký (ed25519). Khóa riêng nằm trên máy của người duy trì.
 - Không có tệp nhị phân hay tài nguyên của Kobo trong kho mã này hay trong bản phát hành.
 
@@ -144,7 +143,7 @@ Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới ch�
 
 - [NickelHook](https://github.com/pgaskin/NickelHook) và [NickelMenu](https://github.com/pgaskin/NickelMenu) của Patrick Gaskin (MIT): khung hook mà ngăn gốc dùng, và menu chạy chung với nó.
 - [NickelTC](https://github.com/pgaskin/NickelTC): bộ biên dịch chéo, và cộng đồng nghiên cứu ngược Kobo với hiểu biết về cách Nickel hoạt động.
-- [localgo](https://github.com/bethropolis/localgo) (MIT): phần cài giao thức LocalSend mà ứng dụng LocalSend dùng.
+- [localgo](https://github.com/bethropolis/localgo) (MIT): phần cài giao thức LocalSend.
 - [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT): biểu tượng dự phòng khi không có biểu tượng của Nickel.
 - [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet): sửa giao diện và phông tiếng Việt cho Kobo. NickelDrawer được thiết kế để chạy chung với nó; không phụ thuộc vào nó.
 

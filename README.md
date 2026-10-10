@@ -1,21 +1,23 @@
 # NickelDrawer
 
-An app drawer for Kobo e-readers that run the stock firmware (Nickel). It adds an **Apps** row and a **Tweaks** panel to the More tab, and gives small tools (receive files from a phone, sync books from GitHub, use your pictures as the sleep screen, tidy your library) a native Kobo look. It works without a cloud account and sends nothing anywhere unless you start a feature that needs the network.
+An app drawer for Kobo e-readers that run the stock firmware (Nickel). It adds an **Apps** row and a **Tweaks** panel to the More tab, and gives small apps a native Kobo look. It works without a cloud account and sends nothing anywhere unless you start a feature that needs the network.
 
-**Status: 1.0.0-beta.1.** Verified on one device and one firmware build (see [Supported firmware](#supported-firmware)). Read [Safety](#safety) before you install.
+**Status: 1.0.0 beta** ([releases](../../releases)). Verified on one device and one firmware build (see [Supported firmware](#supported-firmware)). Read [Safety](#safety) before you install.
 
-| LocalSend | Wallpaper |
+Tiếng Việt: [README.vi.md](README.vi.md).
+
+| List view | Grid view |
 |---|---|
-| ![LocalSend screen preview](docs/img/localsend.png) | ![Wallpaper screen preview](docs/img/wallpaper.png) |
+| ![The drawer's list view](docs/img/drawer-list.png) | ![The drawer's grid view](docs/img/drawer-grid.png) |
 
-These are renders made on a computer with `ndpreview` at the e-ink size, not photos of a device. To regenerate them:
+The drawer as a list (name, icon and live status per app) or as a grid; the buttons in the header switch between them. These are renders made on a computer with `ndpreview` at the e-ink size, not photos of a device. To regenerate them:
 
 ```sh
-go run ./cmd/ndpreview render apps/localsend --out docs/img/localsend.png
-go run ./cmd/ndpreview render apps/wallpaper --out docs/img/wallpaper.png
+go run ./cmd/ndpreview drawer-list --installed --out docs/img/drawer-list.png
+go run ./cmd/ndpreview drawer-grid --installed --out docs/img/drawer-grid.png
 ```
 
-Use `--screen ID`, `--locale vi` and `--state state.json` for other screens, languages and states. Write extra renders to `build/preview/` (gitignored) and copy the ones you want to show into `docs/img/`.
+Add `--locale vi` for Vietnamese. `ndpreview render <app-dir>` draws an app's own screens. Write extra renders to `build/preview/` (gitignored) and copy the ones you want to show into `docs/img/`.
 
 ## What you get
 
@@ -23,7 +25,6 @@ Use `--screen ID`, `--locale vi` and `--state state.json` for other screens, lan
 - **Tweaks.** A settings-style panel for sleep screen, screenshots, auto USB connect, text legibility, IP address, reboot and library rescan.
 - **Apps are folders.** Copy a folder with a manifest and a few scripts to `.adds/apps/` and it appears. No C++ needed ([docs/APPS.md](docs/APPS.md)).
 - **Native app screens.** Apps describe lists, toggles, buttons, QR codes and live status in a `ui.json` file; the drawer draws them.
-- **Included apps.** LocalSend (receive files from a phone, sorted into Books, Documents, Comics and Pictures), GitHub sync (add-only book sync, paired from your phone), Wallpaper (a gallery for your sleep screen pictures), Library (dedupe, language tags, Unicode normalisation) and To-do (a small task list). A hidden UI Kit app shows every screen component for developers and testers ([apps/uikit](apps/uikit/README.md)).
 - **Signed updates.** Apps and the host tool update over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
 - **Any language.** English is the source; Vietnamese ships first. The language follows the Kobo's own setting ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 
@@ -83,7 +84,7 @@ Apps run as root on a device that holds your library. Install only apps you trus
 
 - The native drawer is a [NickelHook](https://github.com/pgaskin/NickelHook) mod with a **failsafe**: if Nickel crashes (or you power off once) in the first 15 seconds after the mod loads, the mod is left out at the next boot and Nickel starts as stock.
 - **Uninstall:** create `.adds/nickeldrawer/uninstall` (empty), eject, wait for the reboot. Then delete the `.adds/koboapps` and `.adds/apps` folders if you want everything gone. Your books are never touched.
-- No telemetry. The network is used only for what you start (LocalSend, GitHub sync, update check).
+- No telemetry. The network is used only for what you start (an app's network feature, the update check).
 - Releases are signed (ed25519). The private key stays on the maintainer's computer.
 - No Kobo binaries or Kobo assets are in this repository or in a release.
 
@@ -121,10 +122,6 @@ English and Vietnamese are maintained here. A new language is one JSON file per 
 
 Tiếng Việt: xem [README.vi.md](README.vi.md).
 
-### Vietnamese system UI (optional)
-
-Separate from NickelDrawer: [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet) (third-party, by redphx; firmware 4.x only) shows Kobo's own menus in Vietnamese and fixes Vietnamese fonts. It can be installed before or after NickelDrawer. See [Cài đặt thêm: giao diện Kobo bằng tiếng Việt](README.vi.md#giao-dien-tieng-viet) and the [guide appendix](docs/guide/user-guide.vi.md#s-giao-dien-tieng-viet) (Vietnamese; English summary in the [English guide](docs/guide/user-guide.en.md#vietnamese-system-ui)).
-
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE): free for personal use, study, hobby projects and non-profit organisations; **no commercial use**. Forks and changes are welcome under the same terms. NickelDrawer is source-available, not OSI open source. Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).
@@ -133,8 +130,7 @@ Separate from NickelDrawer: [kobo-tieng-viet](https://github.com/redphx/kobo-tie
 
 - [NickelHook](https://github.com/pgaskin/NickelHook) and [NickelMenu](https://github.com/pgaskin/NickelMenu) by Patrick Gaskin (MIT): the hook framework the native drawer is built on, and the menu it coexists with.
 - [NickelTC](https://github.com/pgaskin/NickelTC): the cross toolchain, and the wider Kobo reverse-engineering community for the knowledge of how Nickel works.
-- [localgo](https://github.com/bethropolis/localgo) (MIT): the LocalSend protocol implementation used by the LocalSend app.
+- [localgo](https://github.com/bethropolis/localgo) (MIT): the LocalSend protocol implementation.
 - [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT): fallback icons when Nickel's own are not available.
-- [kobo-tieng-viet](https://github.com/redphx/kobo-tieng-viet): Vietnamese UI and font fixes for Kobo. NickelDrawer is designed to coexist with it; it is not a dependency.
 
 NickelDrawer is an independent project. It is not made by, affiliated with or endorsed by Rakuten Kobo. "Kobo" and "Nickel" are trademarks of their owners.

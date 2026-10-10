@@ -37,7 +37,7 @@ commands:
   drawer-list  headless PNG of the drawer's list view with sample apps (--problems, --qt6)
   drawer-empty headless PNG of the drawer's empty state (--loading for the Loading state)
   tweaks       headless PNG of the "Tweaks" modal
-          --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --font FILE  --icons DIR
+          --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --installed (real apps of --apps)  --font FILE  --icons DIR
 
 Every command lays out in the real page area (1264x1426 below Nickel's 128 px status bar, a 126 px
 tab bar under it; both drawn as plain strips) and draws icons from the repository's Tabler PNGs

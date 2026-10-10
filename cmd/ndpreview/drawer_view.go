@@ -128,6 +128,7 @@ type drawerFlags struct {
 	out, appsDir, locale, font, icons string
 	count                             int
 	loading, problems, qt6Notice      bool
+	installed                         bool
 }
 
 func parseDrawerFlags(name string, args []string, stderr io.Writer, defaultCount int) (drawerFlags, bool) {
@@ -140,6 +141,7 @@ func parseDrawerFlags(name string, args []string, stderr io.Writer, defaultCount
 	flags.IntVar(&parsed.count, "count", defaultCount, "number of sample items")
 	flags.BoolVar(&parsed.loading, "loading", false, "drawer-empty: the Loading state (heading alone) instead of the empty state")
 	flags.BoolVar(&parsed.problems, "problems", false, "drawer-list: add a Problems section with one problem row")
+	flags.BoolVar(&parsed.installed, "installed", false, "drawer-list, drawer-grid: the visible apps of --apps with their own names, not the samples")
 	flags.BoolVar(&parsed.qt6Notice, "qt6", false, "drawer-list: show the Qt6 upgrade warning notice under the header")
 	flags.StringVar(&parsed.font, "font", "", "TrueType or OpenType file for text (default: a system font if found)")
 	flags.StringVar(&parsed.icons, "icons", "", "folder with the Tabler PNGs (default: host/icons/ui of the repository)")

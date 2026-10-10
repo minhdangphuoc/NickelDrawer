@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -102,8 +103,13 @@ func runDrawerGrid(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return exitFailure
 	}
+	items, err := drawerItemsFor(flags, "icon.png")
+	if err != nil {
+		fmt.Fprintln(stderr, "ndpreview:", err)
+		return exitFailure
+	}
 	build := func() Page {
-		return drawerGridPage(sampleDrawerItems(flags.appsDir, flags.locale, flags.count, "icon.png"), chromeFor(flags.locale), 0)
+		return drawerGridPage(items, chromeFor(flags.locale), 0)
 	}
 	return renderDrawerPage("drawer grid", flags, build, stdout, stderr)
 }

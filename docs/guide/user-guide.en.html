@@ -69,7 +69,7 @@ main p > em:only-child { color: var(--muted); font-size: .85rem; }
 blockquote p:last-child { margin-bottom: 0; }
 </style>
 <div class="shell">
-  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#what-nickeldrawer-is-and-is-not">What NickelDrawer is (and is not)</a><a href="#check-that-your-kobo-is-supported">Check that your Kobo is supported</a><a href="#before-you-install">Before you install</a><a href="#install">Install</a><a href="#first-look">First look</a><a href="#localsend-receive-books-from-your-phone">LocalSend: receive books from your phone</a><a href="#github-sync-books-from-your-repository">GitHub: sync books from your repository</a><a href="#wallpaper-your-pictures-on-the-sleep-screen">Wallpaper: your pictures on the sleep screen</a><a href="#library-tidy-your-books">Library: tidy your books</a><a href="#to-do-a-small-task-list">To-do: a small task list</a><a href="#tweaks">Tweaks</a><a href="#updates">Updates</a><a href="#languages">Languages</a><a href="#troubleshooting">Troubleshooting</a><a href="#safety-and-uninstall">Safety and uninstall</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a><a href="#optional-vietnamese-system-ui">Optional: Vietnamese system UI</a><a href="#glossary">Glossary</a></nav>
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#what-nickeldrawer-is-and-is-not">What NickelDrawer is (and is not)</a><a href="#check-that-your-kobo-is-supported">Check that your Kobo is supported</a><a href="#before-you-install">Before you install</a><a href="#install">Install</a><a href="#first-look">First look</a><a href="#localsend-receive-books-from-your-phone">LocalSend: receive books from your phone</a><a href="#github-sync-books-from-your-repository">GitHub: sync books from your repository</a><a href="#wallpaper-your-pictures-on-the-sleep-screen">Wallpaper: your pictures on the sleep screen</a><a href="#library-tidy-your-books">Library: tidy your books</a><a href="#to-do-a-small-task-list">To-do: a small task list</a><a href="#tweaks">Tweaks</a><a href="#updates">Updates</a><a href="#languages">Languages</a><a href="#troubleshooting">Troubleshooting</a><a href="#safety-and-uninstall">Safety and uninstall</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a><a href="#glossary">Glossary</a></nav>
   <main>
     <header class="top">
       <span class="eyebrow">NickelDrawer · user guide</span>
@@ -231,7 +231,7 @@ blockquote p:last-child { margin-bottom: 0; }
 </tbody>
 </table></div>
 <p>Nothing else changes until you use an app or a tweak. Each app writes only to its own folders (for example LocalSend writes to <code>Books</code>, <code>Documents</code>, <code>Comics</code> and <code>Pictures</code>). Tweaks change Kobo settings only when you tap them.</p>
-<p>NickelDrawer does not need NickelMenu and works next to it. It also works next to kobo-tieng-viet (Vietnamese fonts and fixes for Kobo).</p>
+<p>NickelDrawer does not need NickelMenu and works next to it.</p>
 <h2 id="install">Install</h2>
 <p>There are two ways. Most people use <strong>way A</strong>.</p>
 <h3 id="way-a-copy-the-release-files-any-computer">Way A: copy the release files (any computer)</h3>
@@ -1000,18 +1000,6 @@ No. The license allows personal, study, hobby and non-profit use only.</p>
 A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default; turn it on with <strong>⚙</strong> → <strong>Hidden apps</strong> → <strong>UI Kit</strong>.</p>
 <p><strong>Where are my files?</strong>
 Received books in <code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>. GitHub books in the <code>GitHub</code> folders inside them. App settings in <code>.adds/apps/&lt;app&gt;/data/</code>.</p>
-<p><a id="vietnamese-system-ui"></a></p>
-<h2 id="optional-vietnamese-system-ui">Optional: Vietnamese system UI</h2>
-<p>This is separate from NickelDrawer, which already has its own Vietnamese translation and works with or without it. Kobo's own menus can be shown in Vietnamese, with fonts that cover Vietnamese letters (without the fix, accented letters may show as boxes), by installing the third-party project <a href="https://github.com/redphx/kobo-tieng-viet">kobo-tieng-viet</a> by redphx. It has its own license terms, is not part of NickelDrawer and is not affiliated with Kobo.</p>
-<ul>
-<li><strong>Firmware:</strong> 4.x only; 3.x and 5.x are not supported (per the project page). Decline Kobo's 5.x (Qt6) offer: see the <a href="#faq">FAQ</a> and <a href="../DECISIONS.md">DECISIONS.md</a>.</li>
-<li><strong>Install:</strong> back up first, copy the project's <code>KoboRoot.tgz</code> into the hidden <code>.kobo</code> folder (do not unzip it), eject, wait about 3 minutes. Select <strong>Extra: vi</strong> under Settings → Language and dictionaries † if the language does not switch by itself. Uninstall: an empty <code>uninstall.txt</code> in <code>.adds/tiengviet/</code>. Follow the project's own instructions; they may change.</li>
-<li><strong>With NickelDrawer:</strong> either order works; install one, let the Kobo reboot, then the other. After a Kobo firmware update, check both.</li>
-<li><strong>Fonts for reading:</strong> copy <code>.ttf</code> or <code>.otf</code> files to a <code>fonts</code> folder at the Kobo root, then pick them in the reading menu (Supplemental, Font Face; <a href="https://help.kobo.com/hc/en-us/articles/13009477876631-Load-fonts-onto-your-Kobo-eReader">Kobo help</a>). Check Vietnamese coverage with <code>python3 tools/vncheck.py font.ttf</code> (needs <code>pip install fonttools</code>). A book with embedded fonts may ignore your choice.</li>
-<li><strong>Reading tips:</strong> convert EPUBs to KEPUB (<a href="https://github.com/pgaskin/kepubify">kepubify</a>, or Calibre with the <a href="https://www.mobileread.com/forums/showthread.php?t=211135">Kobo Touch Extended</a> plugin), keep file names and metadata in NFC and set the book language to <code>vi</code> (the Library app fixes both: <a href="#library-tidy-your-books">Library</a>).</li>
-<li><strong>Dictionary:</strong> <a href="https://github.com/redphx/tudien">redphx/tudien</a> is an optional English-Vietnamese dictionary; third-party dictionaries are at your own risk.</li>
-</ul>
-<p>The full steps are in the Vietnamese guide: <a href="user-guide.vi.html#s-giao-dien-tieng-viet">Cài thêm: giao diện Kobo bằng tiếng Việt</a>.</p>
 <h2 id="glossary">Glossary</h2>
 <p>Kobo's own names (the screens NickelDrawer works with) and NickelDrawer's names, on a Kobo set to English and to Vietnamese.</p>
 <div class="tbl"><table>
