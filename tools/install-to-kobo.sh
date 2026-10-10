@@ -18,17 +18,19 @@ REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 KOBO_VOLUME_NAME=KOBOeReader
 KOBO_SEARCH_DIRS=${KOBO_SEARCH_DIRS:-/Volumes /media/${USER:-$(id -un)} /run/media/${USER:-$(id -un)} /mnt}
 
-# Prints the first mounted Kobo volume, or the macOS default when none is mounted (the
-# "no Kobo found" message then names a path the user knows).
+# Prints the first mounted Kobo volume, or the volume path in the first search dir when none
+# is mounted (on macOS that is /Volumes, so the "no Kobo found" message names a path the user
+# knows; an overridden search list never falls back to a real mount).
 detect_kobo_root() {
-    local searchDir
+    local searchDir firstSearchDir=""
     for searchDir in $KOBO_SEARCH_DIRS; do
+        firstSearchDir=${firstSearchDir:-$searchDir}
         if [ -d "$searchDir/$KOBO_VOLUME_NAME/.kobo" ]; then
             echo "$searchDir/$KOBO_VOLUME_NAME"
             return
         fi
     done
-    echo "/Volumes/$KOBO_VOLUME_NAME"
+    echo "${firstSearchDir:-/Volumes}/$KOBO_VOLUME_NAME"
 }
 
 KOBO_ROOT=${KOBO_ROOT:-$(detect_kobo_root)}
