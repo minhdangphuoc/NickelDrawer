@@ -81,6 +81,7 @@ check "config.example.json installed" test -f "$ADDS/apps/ghsync/data/config.exa
 check "no other ghsync data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l | tr -d ' ')" = 1
 check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
 check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
+check "UI icon installed" test -f "$ADDS/koboapps/icons/ui/settings-64.png"
 check "app icon installed" test -f "$ADDS/apps/localsend/icon.png"
 check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
 check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"

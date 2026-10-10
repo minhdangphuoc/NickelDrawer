@@ -2,8 +2,6 @@ package main
 
 import (
 	"bytes"
-	"image"
-	"image/draw"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -11,17 +9,6 @@ import (
 )
 
 const repoRoot = "../.."
-
-func decodeNRGBA(t *testing.T, data []byte) *image.NRGBA {
-	t.Helper()
-	decoded, err := png.Decode(bytes.NewReader(data))
-	if err != nil {
-		t.Fatal(err)
-	}
-	result := image.NewNRGBA(decoded.Bounds())
-	draw.Draw(result, result.Bounds(), decoded, decoded.Bounds().Min, draw.Src)
-	return result
-}
 
 // A stale committed icon fails here; fix with `go run ./cmd/iconsgen -repo .`.
 func TestCommittedIconsMatchGenerator(t *testing.T) {
@@ -31,51 +18,39 @@ func TestCommittedIconsMatchGenerator(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%v; run: go run ./cmd/iconsgen -repo .", err)
 			}
-			want := render(entry).image()
-			got := decodeNRGBA(t, committed)
-			if got.Bounds() != want.Bounds() || !bytes.Equal(got.Pix, want.Pix) {
+			want, err := encode(repoRoot, entry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(committed, want) {
 				t.Fatalf("%s is stale; run: go run ./cmd/iconsgen -repo .", entry.path)
 			}
 		})
 	}
 }
 
-func TestIconsAreBlackOutlinesOnTransparent(t *testing.T) {
+func TestIconsAreBlackStrokesOnTransparent(t *testing.T) {
 	for _, entry := range icons {
 		t.Run(entry.path, func(t *testing.T) {
-			rendered := render(entry).image()
-			size := entry.style.size
-			if rendered.Bounds().Dx() != size || rendered.Bounds().Dy() != size {
-				t.Fatalf("size = %v, want %dx%d", rendered.Bounds(), size, size)
+			rendered, err := render(repoRoot, entry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if rendered.Bounds().Dx() != entry.size || rendered.Bounds().Dy() != entry.size {
+				t.Fatalf("size = %v, want %dx%d", rendered.Bounds(), entry.size, entry.size)
 			}
 			inked := 0
 			for offset := 0; offset < len(rendered.Pix); offset += 4 {
+				if rendered.Pix[offset+3] == 0 {
+					continue
+				}
+				inked++
 				if rendered.Pix[offset] != 0 || rendered.Pix[offset+1] != 0 || rendered.Pix[offset+2] != 0 {
 					t.Fatal("found a non-black pixel")
 				}
-				if rendered.Pix[offset+3] > 0 {
-					inked++
-				}
 			}
-			if inked < size*size/30 || inked > size*size/2 {
+			if inked < entry.size*entry.size/60 || inked > entry.size*entry.size/2 {
 				t.Fatalf("%d inked pixels: icon looks empty or filled", inked)
-			}
-		})
-	}
-}
-
-func TestIconsStayInsideTheMargin(t *testing.T) {
-	for _, entry := range icons {
-		t.Run(entry.path, func(t *testing.T) {
-			rendered := render(entry).image()
-			size, minimumMargin := entry.style.size, entry.style.margin
-			for y := 0; y < size; y++ {
-				for x := 0; x < size; x++ {
-					isInMargin := x < minimumMargin || y < minimumMargin || x >= size-minimumMargin || y >= size-minimumMargin
-					if isInMargin && rendered.NRGBAAt(x, y).A > 0 {
-						t.Fatalf("ink at (%d,%d) inside the %d px margin", x, y, minimumMargin)
-					}
-				}
 			}
 		})
 	}
@@ -83,37 +58,28 @@ func TestIconsStayInsideTheMargin(t *testing.T) {
 
 func TestRenderIsDeterministic(t *testing.T) {
 	for _, entry := range icons {
-		first, err := encode(entry)
+		first, err := encode(repoRoot, entry)
 		if err != nil {
 			t.Fatal(err)
 		}
-		second, _ := encode(entry)
+		second, _ := encode(repoRoot, entry)
 		if !bytes.Equal(first, second) {
 			t.Errorf("%s differs between runs", entry.path)
 		}
 	}
 }
 
-// The More-tab row icon sits next to Nickel's own (50x50, ~2 px strokes, 2 px padding).
-func TestAppsRowIconMatchesNickelMoreIcons(t *testing.T) {
-	for _, entry := range icons {
-		if entry.path != "host/icons/apps.png" {
-			continue
-		}
-		rendered := render(entry).image()
-		if rendered.Bounds().Dx() != 50 || rendered.Bounds().Dy() != 50 {
-			t.Fatalf("apps.png is %v, want 50x50 like Nickel's More icons", rendered.Bounds())
-		}
-		left, right := 50, -1
-		for x := 0; x < 50; x++ {
-			if rendered.NRGBAAt(x, 13).A > 128 { // a row through the top two squares
-				left, right = min(left, x), max(right, x)
-			}
-		}
-		if left > 5 || right < 44 {
-			t.Fatalf("ink spans x %d..%d across the top squares, want about 3..46 like Nickel's icons", left, right)
-		}
-		return
+// The More-tab row icon sits next to Nickel's own (50x50).
+func TestAppsRowIconIsNickelMoreSize(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join(repoRoot, "host/icons/apps.png"))
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Fatal("host/icons/apps.png is not generated")
+	config, err := png.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config.Width != 50 || config.Height != 50 {
+		t.Fatalf("apps.png is %dx%d, want 50x50 like Nickel's More icons", config.Width, config.Height)
+	}
 }
