@@ -138,7 +138,7 @@ Order between 23697 and 23684 is by build number and CDN month (May 2026 vs Apr 
 
 ## 4. Phase-by-phase breakdown
 
-Estimates are agent working hours. "User" lines are what the user must do; they are grouped into batched test sessions (section 5.3).
+Estimates are developer working hours. "User" lines are what the user must do; they are grouped into batched test sessions (section 5.3).
 
 ### Phase 0 — Clean base (done, 8 Oct 2026)
 
@@ -171,7 +171,7 @@ Estimates are agent working hours. "User" lines are what the user must do; they 
 
 ### Phase 2 — Toolchain + RE setup + hello-world (≈ 3 days, +1.5 d for the firmware matrix)
 
-**Objective:** a reproducible build on the Mac, all five libnickel builds analysed in Ghidra with Ghidra reachable from the maintainer, and a hello-world mod whose failsafe and uninstall paths were exercised on the device.
+**Objective:** a reproducible build on the Mac, all five libnickel builds analysed in Ghidra, and a hello-world mod whose failsafe and uninstall paths were exercised on the device.
 
 | # | Task | Est (h) |
 |---|---|---|
@@ -179,18 +179,18 @@ Estimates are agent working hours. "User" lines are what the user must do; they 
 | 2.2 | Docker wrapper `tools/tc` that runs `ghcr.io/pgaskin/nickeltc:1` with `--platform linux/amd64`; confirm `arm-nickel-linux-gnueabihf-g++ --version` = 4.9.4 and `qmake -query` shows Qt 5.2.1 (**verify** image tag `:1` vs `:1.0`; nickel-screensaver uses `:1.0`) | 1.5 |
 | 2.3 | `tools/fetch-fw.sh <ver>`: downloads the official zip for kobo9 into `~/.cache/koboapps/fw/<ver>/` (outside the repo), checks sha256 against `re/firmware.lock` (first run records it), extracts only `KoboRoot.tgz` → `usr/local/Kobo/libnickel.so.1.0.0`, `libnickel.so.1.0.0` symbol dump via `nm -D`, and the `version`/`upgrade` identifiers to verify it is a Freescale (Libra 2) image. Run for all five builds + 4.38.23429 | 2.5 |
 | 2.4 | Ghidra: install (needs JDK 21 — **verify** current Ghidra 11.x requirement), create project `libnickel`, import the five `libnickel.so.1.0.0` as separate programs named by version, auto-analyse (ARM v7 LE, Thumb aware; enable "Demangler GNU" and "Shared Return Calls"). Expect ~30–60 min per binary on an M-series Mac; run as a batch overnight with `analyzeHeadless` | 3 |
-| 2.5 | Ghidra: install the plugin zip in Ghidra (`File → Install Extensions`), enable `GhidraPlugin`, run `bridge_mcp_ghidra.py` (Python 3 + `mcp` SDK), register as an MCP server in the maintainer (`
+| 2.5 | Ghidra smoke test: open the 4.38.23828 program in the CodeBrowser, list classes, decompile `MainNavView::MainNavView` | 1 |
 | 2.6 | Hello-world mod: `nh_info{name="koboapps", uninstall_flag=".adds/koboapps/uninstall", failsafe_delay=15}`, one optional dlsym (`MainWindowController::sharedInstance` + `toast`), `init()` reads `/mnt/onboard/.kobo/version`, logs it, and schedules a toast "Xin chào từ Ứng dụng" 10 s after start through a `QTimer::singleShot` on the GUI thread. `make koboroot` | 3 |
 | 2.7 | Failsafe drill design: build variant B that deliberately `abort()`s in `init()` to confirm NickelHook removes the mod and Nickel boots; variant C normal. Write the test script for the user (section 9.5, cases SAFE-01..04) | 1 |
 | 2.8 | `tools/symcheck.py` v0: reads `re/symbols/required.yaml`, runs over every cached `libnickel` symbol dump, prints a matrix; wire into `make check` | 2.5 |
 | 2.9 | `re/symbols/symbols-4.38.23828.md` skeleton with the symbols the hello-world and NickelMenu/NickelDBus/NickelHardcover already use (section 6.5 format) | 1.5 |
 | 2.10 | Dev loop tooling: `tools/push.sh` (copies KoboRoot.tgz to `.kobo/` over USB or over LocalSend/FTP when the device is not mounted; **verify** which the user prefers), `tools/logs.sh` (collects `.kobo/koboapps_*.log`, `logread` via telnet if enabled) | 1.5 |
 
-**Deliverables:** repo building in Docker, `KoboRoot.tgz` of hello-world (variants B and C), Ghidra project with 5 programs, Ghidra reachable, `symcheck` matrix for 5 builds, `symbols-4.38.23828.md` v0.
+**Deliverables:** repo building in Docker, `KoboRoot.tgz` of hello-world (variants B and C), Ghidra project with 5 programs, `symcheck` matrix for 5 builds, `symbols-4.38.23828.md` v0.
 
 **Acceptance (device, session T2):** SAFE-01 variant B: Nickel boots within 2 minutes, mod file gone, log shows failsafe. SAFE-02 variant C: toast appears after boot, log shows firmware string. SAFE-03 uninstall file: mod removed on next boot. SAFE-04: USB connect/disconnect with the mod loaded, no errors. Gate **G1**.
 
-**Risks:** NickelTC under amd64 emulation may be slow or crash (mitigation: build in a cloud x86_64 runner via CI if needed); Ghidra analysis of a ~40 MB C++ binary is slow (headless batch). **Rollback:** failsafe, uninstall flag, or delete `/usr/local/Kobo/imageformats/libkoboapps.so` over telnet. **User:** approve installing Ghidra/Ghidra and Docker use (section 13), run session T2 (~30 min).
+**Risks:** NickelTC under amd64 emulation may be slow or crash (mitigation: build in a cloud x86_64 runner via CI if needed); Ghidra analysis of a ~40 MB C++ binary is slow (headless batch). **Rollback:** failsafe, uninstall flag, or delete `/usr/local/Kobo/imageformats/libkoboapps.so` over telnet. **User:** approve installing Ghidra and Docker use (section 13), run session T2 (~30 min).
 
 ### Phase 2b — RE spike (≈ 3 days)
 
@@ -203,7 +203,7 @@ Estimates are agent working hours. "User" lines are what the user must do; they 
 | 2b.3 | Prototype B: header bar. Find the header widget class used by Settings (likely `N3SettingsHeader`/`HeaderView` — **verify** name) with back chevron and title | 3 |
 | 2b.4 | Prototype C: keyboard. Create `TouchLineEdit` + `KeyboardReceiver` + `KeyboardFrame::createKeyboard(KeyboardScript, QLocale)` inside our view (not inside an `N3Dialog`); confirm Vietnamese layout from kobo-tieng-viet appears | 3 |
 | 2b.5 | Prototype D: list row + toggle. Instantiate `SettingContainer`-style rows and `TouchCheckBox`; compare pixel-by-pixel with a Settings screenshot | 2 |
-| 2b.6 | Record findings in `re/notes/view-push.md`, `re/notes/keyboard.md`, update `symbols-4.38.23828.md`; cross-check each found symbol on the other four builds with `symcheck` and Ghidra "find function by name" | 2 |
+| 2b.6 | Record findings in `re/notes/view-push.md`, `re/notes/keyboard.md`, update `symbols-4.38.23828.md`; cross-check each found symbol on the other four builds with `symcheck` and Ghidra's function search | 2 |
 
 **Acceptance (device, session T3):** prototypes A–D shown on device and screenshotted; user says the header/row/toggle look native. Gate **G2** (go/no-go for the native drawer). No-go fallback: "drawer as `N3Dialog` full-view mode" (NickelHardcover style) which is already proven to work, at the cost of no persistent tab bar.
 
@@ -294,14 +294,14 @@ Out of v1 scope. Minimal version: a `catalog.json` in a GitHub repo listing app 
 
 ## 5. Calendar timeline, milestones and gates
 
-Assumptions: Mon–Fri, ~5 agent hours/day (25 h/week), user test sessions mostly in evenings or weekends, batched (the device is in daily use). Public holidays: none affecting Oct–Dec 2026 in the schedule except the week of 21 Dec which is a half week.
+Assumptions: Mon–Fri, ~5 developer hours/day (25 h/week), user test sessions mostly in evenings or weekends, batched (the device is in daily use). Public holidays: none affecting Oct–Dec 2026 in the schedule except the week of 21 Dec which is a half week.
 
 ### 5.1 Week-by-week
 
-| Week | Dates (2026) | Phase | Agent work (≈ h) | User sessions | Milestone / gate |
+| Week | Dates (2026) | Phase | Developer work (≈ h) | User sessions | Milestone / gate |
 |---|---|---|---|---|---|
 | W1 | Mon 12 – Fri 16 Oct | P1 (app folders, menu fallback), P2 start (repo, Docker TC, fetch-fw ×6) | 25 | **T0** (Phase 0 check, 15 min, Mon/Tue) · **T1** (Phase 1, 30 min, Thu/Fri) | M1: Phase 1 shipped via NickelMenu (Fri 16) |
-| W2 | 19 – 23 Oct | P2 (Ghidra batch, Ghidra, hello-world, symcheck, push/log tools) | 25 | **T2** (failsafe drill + hello toast + USB, 30 min, Fri 23 or Sat 24) | **G1** go/no-go: failsafe and uninstall proven (Fri 23) |
+| W2 | 19 – 23 Oct | P2 (Ghidra batch, hello-world, symcheck, push/log tools) | 25 | **T2** (failsafe drill + hello toast + USB, 30 min, Fri 23 or Sat 24) | **G1** go/no-go: failsafe and uninstall proven (Fri 23) |
 | W3 | 26 – 30 Oct | P2b RE spike (view push, header, keyboard, rows), cross-check on 5 builds | 25 | **T3** (prototypes A–D, 30 min, Fri 30) | **G2** go/no-go: native view with tab bar + keyboard confirmed (Fri 30) |
 | W4 | 2 – 6 Nov | P3 drawer host part 1 (fw detect, wrappers, tab, drawer view, registry) | 25 | – | – |
 | W5 | 9 – 13 Nov | P3 part 2 (backend manager, services, USB, logging, settings) | 25 | **T4** (drawer tests DRW-*, 45 min, Fri 13); start 72 h idle soak Fri→Mon | **G3**: drawer host accepted (Mon 16 after soak numbers) |
@@ -313,14 +313,14 @@ Assumptions: Mon–Fri, ~5 agent hours/day (25 h/week), user test sessions mostl
 | W11 | 21 – 23 Dec (3 days) | Buffer, timed exercise, release v1.0, firmware rehearsal (FW-* static) | 15 | **T8** (final sign-off + uninstall/reinstall check, 30 min, Wed 23) | **G6 = v1.0 released** (Wed 23 Dec) |
 | (Jan 2027) | optional | P7 catalog | – | – | – |
 
-Total: 11 weeks, ≈ 265 agent hours, 9 user sessions totalling ≈ 5.5 hours plus two 72 h soaks that need no attention beyond noting battery % twice a day.
+Total: 11 weeks, ≈ 265 developer hours, 9 user sessions totalling ≈ 5.5 hours plus two 72 h soaks that need no attention beyond noting battery % twice a day.
 
 ### 5.2 Buffers and slip rules
 
 - Built-in slack: W11 (3 days) plus ~2 h/week unallocated inside each phase estimate.
 - If G2 is **no-go** (no clean view push with tab bar): switch to the `N3Dialog` full-view design; costs ~3 days; the kit and apps are unaffected because they target the kit API, not the container. Release moves to ~Thu 7 Jan 2027.
 - If NickelTC under amd64 emulation fails: build in GitHub Actions (x86_64) and download artifacts; costs ~1 day in W2.
-- If any phase slips > 3 days, the agent files a blocker report (section 10) and the timeline is replanned at the next gate rather than silently compressing later phases.
+- If any phase slips > 3 days, the developer files a blocker report (section 10) and the timeline is replanned at the next gate rather than silently compressing later phases.
 
 ### 5.3 Batched user test sessions
 
@@ -337,7 +337,7 @@ Each session has a checklist (section 9.9), takes 15–60 minutes, starts with a
 | G5 | after W9 | LS/GH/LIB/FI cases pass; S5, S6, S7, S12 met | Ship LocalSend + GitHub only; Library tool to v1.1 |
 | G6 | 23 Dec | CI green incl. symcheck ×5; S13 met; uninstall verified; user signs off | Release as 1.0-rc; fix list to January |
 
-Note (2026-10-10, see `docs/DECISIONS.md`): the 72 h idle and usage soaks (SOAK-1, SOAK-2) are skipped. G3 and G5 pass on one batched device session, `docs/sessions/T-final-checklist.md`, which also covers G4; S4 and S5 are not measured, `debug.log` stays on in the beta. GitHub sync cases (GH-*) are postponed and do not block G5.
+Note (2026-10-10, see `docs/DECISIONS.md`): the 72 h idle and usage soaks (SOAK-1, SOAK-2) are skipped. G3 and G5 pass on one batched device session, `docs/testing/final-checklist.md`, which also covers G4; S4 and S5 are not measured, `debug.log` stays on in the beta. GitHub sync cases (GH-*) are postponed and do not block G5.
 
 ---
 
@@ -362,15 +362,14 @@ tools/fetch-fw.sh 4.38.23828
 
 The device's running copy can be cross-checked: `/usr/local/Kobo/libnickel.so.1.0.0` on the Kobo (via telnet/FTP from NickelMenu's example items) must have the same sha256 as the extracted 4.38.23828 one.
 
-### 6.3 Ghidra + Ghidra setup (one-time, Mac)
+### 6.3 Ghidra setup (one-time, Mac)
 
 1. Install JDK 21 (`brew install --cask temurin@21`) and Ghidra (`brew install --cask ghidra`, **verify** cask availability/version; else download from ghidra-sre.org).
-2. Download the Ghidra release zip (plugin + `bridge_mcp_ghidra.py`). In Ghidra: `File → Install Extensions → +`, pick the zip, restart, enable `GhidraPlugin` under `File → Configure → Developer`. Default HTTP port 8080 (`Edit → Tool Options → Ghidra HTTP Server`).
-3. `python3 -m venv ~/.venvs/Ghidra && pip install mcp requests` then register in the maintainer: `
-4. Headless batch import/analysis for the five binaries:
+2. Headless batch import/analysis for the five binaries:
    `analyzeHeadless ~/ghidra-projects libnickel -import libnickel-4.38.23828.so.1.0.0 -processor ARM:LE:32:v7 -analysisTimeoutPerFile 7200` (repeat per build, naming programs `libnickel-<ver>`).
-5. Open the CodeBrowser on `libnickel-4.38.23828`; Ghidra serves whichever program is open, so switching builds means opening another program (or running a second Ghidra instance on another port).
-6. Smoke test from the maintainer: `list_classes`, `search_functions_by_name MainNavView`, `decompile_function`.
+3. Open the CodeBrowser on `libnickel-4.38.23828`; switch builds by opening another program.
+4. Smoke test: list classes, search functions for `MainNavView`, decompile one.
+5. Setup details and pinned versions are in [GHIDRA.md](GHIDRA.md).
 
 ### 6.4 Capabilities to locate (with starting points)
 
@@ -411,7 +410,7 @@ Machine form `symbols-<fw>.json` is generated from `required.yaml` + the `nm` du
 
 1. `tools/fetch-fw.sh <new>` → symbol dump; `tools/symcheck.py --against <new>` prints missing/renamed symbols in under a minute.
 2. If all `required-for-drawer` symbols exist unchanged: add the build to `required.yaml` as `same`, regenerate `fw_table.h`, build, run the static CI, publish a patch release. Typical cost: 1 h.
-3. If some are missing: import into Ghidra, use Ghidra `search_functions_by_name` and string references to find the renamed/moved function, record `renamed:<new>`, add a per-firmware alias in `required.yaml`, re-test on device if the user updates. Typical cost: 2–6 h.
+3. If some are missing: import into Ghidra, use Ghidra's function search and string references to find the renamed/moved function, record `renamed:<new>`, add a per-firmware alias in `required.yaml`, re-test on device if the user updates. Typical cost: 2–6 h.
 4. Until then, the runtime check keeps the drawer off on the new build and the NickelMenu fallback carries the apps. Recommend the user keeps Kobo auto-update off (section 13).
 
 ---
@@ -656,7 +655,7 @@ Verbose mode: `.adds/koboapps/config` → `log:2`. Every test case lists the log
 
 ### 9.6 Soak tests
 
-| ID | Setup | Duration | Measurements (user notes at ~08:00 and ~20:00; agent reads logs) | Thresholds |
+| ID | Setup | Duration | Measurements (user notes at ~08:00 and ~20:00; developer reads logs) | Thresholds |
 |---|---|---|---|---|
 | SOAK-1 (W5) | Drawer installed, never opened; device in normal use; Wi-Fi as usual | 72 h | Battery % at each note; Nickel VmRSS logged at boot and on each drawer open (`tools/logs.sh` after); number of backend processes = 0 (`ps` via telnet or `data/pid` absent) | Extra drain ≤ 1 %/24 h vs the user's baseline week; VmRSS growth ≤ 1 MB; no log errors |
 | SOAK-2 (W9) | LocalSend used once per day, GitHub sync once per day, Library tool once | 72 h | Same + per-backend RSS peaks from `backend.log` self-reports (`/proc/self/status` printed at exit) | S5–S7; zero crashes; no stuck backends after sleep |
@@ -778,7 +777,7 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 
 | Term | Meaning | Example |
 |---|---|---|
-| **Blocker** | Something that stops planned work from continuing and that the agent cannot resolve alone within the time-box | A needed libnickel capability does not exist; a permission the agent lacks; hardware needed for a test |
+| **Blocker** | Something that stops planned work from continuing and that the developer cannot resolve alone within the time-box | A needed libnickel capability does not exist; a permission the developer lacks; hardware needed for a test |
 | **Risk** | Something that *might* become a blocker; tracked in the risk register with a mitigation, work continues | NickelTC emulation may be slow |
 | **Question** | A decision only the user can make; work can usually continue on an assumption that is written down | Which GitHub repo to sync |
 
@@ -802,7 +801,7 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 # B-NNN — <one-line summary>
 
 - Date: YYYY-MM-DD   Severity: S1 | S2 | S3   Status: open | waiting-user | resolved | withdrawn
-- Phase / task: P<n> / <task id>   Owner: agent   Needs: user | external | time
+- Phase / task: P<n> / <task id>   Owner: dev   Needs: user | external | time
 - Gate affected: G<n>   Timeline impact: <days> on <milestone>
 
 ## What was tried (with evidence)
@@ -830,8 +829,8 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 ### 10.5 Where reports live and how they are communicated
 
 - Files: `docs/blockers/B-001.md`, `B-002.md`, … plus `docs/blockers/INDEX.md` (table: ID, date, severity, status, one-line summary, gate affected). Reports are never deleted; superseded ones are marked `withdrawn`.
-- Chat: the agent posts one short message when a report is opened: `BLOCKER B-003 (S2, P2b) — libnickel 4.38 has no exported symbol for pushing a view with the tab bar. Needs: your decision between options A/B by Fri 30 Oct. Details: docs/blockers/B-003.md`. Status changes get a one-line follow-up. No blocker is buried inside a long progress message.
-- Replanning: at the next gate (or immediately for S1) the agent updates section 5 of this plan (dates, buffer consumption) with a short "replan note" referencing the blocker ID; the Gantt table at the end is regenerated; the user acknowledges the new dates in the sign-off file.
+- Chat: the developer posts one short message when a report is opened: `BLOCKER B-003 (S2, P2b) — libnickel 4.38 has no exported symbol for pushing a view with the tab bar. Needs: your decision between options A/B by Fri 30 Oct. Details: docs/blockers/B-003.md`. Status changes get a one-line follow-up. No blocker is buried inside a long progress message.
+- Replanning: at the next gate (or immediately for S1) the developer updates section 5 of this plan (dates, buffer consumption) with a short "replan note" referencing the blocker ID; the Gantt table at the end is regenerated; the user acknowledges the new dates in the sign-off file.
 
 ### 10.6 Example 1
 
@@ -839,14 +838,14 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 # B-003 — libnickel 4.38 has no exported symbol for pushing a view with the tab bar
 
 - Date: 2026-10-28   Severity: S2   Status: waiting-user
-- Phase / task: P2b / 2b.1–2b.2   Owner: agent   Needs: user
+- Phase / task: P2b / 2b.1–2b.2   Owner: dev   Needs: user
 - Gate affected: G2   Timeline impact: +3 days on G3 if option B; +0 if option A works within 1 day
 
 ## What was tried (with evidence)
 1. MainWindowController::pushView(QWidget*) with a plain QWidget — view shows full screen,
    bottom MainNavView is hidden. Log: host.log 2026-10-28 14:02 "pushView ok; navbar visible=0".
    Screenshot docs/screens/T3/pushview-plain.png.
-2. Searched Ghidra (Ghidra search_functions_by_name) for "MainNav", "TabBar", "Footer":
+2. Searched Ghidra (function name search) for "MainNav", "TabBar", "Footer":
    MainNavView is created by MainNavController and parented to the Home/Library views'
    container, not to the window — i.e. each top-level view embeds its own nav bar
    (re/notes/view-push.md §3). No exported function builds that container for a foreign widget.
@@ -882,13 +881,13 @@ Optionally: say whether a drawer without a persistent tab bar (B) is acceptable 
 # B-001 — permission denied building external code on the Mac (Docker socket / NickelTC)
 
 - Date: 2026-10-14   Severity: S1   Status: resolved 2026-10-15
-- Phase / task: P2 / 2.2   Owner: agent   Needs: user
+- Phase / task: P2 / 2.2   Owner: dev   Needs: user
 - Gate affected: G1   Timeline impact: 0 (resolved within 1 day, buffer used: 0)
 
 ## What was tried (with evidence)
 1. `tools/tc make all` → "permission denied while trying to connect to the Docker daemon socket
    at unix:///var/run/docker.sock" (output saved docs/blockers/B-001-docker.txt). Docker Desktop
-   was not running in the user's session; the agent's sandbox cannot start GUI apps.
+   was not running in the user's session; the developer's sandbox cannot start GUI apps.
 2. After the user started Docker Desktop: `docker run --platform linux/amd64 ghcr.io/pgaskin/nickeltc:1`
    → "exec format error" because Rosetta for Linux containers was disabled in Docker settings.
 3. Tried extracting the toolchain tarball to run natively (NickelTC README) — binaries are x86_64 ELF;
@@ -975,24 +974,24 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 
 | ID | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|---|
-| R-01 | Boot loop from a bad mod build | Low | High | NickelHook failsafe, `failsafe_delay=15`, tiny init, SAFE-01 drill per build line, uninstall flag, telnet enabled before risky sessions | agent |
-| R-02 | No clean way to push a view with the tab bar (G2 no-go) | Medium | Medium | Plan B N3Dialog full-view container; kit unaffected; +3 days | agent |
-| R-03 | Keyboard cannot be hosted outside N3Dialog | Medium | Low | TextField opens native text-edit dialog instead (still native) | agent |
-| R-04 | NickelTC on Apple Silicon slow/broken | Medium | Medium | Rosetta emulation; CI build fallback | user/agent |
-| R-05 | Firmware update changes symbols | Medium over months | Medium | Symbol check + 5-build matrix + runtime disable + menu fallback; auto-update off | agent |
-| R-06 | 4.38.23697 kobo9 package is not a Libra 2 build | Medium | Low | fetch-fw verifies image type; replace with 4.38.23429 in the matrix | agent |
-| R-07 | Conflict with NickelMenu/NickelHome hooks on `MainNavView` | Medium | Medium | Order-independent injection (append after existing buttons), FI-12, test with "Tweak" tab present | agent |
-| R-08 | Memory growth / leaks inside Nickel over weeks | Low | High | No timers when idle, QObject parenting audit, SOAK tests, VmRSS logging | agent |
-| R-09 | USB corruption from held file handles | Low | High | open-write-close rule, backend stop on USB, FI-05 | agent |
-| R-10 | Library tool corrupts an EPUB | Low | High | copy-verify-rename, trash folder, `unzip -t` equivalent, user confirms candidates | agent |
+| R-01 | Boot loop from a bad mod build | Low | High | NickelHook failsafe, `failsafe_delay=15`, tiny init, SAFE-01 drill per build line, uninstall flag, telnet enabled before risky sessions | dev |
+| R-02 | No clean way to push a view with the tab bar (G2 no-go) | Medium | Medium | Plan B N3Dialog full-view container; kit unaffected; +3 days | dev |
+| R-03 | Keyboard cannot be hosted outside N3Dialog | Medium | Low | TextField opens native text-edit dialog instead (still native) | dev |
+| R-04 | NickelTC on Apple Silicon slow/broken | Medium | Medium | Rosetta emulation; CI build fallback | user/dev |
+| R-05 | Firmware update changes symbols | Medium over months | Medium | Symbol check + 5-build matrix + runtime disable + menu fallback; auto-update off | dev |
+| R-06 | 4.38.23697 kobo9 package is not a Libra 2 build | Medium | Low | fetch-fw verifies image type; replace with 4.38.23429 in the matrix | dev |
+| R-07 | Conflict with NickelMenu/NickelHome hooks on `MainNavView` | Medium | Medium | Order-independent injection (append after existing buttons), FI-12, test with "Tweak" tab present | dev |
+| R-08 | Memory growth / leaks inside Nickel over weeks | Low | High | No timers when idle, QObject parenting audit, SOAK tests, VmRSS logging | dev |
+| R-09 | USB corruption from held file handles | Low | High | open-write-close rule, backend stop on USB, FI-05 | dev |
+| R-10 | Library tool corrupts an EPUB | Low | High | copy-verify-rename, trash folder, `unzip -t` equivalent, user confirms candidates | dev |
 | R-11 | GitHub PAT leak | Low | Medium | token file mode 600 in `data/`, never logged, fine-grained read-only, user pastes it | user |
-| R-12 | Old GCC 4.9 / Qt 5.2 lacks features used | Medium | Low | No std::, C++11 subset only, clangd database for early errors, CI build | agent |
-| R-13 | Emulated Qt build mismatches device (ABI) | Low | High | Only NickelTC output goes to the device; Mac preview is for layout only | agent |
-| R-14 | User availability for batched sessions slips | Medium | Medium | Sessions are short, scheduled at gates, agent continues on Mac-only work (preview, docs, backends) | user |
-| R-15 | Ghidra analysis time on 5 binaries | Medium | Low | headless batch overnight; analyse 23828 first, others in background | agent |
-| R-16 | Vietnamese keyboard layout from kobo-tieng-viet not available in our field | Low | Medium | Use `KeyboardScript` the mod registers (**verify**); else fall back to native text-edit dialog which the mod already patches | agent |
-| R-17 | Battery drain from keep-alive LocalSend receiver (Wi-Fi held on) | High (by design) | Low | Tile shows "Đang nhận"; auto-stop after N hours (configurable, default 2 h); SOAK-3 numbers | agent |
-| R-18 | Backends run as root; a bug can delete books | Low | High | Add-only policies, confirm dialogs, trash folder, apps limited to those written in this repo | user/agent |
+| R-12 | Old GCC 4.9 / Qt 5.2 lacks features used | Medium | Low | No std::, C++11 subset only, clangd database for early errors, CI build | dev |
+| R-13 | Emulated Qt build mismatches device (ABI) | Low | High | Only NickelTC output goes to the device; Mac preview is for layout only | dev |
+| R-14 | User availability for batched sessions slips | Medium | Medium | Sessions are short, scheduled at gates, developer continues on Mac-only work (preview, docs, backends) | user |
+| R-15 | Ghidra analysis time on 5 binaries | Medium | Low | headless batch overnight; analyse 23828 first, others in background | dev |
+| R-16 | Vietnamese keyboard layout from kobo-tieng-viet not available in our field | Low | Medium | Use `KeyboardScript` the mod registers (**verify**); else fall back to native text-edit dialog which the mod already patches | dev |
+| R-17 | Battery drain from keep-alive LocalSend receiver (Wi-Fi held on) | High (by design) | Low | Tile shows "Đang nhận"; auto-stop after N hours (configurable, default 2 h); SOAK-3 numbers | dev |
+| R-18 | Backends run as root; a bug can delete books | Low | High | Add-only policies, confirm dialogs, trash folder, apps limited to those written in this repo | user/dev |
 
 ---
 
@@ -1000,7 +999,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 
 | # | Question | Needed by | Default assumption if no answer |
 |---|---|---|---|
-| Q1 | OK to install JDK 21, Ghidra, Ghidra and to register an MCP server in the maintainer on the Mac? | W2 start (19 Oct) | Yes |
+| Q1 | OK to install JDK 21 and Ghidra on the Mac? | W2 start (19 Oct) | Yes |
 | Q2 | OK to run Docker Desktop with Rosetta emulation during dev days? | W1 | Yes; CI fallback otherwise |
 | Q3 | OK to install test mods (hello-world incl. the deliberate-crash variant) on the Kobo in session T2? | 23 Oct | Yes |
 | Q4 | Turn off Kobo auto-update (and keep Wi-Fi mostly off) while the drawer is young? | W1 | Yes (recommended) |
@@ -1054,7 +1053,6 @@ Soaks                            ▒▒▒(72h)        ▒▒▒(72h) ▒(24h)
 - NickelMenu: `menu_main_15505_*` experimental options control the extra bottom-bar button (label/icon); hooks `MainNavView::MainNavView`, creates `MainNavButton`, bridges `tapped()` through a `QPushButton` shim, shows `NickelTouchMenu` with `MenuTextItem`s; all these symbols are `optional` and the feature degrades with a log message. Actions available for the fallback: `cmd_spawn`, `cmd_output` (≤ 10 s), `nickel_wifi:autoconnect|autoconnect_silent|enable|disable|toggle`, `nickel_misc:rescan_books|rescan_books_full|home|force_usb_connection`, `nickel_setting:toggle:dark_mode|screenshots|invert|lockscreen`, `nickel_screenshot:capture`, `dbg_toast`, `power:sleep|reboot|shutdown`. Uninstall by `.adds/nm/uninstall` or power-off within 20 s of boot. "Firmware 5.x is not supported yet."
 - NickelDBus symbols: `PlugManager::sharedInstance/gadgetMode`, `PlugWorkflowManager::sharedInstance`, `WirelessManager::sharedInstance`, `MainWindowController::sharedInstance/toast/currentView`, `N3Dialog::content`, `Device::getCurrentDevice`, `N3FSSyncManager::sharedInstance/sync(QStringList*)`, `WirelessWatchdog::sharedInstance`, `ConfirmationDialogFactory::getConfirmationDialog/showTextEditDialog`, `ConfirmationDialog::setTitle/setText/setAcceptButtonText/setRejectButtonText/showCloseButton/setRejectOnOutsideTap/addWidget`, `N3ConfirmationTextEditField` ctor(s) with `KeyboardScript`, `TouchLineEdit`; signal `pfmDoneProcessing`.
 - NickelHardcover (hook/src): `MainWindowController::pushView(QWidget*)`, `viewWithObjectName`, `N3DialogFactory::getDialog(QWidget*, bool)`, `N3Dialog::showKeyboard/hideKeyboard/keyboardFrame/enableBackButton/disableCloseButton/enableFullViewMode/setTitle`, `KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&)`, `KeyboardReceiver(QLineEdit*|QTextEdit*, bool)`, `SearchKeyboardController::setReceiver/setGoText`, `TouchLineEdit`, `TouchTextEdit::setCustomPlaceholderText`, `TouchCheckBox`, `TouchLabel::setHitStateEnabled`, `N3ButtonLabel`, `SettingContainer`, `PowerTimer::fireAt/timeRemaining`, `WirelessWorkflowManager::connectWireless/connectWirelessSilently/isInternetAccessible`, `SupportedLocales::supportedLocales`, `ConfirmationDialogFactory::showErrorDialog`; widgets dir has `dialog, label, elidedlabel, pagedstack, buttongroup, rating`; settings dir has `checkboxrow, menurow, staticrow, settingsdialog`. "Firmware 5.x not supported." Primary repo on Codeberg.
-- Ghidra: Ghidra extension zip installed via `File → Install Extensions`; plugin `GhidraPlugin` under `File → Configure → Developer`; HTTP server default `127.0.0.1:8080`; Python bridge `bridge_mcp_ghidra.py --ghidra-server http://127.0.0.1:8080/` (needs the `mcp` Python SDK); tools include list classes/methods/imports/exports, decompile, rename.
 - Kobo firmware: upgrade API `https://api.kobobooks.com/1.0/UpgradeCheck/Device/<deviceid>/<affiliate>/<ver>/<serial>`; Libra 2 device id `…0388`, hardware folder `kobo9`; zip contains `upgrade/`, `KoboRoot.tgz`, `manifest.md5sum`; manual install = copy contents into `.kobo/` and eject. Five newest Libra 2 builds and CDN facts in section 3.1. kobopatch-patches `src/versions` ends at 4.38.21908 and 4.39.22801 (no patch sets for the 4.38.23xxx Libra 2 builds there; MobileRead patch threads exist for 4.38.23648 and 4.38.23828).
 - kobo-tieng-viet: 4.x only ("không hỗ trợ 3.x và 5.x"); since build 20260319 it self-repairs Vietnamese after a firmware update on the next reboot.
 - Device: Kobo Libra 2, N418, Mark 9 "Io", NXP i.MX6SLL, 512 MB RAM (**verify**), 7" 1264×1680 300 ppi, firmware 4.38.23828.

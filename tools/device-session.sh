@@ -1,5 +1,5 @@
 #!/bin/bash
-# Orchestrator helper for on-device sessions. Never cd's into the volume; refuses to run without a Kobo.
+# Helper for on-device test sessions. Never cd's into the volume; refuses to run without a Kobo.
 # Usage: device-session.sh status | stage <tgz> | flags <flag>... | log | clean | eject
 # Env: KOBO_ROOT (default /Volumes/KOBOeReader) for tests; BACKUP_ROOT (default <repo>/backups).
 set -euo pipefail

@@ -12,7 +12,7 @@ Ba màn hình:
 - **Thêm thành phần**: công tắc, lựa chọn (radio) có dòng phụ, ô nhập chữ và ô nhập số, các nút (phụ, tắt/bật nhờ biến, có xác nhận), mã QR, khối ghép nối, và liên kết trên tiêu đề.
 - **Thư viện ảnh**: lưới ảnh lấy từ các tệp PNG nhỏ (tối đa 1 MB, tối đa 6 ảnh) trong `Pictures`. Không có ảnh thì hiện màn trống. Ứng dụng chỉ **chép** ảnh vào `data/samples/`, không đổi hay xoá ảnh gốc.
 
-Mọi thao tác chỉ phản hồi bằng toast đã khai báo để bạn kiểm tra cú chạm. Giá trị của công tắc, lựa chọn và ô nhập được lưu trong `data/` để màn hình hiện lại đúng giá trị. Các ca thử KIT-* trong `docs/sessions/T-final-checklist.md` (mục 5b, UIK-*) dùng ứng dụng này.
+Mọi thao tác chỉ phản hồi bằng toast đã khai báo để bạn kiểm tra cú chạm. Giá trị của công tắc, lựa chọn và ô nhập được lưu trong `data/` để màn hình hiện lại đúng giá trị. Các ca thử KIT-* trong `docs/testing/final-checklist.md` (mục 5b, UIK-*) dùng ứng dụng này.
 
 ## English
 
@@ -26,7 +26,7 @@ Three screens:
 - **More components**: a switch, radio options with sub-lines, a text field and a number field, buttons (secondary, enabled or disabled through a `$var`, with a confirm), a QR code, the pairing block and a header link.
 - **Gallery**: a picture grid built from small PNG files (up to 1 MB each, at most 6) in `Pictures`. With none, the empty state shows. The app only **copies** them into `data/samples/`; originals are never changed or deleted.
 
-Every action only echoes a declared toast so a tap can be verified. The switch, radio and field values are stored in `data/` so the screen shows them again. The KIT-* cases in `docs/sessions/T-final-checklist.md` (section 5b, UIK-*) use this app.
+Every action only echoes a declared toast so a tap can be verified. The switch, radio and field values are stored in `data/` so the screen shows them again. The KIT-* cases in `docs/testing/final-checklist.md` (section 5b, UIK-*) use this app.
 
 ## For developers
 

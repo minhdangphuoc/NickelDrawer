@@ -26,3 +26,5 @@ cmd/*/library
 /todo
 cmd/*/todo
 apps/todo/bin/todo
+
+# Maintainer-local tooling files

@@ -12,7 +12,7 @@ Target: the five newest Libra 2 builds (firmware family `kobo9`, device id endin
 | 4.38.23648 | Mar 2026 | planned | planned | planned / untested |
 | 4.38.23552 | Nov 2025 | planned | planned | planned / untested |
 
-"Works" means it was run on a real device (see `docs/sessions/`). "Untested" means no one has run NickelDrawer on that build yet. This table will change as we test.
+"Works" means it was run on a real device (see `docs/testing/final-checklist.md`). "Untested" means no one has run NickelDrawer on that build yet. This table will change as we test.
 
 How we test: symbol checks against all five builds, and runtime tests on one real device with one build. We cannot run every build on hardware.
 

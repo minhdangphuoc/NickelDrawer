@@ -129,7 +129,7 @@ jobs:
           bash tools/fw-watch.sh
           status=$?
           if [ "$status" -eq 10 ]; then
-            echo "::warning::New Kobo Libra 2 firmware found, see the log and docs/WORKFLOW.md (firmware-watch)"
+            echo "::warning::New Kobo Libra 2 firmware found, see the log and docs/RELEASING.md"
             exit 0
           fi
           exit "$status"

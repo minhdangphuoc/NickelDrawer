@@ -1,8 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ngăn Ứng Dụng Build Plan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,7 +87,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tbody>
 <tr>
 <td>Plan version</td>
-<td>v3-detailed, 8 Oct 2026 (expands <code>body.html</code> plan v2)</td>
+<td>v3-detailed, 8 Oct 2026 (expands <code>docs/plan-overview.html</code> plan v2)</td>
 </tr>
 <tr>
 <td>Developer</td>
@@ -112,7 +107,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>Source of truth for design</td>
-<td><code>scratchpad/body.html</code> (architecture, wireframes, kit component list, protocol sketch)</td>
+<td><code>docs/plan-overview.html</code> (architecture, wireframes, kit component list, protocol sketch)</td>
 </tr>
 </tbody>
 </table></div>
@@ -120,6 +115,9 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <hr />
 <h2 id="1-goals-non-goals-success-criteria">1. Goals, non-goals, success criteria</h2>
 <h3 id="11-goals">1.1 Goals</h3>
+<blockquote>
+<p><strong>Superseded by <a href="DECISIONS.md">DECISIONS.md</a> (2026-10-10):</strong> NickelMenu is retired and is not a fallback. On an unknown firmware the mod turns the drawer off, shows one toast and logs the reason (goal 5 below no longer promises NickelMenu items).</p>
+</blockquote>
 <ol>
 <li>An <strong>"Ứng dụng" (Apps) tab</strong> in Nickel's bottom navigation bar that opens a native drawer view listing installed apps, drawn with Nickel's own widgets and stylesheet so it is indistinguishable from a Kobo screen.</li>
 <li>A <strong>UI kit renderer</strong> inside the same mod that turns each app's <code>ui.json</code> into native Qt widgets (header with back chevron, list rows, toggles, text fields using Kobo's keyboard, buttons, progress, toasts, confirm dialogs).</li>
@@ -232,7 +230,10 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </table></div>
 <hr />
 <h2 id="2-architecture-recap-and-fixed-decisions">2. Architecture recap and fixed decisions</h2>
-<p>Taken from <code>body.html</code> and the NickelHook/NickelMenu/NickelDBus sources read during planning.</p>
+<blockquote>
+<p><strong>Superseded by <a href="DECISIONS.md">DECISIONS.md</a> (2026-10-10):</strong> the "NickelMenu fallback" bullet below is obsolete (<code>gen-menu</code> is gone; the installer removes the old generated file). The mod is <code>libnickeldrawer.so</code>, staged by <code>tools/install-to-kobo.sh</code> or an OTA update as <code>.kobo/KoboRoot.tgz</code>, and removed with the flag <code>.adds/nickeldrawer/uninstall</code> (the installer's <code>--uninstall</code> writes it).</p>
+</blockquote>
+<p>Taken from <code>docs/plan-overview.html</code> and the NickelHook/NickelMenu/NickelDBus sources read during planning.</p>
 <ul>
 <li><strong>Mod name</strong>: <code>libkoboapps.so</code> (NickelHook requires ≥ 3-letter unique names; under 3 letters are reserved for pgaskin/shermp). Installed by <code>KoboRoot.tgz</code> to <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> (the Qt plugin path NickelHook mods use — <mark>verify</mark> exact path from <code>NickelHook.mk</code> when the toolchain is set up; NickelMenu installs <code>libnm.so</code> there).</li>
 <li><strong>Framework</strong>: NickelHook (<code>nh.c</code>, <code>NickelHook.h</code>, <code>NickelHook.mk</code>) as a git submodule, built with NickelTC (<code>ghcr.io/pgaskin/nickeltc:1</code>, GCC 4.9.4, Qt 5.2.1 sysroot, <code>-march=armv7-a -mtune=cortex-a8 -mfpu=neon -mfloat-abi=hard -mthumb</code>). NickelTC is x86_64 only: on Apple Silicon run Docker with <code>--platform linux/amd64</code> (Rosetta/QEMU emulation; slower but works — <mark>verify</mark> on first build).</li>
@@ -334,7 +335,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </ol>
 <hr />
 <h2 id="4-phase-by-phase-breakdown">4. Phase-by-phase breakdown</h2>
-<p>Estimates are agent working hours. "User" lines are what the user must do; they are grouped into batched test sessions (section 5.3).</p>
+<p>Estimates are developer working hours. "User" lines are what the user must do; they are grouped into batched test sessions (section 5.3).</p>
 <h3 id="phase-0-clean-base-done-8-oct-2026">Phase 0 — Clean base (done, 8 Oct 2026)</h3>
 <ul>
 <li>KOReader removed, backup at <code>~/kobo-backup-20261008</code>.</li>
@@ -391,7 +392,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <p><strong>Acceptance (device, session T1):</strong> NickelMenu shows "Ứng dụng › LocalSend › Bắt đầu nhận" etc.; a file from the phone arrives and appears in the library after "rescan"; "Đồng bộ GitHub ngay" pulls one new EPUB from the private repo and nothing is deleted; menu regenerates after adding a dummy app folder and rebooting.</p>
 <p><strong>Risks:</strong> NickelMenu's <code>cmd_spawn</code> runs from <code>/</code> as root: scripts must <code>cd</code> themselves. <strong>Rollback:</strong> delete <code>.adds/nm/apps</code>, restore <code>.adds/localsend</code> items. <strong>Dependencies:</strong> user supplies repo <code>owner/repo</code>, folder, token (section 13). <strong>User:</strong> create the PAT, paste into <code>data/token</code>, run session T1.</p>
 <h3 id="phase-2-toolchain-re-setup-hello-world-3-days-15-d-for-the-firmware-matrix">Phase 2 — Toolchain + RE setup + hello-world (≈ 3 days, +1.5 d for the firmware matrix)</h3>
-<p><strong>Objective:</strong> a reproducible build on the Mac, all five libnickel builds analysed in Ghidra with Ghidra reachable from the maintainer, and a hello-world mod whose failsafe and uninstall paths were exercised on the device.</p>
+<p><strong>Objective:</strong> a reproducible build on the Mac, all five libnickel builds analysed in Ghidra, and a hello-world mod whose failsafe and uninstall paths were exercised on the device.</p>
 <div class="tbl"><table>
 <thead>
 <tr>
@@ -423,8 +424,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>2.5</td>
-<td>Ghidra: install the plugin zip in Ghidra (<code>File → Install Extensions</code>), enable <code>GhidraPlugin</code>, run <code>bridge_mcp_ghidra.py</code> (Python 3 + <code>mcp</code> SDK), register as an MCP server in the maintainer (<code>
-<td>2</td>
+<td>Ghidra smoke test: open the 4.38.23828 program in the CodeBrowser, list classes, decompile <code>MainNavView::MainNavView</code></td>
+<td>1</td>
 </tr>
 <tr>
 <td>2.6</td>
@@ -453,9 +454,9 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 </tbody>
 </table></div>
-<p><strong>Deliverables:</strong> repo building in Docker, <code>KoboRoot.tgz</code> of hello-world (variants B and C), Ghidra project with 5 programs, Ghidra reachable, <code>symcheck</code> matrix for 5 builds, <code>symbols-4.38.23828.md</code> v0.</p>
+<p><strong>Deliverables:</strong> repo building in Docker, <code>KoboRoot.tgz</code> of hello-world (variants B and C), Ghidra project with 5 programs, <code>symcheck</code> matrix for 5 builds, <code>symbols-4.38.23828.md</code> v0.</p>
 <p><strong>Acceptance (device, session T2):</strong> SAFE-01 variant B: Nickel boots within 2 minutes, mod file gone, log shows failsafe. SAFE-02 variant C: toast appears after boot, log shows firmware string. SAFE-03 uninstall file: mod removed on next boot. SAFE-04: USB connect/disconnect with the mod loaded, no errors. Gate <strong>G1</strong>.</p>
-<p><strong>Risks:</strong> NickelTC under amd64 emulation may be slow or crash (mitigation: build in a cloud x86_64 runner via CI if needed); Ghidra analysis of a ~40 MB C++ binary is slow (headless batch). <strong>Rollback:</strong> failsafe, uninstall flag, or delete <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> over telnet. <strong>User:</strong> approve installing Ghidra/Ghidra and Docker use (section 13), run session T2 (~30 min).</p>
+<p><strong>Risks:</strong> NickelTC under amd64 emulation may be slow or crash (mitigation: build in a cloud x86_64 runner via CI if needed); Ghidra analysis of a ~40 MB C++ binary is slow (headless batch). <strong>Rollback:</strong> failsafe, uninstall flag, or delete <code>/usr/local/Kobo/imageformats/libkoboapps.so</code> over telnet. <strong>User:</strong> approve installing Ghidra and Docker use (section 13), run session T2 (~30 min).</p>
 <h3 id="phase-2b-re-spike-3-days">Phase 2b — RE spike (≈ 3 days)</h3>
 <p><strong>Objective:</strong> answer the two questions that decide the drawer design before writing it: (a) can we push a full-screen view that keeps the bottom tab bar and the status bar, exactly like Home/Books; (b) can we instantiate Nickel's keyboard, list rows and toggles outside Nickel's own dialogs. See section 6 for the capability list.</p>
 <div class="tbl"><table>
@@ -494,7 +495,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>2b.6</td>
-<td>Record findings in <code>re/notes/view-push.md</code>, <code>re/notes/keyboard.md</code>, update <code>symbols-4.38.23828.md</code>; cross-check each found symbol on the other four builds with <code>symcheck</code> and Ghidra "find function by name"</td>
+<td>Record findings in <code>re/notes/view-push.md</code>, <code>re/notes/keyboard.md</code>, update <code>symbols-4.38.23828.md</code>; cross-check each found symbol on the other four builds with <code>symcheck</code> and Ghidra's function search</td>
 <td>2</td>
 </tr>
 </tbody>
@@ -757,7 +758,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <p>Out of v1 scope. Minimal version: a <code>catalog.json</code> in a GitHub repo listing app zips with sha256; the host's "Thêm ứng dụng" tile downloads and unpacks into <code>.adds/apps/</code> after a confirm. Requires a trust decision (signing) — deferred.</p>
 <hr />
 <h2 id="5-calendar-timeline-milestones-and-gates">5. Calendar timeline, milestones and gates</h2>
-<p>Assumptions: Mon–Fri, ~5 agent hours/day (25 h/week), user test sessions mostly in evenings or weekends, batched (the device is in daily use). Public holidays: none affecting Oct–Dec 2026 in the schedule except the week of 21 Dec which is a half week.</p>
+<p>Assumptions: Mon–Fri, ~5 developer hours/day (25 h/week), user test sessions mostly in evenings or weekends, batched (the device is in daily use). Public holidays: none affecting Oct–Dec 2026 in the schedule except the week of 21 Dec which is a half week.</p>
 <h3 id="51-week-by-week">5.1 Week-by-week</h3>
 <div class="tbl"><table>
 <thead>
@@ -765,7 +766,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <th>Week</th>
 <th>Dates (2026)</th>
 <th>Phase</th>
-<th>Agent work (≈ h)</th>
+<th>Developer work (≈ h)</th>
 <th>User sessions</th>
 <th>Milestone / gate</th>
 </tr>
@@ -782,7 +783,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>W2</td>
 <td>19 – 23 Oct</td>
-<td>P2 (Ghidra batch, Ghidra, hello-world, symcheck, push/log tools)</td>
+<td>P2 (Ghidra batch, hello-world, symcheck, push/log tools)</td>
 <td>25</td>
 <td><strong>T2</strong> (failsafe drill + hello toast + USB, 30 min, Fri 23 or Sat 24)</td>
 <td><strong>G1</strong> go/no-go: failsafe and uninstall proven (Fri 23)</td>
@@ -869,13 +870,13 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 </tbody>
 </table></div>
-<p>Total: 11 weeks, ≈ 265 agent hours, 9 user sessions totalling ≈ 5.5 hours plus two 72 h soaks that need no attention beyond noting battery % twice a day.</p>
+<p>Total: 11 weeks, ≈ 265 developer hours, 9 user sessions totalling ≈ 5.5 hours plus two 72 h soaks that need no attention beyond noting battery % twice a day.</p>
 <h3 id="52-buffers-and-slip-rules">5.2 Buffers and slip rules</h3>
 <ul>
 <li>Built-in slack: W11 (3 days) plus ~2 h/week unallocated inside each phase estimate.</li>
 <li>If G2 is <strong>no-go</strong> (no clean view push with tab bar): switch to the <code>N3Dialog</code> full-view design; costs ~3 days; the kit and apps are unaffected because they target the kit API, not the container. Release moves to ~Thu 7 Jan 2027.</li>
 <li>If NickelTC under amd64 emulation fails: build in GitHub Actions (x86_64) and download artifacts; costs ~1 day in W2.</li>
-<li>If any phase slips &gt; 3 days, the agent files a blocker report (section 10) and the timeline is replanned at the next gate rather than silently compressing later phases.</li>
+<li>If any phase slips &gt; 3 days, the developer files a blocker report (section 10) and the timeline is replanned at the next gate rather than silently compressing later phases.</li>
 </ul>
 <h3 id="53-batched-user-test-sessions">5.3 Batched user test sessions</h3>
 <p>Each session has a checklist (section 9.9), takes 15–60 minutes, starts with a backup of <code>.adds</code> and <code>.kobo/KoboReader.sqlite</code> to the Mac, and ends with log collection (<code>tools/logs.sh</code>). Between sessions the device runs the last accepted build so daily reading is never interrupted by a half-finished build. A "quick fix" re-test outside the batch is allowed only for S3-class safety issues.</p>
@@ -928,6 +929,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 </tbody>
 </table></div>
+<p>Note (2026-10-10, see <code>docs/DECISIONS.md</code>): the 72 h idle and usage soaks (SOAK-1, SOAK-2) are skipped. G3 and G5 pass on one batched device session, <code>docs/testing/final-checklist.md</code>, which also covers G4; S4 and S5 are not measured, <code>debug.log</code> stays on in the beta. GitHub sync cases (GH-*) are postponed and do not block G5.</p>
 <hr />
 <h2 id="6-reverse-engineering-workplan">6. Reverse-engineering workplan</h2>
 <h3 id="61-legal-stance">6.1 Legal stance</h3>
@@ -943,15 +945,14 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 # 5. sha256 of libnickel recorded next to it
 </code></pre>
 <p>The device's running copy can be cross-checked: <code>/usr/local/Kobo/libnickel.so.1.0.0</code> on the Kobo (via telnet/FTP from NickelMenu's example items) must have the same sha256 as the extracted 4.38.23828 one.</p>
-<h3 id="63-ghidra-Ghidra-setup-one-time-mac">6.3 Ghidra + Ghidra setup (one-time, Mac)</h3>
+<h3 id="63-ghidra-setup-one-time-mac">6.3 Ghidra setup (one-time, Mac)</h3>
 <ol>
 <li>Install JDK 21 (<code>brew install --cask temurin@21</code>) and Ghidra (<code>brew install --cask ghidra</code>, <mark>verify</mark> cask availability/version; else download from ghidra-sre.org).</li>
-<li>Download the Ghidra release zip (plugin + <code>bridge_mcp_ghidra.py</code>). In Ghidra: <code>File → Install Extensions → +</code>, pick the zip, restart, enable <code>GhidraPlugin</code> under <code>File → Configure → Developer</code>. Default HTTP port 8080 (<code>Edit → Tool Options → Ghidra HTTP Server</code>).</li>
-<li><code>python3 -m venv ~/.venvs/Ghidra &amp;&amp; pip install mcp requests</code> then register in the maintainer: <code>
 <li>Headless batch import/analysis for the five binaries:
    <code>analyzeHeadless ~/ghidra-projects libnickel -import libnickel-4.38.23828.so.1.0.0 -processor ARM:LE:32:v7 -analysisTimeoutPerFile 7200</code> (repeat per build, naming programs <code>libnickel-&lt;ver&gt;</code>).</li>
-<li>Open the CodeBrowser on <code>libnickel-4.38.23828</code>; Ghidra serves whichever program is open, so switching builds means opening another program (or running a second Ghidra instance on another port).</li>
-<li>Smoke test from the maintainer: <code>list_classes</code>, <code>search_functions_by_name MainNavView</code>, <code>decompile_function</code>.</li>
+<li>Open the CodeBrowser on <code>libnickel-4.38.23828</code>; switch builds by opening another program.</li>
+<li>Smoke test: list classes, search functions for <code>MainNavView</code>, decompile one.</li>
+<li>Setup details and pinned versions are in <a href="GHIDRA.md">GHIDRA.md</a>.</li>
 </ol>
 <h3 id="64-capabilities-to-locate-with-starting-points">6.4 Capabilities to locate (with starting points)</h3>
 <div class="tbl"><table>
@@ -1087,11 +1088,14 @@ libnickel sha256: &lt;hex&gt;   source: kobo-update-4.38.23828.zip (Sep2026)   a
 <ol>
 <li><code>tools/fetch-fw.sh &lt;new&gt;</code> → symbol dump; <code>tools/symcheck.py --against &lt;new&gt;</code> prints missing/renamed symbols in under a minute.</li>
 <li>If all <code>required-for-drawer</code> symbols exist unchanged: add the build to <code>required.yaml</code> as <code>same</code>, regenerate <code>fw_table.h</code>, build, run the static CI, publish a patch release. Typical cost: 1 h.</li>
-<li>If some are missing: import into Ghidra, use Ghidra <code>search_functions_by_name</code> and string references to find the renamed/moved function, record <code>renamed:&lt;new&gt;</code>, add a per-firmware alias in <code>required.yaml</code>, re-test on device if the user updates. Typical cost: 2–6 h.</li>
+<li>If some are missing: import into Ghidra, use Ghidra's function search and string references to find the renamed/moved function, record <code>renamed:&lt;new&gt;</code>, add a per-firmware alias in <code>required.yaml</code>, re-test on device if the user updates. Typical cost: 2–6 h.</li>
 <li>Until then, the runtime check keeps the drawer off on the new build and the NickelMenu fallback carries the apps. Recommend the user keeps Kobo auto-update off (section 13).</li>
 </ol>
 <hr />
 <h2 id="7-ui-kit-spec-v1-and-protocol-spec">7. UI kit spec v1 and protocol spec</h2>
+<blockquote>
+<p><strong>Updated 2026-10-08:</strong> the component set, sizes, drawer behaviour (list default + optional grid, More-tab entry row, page-turn keys) and screen patterns are now defined in <a href="spec/ui-kit.md"><code>docs/spec/ui-kit.md</code></a>, which supersedes this section where they differ. The JSON-lines protocol in §7.7 was <strong>not built</strong>: DECISIONS.md (2026-10-10) replaced it with short action scripts, a <code>state</code> action the mod re-reads, and JSON signals; see <a href="spec/drawer-protocol.md"><code>spec/drawer-protocol.md</code></a>.</p>
+</blockquote>
 <h3 id="71-screen-file-uijson">7.1 Screen file (<code>ui.json</code>)</h3>
 <pre><code class="language-json">{
   &quot;kit&quot;: 1,
@@ -1111,6 +1115,9 @@ libnickel sha256: &lt;hex&gt;   source: kobo-update-4.38.23828.zip (Sep2026)   a
 </code></pre>
 <p>Rules: <code>kit</code> is the schema version; unknown component keys are rendered as an error row, not a crash; <code>vars</code> gives defaults so a screen renders before the backend answers; strings may be plain or <code>{ "vi": "...", "en": "..." }</code>.</p>
 <h3 id="72-components">7.2 Components</h3>
+<blockquote>
+<p><strong>Note:</strong> the components, the app-to-host events and the toast/dialog/request signals are specified in <a href="spec/ui-json.md"><code>spec/ui-json.md</code></a> and <a href="spec/drawer-protocol.md"><code>spec/drawer-protocol.md</code></a>, which win over this table.</p>
+</blockquote>
 <div class="tbl"><table>
 <thead>
 <tr>
@@ -1267,6 +1274,9 @@ libnickel sha256: &lt;hex&gt;   source: kobo-update-4.38.23828.zip (Sep2026)   a
 </tbody>
 </table></div>
 <h3 id="77-json-lines-protocol-v1">7.7 JSON-lines protocol v1</h3>
+<blockquote>
+<p><strong>Not implemented, dropped 2026-10-10</strong> in favour of scripts + state polling + signals (<a href="spec/drawer-protocol.md"><code>spec/drawer-protocol.md</code></a>, DECISIONS.md). Kept below as the original design record only.</p>
+</blockquote>
 <p>Transport: backend stdin (host→backend), stdout (backend→host), UTF-8, one JSON object per <code>\n</code>-terminated line, max 64 KB per line, no pretty-printing. stderr is logging only.</p>
 <p><strong>Handshake (first lines):</strong></p>
 <pre><code>host → backend : {&quot;hello&quot;:{&quot;proto&quot;:1,&quot;host&quot;:&quot;koboapps/0.4.0&quot;,&quot;fw&quot;:&quot;4.38.23828&quot;,&quot;lang&quot;:&quot;vi&quot;,&quot;screen&quot;:&quot;main&quot;,&quot;data_dir&quot;:&quot;/mnt/onboard/.adds/apps/localsend/data&quot;,&quot;vars&quot;:{...current vars...}}}
@@ -1573,7 +1583,7 @@ make release VERSION=1.0.0
 <th>ID</th>
 <th>Setup</th>
 <th>Duration</th>
-<th>Measurements (user notes at ~08:00 and ~20:00; agent reads logs)</th>
+<th>Measurements (user notes at ~08:00 and ~20:00; developer reads logs)</th>
 <th>Thresholds</th>
 </tr>
 </thead>
@@ -2100,8 +2110,8 @@ make release VERSION=1.0.0
 <tbody>
 <tr>
 <td><strong>Blocker</strong></td>
-<td>Something that stops planned work from continuing and that the agent cannot resolve alone within the time-box</td>
-<td>A needed libnickel capability does not exist; a permission the agent lacks; hardware needed for a test</td>
+<td>Something that stops planned work from continuing and that the developer cannot resolve alone within the time-box</td>
+<td>A needed libnickel capability does not exist; a permission the developer lacks; hardware needed for a test</td>
 </tr>
 <tr>
 <td><strong>Risk</strong></td>
@@ -2152,7 +2162,7 @@ make release VERSION=1.0.0
 <pre><code># B-NNN — &lt;one-line summary&gt;
 
 - Date: YYYY-MM-DD   Severity: S1 | S2 | S3   Status: open | waiting-user | resolved | withdrawn
-- Phase / task: P&lt;n&gt; / &lt;task id&gt;   Owner: agent   Needs: user | external | time
+- Phase / task: P&lt;n&gt; / &lt;task id&gt;   Owner: dev   Needs: user | external | time
 - Gate affected: G&lt;n&gt;   Timeline impact: &lt;days&gt; on &lt;milestone&gt;
 
 ## What was tried (with evidence)
@@ -2179,21 +2189,21 @@ make release VERSION=1.0.0
 <h3 id="105-where-reports-live-and-how-they-are-communicated">10.5 Where reports live and how they are communicated</h3>
 <ul>
 <li>Files: <code>docs/blockers/B-001.md</code>, <code>B-002.md</code>, … plus <code>docs/blockers/INDEX.md</code> (table: ID, date, severity, status, one-line summary, gate affected). Reports are never deleted; superseded ones are marked <code>withdrawn</code>.</li>
-<li>Chat: the agent posts one short message when a report is opened: <code>BLOCKER B-003 (S2, P2b) — libnickel 4.38 has no exported symbol for pushing a view with the tab bar. Needs: your decision between options A/B by Fri 30 Oct. Details: docs/blockers/B-003.md</code>. Status changes get a one-line follow-up. No blocker is buried inside a long progress message.</li>
-<li>Replanning: at the next gate (or immediately for S1) the agent updates section 5 of this plan (dates, buffer consumption) with a short "replan note" referencing the blocker ID; the Gantt table at the end is regenerated; the user acknowledges the new dates in the sign-off file.</li>
+<li>Chat: the developer posts one short message when a report is opened: <code>BLOCKER B-003 (S2, P2b) — libnickel 4.38 has no exported symbol for pushing a view with the tab bar. Needs: your decision between options A/B by Fri 30 Oct. Details: docs/blockers/B-003.md</code>. Status changes get a one-line follow-up. No blocker is buried inside a long progress message.</li>
+<li>Replanning: at the next gate (or immediately for S1) the developer updates section 5 of this plan (dates, buffer consumption) with a short "replan note" referencing the blocker ID; the Gantt table at the end is regenerated; the user acknowledges the new dates in the sign-off file.</li>
 </ul>
 <h3 id="106-example-1">10.6 Example 1</h3>
 <pre><code># B-003 — libnickel 4.38 has no exported symbol for pushing a view with the tab bar
 
 - Date: 2026-10-28   Severity: S2   Status: waiting-user
-- Phase / task: P2b / 2b.1–2b.2   Owner: agent   Needs: user
+- Phase / task: P2b / 2b.1–2b.2   Owner: dev   Needs: user
 - Gate affected: G2   Timeline impact: +3 days on G3 if option B; +0 if option A works within 1 day
 
 ## What was tried (with evidence)
 1. MainWindowController::pushView(QWidget*) with a plain QWidget — view shows full screen,
    bottom MainNavView is hidden. Log: host.log 2026-10-28 14:02 &quot;pushView ok; navbar visible=0&quot;.
    Screenshot docs/screens/T3/pushview-plain.png.
-2. Searched Ghidra (Ghidra search_functions_by_name) for &quot;MainNav&quot;, &quot;TabBar&quot;, &quot;Footer&quot;:
+2. Searched Ghidra (function name search) for &quot;MainNav&quot;, &quot;TabBar&quot;, &quot;Footer&quot;:
    MainNavView is created by MainNavController and parented to the Home/Library views'
    container, not to the window — i.e. each top-level view embeds its own nav bar
    (re/notes/view-push.md §3). No exported function builds that container for a foreign widget.
@@ -2226,13 +2236,13 @@ Optionally: say whether a drawer without a persistent tab bar (B) is acceptable 
 <pre><code># B-001 — permission denied building external code on the Mac (Docker socket / NickelTC)
 
 - Date: 2026-10-14   Severity: S1   Status: resolved 2026-10-15
-- Phase / task: P2 / 2.2   Owner: agent   Needs: user
+- Phase / task: P2 / 2.2   Owner: dev   Needs: user
 - Gate affected: G1   Timeline impact: 0 (resolved within 1 day, buffer used: 0)
 
 ## What was tried (with evidence)
 1. `tools/tc make all` → &quot;permission denied while trying to connect to the Docker daemon socket
    at unix:///var/run/docker.sock&quot; (output saved docs/blockers/B-001-docker.txt). Docker Desktop
-   was not running in the user's session; the agent's sandbox cannot start GUI apps.
+   was not running in the user's session; the developer's sandbox cannot start GUI apps.
 2. After the user started Docker Desktop: `docker run --platform linux/amd64 ghcr.io/pgaskin/nickeltc:1`
    → &quot;exec format error&quot; because Rosetta for Linux containers was disabled in Docker settings.
 3. Tried extracting the toolchain tarball to run natively (NickelTC README) — binaries are x86_64 ELF;
@@ -2324,7 +2334,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>NickelHook failsafe, <code>failsafe_delay=15</code>, tiny init, SAFE-01 drill per build line, uninstall flag, telnet enabled before risky sessions</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-02</td>
@@ -2332,7 +2342,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Medium</td>
 <td>Plan B N3Dialog full-view container; kit unaffected; +3 days</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-03</td>
@@ -2340,7 +2350,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Low</td>
 <td>TextField opens native text-edit dialog instead (still native)</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-04</td>
@@ -2348,7 +2358,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Medium</td>
 <td>Rosetta emulation; CI build fallback</td>
-<td>user/agent</td>
+<td>user/dev</td>
 </tr>
 <tr>
 <td>R-05</td>
@@ -2356,7 +2366,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium over months</td>
 <td>Medium</td>
 <td>Symbol check + 5-build matrix + runtime disable + menu fallback; auto-update off</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-06</td>
@@ -2364,7 +2374,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Low</td>
 <td>fetch-fw verifies image type; replace with 4.38.23429 in the matrix</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-07</td>
@@ -2372,7 +2382,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Medium</td>
 <td>Order-independent injection (append after existing buttons), FI-12, test with "Tweak" tab present</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-08</td>
@@ -2380,7 +2390,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>No timers when idle, QObject parenting audit, SOAK tests, VmRSS logging</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-09</td>
@@ -2388,7 +2398,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>open-write-close rule, backend stop on USB, FI-05</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-10</td>
@@ -2396,7 +2406,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>copy-<mark>verify</mark>-rename, trash folder, <code>unzip -t</code> equivalent, user confirms candidates</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-11</td>
@@ -2412,7 +2422,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Low</td>
 <td>No std::, C++11 subset only, clangd database for early errors, CI build</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-13</td>
@@ -2420,14 +2430,14 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>Only NickelTC output goes to the device; Mac preview is for layout only</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-14</td>
 <td>User availability for batched sessions slips</td>
 <td>Medium</td>
 <td>Medium</td>
-<td>Sessions are short, scheduled at gates, agent continues on Mac-only work (preview, docs, backends)</td>
+<td>Sessions are short, scheduled at gates, developer continues on Mac-only work (preview, docs, backends)</td>
 <td>user</td>
 </tr>
 <tr>
@@ -2436,7 +2446,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Medium</td>
 <td>Low</td>
 <td>headless batch overnight; analyse 23828 first, others in background</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-16</td>
@@ -2444,7 +2454,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>Medium</td>
 <td>Use <code>KeyboardScript</code> the mod registers (<mark>verify</mark>); else fall back to native text-edit dialog which the mod already patches</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-17</td>
@@ -2452,7 +2462,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>High (by design)</td>
 <td>Low</td>
 <td>Tile shows "Đang nhận"; auto-stop after N hours (configurable, default 2 h); SOAK-3 numbers</td>
-<td>agent</td>
+<td>dev</td>
 </tr>
 <tr>
 <td>R-18</td>
@@ -2460,7 +2470,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <td>Low</td>
 <td>High</td>
 <td>Add-only policies, confirm dialogs, trash folder, apps limited to those written in this repo</td>
-<td>user/agent</td>
+<td>user/dev</td>
 </tr>
 </tbody>
 </table></div>
@@ -2478,7 +2488,7 @@ tools/push.sh KoboRoot.tgz                 # copies to /Volumes/KOBOeReader/.kob
 <tbody>
 <tr>
 <td>Q1</td>
-<td>OK to install JDK 21, Ghidra, Ghidra and to register an MCP server in the maintainer on the Mac?</td>
+<td>OK to install JDK 21 and Ghidra on the Mac?</td>
 <td>W2 start (19 Oct)</td>
 <td>Yes</td>
 </tr>
@@ -2627,12 +2637,9 @@ Soaks                            ▒▒▒(72h)        ▒▒▒(72h) ▒(24h)
 <li>NickelMenu: <code>menu_main_15505_*</code> experimental options control the extra bottom-bar button (label/icon); hooks <code>MainNavView::MainNavView</code>, creates <code>MainNavButton</code>, bridges <code>tapped()</code> through a <code>QPushButton</code> shim, shows <code>NickelTouchMenu</code> with <code>MenuTextItem</code>s; all these symbols are <code>optional</code> and the feature degrades with a log message. Actions available for the fallback: <code>cmd_spawn</code>, <code>cmd_output</code> (≤ 10 s), <code>nickel_wifi:autoconnect|autoconnect_silent|enable|disable|toggle</code>, <code>nickel_misc:rescan_books|rescan_books_full|home|force_usb_connection</code>, <code>nickel_setting:toggle:dark_mode|screenshots|invert|lockscreen</code>, <code>nickel_screenshot:capture</code>, <code>dbg_toast</code>, <code>power:sleep|reboot|shutdown</code>. Uninstall by <code>.adds/nm/uninstall</code> or power-off within 20 s of boot. "Firmware 5.x is not supported yet."</li>
 <li>NickelDBus symbols: <code>PlugManager::sharedInstance/gadgetMode</code>, <code>PlugWorkflowManager::sharedInstance</code>, <code>WirelessManager::sharedInstance</code>, <code>MainWindowController::sharedInstance/toast/currentView</code>, <code>N3Dialog::content</code>, <code>Device::getCurrentDevice</code>, <code>N3FSSyncManager::sharedInstance/sync(QStringList*)</code>, <code>WirelessWatchdog::sharedInstance</code>, <code>ConfirmationDialogFactory::getConfirmationDialog/showTextEditDialog</code>, <code>ConfirmationDialog::setTitle/setText/setAcceptButtonText/setRejectButtonText/showCloseButton/setRejectOnOutsideTap/addWidget</code>, <code>N3ConfirmationTextEditField</code> ctor(s) with <code>KeyboardScript</code>, <code>TouchLineEdit</code>; signal <code>pfmDoneProcessing</code>.</li>
 <li>NickelHardcover (hook/src): <code>MainWindowController::pushView(QWidget*)</code>, <code>viewWithObjectName</code>, <code>N3DialogFactory::getDialog(QWidget*, bool)</code>, <code>N3Dialog::showKeyboard/hideKeyboard/keyboardFrame/enableBackButton/disableCloseButton/enableFullViewMode/setTitle</code>, <code>KeyboardFrame::createKeyboard(KeyboardScript, QLocale const&amp;)</code>, <code>KeyboardReceiver(QLineEdit*|QTextEdit*, bool)</code>, <code>SearchKeyboardController::setReceiver/setGoText</code>, <code>TouchLineEdit</code>, <code>TouchTextEdit::setCustomPlaceholderText</code>, <code>TouchCheckBox</code>, <code>TouchLabel::setHitStateEnabled</code>, <code>N3ButtonLabel</code>, <code>SettingContainer</code>, <code>PowerTimer::fireAt/timeRemaining</code>, <code>WirelessWorkflowManager::connectWireless/connectWirelessSilently/isInternetAccessible</code>, <code>SupportedLocales::supportedLocales</code>, <code>ConfirmationDialogFactory::showErrorDialog</code>; widgets dir has <code>dialog, label, elidedlabel, pagedstack, buttongroup, rating</code>; settings dir has <code>checkboxrow, menurow, staticrow, settingsdialog</code>. "Firmware 5.x not supported." Primary repo on Codeberg.</li>
-<li>Ghidra: Ghidra extension zip installed via <code>File → Install Extensions</code>; plugin <code>GhidraPlugin</code> under <code>File → Configure → Developer</code>; HTTP server default <code>127.0.0.1:8080</code>; Python bridge <code>bridge_mcp_ghidra.py --ghidra-server http://127.0.0.1:8080/</code> (needs the <code>mcp</code> Python SDK); tools include list classes/methods/imports/exports, decompile, rename.</li>
 <li>Kobo firmware: upgrade API <code>https://api.kobobooks.com/1.0/UpgradeCheck/Device/&lt;deviceid&gt;/&lt;affiliate&gt;/&lt;ver&gt;/&lt;serial&gt;</code>; Libra 2 device id <code>…0388</code>, hardware folder <code>kobo9</code>; zip contains <code>upgrade/</code>, <code>KoboRoot.tgz</code>, <code>manifest.md5sum</code>; manual install = copy contents into <code>.kobo/</code> and eject. Five newest Libra 2 builds and CDN facts in section 3.1. kobopatch-patches <code>src/versions</code> ends at 4.38.21908 and 4.39.22801 (no patch sets for the 4.38.23xxx Libra 2 builds there; MobileRead patch threads exist for 4.38.23648 and 4.38.23828).</li>
 <li>kobo-tieng-viet: 4.x only ("không hỗ trợ 3.x và 5.x"); since build 20260319 it self-repairs Vietnamese after a firmware update on the next reboot.</li>
 <li>Device: Kobo Libra 2, N418, Mark 9 "Io", NXP i.MX6SLL, 512 MB RAM (<mark>verify</mark>), 7" 1264×1680 300 ppi, firmware 4.38.23828.</li>
 </ul>
   </main>
 </div>
-
-</html>

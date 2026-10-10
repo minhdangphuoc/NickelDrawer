@@ -489,12 +489,12 @@ td code { white-space: nowrap; }
 <section>
   <div class="col stack">
     <span class="eyebrow">Reverse engineering</span>
-    <h2>Mapping libnickel with Ghidra and Ghidra</h2>
-    <p>Nickel is closed source, but <code>libnickel.so</code> exports readable C++ and Qt symbols. Ghidra connects Ghidra to me through MCP. I can then list classes, read decompiled functions and trace how Kobo builds a settings screen, instead of you copying output by hand.</p>
+    <h2>Mapping libnickel with Ghidra</h2>
+    <p>Nickel is closed source, but <code>libnickel.so</code> exports readable C++ and Qt symbols. Ghidra lets us list classes, read decompiled functions and trace how Kobo builds a settings screen.</p>
   </div>
   <ol class="flow col">
     <li><div><h3>Get libnickel for 4.38.23828</h3><p>Extract it from the official firmware package on the Mac, matching the version on your Kobo. The Kobo binary never goes into our repo or any shared file.</p></div></li>
-    <li><div><h3>Load it into Ghidra with Ghidra</h3><p>Install Ghidra, the Ghidra plugin and its Python bridge, then add it as an MCP server in the maintainer. One-time setup on your Mac.</p></div></li>
+    <li><div><h3>Load it into Ghidra</h3><p>Install Ghidra with JDK 21, then import and analyse the binary headless. One-time setup on your Mac.</p></div></li>
     <li><div><h3>Find the pieces the kit needs</h3><p>How a view is pushed with the tab bar kept, the list-row and toggle widgets, the keyboard, toast and confirm dialog, and the library rescan call. NickelMenu, NickelDBus and NickelHardcover show where to start.</p></div></li>
     <li><div><h3>Write a symbol table per firmware</h3><p>Every Kobo function the mod uses goes into <code>symbols-4.38.23828.md</code> with its signature. At startup the mod checks they all exist. If any is missing, the drawer disables itself and the menu fallback takes over.</p></div></li>
     <li><div><h3>Re-check on each firmware update</h3><p>Diff the new libnickel against the table in Ghidra and update only what moved.</p></div></li>
@@ -514,7 +514,6 @@ td code { white-space: nowrap; }
       <tbody>
         <tr><td><a href="https://github.com/pgaskin/NickelHook">pgaskin/NickelHook</a></td><td><b>Foundation.</b> Loads our mod into Nickel. Provides a failsafe that removes a mod which breaks startup, uninstall-by-file, and symbol lookup with error checks.</td><td>Jul 2026</td></tr>
         <tr><td><a href="https://github.com/pgaskin/NickelTC">pgaskin/NickelTC</a></td><td><b>Toolchain.</b> Docker image with the Kobo compiler and Qt sysroot. NickelHook requires it. Old but stable.</td><td>Apr 2021</td></tr>
-        <tr><td><a href="https://github.com/LaurieWired/Ghidra">LaurieWired/Ghidra</a></td><td><b>RE bridge.</b> Lets me query Ghidra's analysis of libnickel directly.</td><td>Jun 2025</td></tr>
         <tr><td><a href="https://github.com/pgaskin/NickelMenu">pgaskin/NickelMenu</a></td><td><b>Reference + fallback.</b> Shows how to add a bottom tab and call Nickel actions. Stays installed as the safety net.</td><td>Jun 2026</td></tr>
         <tr><td><a href="https://github.com/shermp/NickelDBus">shermp/NickelDBus</a></td><td><b>Reference.</b> Native toasts, dialogs, Wi-Fi and library rescan, already mapped.</td><td>Apr 2024</td></tr>
         <tr><td><a href="https://github.com/RedHatter/NickelHardcover">RedHatter/NickelHardcover</a></td><td><b>Reference.</b> A recent mod that adds its own native screens, the closest example to our drawer.</td><td>listed stable</td></tr>
@@ -553,7 +552,7 @@ td code { white-space: nowrap; }
     <div class="phase">
       <div class="phase-head"><h3>Phase 2 · toolchain + RE setup</h3><span class="est">≈ 2–3 days</span></div>
       <ul>
-        <li>NickelTC in Docker on your Mac; Ghidra + Ghidra connected to the maintainer</li>
+        <li>NickelTC in Docker on your Mac; Ghidra with the five libnickel builds</li>
         <li>Load libnickel 4.38.23828; confirm Qt version and the key classes</li>
         <li><b>Hello-world mod</b> that shows one native toast. Test the failsafe and the uninstall file on the device before anything bigger</li>
       </ul>
@@ -609,7 +608,7 @@ td code { white-space: nowrap; }
   </div>
   <div class="decide col">
     <ul>
-      <li><h3>Okay to install Ghidra + Ghidra on your Mac</h3><p>Needs Java 21, Ghidra, the Ghidra plugin, and an MCP entry in the maintainer's config. I'll show each step before running it.</p></li>
+      <li><h3>Okay to install Ghidra on your Mac</h3><p>Needs Java 21 and Ghidra. Each step is listed in docs/GHIDRA.md.</p></li>
       <li><h3>Okay to run a test mod on the Kobo</h3><p>Phase 2 loads a hello-world mod into Nickel. If it fails, the failsafe removes it. This is the first step with any boot-loop risk.</p></li>
       <li><h3>GitHub repo and folder</h3><p>Repo as <code>owner/repo</code> and the books folder. You'll paste the read-only token into a file on the Kobo yourself.</p></li>
       <li><h3>Turn off Kobo auto-update?</h3><p>Recommended while the drawer is young, so a firmware update never arrives before the symbol table is ready.</p></li>

@@ -87,7 +87,7 @@ libnickel NEEDS `libQt5{Core,Gui,Widgets,Network,Sql,DBus,Xml,Svg,WebKit,WebKitW
 Concurrent,Sensors,PrintSupport}.so.5` with RPATH `/chroot/lib:/chroot/usr/lib:/usr/local/Qt-5.2.1-arm/lib`
 → **Qt 5.2.1** (consistent with what NickelHook targets). The Qt libraries themselves are on the rootfs, not in
 `KoboRoot.tgz` (KoboRoot only carries legacy symlinks under `Qt-5.2.1-arm/lib`). libnickel uses libstdc++
-(`GLIBCXX_3.4.18` max, `CXXABI_ARM_1.3.3`); our mod still must not use the C++ stdlib (CONTRIBUTING.md rule).
+(`GLIBCXX_3.4.18` max, `CXXABI_ARM_1.3.3`); our mod still must not use the C++ stdlib (see CONTRIBUTING.md).
 
 ### Exports
 

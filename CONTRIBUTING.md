@@ -32,21 +32,31 @@ Run `make check build dist` before you open a pull request. You do not need a Ko
 - Match the surrounding style. Format with `gofmt`, `clang-format`, `shfmt`, `black`.
 - Leave touched code cleaner, but do not refactor unrelated code in the same change.
 
-AI coding agents: read [CONTRIBUTING.md](CONTRIBUTING.md). It has the full rules and the Kobo safety rules.
-
 ## Tests
 
 - Every bug fix comes with a test or a validation case.
 - Every new feature comes with tests.
 - Shell scripts must pass `shellcheck` and `sh -n`.
 - Never make a test depend on a real Kobo.
+- Run `make check` and `tools/test-install.sh` before every commit.
 
 ## Kobo safety
 
 - Back up any device file before you change it.
 - Do not leave your shell's working directory on the Kobo volume. It blocks ejecting.
 - Run a new native mod build on a device only after the failsafe and uninstall drill.
-- Native mods use C and Qt only, check every libnickel symbol with `dlsym`, and disable themselves if a symbol is missing.
+- Native mods (NickelHook): no C++ standard library (Qt and C only), a tiny init, a `dlsym` check for every libnickel symbol, no files held open on `/mnt/onboard`, low CPU, IO and memory. An unknown firmware or a missing symbol disables the drawer and logs why; NickelMenu stays the fallback.
+- Supported firmware is the 5 newest Libra 2 builds listed in [docs/plan-detailed.md](docs/plan-detailed.md) section 3 (4.x only; 5.x is unsupported by NickelMenu).
+
+## Design rules
+
+- No personal data in tracked files (device backups, serials, IPs, tokens, book titles and paths). Keep them in the gitignored `backups/` or `local/` folders.
+- No device-specific hardcoding. Device name, model, paths and labels come from config or are detected (`/mnt/onboard/.kobo/version`, `Kobo eReader.conf` locale).
+- No user-facing string in code or scripts. English is the source; translations live in `locales/<lang>.json`. The language comes from `CurrentLocale` with the fallback chain exact (`pt_BR`) then language (`pt`) then `en`. Keep strings short (e-ink, small screen) and use placeholders (`{count}`), never string concatenation.
+- Apps use only the NickelDrawer API. Inside the drawer an app never shows its own text output as a dialog; it talks to the host through the drawer protocol (JSON events: state, toast, confirm, rescan, Wi-Fi) and the host maps those to Nickel's own widgets. NickelMenu output is a legacy fallback and must not leak into the drawer UI.
+- Third-party code keeps its license and is recorded in `third_party/README.md`.
+- No telemetry. Network access only for features the user started (sync, update check).
+- Releases are signed (ed25519). The private signing key never enters the repo, CI or logs.
 
 ## Never commit
 
@@ -78,7 +88,9 @@ fix(appsctl): reject labels that contain a colon
 docs: explain the background script pattern
 ```
 
-Types: `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `ci`, `chore`.
+Types: `feat`, `fix`, `docs`, `test`, `refactor`, `build`, `ci`, `chore`. Keep the subject to 72 characters and use the body to explain why. Add no co-author or session trailers.
+
+Before committing, check the staged list for binaries, Kobo files and personal data.
 
 Keep a pull request to one topic. Describe what changed and how you tested it. Link the issue if there is one.
 

@@ -33,4 +33,4 @@ tools/fw-watch.sh            # query the upgrade API with a placeholder serial
 tools/fw-watch.sh --fetch    # also fetch + dump the new build into ~/.cache/nickeldrawer
 ```
 
-Exit 0: nothing newer than the newest version in `re/firmware.lock`. Exit 10: new firmware; the URL and the fetch and symcheck commands are printed. A 5.x URL (Qt6 upgrade) is flagged as unsupported. Next steps are in `docs/WORKFLOW.md` (firmware-watch).
+Exit 0: nothing newer than the newest version in `re/firmware.lock`. Exit 10: new firmware; the URL and the fetch and symcheck commands are printed. A 5.x URL (Qt6 upgrade) is flagged as unsupported. Next steps are in [RELEASING.md](RELEASING.md).

@@ -4,7 +4,7 @@ Exact steps for the first public beta. Nothing here has been run. Work top to bo
 
 Rules that apply to every step:
 
-- Commit messages, tags and release notes never mention assistants or AI tools, and carry no `Co-Authored-By` or session trailers.
+- Commit messages, tags and release notes carry no co-author or session trailers.
 - The signing key (`~/.config/nickeldrawer/release-ed25519.key`) is only ever read by `make release` on your Mac. Never print it, copy it, upload it or put it in CI.
 - Do not `cd` into `/Volumes/KOBOeReader`.
 
@@ -14,9 +14,8 @@ Answer these before step 1 (the audit lists the facts):
 
 1. **Repository name and owner.** Assumed below: your GitHub account, name `NickelDrawer`, public.
 2. **History.** The 54 existing commits are clean (no secrets, binaries or serials) but carry your personal git email. Publish as is, or squash into one commit with an address you are fine to show (`git commit-tree`/orphan branch). Assumed: publish as is.
-3. **Maintainer files that mention AI tooling.** `CONTRIBUTING.md`, `.tooling/workflows/`, `docs/WORKFLOW.md`, `docs/DECISIONS.md`, `docs/GHIDRA.md`, `docs/plan-detailed.*` and `CONTRIBUTING.md` (one line) name the coding assistant and model routing. Keep them (honest, useful for contributors) or move them to a private folder before the first push. Assumed: you decide; the commands below do not touch them.
-4. **`docs/sessions/`** holds device test logs. Keep, or move to the gitignored `local/` before pushing.
-5. **`screens` flag.** App screens (`ui.json`) are off unless `.adds/nickeldrawer/screens` exists. Decide whether the beta ships with them on by default (code change in `mod/drawer/mod_switches.cc` plus a device test) or documents the flag (the README does).
+3. **`docs/testing/`** holds the final on-device checklist. Device session logs live in the gitignored `local/sessions/`.
+4. **`screens` flag.** App screens (`ui.json`) are off unless `.adds/nickeldrawer/screens` exists. Decide whether the beta ships with them on by default (code change in `mod/drawer/mod_switches.cc` plus a device test) or documents the flag (the README does).
 
 ## 1. Final checks (local, no device)
 
@@ -42,7 +41,7 @@ unzip -l dist/koboapps-1.0.0-beta.1.zip | grep -Ei '\.so|\.tgz|sqlite' || echo c
 
 The `KoboRoot` must list exactly `usr/local/Kobo/imageformats/libnickeldrawer.so`.
 
-On the device you own, before you publish anything you tell other people to install: run the failsafe and uninstall drill with this exact build (plan gate G1 and `docs/sessions/`), then one normal boot, the Apps row, the Tweaks panel and one app.
+On the device you own, before you publish anything you tell other people to install: run the failsafe and uninstall drill with this exact build (plan gate G1 and `docs/testing/final-checklist.md`), then one normal boot, the Apps row, the Tweaks panel and one app.
 
 ## 2. Release commit
 
