@@ -128,6 +128,8 @@ Tiếng Việt: xem [README.vi.md](README.vi.md).
 
 [PolyForm Noncommercial 1.0.0](LICENSE): free for personal use, study, hobby projects and non-profit organisations; **no commercial use**. Forks and changes are welcome under the same terms. NickelDrawer is source-available, not OSI open source. Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).
 
+**Apps you write are yours.** The license does not reach apps that only use the drawer's app format, protocol and tools: you choose their license, commercial included, and the app template and examples are 0BSD. Details: [LICENSE-APPS.md](LICENSE-APPS.md).
+
 ## Credits
 
 - [NickelHook](https://github.com/pgaskin/NickelHook) and [NickelMenu](https://github.com/pgaskin/NickelMenu) by Patrick Gaskin (MIT): the hook framework the native drawer is built on, and the menu it coexists with.

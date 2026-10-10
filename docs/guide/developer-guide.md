@@ -589,6 +589,8 @@ An app for this repository lives in `apps/<id>/` with a README and a row in `app
 
 To propose an app for the main repository, follow [CONTRIBUTING.md](../../CONTRIBUTING.md). Code in this repository is under PolyForm Noncommercial 1.0.0.
 
+**Your own app's license is your choice**, commercial included. NickelDrawer's license does not reach an app that only uses the app format, the drawer protocol and the tools, and the files `appsctl new` writes (and the examples) are 0BSD, so you can keep or relicense them. Copying other code from this repository into your app brings its license with it. Details: [LICENSE-APPS.md](../../LICENSE-APPS.md).
+
 ## Versioning and min_host
 
 - **PATCH** for fixes, **MINOR** for new actions, screens or messages, **MAJOR** when the `data/` format changes incompatibly. On a MAJOR change, migrate old data or refuse with a clear message.

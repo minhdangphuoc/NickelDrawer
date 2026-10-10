@@ -124,6 +124,8 @@ Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới ch�
 
 [PolyForm Noncommercial 1.0.0](LICENSE): miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; **không dùng cho mục đích thương mại**. Có thể fork và sửa theo cùng điều khoản. NickelDrawer là mã nguồn có thể xem (source-available), không phải mã nguồn mở theo chuẩn OSI. Mã của bên thứ ba giữ giấy phép riêng, liệt kê ở [third_party/README.md](third_party/README.md).
 
+**Ứng dụng bạn viết là của bạn.** Giấy phép này không áp dụng cho ứng dụng chỉ dùng định dạng ứng dụng, giao thức và công cụ của Ngăn: bạn tự chọn giấy phép cho ứng dụng, kể cả thương mại; mẫu ứng dụng và các ví dụ theo 0BSD. Chi tiết: [LICENSE-APPS.md](LICENSE-APPS.md) (tiếng Anh).
+
 ## Ghi công
 
 - [NickelHook](https://github.com/pgaskin/NickelHook) và [NickelMenu](https://github.com/pgaskin/NickelMenu) của Patrick Gaskin (MIT): khung hook mà ngăn gốc dùng, và menu chạy chung với nó.

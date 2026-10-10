@@ -137,6 +137,10 @@ Bạn không đặt mirror trong `app.json`.
 
 Sau khi đổi, khóa ký cũ bị từ chối vĩnh viễn. Nếu bạn chưa từng tạo khóa khôi phục thì không thể đổi: hãy báo người dùng cài lại ứng dụng qua USB với khóa mới.
 
+## Giấy phép
+
+Bạn tự chọn giấy phép cho ứng dụng, kể cả thương mại. Giấy phép của NickelDrawer không áp dụng cho ứng dụng chỉ dùng định dạng ứng dụng, giao thức và công cụ của nó, và bạn được dùng `appsctl` để dựng, ký và phát hành ứng dụng cho mọi mục đích. Xem [LICENSE-APPS.md](../../LICENSE-APPS.md) (tiếng Anh).
+
 ## An ninh
 
 - Không để khóa riêng trong thư mục ứng dụng hay trên GitHub, hay máy dùng chung. Đặt mật khẩu cho khóa.

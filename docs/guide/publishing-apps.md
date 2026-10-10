@@ -137,6 +137,10 @@ Rotation needs the **recovery key**. A leak of the signing key is the case it ex
 
 After the rotation, the old signing key is rejected forever. If you never made a recovery key, you cannot rotate: tell users to reinstall the app over USB with a new key.
 
+## License
+
+You choose your app's license, commercial included. NickelDrawer's license does not apply to apps that only use its app format, protocol and tools, and using `appsctl` to build, sign and publish your app is allowed for any purpose. See [LICENSE-APPS.md](../../LICENSE-APPS.md).
+
 ## Security
 
 - Keep private keys out of the app folder, off GitHub and off shared machines. Use a passphrase.
