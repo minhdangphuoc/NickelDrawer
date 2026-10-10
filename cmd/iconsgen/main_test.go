@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"image"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -10,23 +12,65 @@ import (
 
 const repoRoot = "../.."
 
+// Antialiasing differs by a few levels between CPUs (arm64 vs amd64 float rounding), so
+// committed icons are compared pixel by pixel with a small tolerance instead of byte for byte.
+// A changed shape or stroke still moves far more pixels than this allows.
+const (
+	maxAlphaDifference     = 24   // per pixel, out of 255
+	maxDifferingPixelShare = 0.02 // of all pixels may differ at all
+)
+
 // A stale committed icon fails here; fix with `go run ./cmd/iconsgen -repo .`.
 func TestCommittedIconsMatchGenerator(t *testing.T) {
 	for _, entry := range icons {
 		t.Run(entry.path, func(t *testing.T) {
-			committed, err := os.ReadFile(filepath.Join(repoRoot, entry.path))
+			file, err := os.Open(filepath.Join(repoRoot, entry.path))
 			if err != nil {
 				t.Fatalf("%v; run: go run ./cmd/iconsgen -repo .", err)
 			}
-			want, err := encode(repoRoot, entry)
+			defer file.Close()
+			committed, err := png.Decode(file)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !bytes.Equal(committed, want) {
-				t.Fatalf("%s is stale; run: go run ./cmd/iconsgen -repo .", entry.path)
+			want, err := render(repoRoot, entry)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if problem := iconDifference(committed, want); problem != "" {
+				t.Fatalf("%s is stale (%s); run: go run ./cmd/iconsgen -repo .", entry.path, problem)
 			}
 		})
 	}
+}
+
+// iconDifference describes why two renders of the same icon differ beyond rounding, or "".
+func iconDifference(committed image.Image, want *image.NRGBA) string {
+	if committed.Bounds() != want.Bounds() {
+		return fmt.Sprintf("size %v, want %v", committed.Bounds(), want.Bounds())
+	}
+	differing := 0
+	bounds := want.Bounds()
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			_, _, _, committedAlpha := committed.At(x, y).RGBA()
+			wantAlpha := int(want.NRGBAAt(x, y).A)
+			difference := int(committedAlpha>>8) - wantAlpha
+			if difference < 0 {
+				difference = -difference
+			}
+			if difference > maxAlphaDifference {
+				return fmt.Sprintf("pixel %d,%d alpha differs by %d", x, y, difference)
+			}
+			if difference > 0 {
+				differing++
+			}
+		}
+	}
+	if share := float64(differing) / float64(bounds.Dx()*bounds.Dy()); share > maxDifferingPixelShare {
+		return fmt.Sprintf("%.1f%% of pixels differ", share*100)
+	}
+	return ""
 }
 
 func TestIconsAreBlackStrokesOnTransparent(t *testing.T) {
