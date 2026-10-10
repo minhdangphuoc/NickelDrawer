@@ -158,6 +158,12 @@ is_mod_changed() {
     [ ! -f "$INSTALLED_MOD_RECORD" ] || ! cmp -s "$MOD_TGZ" "$INSTALLED_MOD_RECORD"
 }
 
+# True when the archive waiting in .kobo is the one our last install staged (the Kobo has not
+# rebooted since), so a newer build may replace it; it is backed up first like every file.
+is_waiting_archive_ours() {
+    [ -f "$INSTALLED_MOD_RECORD" ] && cmp -s "$STAGED_TGZ" "$INSTALLED_MOD_RECORD"
+}
+
 # Decides before anything is written whether the mod gets staged, and fails early on a conflict.
 should_stage_mod() {
     case $modMode in
@@ -167,6 +173,7 @@ should_stage_mod() {
     esac
     if [ -e "$STAGED_TGZ" ]; then
         cmp -s "$MOD_TGZ" "$STAGED_TGZ" && return 1
+        is_waiting_archive_ours && return 0
         if [ "$modMode" = force ]; then
             fail "a different KoboRoot.tgz is already waiting on the Kobo. Reboot the Kobo first, then run again."
         fi

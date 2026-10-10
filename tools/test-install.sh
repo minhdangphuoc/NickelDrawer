@@ -267,8 +267,14 @@ sleep 1
 check "--with-mod stages even an unchanged mod" cmp -s "$MOD_TGZ" "$STAGED"
 make_mod_tgz v3
 sleep 1
+"$INSTALLER" >"$WORK/ours.out" 2>&1
+check "our own archive still waiting is replaced by a newer build" cmp -s "$MOD_TGZ" "$STAGED"
+check "...and the record follows it" cmp -s "$MOD_TGZ" "$ADDS/koboapps/mod/KoboRoot-nickeldrawer.tgz"
+printf 'not our archive\n' >"$STAGED"
+make_mod_tgz v4
+sleep 1
 "$INSTALLER" >"$WORK/busy.out" 2>&1
-check "a different archive that is already waiting is not replaced" bash -c '[ -f "$1" ] && ! cmp -s "$0" "$1"' "$MOD_TGZ" "$STAGED"
+check "a foreign archive that is already waiting is not replaced" bash -c '[ -f "$1" ] && ! cmp -s "$0" "$1"' "$MOD_TGZ" "$STAGED"
 check "the install still completes and warns" contains "$WORK/busy.out" "already waiting"
 sleep 1
 "$INSTALLER" --with-mod >/dev/null 2>&1 && busyStatus=0 || busyStatus=$?
