@@ -87,6 +87,7 @@ struct TapTarget {
 
     Kind kind = TAP_COMPONENT;
     QRect rect;
+    QRect pressRect;    // pager arrows: the circle drawn when pressed; empty = the whole rect inverts
     int component = -1; // index into ScreenLayout::component()
     int row = -1;       // TAP_LIST_ROW: index of the row in the list's items
     QString value;      // radio: the option id; list: the row's primary text; tile: its id; viewer button: "primary" / "secondary"

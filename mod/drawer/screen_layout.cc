@@ -789,6 +789,16 @@ ScreenPage ScreenLayout::page(int index) const
     return result;
 }
 
+// The square a pressed pager arrow shows its circle in: the drawer footer's arrow button size,
+// centred on the chevron, so the "n / N" label never inverts with it.
+static QRect pressCircleAround(const QRect &arrow)
+{
+    int side = copperui::v1::DRAWER_FOOTER_BUTTON;
+    QRect square(0, 0, side, side);
+    square.moveCenter(arrow.center());
+    return square;
+}
+
 // The pager (copperui/pager.h): "n / N" between two Tabler chevrons; the two halves of the line
 // are the touch targets (design-system.md 4.19). Only drawn when the screen has more than one page.
 void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
@@ -804,9 +814,11 @@ void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
     TapTarget previous;
     previous.kind = TapTarget::TAP_PREVIOUS_PAGE;
     previous.rect = toQRect(pager.previousTarget);
+    previous.pressRect = pressCircleAround(toQRect(pager.previousArrow));
     TapTarget next;
     next.kind = TapTarget::TAP_NEXT_PAGE;
     next.rect = toQRect(pager.nextTarget);
+    next.pressRect = pressCircleAround(toQRect(pager.nextArrow));
     page->targets << previous << next;
 }
 

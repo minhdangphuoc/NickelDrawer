@@ -127,10 +127,10 @@ Preview fixtures had fallen behind the host and app code, so the renders showed 
 - **N6** `docs/design-system.md` §2.1, §2.4, §7 still gave `line.header` 187; aligned to A1 (102), as the token file already is.
 
 ### Still open (none blocks a device install)
-- **N4** Empty drawer still shows the long-press hint ("Long-press an app for info or remove") though there is no app: `mod/drawer/drawer_view.cc:217`, mirrored in `cmd/ndpreview/drawer_empty.go:42`. Hide the hint while the empty state shows. Needs a mod build and docker test.
-- **N5** LocalSend idle shows the IP row with an empty value where GitHub shows "—": `apps/localsend/bin/state.sh:30`.
+- **N4** (fixed) Empty drawer still shows the long-press hint ("Long-press an app for info or remove") though there is no app: `mod/drawer/drawer_view.cc:217`, mirrored in `cmd/ndpreview/drawer_empty.go:42`. Hide the hint while the empty state shows. Needs a mod build and docker test.
+- **N5** (fixed) LocalSend idle shows the IP row with an empty value where GitHub shows "—": `apps/localsend/bin/state.sh:30`.
 - **N7** Library has no `preview-state*.json`, so its render shows ui.json defaults (blank "Last scan" where the app writes "never"); add fixtures for idle / scanning / duplicates.
-- **N8** UI Kit header status "Kit 1 · 18" is cryptic (`apps/uikit/locales/en.json:264`, `vi.json:264`); e.g. "18 components", within 340 px.
+- **N8** (fixed: "18 components" / "18 thành phần") UI Kit header status "Kit 1 · 18" was cryptic (`apps/uikit/locales/en.json:264`, `vi.json:264`); e.g. "18 components", within 340 px.
 - **F38** Header text link underlined: Nickel draws it (`mod/drawer/screen_view.cc:32`); device check.
 - Notes, not defects: the pressed primary in the UI Kit button matrix inverts to white with no outline, which is PressArea's `HIGHLIGHT_INVERT` (device check "pressed inversion"); Settings firmware value "4.38.23828 ✓" is a text mark by design (`settings_state.go:125`), A13 covers list rows only.
 

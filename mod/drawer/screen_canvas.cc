@@ -440,6 +440,10 @@ PressArea::PressFeedback ScreenCanvas::feedbackAt(const QPoint &position) const
         feedback.rect = target->rect;
         // An icon button over a picture: Nickel's black circle, not the whole target inverted.
         feedback.highlight = target->kind == TapTarget::TAP_VIEWER_BACK ? HIGHLIGHT_CIRCLE : HIGHLIGHT_INVERT;
+        if (!target->pressRect.isEmpty()) { // pager arrow: the circle behind the chevron, like the drawer footer
+            feedback.rect = target->pressRect;
+            feedback.highlight = HIGHLIGHT_CIRCLE;
+        }
     }
     return feedback;
 }
