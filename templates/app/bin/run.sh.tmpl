@@ -1,6 +1,6 @@
 #!/bin/sh
 # TODO: replace this with what your app does. Return at once: for longer work start a
-# background job and show its progress through the `state` action (see docs/APPS.md).
+# background job and show its progress through the `state` action (see docs/guide/developer-guide.md).
 # Inside the drawer a script never prints prose; it answers with a toast declared in ui.json.
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
@@ -9,5 +9,7 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 APP_ID={{.ID}}
 
 app_log "$APP_DIR" "run"
-{{if .WithUI}}date '+%H:%M' > "$APP_DIR/data/last-run.txt"
+{{if .WithUI}}runCountFile=$APP_DIR/data/run-count.txt
+runCount=$(cat "$runCountFile" 2>/dev/null || echo 0)
+echo $((runCount + 1)) >"$runCountFile"
 {{end}}report hello "$APP_ID" msg.hello

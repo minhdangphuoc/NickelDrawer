@@ -7,10 +7,10 @@ APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 
 APP_ID={{.ID}}
 
-lastRun=$(cat "$APP_DIR/data/last-run.txt" 2>/dev/null)
-if [ -z "$lastRun" ]; then
+runCount=$(cat "$APP_DIR/data/run-count.txt" 2>/dev/null || echo 0)
+if [ "$runCount" -eq 0 ]; then
     status=$(msg "$APP_ID" msg.never_run)
 else
-    status=$(msg "$APP_ID" msg.last_run time="$lastRun")
+    status=$(msg "$APP_ID" msg.run_count count="$runCount")
 fi
 printf '{"status":"%s"}\n' "$status"

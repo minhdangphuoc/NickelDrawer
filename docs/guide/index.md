@@ -2,7 +2,7 @@
 
 NickelDrawer adds an **Apps** drawer and a **Tweaks** window to the More tab of a Kobo e-reader running Kobo's own software, with small apps that look like the rest of the Kobo. It is an independent project, not made by or affiliated with Rakuten Kobo.
 
-**Status: 1.0.0-beta.1.** Supported on the Kobo Libra 2 with five 4.38 firmware builds; tried on one device so far. Each guide says what has run on a real device.
+**Status: beta.** Supported on the Kobo Libra 2 with five 4.38 firmware builds; tried on one device so far. Each guide says what has run on a real device.
 
 ## Guides
 

@@ -1,6 +1,6 @@
 # Examples
 
-Worked examples for the [app developer guide](../docs/APPS.md). Each is a complete app folder.
+Worked examples for the [developer guide](../docs/guide/developer-guide.md) and the [design guidelines](../docs/APPS.md). Each is a complete app folder.
 
 | Example | Teaches |
 |---|---|
@@ -16,12 +16,12 @@ Validate (from the repository root):
 go run ./cmd/appsctl validate apps/todo examples/imageview
 ```
 
-Install on a Kobo (follow the safety steps in the guide, section "Test on the device", back up
+Install on a Kobo (follow the safety steps in the guide, section "Install on a Kobo", back up
 first, and do not leave your shell's working directory on the Kobo volume):
 
 ```sh
 cp -R examples/imageview /Volumes/KOBOeReader/.adds/apps/imageview
 ```
 
-Then eject and open the Apps drawer; **Refresh list** (System section) rescans the apps. The `imageview` example needs its `bin/mkcbz` built
+Then eject, open the Apps drawer and tap the refresh button in its header to rescan the apps. The `imageview` example needs its `bin/mkcbz` built
 first; see its README.

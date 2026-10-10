@@ -13,11 +13,13 @@ You need:
 Common commands:
 
 ```sh
-make check          # gofmt check, go vet, go test
-make build          # ARMv7 binaries for the Kobo, plus host tools
+make check          # CopperUI tokens, gofmt check, go vet, go test, shellcheck (if installed)
+make build          # ARMv7 binaries for the Kobo, plus host tools (build/appsctl-host, build/ndpreview-host)
 make dist           # dist/ tree and dist/koboapps-<version>.zip
 tools/test-install.sh   # runs the installer against a fake Kobo
 ```
+
+After you edit a page in `docs/guide/`, refresh its HTML with `python3 tools/guide2html.py docs/guide/<page>.md docs/guide/<page>.html` (needs `pip install markdown`).
 
 Run `make check build dist` before you open a pull request. You do not need a Kobo for most work.
 
@@ -45,8 +47,8 @@ Run `make check build dist` before you open a pull request. You do not need a Ko
 - Back up any device file before you change it.
 - Do not leave your shell's working directory on the Kobo volume. It blocks ejecting.
 - Run a new native mod build on a device only after the failsafe and uninstall drill.
-- Native mods (NickelHook): no C++ standard library (Qt and C only), a tiny init, a `dlsym` check for every libnickel symbol, no files held open on `/mnt/onboard`, low CPU, IO and memory. An unknown firmware or a missing symbol disables the drawer and logs why; NickelMenu stays the fallback.
-- Supported firmware is the 5 newest Libra 2 builds listed in [docs/plan-detailed.md](docs/plan-detailed.md) section 3 (4.x only; 5.x is unsupported by NickelMenu).
+- Native mods (NickelHook): no C++ standard library (Qt and C only), a tiny init, a `dlsym` check for every libnickel symbol, no files held open on `/mnt/onboard`, low CPU, IO and memory. An unknown firmware or a missing symbol disables the drawer, shows one toast and logs why; NickelMenu is not a fallback.
+- Supported firmware is the 5 newest Libra 2 builds listed in [docs/plan-detailed.md](docs/plan-detailed.md) section 3 (4.x only; 5.x is unsupported).
 
 ## Design rules
 
@@ -96,7 +98,7 @@ Keep a pull request to one topic. Describe what changed and how you tested it. L
 
 ## Writing an app
 
-See [docs/APPS.md](docs/APPS.md).
+Start with the [developer guide](docs/guide/developer-guide.md) (a 15-minute tutorial and the reference); [docs/APPS.md](docs/APPS.md) has the design guidelines. Scaffold with `build/appsctl-host new <id> --with-ui`, then run `build/appsctl-host validate --apps-dir apps` (no errors, no warnings) before a pull request.
 
 ## License
 

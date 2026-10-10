@@ -28,7 +28,7 @@ What it is not:
 - **Not a cloud service.** It has no account and sends nothing anywhere unless you start a feature that needs the network.
 - **Not open source.** NickelDrawer is source-available under the PolyForm Noncommercial 1.0.0 license: free for personal use, study, hobby projects and non-profit organisations; no commercial use.
 
-> **Status: beta (1.0.0-beta.1).** NickelDrawer has been tried on one Kobo Libra 2 with one firmware build. Parts of it have run on that device; much of what this guide describes has only been tested on a computer so far. Each chapter says what has been tried on a real device. Read [Safety and uninstall](#safety-and-uninstall) before you install.
+> **Status: beta.** NickelDrawer has been tried on one Kobo Libra 2 with one firmware build. Parts of it have run on that device; much of what this guide describes has only been tested on a computer so far. Each chapter says what has been tried on a real device. Read [Safety and uninstall](#safety-and-uninstall) before you install.
 
 ## Check that your Kobo is supported
 

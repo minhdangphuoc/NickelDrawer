@@ -124,7 +124,7 @@ the 9th partial update in a row is upgraded to a full one. A changed item list r
 
 ## Flags (on the Kobo, read once at boot; reboot to apply)
 
-Version `1.0.0-beta.1` (`NH_VERSION`, logged by NickelHook).
+Version: the release version (`NH_VERSION`, logged by NickelHook).
 
 | Path | Effect |
 |---|---|
@@ -220,7 +220,7 @@ Shell rule: absolute paths, never `cd` into `/Volumes/KOBOeReader`.
 4. Page buttons: forward/back flip pages (one flash each); at the edges nothing changes. On-screen
    arrows do the same. Toggle grid: 4 columns of icon + name cells, refresh icon in the header; leave and re-open: grid is remembered.
 5. Tap an app (e.g. LocalSend): result dialog; status line updates in place after closing it.
-   Tap "Refresh list": dialog, list reloads.
+   Tap the refresh button in the header: list reloads.
 6. Long-press an app: menu with Info, other actions, Remove…; Info shows version/storage/folder;
    Remove… → confirm (Cancel left, Remove right); Cancel leaves it.
 7. With Wi-Fi off, tap an app that needs Wi-Fi: "Wi-Fi is off" dialog → Turn on Wi-Fi → Nickel connects

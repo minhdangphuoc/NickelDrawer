@@ -1,26 +1,26 @@
 # {{.Name}}
 
-TODO: what the app does, in two sentences.
+Replace this with what the app does, in two sentences.
 
 ## Develop
 
 ```sh
 appsctl validate .{{if .WithUI}}
-ndpreview serve .          # preview ui.json at Kobo size on 127.0.0.1{{end}}
+ndpreview serve .          # preview ui.json at the Kobo's screen size on 127.0.0.1{{end}}
 ```
 
-Copy the folder to `/mnt/onboard/.adds/apps/{{.ID}}/` (or run `tools/install-to-kobo.sh` from the NickelDrawer repo) and open the Apps drawer; **Refresh list** (System section) rescans the apps.
+Copy the folder to `/mnt/onboard/.adds/apps/{{.ID}}/` and open the Apps drawer; tap the refresh button in the drawer header to rescan the apps.
 
 ## How the app talks to the user
 
-Inside the drawer a script never prints prose. It answers with a JSON signal such as `{"toast":"hello"}` naming a toast declared in `ui.json` (`report` in `lib/common.sh` does this and prints the localized text instead when you run the script from a shell). Longer work runs in the background and the screen follows it through the `state` action. See `docs/APPS.md`.
+Inside the drawer a script never prints prose. It answers with a JSON signal such as `{"toast":"hello"}` naming a toast declared in `ui.json` (`report` in `lib/common.sh` does this and prints the localized text instead when you run the script from a shell). Longer work runs in the background and the screen follows it through the `state` action. See `docs/guide/developer-guide.md` in the NickelDrawer repository.
 
 ## What it touches
 
 Declare this in `app.json` so reviews and `appsctl validate` can hold the code to it:
 
 - **Network:** `"network": false` today. Set `true` if the app talks to the network.
-- **Shared folders:** none today. Add `"storage": {"reads": ["pictures"], "writes": ["inbox"]}` with the logical names listed in `docs/spec/app-format.md` when the app reads or writes outside its own `data/` folder.
+- **Shared folders:** none today. Add `"storage": {"reads": ["pictures"], "writes": ["inbox"]}` with the logical names listed in `docs/spec/app-format.md` (NickelDrawer repository) when the app reads or writes outside its own `data/` folder.
 - Its own `data/` folder needs no declaration. Never ship `data/` in a package.
 
 ## Translate

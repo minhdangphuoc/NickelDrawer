@@ -77,7 +77,7 @@ blockquote p:last-child { margin-bottom: 0; }
       <p class="lede">Build, test and ship an app for the drawer: a 15-minute tutorial, the reference, and the rules that keep a Kobo safe.</p>
     </header>
     
-<p>How to build, test and ship an app for the NickelDrawer app drawer on a Kobo. You need a computer with Go 1.24 or newer and a checkout of this repository. You do not need a Kobo until the last step, and you never write C++.</p>
+<p>How to build, test and ship an app for the NickelDrawer app drawer on a Kobo. You need a computer with Go 1.24 or newer, <code>make</code>, and a checkout of this repository; run every command below from the repository root. You do not need a Kobo until the last step, and you never write C++.</p>
 <p>The formats are defined in <a href="../spec/">docs/spec/</a>. This guide is the friendly path through them; when the two disagree, the spec wins.</p>
 <blockquote>
 <p><strong>Status.</strong> The format, the validator, the previewer and the protocol are tested on a computer. Earlier builds of the drawer and its app screens ran on a Kobo; the current build has not been through its full device test session yet. Treat the previewer as a layout check, not as proof that a screen works on a device.</p>
@@ -87,10 +87,11 @@ blockquote p:last-child { margin-bottom: 0; }
 <p><img alt="My To-do in the previewer" src="img/dev-mytodo.png" /></p>
 <p><em>Rendered with <code>ndpreview</code> at the Kobo's screen size.</em></p>
 <h3 id="1-scaffold">1. Scaffold</h3>
-<pre><code class="language-sh">make build                                   # host tools in build/
+<pre><code class="language-sh">make build                                   # host tools in build/ (appsctl-host, ndpreview-host)
 build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/apps
 </code></pre>
-<p><code>appsctl new</code> copies <code>templates/app</code> into <code>/tmp/apps/mytodo/</code>: <code>app.json</code>, <code>ui.json</code>, <code>bin/run.sh</code>, <code>bin/state.sh</code>, <code>locales/en.json</code>, <code>locales/vi.json</code> and a README. It refuses an existing folder and validates the result. Delete <code>bin/run.sh</code>; we write our own scripts.</p>
+<p><code>appsctl new</code> copies <code>templates/app</code> into <code>/tmp/apps/mytodo/</code>: <code>app.json</code>, <code>ui.json</code>, <code>bin/run.sh</code>, <code>bin/state.sh</code>, <code>locales/en.json</code>, <code>locales/vi.json</code> and a README. It refuses an existing folder, validates the result (a fresh scaffold validates with no warnings) and prints the next steps. It is a working "Hello" app; we replace every file. Delete <code>bin/run.sh</code>, then overwrite <code>app.json</code>, <code>ui.json</code>, <code>bin/state.sh</code> and both locale files with the versions below.</p>
+<p>The commands in this guide use <code>build/appsctl-host</code> and <code>build/ndpreview-host</code> from <code>make build</code>. <code>go run ./cmd/appsctl …</code> and <code>go run ./cmd/ndpreview …</code> do the same without building first.</p>
 <h3 id="2-declare-the-actions-appjson">2. Declare the actions: <code>app.json</code></h3>
 <p>Every tap on the screen runs one <strong>action</strong>: a script named in <code>app.json</code>.</p>
 <pre><code class="language-json">{
@@ -111,6 +112,7 @@ build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/a
 </code></pre>
 <ul>
 <li>The <code>id</code> equals the folder name and never changes after a release: the user's data lives under it.</li>
+<li><code>remove</code> and <code>clear-done</code> carry a <code>confirm</code> question, so the drawer asks before it runs them (their translations are <code>actions.remove.confirm</code> and <code>actions.clear-done.confirm</code> in <code>vi.json</code>). <code>clear-done</code> also has <code>"menu": true</code>; it joins the long-press menu of the app in the drawer list.</li>
 <li><code>state</code> is special: the drawer runs it to fill the screen's variables.</li>
 <li>An input control runs the action whose id equals its variable name. That is why the text box's variable and its action are both <code>newitem</code> (action ids allow no <code>_</code>).</li>
 </ul>
@@ -171,7 +173,7 @@ build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/a
   &quot;ui.new_task_hint&quot;: &quot;Type and confirm&quot;,
   &quot;ui.tasks&quot;: &quot;Tasks&quot;,
   &quot;ui.empty&quot;: &quot;Nothing to do yet&quot;,
-  &quot;ui.delete&quot;: &quot;Delete...&quot;,
+  &quot;ui.delete&quot;: &quot;Delete…&quot;,
   &quot;ui.clear_done&quot;: &quot;Clear done tasks&quot;,
   &quot;ui.clear_confirm&quot;: &quot;Delete every task that is marked done?&quot;,
   &quot;ui.clear_ok&quot;: &quot;Delete&quot;,
@@ -183,7 +185,39 @@ build/appsctl-host new mytodo --name &quot;My To-do&quot; --with-ui --dir /tmp/a
   &quot;ui.toast_failed&quot;: &quot;That did not work. See data/log.txt.&quot;
 }
 </code></pre>
-<p><code>ui.*</code> keys are screen texts. <code>msg.*</code> keys are what a script prints on the command line (tests, debugging). <code>locales/vi.json</code> has the same keys translated, plus <code>name</code>, <code>description</code> and <code>actions.&lt;id&gt;.label</code> for the manifest texts (see <a href="#languages-i18n">Languages</a>).</p>
+<p><code>ui.*</code> keys are screen texts. <code>msg.*</code> keys are what a script prints on the command line (tests, debugging). <code>locales/vi.json</code> has the same keys translated, plus <code>name</code>, <code>description</code>, <code>actions.&lt;id&gt;.label</code> and <code>actions.&lt;id&gt;.confirm</code> for the manifest texts (see <a href="#languages-i18n">Languages</a>). Vietnamese uses the new tone-mark style (Xóa, Hủy):</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Việc của tôi&quot;,
+  &quot;description&quot;: &quot;Danh sách việc nhỏ lưu trong một tệp văn bản&quot;,
+  &quot;actions.newitem.label&quot;: &quot;Việc mới&quot;,
+  &quot;actions.toggle.label&quot;: &quot;Đánh dấu xong hoặc mở lại&quot;,
+  &quot;actions.remove.label&quot;: &quot;Xóa việc&quot;,
+  &quot;actions.clear-done.label&quot;: &quot;Xóa việc đã xong&quot;,
+  &quot;actions.state.label&quot;: &quot;Trạng thái&quot;,
+  &quot;actions.remove.confirm&quot;: &quot;Xóa việc này?&quot;,
+  &quot;actions.clear-done.confirm&quot;: &quot;Xóa mọi việc đã xong?&quot;,
+  &quot;msg.added&quot;: &quot;Đã thêm việc.&quot;,
+  &quot;msg.removed&quot;: &quot;Đã xóa việc.&quot;,
+  &quot;msg.cleared&quot;: &quot;Đã xóa {count} việc đã xong.&quot;,
+  &quot;msg.empty&quot;: &quot;Hãy gõ việc trước.&quot;,
+  &quot;ui.title&quot;: &quot;Việc của tôi&quot;,
+  &quot;ui.counts&quot;: &quot;Còn $open · xong $done&quot;,
+  &quot;ui.new_task&quot;: &quot;Việc mới&quot;,
+  &quot;ui.new_task_hint&quot;: &quot;Gõ rồi xác nhận&quot;,
+  &quot;ui.tasks&quot;: &quot;Danh sách&quot;,
+  &quot;ui.empty&quot;: &quot;Chưa có việc nào&quot;,
+  &quot;ui.delete&quot;: &quot;Xóa…&quot;,
+  &quot;ui.clear_done&quot;: &quot;Xóa việc đã xong&quot;,
+  &quot;ui.clear_confirm&quot;: &quot;Xóa mọi việc đã đánh dấu xong?&quot;,
+  &quot;ui.clear_ok&quot;: &quot;Xóa&quot;,
+  &quot;ui.cancel&quot;: &quot;Hủy&quot;,
+  &quot;ui.toast_added&quot;: &quot;Đã thêm việc&quot;,
+  &quot;ui.toast_removed&quot;: &quot;Đã xóa việc&quot;,
+  &quot;ui.toast_cleared&quot;: &quot;Đã xóa việc đã xong&quot;,
+  &quot;ui.toast_empty&quot;: &quot;Hãy gõ việc trước&quot;,
+  &quot;ui.toast_failed&quot;: &quot;Không thực hiện được. Xem data/log.txt.&quot;
+}
+</code></pre>
 <h3 id="5-share-the-plumbing-binlibsh">5. Share the plumbing: <code>bin/lib.sh</code></h3>
 <pre><code class="language-sh"># Shared by the action scripts. Source it; do not execute.
 # MYTODO_COMMON lets tests on a computer point at host/lib/common.sh.
@@ -249,7 +283,17 @@ awk -v task=&quot;$(screen_text)&quot; '
     !changed &amp;&amp; $0 == &quot;[x] &quot; task { print &quot;[ ] &quot; task; changed = 1; next }
     { print }' &quot;$TASKS&quot; | replace_tasks
 </code></pre>
-<p><code>bin/remove.sh</code> (row menu <strong>Delete...</strong>) and <code>bin/clear-done.sh</code> follow the same shape:</p>
+<p><code>bin/remove.sh</code>, run from the row menu <strong>Delete…</strong> (the row's text arrives in <code>NICKELDRAWER_VALUE</code>; the menu's <code>confirm</code> already asked):</p>
+<pre><code class="language-sh">#!/bin/sh
+# Removes the tapped task, open or done.
+. &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
+ensure_tasks_file || fail_with &quot;$APP_DIR&quot; &quot;cannot create $TASKS&quot;
+awk -v task=&quot;$(screen_text)&quot; '
+    !removed &amp;&amp; ($0 == &quot;[ ] &quot; task || $0 == &quot;[x] &quot; task) { removed = 1; next }
+    { print }' &quot;$TASKS&quot; | replace_tasks
+report removed &quot;$APP_ID&quot; msg.removed
+</code></pre>
+<p><code>bin/clear-done.sh</code>, run by the footer button:</p>
 <pre><code class="language-sh">#!/bin/sh
 # Removes every done task. The button's confirm dialog already asked.
 . &quot;$(dirname &quot;$0&quot;)/lib.sh&quot;
@@ -266,20 +310,21 @@ NICKELDRAWER_VALUE='Buy milk' /tmp/apps/mytodo/bin/toggle.sh
 /tmp/apps/mytodo/bin/state.sh    # {&quot;open&quot;:&quot;0&quot;,&quot;done&quot;:&quot;1&quot;,&quot;hasdone&quot;:true,...}
 NICKELDRAWER_VALUE='' /tmp/apps/mytodo/bin/newitem.sh            # {&quot;toast&quot;:&quot;empty&quot;}
 </code></pre>
-<p>Without <code>NICKELDRAWER=1</code> the same scripts print the localized sentences instead (they call <code>appsctl msg</code>, which needs the Kobo path or an override).</p>
+<p>Without <code>NICKELDRAWER=1</code> the scripts call <code>report</code>, which runs <code>/mnt/onboard/.adds/koboapps/bin/appsctl msg</code> to print the localized sentence; that path exists only on a Kobo, so on a computer always set <code>NICKELDRAWER=1</code> and read the JSON signals.</p>
 <h3 id="9-preview-the-screen">9. Preview the screen</h3>
 <pre><code class="language-sh">build/ndpreview-host serve /tmp/apps/mytodo --locale vi
 </code></pre>
 <p>Open <code>http://127.0.0.1:8790/</code>. The page draws the screen at the Libra 2 size (1264 × 1680) in black, white and greys. The sidebar switches screen and language, edits the variables (try a list of 60 tasks and long Vietnamese texts), and shows the JSON line a tap would send and which action would run. Arrow keys stand in for the page-turn buttons; "←" pops a screen. Edit, save, reload.</p>
 <p>A picture for a review or bug report:</p>
-<pre><code class="language-sh">build/ndpreview-host render /tmp/apps/mytodo --out mytodo.png --locale vi --state state.json
+<pre><code class="language-sh">/tmp/apps/mytodo/bin/state.sh &gt; /tmp/apps/state.json         # step 8's environment variables set
+build/ndpreview-host render /tmp/apps/mytodo --out mytodo.png --locale vi --state /tmp/apps/state.json
 </code></pre>
-<p><code>render</code> needs a TrueType font with Vietnamese letters; without <code>--font</code> it tries common system fonts and otherwise draws shapes only (with a warning).</p>
+<p><code>--state</code> takes a JSON file with the values of <code>vars</code> (here the real output of <code>state.sh</code>); without it the previewer uses the defaults in <code>ui.json</code>. <code>serve</code> takes the same flag. <code>render</code> needs a TrueType font with Vietnamese letters; without <code>--font</code> it tries common system fonts and otherwise draws shapes only (with a warning).</p>
 <h3 id="10-validate">10. Validate</h3>
 <pre><code class="language-sh">build/appsctl-host validate /tmp/apps/mytodo
 # ok      mytodo (5 actions, ui.json)
 </code></pre>
-<p>Each problem prints as <code>path: [code] message</code>. The codes are listed in <a href="../spec/ui-json.md#7-error-codes">ui-json.md §7</a>. Fix every error and warning before you go on.</p>
+<p>A bad app prints <code>INVALID &lt;path&gt;: &lt;reason&gt;</code> for the manifest and exits 1. Problems inside <code>ui.json</code> or the locale files print as <code>path: [code] message</code>; errors stop the app, warnings (<code>warning …</code>) never do, but ship none. The codes are listed in <a href="../spec/ui-json.md#7-error-codes">ui-json.md §7</a>. Fix every error and warning before you go on. You can pass several folders, or <code>--apps-dir apps</code> for a whole folder of apps.</p>
 <h3 id="11-install-on-a-kobo">11. Install on a Kobo</h3>
 <blockquote>
 <p><strong>Kobo safety.</strong> Back up <code>.adds/apps</code> first. Never leave your shell's working directory on the Kobo volume (it blocks ejecting); use absolute paths. Do not ship or copy a <code>data/</code> folder.</p>
@@ -454,7 +499,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tbody>
 </table></div>
 <h2 id="uijson-components">ui.json components</h2>
-<p>Full rules: <a href="../spec/ui-json.md">ui-json.md</a>. Looks and sizes: <a href="../spec/ui-kit.md">ui-kit.md</a>. To see every component on a device, the hidden <strong>UI Kit</strong> app (<a href="../../apps/uikit/">apps/uikit</a>) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on <strong>UI Kit</strong> under <strong>Hidden apps</strong> (the choice is kept in the host's <code>data/settings.json</code>; the app's <code>app.json</code> stays <code>hidden: true</code>).</p>
+<p>Full rules: <a href="../spec/ui-json.md">ui-json.md</a>. Looks and sizes: <a href="../spec/ui-kit.md">ui-kit.md</a>. Length limits per property are in ui-json.md §6; the validator rejects a text over its limit. To see every component on a device, the hidden <strong>UI Kit</strong> app (<a href="../../apps/uikit/">apps/uikit</a>) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on <strong>UI Kit</strong> under <strong>Hidden apps</strong> (the choice is kept in the host's <code>data/settings.json</code>; the app's <code>app.json</code> stays <code>hidden: true</code>).</p>
 <p>A screen has a header (back arrow, <code>title</code>, <code>status</code>, and one <code>action</code> text link or up to two icon <code>actions</code>), a <code>body</code> that pages, a <code>footer</code> that stays at the bottom, and declared <code>dialogs</code> and <code>toasts</code>. Texts are plain strings, <code>"@ui.key"</code> references, or <code>{"en": …, "vi": …}</code> maps.</p>
 <div class="tbl"><table>
 <thead>
@@ -483,7 +528,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>row</code></td>
 <td><code>{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }</code></td>
-<td>Tappable with an <code>action</code> (optional <code>confirm</code>) or a <code>push</code> to another screen; <code>show</code> hides it while a flag is false. A <code>detail</code> too long for the right-hand column goes under the label.</td>
+<td>Tappable with an <code>action</code> (optional <code>confirm</code>, an object like a button's) or a <code>push</code> to another screen; <code>show</code> hides it while a flag is false. A <code>detail</code> too long for the right-hand column goes under the label.</td>
 </tr>
 <tr>
 <td><code>toggle</code></td>
@@ -518,7 +563,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>steps</code></td>
 <td><code>{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }</code></td>
-<td>Progress of a background job, as text (never a notice). Hidden while <code>label</code> is empty; with <code>done</code> and <code>total</code> empty the headline is the label alone.</td>
+<td>Progress of a background job, as text (never a notice). <code>label</code>, <code>done</code> and <code>total</code> are all required keys. Hidden while <code>label</code> resolves to empty; with <code>done</code> and <code>total</code> both resolving to empty the headline is the label alone.</td>
 </tr>
 <tr>
 <td><code>samples</code></td>
@@ -533,7 +578,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 <tr>
 <td><code>button</code></td>
 <td><code>{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }</code></td>
-<td>An <code>action</code> or a <code>push</code> (one of them). At most one <code>primary</code> visible per screen: when the main action depends on the state, give each primary a <code>show</code> flag (<code>"$running"</code>, <code>"!$running"</code>) instead of disabling one (a disabled primary next to the possible action is a warning). <code>enabled</code> and <code>show</code> take <code>$var</code> or <code>!$var</code>.</td>
+<td>An <code>action</code> or a <code>push</code> (one of them). <code>async: true</code> keeps the button usable while its action runs; without it the button shows "Working…" until the action returns. At most one <code>primary</code> visible per screen: when the main action depends on the state, give each primary a <code>show</code> flag (<code>"$running"</code>, <code>"!$running"</code>) instead of disabling one (a disabled primary next to the possible action is a warning). <code>enabled</code> and <code>show</code> take <code>$var</code> or <code>!$var</code>.</td>
 </tr>
 <tr>
 <td><code>list</code></td>
@@ -557,7 +602,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tr>
 </tbody>
 </table></div>
-<p>Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's <code>format.date</code>, <code>format.datetime</code> and <code>format.time</code>, never from a fixed layout.</p>
+<p>Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's <code>format.date</code>, <code>format.datetime</code> and <code>format.time</code> (tokens <code>yyyy</code>, <code>MM</code>, <code>dd</code>, <code>HH</code>, <code>mm</code>), never from a fixed layout. The host's <code>locales/&lt;lang&gt;.json</code> sets them, and Go helpers read them through <code>i18n.Bundle</code> (<code>Date</code>, <code>DateTime</code>, <code>Clock</code>); shell scripts have no formatter, so keep dates out of a shell app's texts or let a small Go helper print them.</p>
 <p>Two details the validator enforces: a <code>list</code> menu's <code>confirm</code> may be <code>true</code>, but a gallery <code>on_long_press</code> or viewer <code>secondary</code> <code>confirm</code> must be an object (<code>{"title", "text", "ok", "cancel"}</code>); and every variable you bind must be declared in <code>vars</code>.</p>
 <p>Dialogs and toasts are per screen:</p>
 <pre><code class="language-json">&quot;dialogs&quot;: { &quot;done&quot;: { &quot;title&quot;: &quot;Synced&quot;, &quot;text&quot;: &quot;$summary&quot;, &quot;ok&quot;: &quot;OK&quot; } },

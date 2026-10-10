@@ -1,6 +1,6 @@
 # NickelDrawer developer guide
 
-How to build, test and ship an app for the NickelDrawer app drawer on a Kobo. You need a computer with Go 1.24 or newer and a checkout of this repository. You do not need a Kobo until the last step, and you never write C++.
+How to build, test and ship an app for the NickelDrawer app drawer on a Kobo. You need a computer with Go 1.24 or newer, `make`, and a checkout of this repository; run every command below from the repository root. You do not need a Kobo until the last step, and you never write C++.
 
 The formats are defined in [docs/spec/](../spec/). This guide is the friendly path through them; when the two disagree, the spec wins.
 
@@ -17,11 +17,13 @@ We build **My To-do**, a small version of the shipped To-do app ([apps/todo](../
 ### 1. Scaffold
 
 ```sh
-make build                                   # host tools in build/
+make build                                   # host tools in build/ (appsctl-host, ndpreview-host)
 build/appsctl-host new mytodo --name "My To-do" --with-ui --dir /tmp/apps
 ```
 
-`appsctl new` copies `templates/app` into `/tmp/apps/mytodo/`: `app.json`, `ui.json`, `bin/run.sh`, `bin/state.sh`, `locales/en.json`, `locales/vi.json` and a README. It refuses an existing folder and validates the result. Delete `bin/run.sh`; we write our own scripts.
+`appsctl new` copies `templates/app` into `/tmp/apps/mytodo/`: `app.json`, `ui.json`, `bin/run.sh`, `bin/state.sh`, `locales/en.json`, `locales/vi.json` and a README. It refuses an existing folder, validates the result (a fresh scaffold validates with no warnings) and prints the next steps. It is a working "Hello" app; we replace every file. Delete `bin/run.sh`, then overwrite `app.json`, `ui.json`, `bin/state.sh` and both locale files with the versions below.
+
+The commands in this guide use `build/appsctl-host` and `build/ndpreview-host` from `make build`. `go run ./cmd/appsctl …` and `go run ./cmd/ndpreview …` do the same without building first.
 
 ### 2. Declare the actions: `app.json`
 
@@ -46,6 +48,7 @@ Every tap on the screen runs one **action**: a script named in `app.json`.
 ```
 
 - The `id` equals the folder name and never changes after a release: the user's data lives under it.
+- `remove` and `clear-done` carry a `confirm` question, so the drawer asks before it runs them (their translations are `actions.remove.confirm` and `actions.clear-done.confirm` in `vi.json`). `clear-done` also has `"menu": true`; it joins the long-press menu of the app in the drawer list.
 - `state` is special: the drawer runs it to fill the screen's variables.
 - An input control runs the action whose id equals its variable name. That is why the text box's variable and its action are both `newitem` (action ids allow no `_`).
 
@@ -111,7 +114,7 @@ Every tap on the screen runs one **action**: a script named in `app.json`.
   "ui.new_task_hint": "Type and confirm",
   "ui.tasks": "Tasks",
   "ui.empty": "Nothing to do yet",
-  "ui.delete": "Delete...",
+  "ui.delete": "Delete…",
   "ui.clear_done": "Clear done tasks",
   "ui.clear_confirm": "Delete every task that is marked done?",
   "ui.clear_ok": "Delete",
@@ -124,7 +127,41 @@ Every tap on the screen runs one **action**: a script named in `app.json`.
 }
 ```
 
-`ui.*` keys are screen texts. `msg.*` keys are what a script prints on the command line (tests, debugging). `locales/vi.json` has the same keys translated, plus `name`, `description` and `actions.<id>.label` for the manifest texts (see [Languages](#languages-i18n)).
+`ui.*` keys are screen texts. `msg.*` keys are what a script prints on the command line (tests, debugging). `locales/vi.json` has the same keys translated, plus `name`, `description`, `actions.<id>.label` and `actions.<id>.confirm` for the manifest texts (see [Languages](#languages-i18n)). Vietnamese uses the new tone-mark style (Xóa, Hủy):
+
+```json
+{
+  "name": "Việc của tôi",
+  "description": "Danh sách việc nhỏ lưu trong một tệp văn bản",
+  "actions.newitem.label": "Việc mới",
+  "actions.toggle.label": "Đánh dấu xong hoặc mở lại",
+  "actions.remove.label": "Xóa việc",
+  "actions.clear-done.label": "Xóa việc đã xong",
+  "actions.state.label": "Trạng thái",
+  "actions.remove.confirm": "Xóa việc này?",
+  "actions.clear-done.confirm": "Xóa mọi việc đã xong?",
+  "msg.added": "Đã thêm việc.",
+  "msg.removed": "Đã xóa việc.",
+  "msg.cleared": "Đã xóa {count} việc đã xong.",
+  "msg.empty": "Hãy gõ việc trước.",
+  "ui.title": "Việc của tôi",
+  "ui.counts": "Còn $open · xong $done",
+  "ui.new_task": "Việc mới",
+  "ui.new_task_hint": "Gõ rồi xác nhận",
+  "ui.tasks": "Danh sách",
+  "ui.empty": "Chưa có việc nào",
+  "ui.delete": "Xóa…",
+  "ui.clear_done": "Xóa việc đã xong",
+  "ui.clear_confirm": "Xóa mọi việc đã đánh dấu xong?",
+  "ui.clear_ok": "Xóa",
+  "ui.cancel": "Hủy",
+  "ui.toast_added": "Đã thêm việc",
+  "ui.toast_removed": "Đã xóa việc",
+  "ui.toast_cleared": "Đã xóa việc đã xong",
+  "ui.toast_empty": "Hãy gõ việc trước",
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt."
+}
+```
 
 ### 5. Share the plumbing: `bin/lib.sh`
 
@@ -206,7 +243,20 @@ awk -v task="$(screen_text)" '
     { print }' "$TASKS" | replace_tasks
 ```
 
-`bin/remove.sh` (row menu **Delete...**) and `bin/clear-done.sh` follow the same shape:
+`bin/remove.sh`, run from the row menu **Delete…** (the row's text arrives in `NICKELDRAWER_VALUE`; the menu's `confirm` already asked):
+
+```sh
+#!/bin/sh
+# Removes the tapped task, open or done.
+. "$(dirname "$0")/lib.sh"
+ensure_tasks_file || fail_with "$APP_DIR" "cannot create $TASKS"
+awk -v task="$(screen_text)" '
+    !removed && ($0 == "[ ] " task || $0 == "[x] " task) { removed = 1; next }
+    { print }' "$TASKS" | replace_tasks
+report removed "$APP_ID" msg.removed
+```
+
+`bin/clear-done.sh`, run by the footer button:
 
 ```sh
 #!/bin/sh
@@ -230,7 +280,7 @@ NICKELDRAWER_VALUE='Buy milk' /tmp/apps/mytodo/bin/toggle.sh
 NICKELDRAWER_VALUE='' /tmp/apps/mytodo/bin/newitem.sh            # {"toast":"empty"}
 ```
 
-Without `NICKELDRAWER=1` the same scripts print the localized sentences instead (they call `appsctl msg`, which needs the Kobo path or an override).
+Without `NICKELDRAWER=1` the scripts call `report`, which runs `/mnt/onboard/.adds/koboapps/bin/appsctl msg` to print the localized sentence; that path exists only on a Kobo, so on a computer always set `NICKELDRAWER=1` and read the JSON signals.
 
 ### 9. Preview the screen
 
@@ -243,10 +293,11 @@ Open `http://127.0.0.1:8790/`. The page draws the screen at the Libra 2 size (12
 A picture for a review or bug report:
 
 ```sh
-build/ndpreview-host render /tmp/apps/mytodo --out mytodo.png --locale vi --state state.json
+/tmp/apps/mytodo/bin/state.sh > /tmp/apps/state.json         # step 8's environment variables set
+build/ndpreview-host render /tmp/apps/mytodo --out mytodo.png --locale vi --state /tmp/apps/state.json
 ```
 
-`render` needs a TrueType font with Vietnamese letters; without `--font` it tries common system fonts and otherwise draws shapes only (with a warning).
+`--state` takes a JSON file with the values of `vars` (here the real output of `state.sh`); without it the previewer uses the defaults in `ui.json`. `serve` takes the same flag. `render` needs a TrueType font with Vietnamese letters; without `--font` it tries common system fonts and otherwise draws shapes only (with a warning).
 
 ### 10. Validate
 
@@ -255,7 +306,7 @@ build/appsctl-host validate /tmp/apps/mytodo
 # ok      mytodo (5 actions, ui.json)
 ```
 
-Each problem prints as `path: [code] message`. The codes are listed in [ui-json.md §7](../spec/ui-json.md#7-error-codes). Fix every error and warning before you go on.
+A bad app prints `INVALID <path>: <reason>` for the manifest and exits 1. Problems inside `ui.json` or the locale files print as `path: [code] message`; errors stop the app, warnings (`warning …`) never do, but ship none. The codes are listed in [ui-json.md §7](../spec/ui-json.md#7-error-codes). Fix every error and warning before you go on. You can pass several folders, or `--apps-dir apps` for a whole folder of apps.
 
 ### 11. Install on a Kobo
 
@@ -347,7 +398,7 @@ Scripts get these environment variables:
 
 ## ui.json components
 
-Full rules: [ui-json.md](../spec/ui-json.md). Looks and sizes: [ui-kit.md](../spec/ui-kit.md). To see every component on a device, the hidden **UI Kit** app ([apps/uikit](../../apps/uikit/)) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on **UI Kit** under **Hidden apps** (the choice is kept in the host's `data/settings.json`; the app's `app.json` stays `hidden: true`).
+Full rules: [ui-json.md](../spec/ui-json.md). Looks and sizes: [ui-kit.md](../spec/ui-kit.md). Length limits per property are in ui-json.md §6; the validator rejects a text over its limit. To see every component on a device, the hidden **UI Kit** app ([apps/uikit](../../apps/uikit/)) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on **UI Kit** under **Hidden apps** (the choice is kept in the host's `data/settings.json`; the app's `app.json` stays `hidden: true`).
 
 A screen has a header (back arrow, `title`, `status`, and one `action` text link or up to two icon `actions`), a `body` that pages, a `footer` that stays at the bottom, and declared `dialogs` and `toasts`. Texts are plain strings, `"@ui.key"` references, or `{"en": …, "vi": …}` maps.
 
@@ -356,23 +407,23 @@ A screen has a header (back arrow, `title`, `status`, and one `action` text link
 | `text` | `{ "text": "Copy books here over USB.", "style": "caption" }` | `style`: `body`, `caption`, `heading`. Hidden when it resolves to empty. |
 | `section` | `{ "section": "Network" }` | Small-caps group label. |
 | `kv` | `{ "kv": [["IP", "$ip"], ["PIN", "$pin"]] }` | 1 to 12 key/value rows. |
-| `row` | `{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }` | Tappable with an `action` (optional `confirm`) or a `push` to another screen; `show` hides it while a flag is false. A `detail` too long for the right-hand column goes under the label. |
+| `row` | `{ "row": "Pair with your phone", "detail": "Not paired", "action": "pair" }` | Tappable with an `action` (optional `confirm`, an object like a button's) or a `push` to another screen; `show` hides it while a flag is false. A `detail` too long for the right-hand column goes under the label. |
 | `toggle` | `{ "toggle": "Use Wi-Fi", "bind": "wifi" }` | Runs the action named like the variable with `true`/`false`. |
 | `radio` | `{ "radio": "How it shows", "bind": "mode", "options": [["fill", "Fill the screen", "Edges are cropped"], ["fit", "Fit inside"]] }` | 1 to 8 options, optional sub-line. Sends the option id. |
 | `field` | `{ "field": "New task", "bind": "newitem", "placeholder": "Type and confirm", "keyboard": "text" }` | Opens Nickel's keyboard (`text`, `number`, `url`). Not for secrets: use `pair`. |
 | `bigcode` | `{ "bigcode": "$pin", "digits": 4 }` | Large digits, 3 to 12. |
 | `qr` | `{ "qr": "$url", "caption": "Scan with your phone" }` | QR code of a short value. |
 | `pair` | `{ "pair": { "url": "$url", "code": "$code", "title": "Open on your phone", "hint": "Use only on your own Wi-Fi.", "expires": "$expires" } }` | The phone-pairing block: QR, address, code. |
-| `steps` | `{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }` | Progress of a background job, as text (never a notice). Hidden while `label` is empty; with `done` and `total` empty the headline is the label alone. |
+| `steps` | `{ "steps": { "label": "Downloading", "done": "$done", "total": "$total", "detail": "$file" } }` | Progress of a background job, as text (never a notice). `label`, `done` and `total` are all required keys. Hidden while `label` resolves to empty; with `done` and `total` both resolving to empty the headline is the label alone. |
 | `samples` | `{ "samples": [{ "button": "Stop", "look": "pressed", "caption": "Pressed" }], "columns": 3 }` | A picture of controls in their states (UI Kit): `look` is `normal`, `pressed`, `selected` or `disabled`; no bindings, no events, never the primary. |
 | `notice` | `{ "notice": "$notice", "title": "Last sync failed" }` | Boxed note. Hidden when the text is empty: bind it to show it conditionally. |
-| `button` | `{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }` | An `action` or a `push` (one of them). At most one `primary` visible per screen: when the main action depends on the state, give each primary a `show` flag (`"$running"`, `"!$running"`) instead of disabling one (a disabled primary next to the possible action is a warning). `enabled` and `show` take `$var` or `!$var`. |
+| `button` | `{ "button": "Stop", "action": "stop", "style": "secondary", "enabled": "$running", "confirm": { "text": "Stop now?", "ok": "Stop", "cancel": "Cancel" } }` | An `action` or a `push` (one of them). `async: true` keeps the button usable while its action runs; without it the button shows "Working…" until the action returns. At most one `primary` visible per screen: when the main action depends on the state, give each primary a `show` flag (`"$running"`, `"!$running"`) instead of disabling one (a disabled primary next to the possible action is a warning). `enabled` and `show` take `$var` or `!$var`. |
 | `list` | `{ "list": "$received", "title": "Received", "empty_text": "Nothing yet", "max": 10, "tap": "open-item", "menu": [{ "id": "delete-item", "label": "Delete...", "confirm": true }] }` | Rows from an array; tap and long-press menu (up to 6 entries). |
 | `empty` | `{ "empty": "No pictures yet", "text": "Copy PNG or JPEG pictures to Pictures.", "button": "Import pictures", "action": "import" }` | Empty state; its button counts as the primary. |
 | `gallery` | `{ "gallery": "$pictures", "columns": 4, "rows": 3, "on_tap": { "push": "viewer" }, "on_long_press": [{ "label": "Info", "info": true }] }` | Picture grid. Items come from `state`: `{id, thumb, image, label, info, badge}`; paths must be absolute `.png` below your `data/`. |
 | `viewer` | `{ "viewer": "$pictures", "selected": "selected", "primary": { "label": "Set as wallpaper", "label_current": "In use", "action": "set-current" } }` | One picture at a time. Must be alone on its screen, no footer. |
 
-Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's `format.date`, `format.datetime` and `format.time`, never from a fixed layout.
+Content style the validator warns about (it never stops an app loading): text typed in capitals (the renderer uppercases section labels), a header status wider than 340 px, a one-line caption with a full stop, and a section over a single paragraph. Dates and times come from the locale's `format.date`, `format.datetime` and `format.time` (tokens `yyyy`, `MM`, `dd`, `HH`, `mm`), never from a fixed layout. The host's `locales/<lang>.json` sets them, and Go helpers read them through `i18n.Bundle` (`Date`, `DateTime`, `Clock`); shell scripts have no formatter, so keep dates out of a shell app's texts or let a small Go helper print them.
 
 Two details the validator enforces: a `list` menu's `confirm` may be `true`, but a gallery `on_long_press` or viewer `secondary` `confirm` must be an object (`{"title", "text", "ok", "cancel"}`); and every variable you bind must be declared in `vars`.
 

@@ -28,7 +28,7 @@ NickelDrawer **không** phải là:
 - **Dịch vụ đám mây.** Không cần tài khoản, không gửi gì đi đâu nếu bạn không tự bật một tính năng cần mạng.
 - **Phần mềm nguồn mở.** NickelDrawer công khai mã nguồn theo giấy phép PolyForm Noncommercial 1.0.0: miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; không dùng cho mục đích thương mại.
 
-> **Trạng thái: bản thử (1.0.0-beta.1).** NickelDrawer mới được thử trên một máy Kobo Libra 2 với một bản firmware. Một phần đã chạy trên máy đó; phần lớn những gì sách này mô tả mới chỉ được kiểm trên máy tính. Mỗi chương ghi rõ phần nào đã thử trên máy thật. Đọc mục [An toàn và gỡ cài đặt](#s-an-toan-va-go-cai-at) trước khi cài.
+> **Trạng thái: bản thử.** NickelDrawer mới được thử trên một máy Kobo Libra 2 với một bản firmware. Một phần đã chạy trên máy đó; phần lớn những gì sách này mô tả mới chỉ được kiểm trên máy tính. Mỗi chương ghi rõ phần nào đã thử trên máy thật. Đọc mục [An toàn và gỡ cài đặt](#s-an-toan-va-go-cai-at) trước khi cài.
 
 ## Kiểm tra máy của bạn có được hỗ trợ không
 

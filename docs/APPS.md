@@ -4,7 +4,7 @@ An app is a folder with a manifest, a native screen (`ui.json`) and a few short 
 
 The drawer is built and NickelMenu is retired: apps no longer generate NickelMenu items, and nothing an app prints is shown as a text dialog. See [DECISIONS.md](DECISIONS.md).
 
-The full format rules are in [spec/app-format.md](spec/app-format.md). This guide is the short path.
+The full format rules are in [spec/app-format.md](spec/app-format.md). This page is the design guidelines plus a small "Hello" reference. For a step-by-step tutorial with a real screen, run it from [guide/developer-guide.md](guide/developer-guide.md) first.
 
 Skip to [Guidelines](#guidelines) for design rules, or to the worked examples: [To-do](../apps/todo/README.md) (a shipped app: field with the Nickel keyboard, list with a row menu, a tiny Go helper), [UI Kit](../apps/uikit/README.md) (every component with sample content) and [Image viewer](../examples/imageview/README.md) (background job, native reader, Go helper). See [examples/README.md](../examples/README.md).
 
@@ -16,7 +16,7 @@ battery powered; a good app is small and quiet.
 ### Design for e-ink
 
 - **One job per action.** "Sync now" and "Status" are two actions, not one with options. Max 12 actions, and fewer is better.
-- **Results in 12 short lines or fewer.** A dialog is not a log. Show the outcome and the one next step; put details in `data/log.txt`.
+- **Results are short.** A toast is one line (60 characters at most) and a declared dialog stays under 200 characters. Show the outcome and the one next step; put details in `data/log.txt`.
 - **Return at once.** A script the drawer starts must return quickly (a hard cap of 30 s applies, then the drawer shows a timeout message). For longer work use the background pattern: start the job detached (`start_detached` in `common.sh`, which redirects every fd), write a pid file and a result file in `/tmp` or `data/`, answer with a "started" toast, and let the `state` action report progress and the result. See `apps/library/bin/lib.sh` and `examples/imageview`.
 - **Progress comes from `state`, not from the script.** The screen re-reads your `state` action every 5 seconds while it is open. Report step counts (a `steps` component), not a stream of text, and keep e-ink repaints few.
 - **Page-turn keys.** The page-turn buttons flip list pages; the host does this for you with a `list`. Keep one screen short enough to need little paging.
@@ -32,14 +32,14 @@ battery powered; a good app is small and quiet.
 - Scripts never print literal text. Use `appsctl msg --app <id> msg.<key> name=value`. The key in the call includes the `msg.` prefix.
 - Never build a sentence from pieces. Use one string with `{placeholders}`; a translation must use the same placeholders (validated).
 - Keep Vietnamese short. It runs 20 to 40 percent longer than English and has tall diacritics: prefer short verbs ("Xong việc kế tiếp"), no filler words, and keep labels under 32 characters including diacritics.
-- Labels and names may not contain `:`. Use `\n` for line breaks in dialog text; mind the 12-line budget in every language.
+- Labels and names may not contain `:`. Use `\n` for line breaks in dialog text.
 - Check each language with the override: `appsctl msg --locale vi ...`.
 
 ### Safety
 
 Apps run as **root** on a device that holds the user's library. So:
 
-- Touch only your own files: your `data/` folder and the one folder your manifest documents (for example `/mnt/onboard/LocalSend`).
+- Touch only your own files: your `data/` folder and the folders your manifest declares in `storage` (for example `inbox` or `books`).
 - When you create files in a shared folder (the library root, `Images/`, `Albums/`), give them a name that shows they are yours (a prefix such as `todo-` or a dedicated subfolder) so you can find them later and never collide with the user's.
 - **Never delete or overwrite user files.** Delete only what your app created (or content the user explicitly handed you, like the to-do inbox, which is emptied, not removed). Move to `data/trash/` instead of deleting when unsure.
 - Validate every path from config or the network: no `..`, no absolute paths from outside.
@@ -158,8 +158,8 @@ Open a sub-screen with a header action that has `push` (the target screen id; `a
 
 ```json
 {
-  "title": "@screen.main.title",
-  "action": { "label": "@action.duplicates", "push": "duplicates" },
+  "title": "@ui.title",
+  "action": { "label": "@ui.duplicates", "push": "duplicates" },
   "body": [ … ]
 }
 ```
@@ -179,9 +179,13 @@ This creates `my-app/` from `templates/app`: a valid `app.json`, `bin/run.sh` (a
 ```
 hello/
 ├─ app.json            manifest (required)
-├─ bin/hello.sh        script the action runs
+├─ ui.json             the native screen (see section 5)
+├─ icon.png            optional drawer icon, 96 x 96
+├─ bin/
+│  ├─ hello.sh         script the "greet" action runs
+│  └─ state.sh         script the "state" action runs: fills the screen's variables
 ├─ locales/
-│  ├─ en.json          English messages printed by scripts
+│  ├─ en.json          English texts: script messages (msg.*) and screen texts (ui.*)
 │  └─ vi.json          Vietnamese translation
 └─ data/               created at run time: config, tokens, logs
 ```
@@ -206,6 +210,13 @@ On the Kobo the folder lives at `/mnt/onboard/.adds/apps/<id>/`. The folder name
       "timeout_ms": 5000,
       "wifi": false,
       "rescan": "none"
+    },
+    {
+      "id": "state",
+      "label": "State",
+      "run": "bin/state.sh",
+      "output": "show",
+      "timeout_ms": 1000
     }
   ]
 }
@@ -220,6 +231,8 @@ On the Kobo the folder lives at `/mnt/onboard/.adds/apps/<id>/`. The folder name
 - `timeout_ms` (only with `show`) is 500 to 9999. Default is 5000.
 - `wifi: true` makes the drawer connect Wi-Fi first: without an IP, `appsctl` answers `needs_wifi` and the mod connects and retries once.
 - `rescan` is `none`, `quick` or `full`. The library rescans only if the script exited with 0.
+- `menu: true` puts an action in the app's long-press menu; `confirm` is a question the drawer asks before it runs the action. Both are optional (see [spec/app-format.md](spec/app-format.md)).
+- `state` and `status` are special action ids: `state` fills the screen's variables, `status` is the optional status line in the drawer list.
 - `requests` (optional) lists the host services scripts may ask for: `rescan`, `wifi`.
 - `min_host` (optional) is the oldest NickelDrawer version the app works with.
 - Unknown fields are ignored with a warning.
@@ -262,7 +275,7 @@ The drawer answers in the current language (`CurrentLocale`); change it and reop
 - **Return at once.** The drawer waits at most 30 s and `timeout_ms` is at most 9999. Keep scripts well under a second where you can.
 - **Long work goes to the background.** Start the job with all file descriptors redirected (`start_detached`), return at once with a "started" toast, and let the `state` action report progress and the result. `apps/library/bin/lib.sh` is the model: it writes a pid file and output to `/tmp`, and `state.sh` reads them.
 - **Hold no files open on `/mnt/onboard`** after the script exits. Write temporary files to `/tmp` and copy them to `data/` at the end. An open file blocks USB ejecting.
-- **Write only to your own `data/` folder** and to the folder your app declares (for example `/mnt/onboard/LocalSend`).
+- **Write only to your own `data/` folder** and to the folders your app declares in `storage.writes` (for example `inbox`; see [spec/app-format.md](spec/app-format.md)).
 - **Secrets** (tokens, passwords) live only in `data/`, mode 600. Never print them. Never put them in `log.txt`.
 - Log with `app_log "$APP_DIR" "message"`. It appends to `data/log.txt`.
 
@@ -287,7 +300,13 @@ Helpers from `common.sh`:
 ```json
 {
   "msg.greeting": "Hello, {name}!\nIP: {ip}",
-  "msg.no_wifi": "No Wi-Fi. Turn it on and try again."
+  "msg.no_wifi": "No Wi-Fi. Turn it on and try again.",
+  "ui.title": "Hello",
+  "ui.ip": "IP",
+  "ui.say_hello": "Say hello",
+  "ui.toast_greeted": "Hello, reader! IP: $ip",
+  "ui.toast_no_wifi": "No Wi-Fi",
+  "ui.toast_failed": "That did not work. See data/log.txt."
 }
 ```
 
@@ -298,12 +317,19 @@ Helpers from `common.sh`:
   "name": "Xin chào",
   "description": "Chào bạn và hiện địa chỉ Wi-Fi",
   "actions.greet.label": "Chào",
+  "actions.state.label": "Trạng thái",
   "msg.greeting": "Xin chào, {name}!\nIP: {ip}",
-  "msg.no_wifi": "Chưa có Wi-Fi. Bật Wi-Fi rồi thử lại."
+  "msg.no_wifi": "Chưa có Wi-Fi. Bật Wi-Fi rồi thử lại.",
+  "ui.title": "Xin chào",
+  "ui.ip": "IP",
+  "ui.say_hello": "Chào",
+  "ui.toast_greeted": "Xin chào! IP: $ip",
+  "ui.toast_no_wifi": "Chưa có Wi-Fi",
+  "ui.toast_failed": "Không thực hiện được. Xem data/log.txt."
 }
 ```
 
-`hello/ui.json` (the screen; the toast text may use state variables):
+`hello/ui.json` (the screen; texts are `"@ui.key"` references into the locale files, and a toast text may use state variables):
 
 ```json
 {
@@ -312,16 +338,16 @@ Helpers from `common.sh`:
   "vars": { "ip": "" },
   "screens": {
     "main": {
-      "title": "Hello",
-      "body": [ { "kv": [["IP", "$ip"]] } ],
-      "footer": [ { "button": "Say hello", "action": "greet", "style": "primary" } ],
-      "toasts": { "greeted": "Hello, reader! IP: $ip", "no_wifi": "No Wi-Fi", "failed": "That did not work" }
+      "title": "@ui.title",
+      "body": [ { "kv": [["@ui.ip", "$ip"]] } ],
+      "footer": [ { "button": "@ui.say_hello", "action": "greet", "style": "primary" } ],
+      "toasts": { "greeted": "@ui.toast_greeted", "no_wifi": "@ui.toast_no_wifi", "failed": "@ui.toast_failed" }
     }
   }
 }
 ```
 
-`hello/bin/hello.sh` (make it executable) answers with a toast; `hello/bin/state.sh` prints `{"ip":"…"}` with `printf '{"ip":"%s"}\n' "$(current_ip)"` and is declared as the `state` action in `app.json`:
+`hello/bin/hello.sh` (make it executable) answers with a toast:
 
 ```sh
 #!/bin/sh
@@ -339,6 +365,17 @@ fi
 
 app_log "$APP_DIR" "greeted from $ip"
 report greeted "$APP_ID" msg.greeting name=reader ip="$ip"
+```
+
+`hello/bin/state.sh` (also executable) prints the screen's variables as one JSON object:
+
+```sh
+#!/bin/sh
+# Prints the ui.json variables. Must be fast: the drawer runs it every 5 s.
+
+. /mnt/onboard/.adds/koboapps/lib/common.sh
+
+printf '{"ip":"%s"}\n' "$(current_ip)"
 ```
 
 ## 6. Validate
@@ -366,7 +403,7 @@ Read the safety rules in [CONTRIBUTING.md](../CONTRIBUTING.md) first. Short vers
 1. Back up `.adds/apps` before you write to the Kobo.
 2. Copy the `hello` folder to `/mnt/onboard/.adds/apps/hello/`. Do not leave your shell's working directory on the Kobo volume.
 3. Eject the Kobo.
-4. Open More, Apps, and tap **Refresh list** (System section). Your app appears as a row.
+4. Open More, Apps, and tap the refresh button in the header. Your app appears as a row.
 5. Tap it, then tap **Say hello**. If it fails, read `data/log.txt` in the app folder.
 
 ## 9. Package

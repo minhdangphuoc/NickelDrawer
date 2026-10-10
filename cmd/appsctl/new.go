@@ -160,10 +160,16 @@ func jsonString(text string) (string, error) {
 
 func printNewAppNextSteps(out io.Writer, appDir string, hasUI bool) {
 	fmt.Fprintln(out, "\nNext steps:")
-	fmt.Fprintf(out, "  1. Edit %s and %s\n", filepath.Join(appDir, "bin", "run.sh"), filepath.Join(appDir, "app.json"))
-	fmt.Fprintf(out, "  2. Validate:  appsctl validate %s\n", appDir)
-	if hasUI {
-		fmt.Fprintf(out, "  3. Preview:   ndpreview serve %s\n", appDir)
+	step := 1
+	printStep := func(format string, args ...any) {
+		fmt.Fprintf(out, "  %d. ", step)
+		fmt.Fprintf(out, format+"\n", args...)
+		step++
 	}
-	fmt.Fprintf(out, "  4. Install:   copy it to /mnt/onboard/.adds/apps/%s/ (see docs/APPS.md, \"Test on the device\")\n", filepath.Base(appDir))
+	printStep("Edit %s and %s", filepath.Join(appDir, "bin", "run.sh"), filepath.Join(appDir, "app.json"))
+	printStep("Validate:  appsctl validate %s", appDir)
+	if hasUI {
+		printStep("Preview:   ndpreview serve %s", appDir)
+	}
+	printStep("Install:   copy it to /mnt/onboard/.adds/apps/%s/ (see docs/guide/developer-guide.md, \"Install on a Kobo\")", filepath.Base(appDir))
 }

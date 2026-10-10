@@ -1,6 +1,6 @@
-# App format v1 (Phase 1)
+# App format v1
 
-An app is one folder on the Kobo at `/mnt/onboard/.adds/apps/<id>/`. Copy the folder in to install; delete it to uninstall; then open the Apps drawer and tap **Refresh list** (System section, shown in the device language).
+An app is one folder on the Kobo at `/mnt/onboard/.adds/apps/<id>/`. Copy the folder in to install; delete it to uninstall; then open the Apps drawer and tap the refresh button in its header.
 
 Apps are reached only through the native drawer and its API ([drawer-protocol.md](drawer-protocol.md)); NickelMenu is retired. New optional fields are additive; v1 manifests stay valid.
 
