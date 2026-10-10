@@ -3,6 +3,7 @@
 #include <QPainter>
 #include <QPolygonF>
 #include <QPixmap>
+#include <QLineF>
 
 #include "nickel_fonts.h"
 
@@ -88,9 +89,11 @@ static const int HEADER_ICON_SIDE = 120;
 static const int HEADER_GLYPH_SIDE = 64;
 static const int HEADER_STROKE = 4;
 static const int GEAR_TEETH = 8;
-static const int GEAR_RING_DIAMETER = 40;
-static const int GEAR_RING_THICKNESS = 10;
-static const int GEAR_TOOTH_SIDE = 12;
+static const qreal GEAR_TIP_RADIUS = 29;
+static const qreal GEAR_ROOT_RADIUS = 21;
+static const qreal GEAR_HUB_RADIUS = 8;
+static const qreal GEAR_TOOTH_HALF_DEGREES = 9;  // half the tooth's angle at the tip
+static const qreal GEAR_FLANK_DEGREES = 5;       // extra spread where the tooth meets the root
 
 static void paintImportIcon(QPainter *painter, const QRectF &box)
 {
@@ -106,25 +109,28 @@ static void paintImportIcon(QPainter *painter, const QRectF &box)
     painter->drawPolyline(tray);
 }
 
-// Same shapes as cmd/ndpreview/icons.go gearShapes (64 px glyph box): a ring
-// 40 px wide and 10 px thick, and eight 12 px square teeth at radius 26 (N, S,
-// E, W) and offset 18,18 (diagonals) from the centre. Change both.
+static QPointF pointOnCircle(const QPointF &centre, qreal radius, qreal degrees)
+{
+    // QLineF does the trigonometry inside QtCore, so the mod does not need libm.
+    return centre + QLineF::fromPolar(radius, degrees).p2();
+}
+
+// A thin outline gear like Nickel's line icons: eight trapezoid teeth and a round hub, drawn with
+// the header stroke. cmd/ndpreview/icons.go gearShapes approximates it for previews; change both.
 static void paintGearIcon(QPainter *painter, const QRectF &box)
 {
     QPointF centre = box.center();
-    painter->save();
-    painter->setPen(QPen(Qt::black, GEAR_RING_THICKNESS));
-    painter->setBrush(Qt::NoBrush);
-    qreal ringRadius = (GEAR_RING_DIAMETER - GEAR_RING_THICKNESS) / 2.0;
-    painter->drawEllipse(centre, ringRadius, ringRadius);
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(Qt::black);
-    static const int OFFSETS[GEAR_TEETH][2] = {{0, -26}, {0, 26}, {-26, 0}, {26, 0}, {-18, -18}, {18, -18}, {-18, 18}, {18, 18}};
+    QPolygonF outline;
+    qreal step = 360.0 / GEAR_TEETH;
     for (int tooth = 0; tooth < GEAR_TEETH; tooth++) {
-        painter->drawRect(QRectF(centre.x() + OFFSETS[tooth][0] - GEAR_TOOTH_SIDE / 2.0,
-                                 centre.y() + OFFSETS[tooth][1] - GEAR_TOOTH_SIDE / 2.0, GEAR_TOOTH_SIDE, GEAR_TOOTH_SIDE));
+        qreal middle = tooth * step - 90;
+        outline << pointOnCircle(centre, GEAR_ROOT_RADIUS, middle - GEAR_TOOTH_HALF_DEGREES - GEAR_FLANK_DEGREES)
+                << pointOnCircle(centre, GEAR_TIP_RADIUS, middle - GEAR_TOOTH_HALF_DEGREES)
+                << pointOnCircle(centre, GEAR_TIP_RADIUS, middle + GEAR_TOOTH_HALF_DEGREES)
+                << pointOnCircle(centre, GEAR_ROOT_RADIUS, middle + GEAR_TOOTH_HALF_DEGREES + GEAR_FLANK_DEGREES);
     }
-    painter->restore();
+    painter->drawPolygon(outline);
+    painter->drawEllipse(centre, GEAR_HUB_RADIUS, GEAR_HUB_RADIUS);
 }
 
 static void paintRefreshIcon(QPainter *painter, const QRectF &box)

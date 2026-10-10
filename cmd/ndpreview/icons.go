@@ -45,12 +45,13 @@ func trayDownShapes(x, y int) []Item {
 	return items
 }
 
-// gearShapes is a ring with eight square teeth (four straight, four diagonal) and a hollow hub.
+// gearShapes approximates the mod's thin outline gear (mod/drawer/painted_marks.cc
+// paintGearIcon): a 4 px ring, a 4 px hub and eight small teeth on the ring.
 func gearShapes(x, y int) []Item {
-	const tooth, center = 12, 32
-	items := []Item{ringItem(x+12, y+12, 40, 10, inkBlack)}
-	straight := [][2]int{{0, -26}, {0, 26}, {-26, 0}, {26, 0}}
-	diagonal := [][2]int{{-18, -18}, {18, -18}, {-18, 18}, {18, 18}}
+	const tooth, center = 8, 32
+	items := []Item{ringItem(x+11, y+11, 42, 4, inkBlack), ringItem(x+24, y+24, 16, 4, inkBlack)}
+	straight := [][2]int{{0, -24}, {0, 24}, {-24, 0}, {24, 0}}
+	diagonal := [][2]int{{-17, -17}, {17, -17}, {-17, 17}, {17, 17}}
 	for _, offset := range append(straight, diagonal...) {
 		items = append(items, solidRect(x+center+offset[0]-tooth/2, y+center+offset[1]-tooth/2, tooth, tooth, inkBlack))
 	}
