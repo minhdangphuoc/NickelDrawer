@@ -15,7 +15,7 @@ static const char UNINSTALL_PATH[] = "/mnt/onboard/.adds/helpers/screenshot/unin
 static const char DISABLE_PATH[] = "/mnt/onboard/.adds/helpers/screenshot/disable";
 // Verbose lines in the syslog (read once at boot).
 static const char DEBUG_PATH[] = "/mnt/onboard/.adds/helpers/screenshot/debug";
-// The user's switch: present = no button, absent = button (the default). NickelDrawer's Tweaks writes it.
+// The user's switch: present = no button, absent = button (the default). Created and removed by install.sh --off / --on, or by hand.
 static const char OFF_PATH[] = "/mnt/onboard/.adds/helpers/screenshot/off";
 
 bool hasFlag(const char *path);

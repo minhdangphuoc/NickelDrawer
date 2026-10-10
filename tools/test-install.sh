@@ -341,6 +341,15 @@ env -u KOBO_ROOT KOBO_SEARCH_DIRS="$WORK/empty-mounts" "$INSTALLER" --dry-run >"
 check "reports a missing volume when none is found" test "$detectNoneStatus" -ne 0
 check "...and says how to set KOBO_ROOT" grep -qF "KOBO_ROOT" "$WORK/detect-none.out"
 
+echo "--- the optional helper stays out of the drawer"
+# helpers/statusbar-screenshot is a separate extra: nothing of it may ship in dist/ or live in the
+# drawer's own sources, locales or tweaks. Names: its mod, its icon, its flag folder, its old ping property.
+helperPattern='statusbar-screenshot|statusbarshot|screenshot-64|nhScreenshotButton|helpers/screenshot'
+check "dist/ has no file named after the helper" test -z "$(find "$REPO_ROOT/dist" \( -iname '*statusbarshot*' -o -iname '*screenshot-64*' \) 2>/dev/null)"
+check "dist/ has no mention of the helper" test -z "$(grep -rlaE "$helperPattern" "$REPO_ROOT/dist" 2>/dev/null)"
+check "the drawer's sources, locales and tweaks have no mention of the helper" \
+    test -z "$(grep -rlaE "$helperPattern" "$REPO_ROOT/internal/tweaks" "$REPO_ROOT/mod/drawer" "$REPO_ROOT/host" "$REPO_ROOT/cmd/appsctl/embedded" 2>/dev/null)"
+
 if [ "$failures" -ne 0 ]; then
     echo "$failures check(s) failed"
     exit 1

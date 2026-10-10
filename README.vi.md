@@ -138,7 +138,7 @@ Tùy chọn, tách riêng khỏi NickelDrawer và không nằm trong bản phát
 
 ### Nút chụp màn hình trên thanh trạng thái
 
-[helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md): một mod nhỏ riêng, thêm nút chụp màn hình vào thanh trạng thái phía trên của Kobo. Chạm để lưu màn hình thành `screen_NNN.png` ở thư mục gốc của ổ Kobo. Khi đã cài, Tinh chỉnh có công tắc để ẩn hoặc hiện nút. Dựng và cài từ mã nguồn; không có tệp phát hành.
+[helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md): một mod nhỏ riêng, thêm nút chụp màn hình vào thanh trạng thái phía trên của Kobo. Chạm để lưu màn hình thành `screen_NNN.png` ở thư mục gốc của ổ Kobo. Để tắt nút, tạo một tệp rỗng `.adds/helpers/screenshot/off` trên Kobo qua USB (xóa tệp để bật lại; `install.sh --off` / `--on` làm việc này). Dựng và cài từ mã nguồn; không có tệp phát hành.
 
 <a id="giao-dien-tieng-viet"></a>
 

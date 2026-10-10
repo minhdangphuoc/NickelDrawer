@@ -3,6 +3,8 @@
 # not part of tools/install-to-kobo.sh, dist/ or the releases).
 #   helpers/statusbar-screenshot/install.sh [--dry-run]
 #   helpers/statusbar-screenshot/install.sh --uninstall [--dry-run]
+#   helpers/statusbar-screenshot/install.sh --off [--dry-run]   # hide the button (creates the "off" flag)
+#   helpers/statusbar-screenshot/install.sh --on [--dry-run]    # show it again (removes the flag)
 # Env: KOBO_ROOT, the mounted Kobo (default: found like tools/install-to-kobo.sh does);
 #      BACKUP_ROOT (default <repo>/backups); HELPER_TGZ (default build/helpers/KoboRoot-statusbarshot.tgz).
 # Run `make -C helpers/statusbar-screenshot docker-build` and `helpers/statusbar-screenshot/check-symbols.sh`
@@ -12,6 +14,8 @@
 # user's flag files there stay), then stages the library as .kobo/KoboRoot.tgz; Nickel installs it at the
 # next reboot. It refuses when another KoboRoot.tgz is already waiting. --uninstall writes NickelHook's
 # uninstall flag: the library is deleted at the next boot (the folder is left for you to remove).
+# --off and --on only create or remove the "off" flag file (backed up first); the Kobo picks it up the
+# next time the status bar is shown or the button is tapped, no reboot.
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -28,9 +32,11 @@ TARGET=$KOBO_ROOT/$HELPER_RELATIVE
 STAGED_TGZ=$KOBO_ROOT/.kobo/KoboRoot.tgz
 # Flag files the user controls; installing never writes or removes them, except a stale uninstall flag.
 UNINSTALL_FLAG=$TARGET/uninstall
+OFF_FLAG=$TARGET/off
 
 isDryRun=false
 isUninstall=false
+buttonSwitch=
 backupDir=
 
 fail() {
@@ -41,6 +47,7 @@ fail() {
 usage() {
     echo "Usage: $0 [--dry-run]"
     echo "       $0 --uninstall [--dry-run]"
+    echo "       $0 --off|--on [--dry-run]"
 }
 
 # Runs a command, or only prints it with --dry-run.
@@ -58,6 +65,8 @@ parse_flags() {
         case $flag in
         --dry-run) isDryRun=true ;;
         --uninstall) isUninstall=true ;;
+        --off) buttonSwitch=off ;;
+        --on) buttonSwitch=on ;;
         *) fail "unknown flag '$flag'. $(usage)" ;;
         esac
     done
@@ -135,10 +144,25 @@ uninstall_helper() {
     echo "Delete .adds/helpers/screenshot over USB afterwards if you want the files gone too."
 }
 
+# The button's on/off switch is just the "off" flag file: present = hidden, absent = shown.
+switch_button() {
+    backup_before_writing
+    if [ "$buttonSwitch" = off ]; then
+        act mkdir -p "$TARGET"
+        act touch "$OFF_FLAG"
+        echo "Button off: wrote the off flag. Eject; the status bar updates the next time it is shown."
+    else
+        act rm -f "$OFF_FLAG"
+        echo "Button on: removed the off flag. Eject; the status bar updates the next time it is shown."
+    fi
+}
+
 main() {
     parse_flags "$@"
     require_mounted_kobo
-    if $isUninstall; then
+    if [ -n "$buttonSwitch" ]; then
+        switch_button
+    elif $isUninstall; then
         uninstall_helper
     else
         install_helper

@@ -1,10 +1,9 @@
 #include "screenshot_button.h"
 
 #include <QBoxLayout>
-#include <QDynamicPropertyChangeEvent>
+#include <QEvent>
 #include <QFileInfo>
 #include <QTimer>
-#include <QVariant>
 #include <QWidget>
 
 #include <NickelHook.h>
@@ -14,8 +13,6 @@
 #include "helper_log.h"
 #include "helper_strings.h"
 #include "nickel_bridge.h"
-
-const char ScreenshotButton::SWITCH_PROPERTY[] = "nhScreenshotButton";
 
 static const char BUTTON_OBJECT_NAME[] = "nhScreenshotIcon";
 static const char ICON_CONTAINER_NAME[] = "iconContainer";
@@ -136,13 +133,6 @@ bool ScreenshotButton::eventFilter(QObject *watched, QEvent *event)
     }
     if (event->type() == QEvent::Show) {
         updateFromFlagFile();
-    } else if (event->type() == QEvent::DynamicPropertyChange) {
-        QDynamicPropertyChangeEvent *change = static_cast<QDynamicPropertyChangeEvent *>(event);
-        if (change->propertyName() == SWITCH_PROPERTY) {
-            isWanted = statusBar->property(SWITCH_PROPERTY).toBool();
-            HelperLog::debug("property ping, button %s", isWanted ? "on" : "off");
-            showButton(isWanted);
-        }
     }
     return QObject::eventFilter(watched, event);
 }

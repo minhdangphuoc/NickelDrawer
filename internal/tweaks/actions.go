@@ -2,7 +2,6 @@ package tweaks
 
 import (
 	"os"
-	"path/filepath"
 
 	"koboapps/internal/i18n"
 )
@@ -17,8 +16,6 @@ func readLegibility(_ Config, conf *confFile) any {
 	value, found := conf.get(readingSection, textRenderingKey)
 	return found && value == legibleTextRendering
 }
-
-func readStatusBarScreenshot(c Config, _ *confFile) any { return !fileExists(c.HelperFlagPath) }
 
 func readIP(c Config, _ *confFile) any {
 	if address := c.ipAddress(); address != "" {
@@ -41,32 +38,6 @@ func (c Config) toggleScreensaver() (Result, error) {
 		return Result{}, c.writeFailure(err)
 	}
 	return c.toggled(IDScreensaver, !enabled, false), nil
-}
-
-// toggleStatusBarScreenshot flips the helper's "off" flag file; the mod then pings the status bar so
-// the button appears or disappears at once (the helper also rechecks the file on its own).
-func (c Config) toggleStatusBarScreenshot() (Result, error) {
-	wasOn := !fileExists(c.HelperFlagPath)
-	if err := c.writeHelperFlag(wasOn); err != nil {
-		return Result{}, c.writeFailure(err)
-	}
-	result := c.toggled(IDStatusBarScreenshot, !wasOn, false)
-	result.Nickel = NickelStatusBarScreenshot
-	return result, nil
-}
-
-// writeHelperFlag creates (isOff) or removes the "off" flag file.
-func (c Config) writeHelperFlag(isOff bool) error {
-	if !isOff {
-		if err := os.Remove(c.HelperFlagPath); err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		return nil
-	}
-	if err := os.MkdirAll(filepath.Dir(c.HelperFlagPath), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(c.HelperFlagPath, nil, 0o644)
 }
 
 func toggleBoolean(id string, setting booleanSetting) func(Config) (Result, error) {

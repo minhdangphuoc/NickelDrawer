@@ -28,10 +28,6 @@ static const int RUN_FROM_EVENT_LOOP = 0;
 static const int POWER_ACTION_DELAY_MILLISECONDS = 1500;
 // N3Dialog's white frame inside its #4d4d4d surround (Ui_N3Dialog, N3Dialog.qss).
 static const char *const NICKEL_FRAME_NAME = "mainFrame";
-// The status-bar helper (helpers/statusbar-screenshot, a separate library) watches this dynamic property
-// on Nickel's status bar. Plain Qt on both sides: no symbol or link between the two libraries.
-static const char *const STATUS_BAR_OBJECT_NAME = "StatusBarView";
-static const char *const SCREENSHOT_BUTTON_PROPERTY = "nhScreenshotButton";
 // MainWindowController::showStatusBarAsNecessary reads these from the pushed
 // view: all false hides Nickel's status bar, as for its own N3Dialog pages
 // (the dialog has its own battery icon in its top row).
@@ -227,22 +223,6 @@ void TweaksSession::showResult(const TweakResult &result)
     runNickelAction(result);
 }
 
-// Sets the property on the bar so a loaded helper adds or removes its button at once; nothing
-// happens (and nothing is shown) when the bar or the helper is not there.
-static void pingStatusBarHelper(bool isButtonOn)
-{
-    QList<QWidget *> windows = QApplication::topLevelWidgets();
-    for (int i = 0; i < windows.size(); i++) {
-        QWidget *statusBar = windows[i]->findChild<QWidget *>(QString::fromLatin1(STATUS_BAR_OBJECT_NAME));
-        if (statusBar) {
-            statusBar->setProperty(SCREENSHOT_BUTTON_PROPERTY, isButtonOn);
-            DebugLog::write("tweaks: status bar helper pinged, button %s", isButtonOn ? "on" : "off");
-            return;
-        }
-    }
-    DebugLog::write("tweaks: status bar not found, helper not pinged");
-}
-
 void TweaksSession::runNickelAction(const TweakResult &result)
 {
     bool isAvailable = true;
@@ -264,11 +244,6 @@ void TweaksSession::runNickelAction(const TweakResult &result)
         // Quick: PlugWorkflowManager::sync, NickelMenu's rescan_books. The full
         // rescan fakes a USB session and clears the window stack.
         isAvailable = NickelBridge::rescanLibrary(NickelBridge::RESCAN_QUICK);
-        break;
-    case TweaksLogic::NICKEL_STATUSBAR_SCREENSHOT:
-        // Plain Qt, no libnickel symbol: a helper that is not loaded simply does not listen, which is
-        // fine, so this never shows the "unavailable" toast.
-        pingStatusBarHelper(result.hasValue && result.value);
         break;
     case TweaksLogic::NICKEL_UNKNOWN:
         nh_log("tweaks: reply asks for an unknown Nickel action");

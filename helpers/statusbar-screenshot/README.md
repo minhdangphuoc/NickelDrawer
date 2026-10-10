@@ -32,6 +32,7 @@ key. `check-symbols.sh` fails when the key `nh.statusbarshot` is not in the libr
 ```sh
 helpers/statusbar-screenshot/install.sh --dry-run
 helpers/statusbar-screenshot/install.sh             # backs up, copies locales and icon, stages KoboRoot.tgz
+helpers/statusbar-screenshot/install.sh --off       # hide the button (creates the off flag); --on shows it again
 helpers/statusbar-screenshot/install.sh --uninstall # writes the uninstall flag; the library goes at the next boot
 ```
 
@@ -42,14 +43,14 @@ and never touches `.adds/nickeldrawer`. Do the uninstall and failsafe drills fir
 
 | File | Effect |
 |---|---|
-| `off` | No button. Absent = button (the default). NickelDrawer's hidden Tweaks row creates and removes it. |
+| `off` | No button. Absent = button (the default). `install.sh --off` / `--on` creates and removes it over USB, or do it by hand. |
 | `disable` | Kill switch: the hook passes straight through (read at boot). |
 | `debug` | Verbose lines in the syslog under `(statusbarshot)` (read at boot). |
 | `uninstall` | NickelHook deletes the library at the next boot. |
 
-The helper reads `off` with one `stat()` when a status bar is built, when it is shown and on each tap. The
-drawer also sets the dynamic property `nhScreenshotButton` on the `StatusBarView` for an immediate update;
-there is no link between the two libraries.
+The helper reads `off` with one `stat()` when a status bar is built, when it is shown and on each tap, so a
+change over USB applies the next time the bar is shown, without a reboot. The helper has no link to
+NickelDrawer and the drawer has no switch for it: the releases bundle only the drawer.
 
 ## Layout
 

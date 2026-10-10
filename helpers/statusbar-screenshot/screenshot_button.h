@@ -15,14 +15,10 @@ class QWidget;
 // the bar (it rebuilds it after setup, language change and main-window reset) deletes it too.
 //
 // The button is on or off by the flag file (helper_flags.h), checked when the bar is built, whenever
-// the bar is shown and on every tap, and by the dynamic property "nhScreenshotButton" that NickelDrawer's
-// Tweaks sets on the bar for an immediate update. If the layout is not the expected one, nothing is added.
+// the bar is shown and on every tap. If the layout is not the expected one, nothing is added.
 class ScreenshotButton : public QObject {
     Q_OBJECT
 public:
-    // The name of the property NickelDrawer sets (docs/spec/tweaks.md, "statusbar-screenshot").
-    static const char SWITCH_PROPERTY[];
-
     // Adds a controller (and, when enabled, the button) to a status bar that was just built.
     static void attachTo(QWidget *statusBar);
 

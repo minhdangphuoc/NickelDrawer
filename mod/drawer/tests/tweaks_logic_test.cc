@@ -150,16 +150,6 @@ static void testNickelActionReplies()
     EXPECT_EQ(NICKEL_UNKNOWN, reply.nickel);
 }
 
-static void testStatusBarScreenshotReply()
-{
-    Reply reply;
-    EXPECT_EQ(PARSE_OK, parseReplyText("{\"v\":1,\"ok\":true,\"toast\":\"Screenshot button off\",\"value\":false,"
-                                       "\"nickel\":\"statusbar-screenshot\"}", &reply));
-    EXPECT_EQ(NICKEL_STATUSBAR_SCREENSHOT, reply.nickel);
-    EXPECT_EQ(1, reply.hasValue);
-    EXPECT_EQ(0, reply.value);
-}
-
 static void testErrorReplies()
 {
     Reply reply;
@@ -334,7 +324,6 @@ int main()
     testLongLabelIsCutAtACharacterBoundary();
     testToggleReply();
     testNickelActionReplies();
-    testStatusBarScreenshotReply();
     testErrorReplies();
     testGridRowsAndCells();
     testGridHeightAndRightCells();

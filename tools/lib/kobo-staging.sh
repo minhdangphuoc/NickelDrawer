@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # Finding the mounted Kobo and staging a NickelHook mod archive as .kobo/KoboRoot.tgz. Sourced by
-# tools/device-session.sh, tools/install-to-kobo.sh and helpers/statusbar-screenshot/install.sh so the
+# tools/device-session.sh, tools/install-to-kobo.sh and the helpers/*/install.sh scripts so the
 # safety check lives in one place. The caller defines fail() and STAGED_TGZ (<kobo>/.kobo/KoboRoot.tgz).
 
 # Where a desktop mounts the Kobo (volume label KOBOeReader), most likely first.

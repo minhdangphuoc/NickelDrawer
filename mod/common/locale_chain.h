@@ -2,7 +2,7 @@
 #define NICKELDRAWER_LOCALE_CHAIN_H
 
 // Which locale files to try for a Nickel CurrentLocale, shared by mod/drawer and
-// helpers/statusbar-screenshot (each compiles its own copy). Pure: no Qt, no C++ standard library.
+// the mods under helpers/ (each compiles its own copy). Pure: no Qt, no C++ standard library.
 namespace LocaleChain {
 
 // Longest file name in the chain, NUL included.

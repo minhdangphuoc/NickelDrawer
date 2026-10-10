@@ -562,7 +562,7 @@ TweaksLogic::NickelAction nickelActionFromName(const char *name)
     if (!strcmp(name, "rescan-library")) {
         return TweaksLogic::NICKEL_RESCAN_LIBRARY;
     }
-    return !strcmp(name, "statusbar-screenshot") ? TweaksLogic::NICKEL_STATUSBAR_SCREENSHOT : TweaksLogic::NICKEL_UNKNOWN;
+    return TweaksLogic::NICKEL_UNKNOWN;
 }
 
 // The whole text is one object and nothing follows it.

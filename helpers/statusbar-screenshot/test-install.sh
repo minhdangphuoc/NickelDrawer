@@ -91,6 +91,16 @@ echo "--- uninstall"
 check "writes NickelHook's uninstall flag" test -e "$TARGET/uninstall"
 check "stages no archive" test ! -e "$STAGED"
 check "says to reboot" contains "$WORK/uninstall.out" "reboot"
+echo "--- off / on"
+"$INSTALLER" --off >"$WORK/off.out"
+check "--off creates the off flag" test -e "$TARGET/off"
+check "--off backs the folder up first" test -d "$BACKUP_ROOT"
+"$INSTALLER" --on >"$WORK/on.out"
+check "--on removes the off flag" test ! -e "$TARGET/off"
+check "--on stages no archive" test ! -e "$STAGED"
+rm -rf "$TARGET"
+"$INSTALLER" --off --dry-run >/dev/null
+check "--off --dry-run writes nothing" test ! -e "$TARGET"
 "$INSTALLER" --nope >/dev/null 2>&1 && flagStatus=0 || flagStatus=$?
 check "an unknown flag is refused" test "$flagStatus" -ne 0
 

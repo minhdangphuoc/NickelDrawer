@@ -31,9 +31,7 @@ func newFixture(t *testing.T, conf string) fixture {
 		"tweak.err.unknown": "No tweak '{id}'.", "tweak.err.write": "Cannot save: {detail}",
 		"tweak.err.no_screensaver": "No folder {folder}.",
 		"tweak.screenshots.label":  "Screenshots", "tweak.legibility.label": "Legibility",
-		"tweak.screenshots.caption":          "With the power button",
-		"tweak.statusbar-screenshot.label":   "Screenshot button",
-		"tweak.statusbar-screenshot.caption": "In the status bar",
+		"tweak.screenshots.caption": "With the power button",
 	}
 	return fixture{
 		root: root, confPath: confPath,
@@ -41,9 +39,6 @@ func newFixture(t *testing.T, conf string) fixture {
 			Bundle: i18n.NewBundle(english), ConfPath: confPath,
 			ScreensaverDir: filepath.Join(root, ".kobo", "screensaver"),
 			IPAddress:      func() string { return "192.168.1.5" },
-
-			HelperLibraryPath: filepath.Join(root, "imageformats", "libstatusbarshot.so"),
-			HelperFlagPath:    filepath.Join(root, ".adds", "helpers", "screenshot", "off"),
 		},
 	}
 }
@@ -66,8 +61,6 @@ func readFile(t *testing.T, path string) string {
 	}
 	return string(content)
 }
-
-func (f fixture) installHelper(t *testing.T) { writeFile(t, f.config.HelperLibraryPath, "so") }
 
 func (f fixture) conf(t *testing.T) string { return readFile(t, f.confPath) }
 
@@ -329,70 +322,10 @@ func asTweakError(err error, target **Error) bool {
 	return ok
 }
 
-func TestHelperTweakIsHiddenWhileTheHelperIsNotInstalled(t *testing.T) {
+func TestOnlyTheScreenshotsTweakCarriesACaption(t *testing.T) {
 	fix := newFixture(t, "")
 	for _, item := range fix.config.List().Items {
-		if item.ID == IDStatusBarScreenshot {
-			t.Fatalf("listed without the helper: %+v", item)
-		}
-	}
-	_, err := fix.config.Apply(IDStatusBarScreenshot)
-	assertMessage(t, err, "No tweak 'statusbar-screenshot'.")
-	if _, statErr := os.Stat(fix.config.HelperFlagPath); statErr == nil {
-		t.Fatal("applying without the helper must not create the flag file")
-	}
-}
-
-func TestHelperTweakFollowsScreenshotsAndReadsTheFlagFile(t *testing.T) {
-	fix := newFixture(t, "")
-	fix.installHelper(t)
-	items := fix.config.List().Items
-	if items[1].ID != IDScreenshots || items[2].ID != IDStatusBarScreenshot {
-		t.Fatalf("order = %s, %s", items[1].ID, items[2].ID)
-	}
-	if items[2].Value != true || items[2].Caption != "In the status bar" || items[2].Label != "Screenshot button" {
-		t.Fatalf("on by default: %+v", items[2])
-	}
-	writeFile(t, fix.config.HelperFlagPath, "")
-	if fix.config.List().Items[2].Value != false {
-		t.Fatal("the off flag file must read as off")
-	}
-}
-
-func TestHelperToggleCreatesAndRemovesTheFlagFileAndPingsTheMod(t *testing.T) {
-	fix := newFixture(t, "")
-	fix.installHelper(t)
-	off := mustApply(t, fix.config, IDStatusBarScreenshot)
-	if off.Value == nil || *off.Value || off.Nickel != NickelStatusBarScreenshot || off.Toast != "Screenshot button off" {
-		t.Fatalf("off result = %+v", off)
-	}
-	if _, err := os.Stat(fix.config.HelperFlagPath); err != nil {
-		t.Fatalf("flag file not created: %v", err)
-	}
-	on := mustApply(t, fix.config, IDStatusBarScreenshot)
-	if on.Value == nil || !*on.Value || on.Nickel != NickelStatusBarScreenshot {
-		t.Fatalf("on result = %+v", on)
-	}
-	if _, err := os.Stat(fix.config.HelperFlagPath); err == nil {
-		t.Fatal("flag file not removed")
-	}
-}
-
-func TestHelperToggleReportsAnUnwritableFlagFolder(t *testing.T) {
-	fix := newFixture(t, "")
-	fix.installHelper(t)
-	writeFile(t, filepath.Join(fix.root, ".adds"), "a file, not a folder")
-	_, err := fix.config.Apply(IDStatusBarScreenshot)
-	if err == nil || !strings.HasPrefix(err.Error(), "Cannot save:") {
-		t.Fatalf("err = %v", err)
-	}
-}
-
-func TestOnlyTheScreenshotTweaksCarryACaption(t *testing.T) {
-	fix := newFixture(t, "")
-	fix.installHelper(t)
-	for _, item := range fix.config.List().Items {
-		hasCaption := item.ID == IDScreenshots || item.ID == IDStatusBarScreenshot
+		hasCaption := item.ID == IDScreenshots
 		if (item.Caption != "") != hasCaption {
 			t.Errorf("%s caption = %q", item.ID, item.Caption)
 		}

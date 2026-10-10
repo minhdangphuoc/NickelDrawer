@@ -24,7 +24,6 @@ enum NickelAction {
     NICKEL_SLEEP,
     NICKEL_REBOOT,
     NICKEL_RESCAN_LIBRARY,
-    NICKEL_STATUSBAR_SCREENSHOT, // tell the status-bar helper its flag file changed (no libnickel symbol)
     NICKEL_UNKNOWN
 };
 

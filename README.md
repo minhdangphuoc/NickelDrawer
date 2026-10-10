@@ -139,4 +139,4 @@ NickelDrawer is an independent project. It is not made by, affiliated with or en
 
 Optional, separate from NickelDrawer and not part of its releases. Install them only if you want them.
 
-- **Status-bar screenshot button** ([helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md)): a small separate mod that adds a screenshot button to Kobo's top status bar. A tap saves the screen as `screen_NNN.png` at the root of the Kobo drive. When it is installed, Tweaks shows a switch to hide or show the button. Built and installed from the source; there is no release file.
+- **Status-bar screenshot button** ([helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md)): a small separate mod that adds a screenshot button to Kobo's top status bar. A tap saves the screen as `screen_NNN.png` at the root of the Kobo drive. To turn it off, create an empty file `.adds/helpers/screenshot/off` on the Kobo over USB (delete it to turn it back on; `install.sh --off` / `--on` does this). Built and installed from the source; there is no release file.

@@ -9,8 +9,8 @@ the extracted QSS (`~/.cache/nickeldrawer/qss/`), and the rcc name tables in the
 **Scope.** This is a personal helper for the owner's own Kobo, **not a NickelDrawer feature**. It is a separate
 NickelHook mod with its own `.so`, its own KoboRoot, its own dlsym checks and failsafe. It lives tracked in the
 repo under `helpers/statusbar-screenshot/`. It stays out of the main README, `docs/guide`, CHANGELOG feature lists,
-`dist/` and releases. NickelDrawer's only link to it is a hidden Tweaks row that shows up only when the helper is
-installed (section 5).
+`dist/` and releases. NickelDrawer has **no link to it at all** (decision changed, see "Decision: the toggle is a
+flag file" in section 5).
 
 Labels used below: **[confirmed]** means read from the binaries (all five builds unless a build is named).
 **[assumed]** means inferred and still to be checked on the device.
@@ -28,7 +28,7 @@ Labels used below: **[confirmed]** means read from the binaries (all five builds
 | `[FeatureSettings] Screenshots` | Only gates the power-button path in `PowerKeyFilter::filter`. `saveCurrentScreen` itself does not read it, so the button works with the setting off **[confirmed]** |
 | Own instance | Safe. `ScreenshotMaker` is a 4-byte object `{int counter}` and its constructor stores 1. Nickel's own copy lives inside `PowerKeyFilter`; there is no singleton or getter **[confirmed]** |
 | Sequence | Blank the button (keep its size) → wait about 250 ms on a single-shot timer → `saveCurrentScreen` → restore the button → `MainWindowController::toast` |
-| On/off | A flag file `/mnt/onboard/.adds/helpers/screenshot/off`; no file means on. The hidden NickelDrawer Tweaks row writes it. The helper reads it when a status bar is built, on its Show event and on every tap, and the drawer pings the bar for an immediate update |
+| On/off | A flag file `/mnt/onboard/.adds/helpers/screenshot/off`; no file means on. `install.sh --off` / `--on` or the owner creates and removes it over USB. The helper reads it when a status bar is built, on its Show event and on every tap |
 
 ## 1. StatusBarView
 
@@ -223,32 +223,19 @@ single `stat()` (`QFileInfo::exists`) at these points:
 - when the `StatusBarView` hook runs (boot, language change, reset);
 - on the status bar's `QEvent::Show` (an event filter on the bar, which Nickel shows and hides as pages change);
 - on every tap. If the flag says off, the helper removes the button and does not capture.
-- Live ping from the drawer (recommended): after the hidden Tweaks row toggles, NickelDrawer sets a dynamic
-  property on the bar, `window->findChild<QWidget*>("StatusBarView")->setProperty("nhScreenshotButton", isOn)`.
-  The helper's event filter catches `QEvent::DynamicPropertyChange` and adds or removes the button at once. This
-  is plain Qt on both sides, with no symbol or link dependency between the two `.so` files. If either side is
-  missing, nothing happens.
 
 If the stat fails (for example while USB is connected), the helper keeps the current state.
 
-### Hidden Tweaks row in NickelDrawer (user decision)
+### Decision: the toggle is a flag file, not a Tweaks row
 
-- Visible **only** when the helper is installed. `appsctl` (Go, `internal/tweaks`) checks that
-  `/usr/local/Kobo/imageformats/libstatusbarshot.so` exists. That is the truth: NickelHook's uninstall and the
-  failsafe delete exactly that file. A marker under `.adds` could outlive an uninstall, so it is not used.
-- Registry entry `statusbar-screenshot`, kind `toggle`, placed right after `screenshots`.
-  Read: `!exists(.adds/helpers/screenshot/off)`. Apply: create or remove the flag file.
-  Result: `nickel: "statusbar-screenshot"` (a new `NickelAction`). The mod handles it by setting the dynamic
-  property described above.
-- `List()` skips the entry when the `.so` is absent, so nothing changes for anyone else. `Config` gets two
-  injectable paths (`HelperLibraryPath`, `HelperFlagPath`) so tests run in a temp folder.
-- Labels (host `locales/*.json`): `tweak.statusbar-screenshot.label` = vi "Nút chụp màn hình" / en "Screenshot
-  button". The existing `screenshots` row ("Chụp màn hình" / "Screenshots") is the power-button setting, so the new
-  row needs a qualifier: caption vi "Trên thanh trạng thái" / en "In the status bar". The Tweaks protocol v1 has
-  no caption field. Either add an optional `"caption"` to `Item` (docs/spec/tweaks.md, parser in
-  `mod/drawer/tweaks_parser.cc`, drawn small under the label in `tweaks_row`), or until then use a single label
-  "Nút chụp trên thanh trạng thái" / "Status bar screenshot button" if it fits the cell.
-- Outside the drawer, the owner can create or delete the `off` file over USB.
+An earlier design had a hidden NickelDrawer Tweaks row (shown only while the helper was installed) that wrote the
+`off` file and pinged the bar through a dynamic property (`nhScreenshotButton`). It was built and then removed.
+Why: the releases bundle only the drawer and its dependencies, so the drawer must carry no code, strings or
+detection for an extra mod. The switch is therefore only the helper's own flag file: `install.sh --off` / `--on`,
+or create and delete `/mnt/onboard/.adds/helpers/screenshot/off` over USB. The helper still re-checks the file
+on bar build, bar show and every tap, so the change shows up the next time the bar is shown, with no reboot.
+The generic optional `caption` field of the Tweaks protocol stayed (the Screenshots cell says "With the power
+button").
 
 ## 6. NickelHook coexistence and risks
 
@@ -299,7 +286,7 @@ New folder `helpers/statusbar-screenshot/` (tracked, outside `dist/` and release
 | `Makefile` | Copy of `mod/hello/Makefile` pattern: `LIBRARY_NAME := libstatusbarshot.so`, NickelHook from `../../third_party/NickelHook`, `-frtti`, `-fvisibility=hidden`, Qt5Widgets; `docker-build` cleans `GENERATED_IN_VENDOR` first; KoboRoot `build/helpers/KoboRoot-statusbarshot.tgz` with the `.so` plus `/mnt/onboard/.adds/helpers/screenshot/{locales/en.json,locales/vi.json,icons/screenshot-64.png,LICENSES/tabler.txt}` |
 | `statusbarshot.cc` | `nh_info` (`name "statusbarshot"`, `uninstall_flag "/mnt/onboard/.adds/helpers/screenshot/uninstall"`, `failsafe_delay 15`), tiny `init()`: read the `disable` / `debug` flags and the firmware version; nothing else |
 | `nickel_bridge.{h,cc}` | The only file naming libnickel symbols. Hook table + dlsym table (below), `isActive()`, typed wrappers: `makeStatusBarIcon(QWidget*)`, `setIconPixmaps(QWidget*, QPixmap, QPixmap)`, `saveScreen()` → `QString` path or empty, `toast(QString, QString)` |
-| `screenshot_button.{h,cc}` | `ScreenshotButton::attachTo(QWidget *statusBarView)`: find `iconLayout` / `lightIcon` by object name, build the icon, insert, connect `tapped(bool)`; the event filter (Show, DynamicPropertyChange); `capture()` sequence of section 3 |
+| `screenshot_button.{h,cc}` | `ScreenshotButton::attachTo(QWidget *statusBarView)`: find `iconLayout` / `lightIcon` by object name, build the icon, insert, connect `tapped(bool)`; the event filter (Show); `capture()` sequence of section 3 |
 | `helper_flags.{h,cc}` | Paths and `isButtonEnabled()` (one stat), `isKillSwitchOn()`, `isDebug()` |
 | `helper_strings.{h,cc}` | Locale pick from `Kobo eReader.conf` `CurrentLocale` + JSON load (QJsonDocument), fallback English |
 | `icon_pixmaps.{h,cc}` | Load the Tabler PNG, scale to the target height, make the `_hit` look (white glyph on black disc) and the transparent placeholder |
@@ -322,17 +309,8 @@ Symbols (all present in 23552, 23648, 23684, 23697 and 23828; all `optional`):
 | dlsym | `_ZN20MainWindowController5toastERK7QStringS2_i` |
 | signal (metaobject, string connect) | `TouchLabel::tapped(bool)`. Note it as `signal-symbol: _ZN10TouchLabel6tappedEb` for the check script |
 
-NickelDrawer side (small, separate change):
-- `internal/tweaks`: `IDStatusBarScreenshot = "statusbar-screenshot"`, conditional registry entry, read/apply on
-  the flag file, `NickelStatusBarScreenshot` action; tests for: helper absent → no item; present → item with value
-  true; toggle creates/removes `off`.
-- `host/locales/{en,vi}.json`: label (+ caption if the protocol gains it).
-- `mod/drawer/tweaks_logic.h`: `NICKEL_STATUSBAR_SCREENSHOT`; on that action, set the `nhScreenshotButton` property
-  on the `StatusBarView` (reuse `findStatusBar` from `mod/common/status_bar_inset.cc`). No libnickel symbol.
-- Optional: `caption` in docs/spec/tweaks.md + `tweaks_parser.cc` + `tweaks_row`.
-
 Order: (1) helper build + check script, (2) host-side desk test of `icon_pixmaps` / `helper_flags` / `helper_strings`
-(Qt-free parts as plain functions, like the drawer's `docker-test`), (3) G1 device run, (4) drawer Tweaks row.
+(Qt-free parts as plain functions, like the drawer's `docker-test`), (3) G1 device run, (4) `install.sh --off` / `--on`.
 
 ### Validation on device (G1: first run only with the user present)
 
@@ -352,9 +330,8 @@ the `.so` is removed.
 5. Change the language and come back: the button is still there (the status bar was rebuilt).
 6. `[FeatureSettings] Screenshots=false` → the button still works, and the power button still puts the device to
    sleep.
-7. NickelDrawer installed: the Tweaks row appears, turning it off hides the button at once, and it stays off after a
-   reboot. Turning it on brings it back.
-   Without the helper (uninstall it): the row is gone.
+7. `install.sh --off` (or create `off` over USB): after ejecting, the button is gone the next time the status bar
+   is shown, and stays off after a reboot. `install.sh --on` brings it back.
 8. NickelMenu, NickelDrawer and kobo-tieng-viet all still load (the drawer's More rows, NickelMenu's menu, and
    Vietnamese UI).
 9. USB connect while on the home screen: no crash. Tap during USB (if the bar is reachable): no file, no toast.
