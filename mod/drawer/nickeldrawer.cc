@@ -26,6 +26,7 @@ static int initialize()
     }
     NickelBridge::setMoreViewCreatedHandler(EntryRow::addTo);
     PressArea::setTapGestureTypeProvider(NickelBridge::tapGestureType);
+    PressArea::setTapPositionProvider(NickelBridge::tapGesturePosition);
     nh_log("active on %s (route %s, app screens %s)", NickelBridge::firmware(),
            ModSwitches::usesViewPushRoute() ? "B pushView" : "A controller", ModSwitches::usesScreens() ? "on" : "off");
     return 0;

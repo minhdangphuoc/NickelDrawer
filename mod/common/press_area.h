@@ -6,6 +6,7 @@
 #include <QWidget>
 
 class PressOverlay;
+class QGesture;
 class QGestureEvent;
 class QTimer;
 
@@ -16,7 +17,9 @@ class QTimer;
 // synthesize mouse events from touch. Nickel's own buttons (IconButtonBase,
 // TouchLabel) grabGesture() the type TapGestureRecognizer registered and get
 // QEvent::Gesture (TapGesture: started on finger down, finished on release,
-// canceled on drag). So a press area listens on three paths at once, whichever
+// canceled on drag). Nickel never sets the gesture's hot spot; the
+// finger's point is TapGesture::position() (screen coordinates), which areas
+// with many targets (app screens) need: the centre would hit the wrong target. So a press area listens on three paths at once, whichever
 // Nickel delivers: Nickel's tap gesture, raw touch events and mouse events.
 // One physical tap can arrive on several paths; a press is begun and ended
 // once and a second tap within the debounce interval is dropped. Every event
@@ -40,6 +43,13 @@ public:
     // it is read when a press area is constructed, after Nickel registered it.
     typedef int (*TapGestureTypeProvider)();
     static void setTapGestureTypeProvider(TapGestureTypeProvider provider);
+    // Where Nickel's tap gesture started, in screen coordinates: Nickel never
+    // sets the QGesture hot spot, it keeps the point in TapGesture::position().
+    // Returns false when unknown (symbol missing, not a TapGesture). Without a
+    // provider, an area with many targets takes the point of the touch begin
+    // that follows the gesture (the recognizer sees the touch first).
+    typedef bool (*TapPositionProvider)(QGesture *gesture, QPoint *screenPosition);
+    static void setTapPositionProvider(TapPositionProvider provider);
 
     static const int LONG_PRESS_MILLISECONDS = 600;
     static const int DEBOUNCE_MILLISECONDS = 400;
@@ -65,6 +75,10 @@ public:
     void setPressHighlight(PressHighlight highlight);
     bool isPressedStateShown() const { return isPressedShown; }
     QRect pressedStateRect() const { return pressedFeedback.rect; }
+    bool hasNickelTapGesture() const { return tapGestureType != 0; }
+    // One debug line: class, object name, geometry (local and global),
+    // visibility, gesture grabbed, touch accepted, input blocked.
+    void logTapTarget(const char *when) const;
 
 signals:
     void tapped();
@@ -91,6 +105,8 @@ private:
     bool handleGestureEvent(QGestureEvent *event);
     bool handleGestureOverride(QGestureEvent *event);
     bool handleTouchEvent(QEvent *event);
+    QPoint gesturePosition(QGesture *gesture, const char **origin) const;
+    void refineGuessedPress(const QPoint &position);
     void beginPress(const char *source, const QPoint &position);
     void movePress(const char *source, const QPoint &position);
     void endPress(const char *source, bool isInside);
@@ -109,6 +125,7 @@ private:
     PressHighlight pressHighlight;
     int tapGestureType; // 0: Nickel's tap gesture not grabbed
     bool isPressed;
+    bool isPressPositionGuessed; // begun by a gesture with no known point: the centre
     bool isPressedShown;
     bool hasFiredLongPress;
     bool acceptsPresses;

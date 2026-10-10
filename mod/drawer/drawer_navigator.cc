@@ -14,7 +14,47 @@
 #include "nickel_bridge.h"
 #include "status_bar_inset.h"
 
-DrawerNavigator::DrawerNavigator() : QObject(NULL) {}
+// PlugWorkflowManager::plugged() emits both, on the GUI thread, before it
+// builds the "Computer detected" dialog (doPluggedConnection: closeActiveDialogs,
+// getConfirmationDialog(NULL), show). A direct connection closes the drawer
+// first, so the dialog opens over Nickel's own page, as from Home.
+static const char *const USB_PLUG_SIGNALS[] = {
+    SIGNAL(usbPlugPermissionRequest(PermissionRequest *)),
+    SIGNAL(connectConfirmationPermissionRequest(PermissionRequest *, bool *)),
+};
+
+DrawerNavigator::DrawerNavigator() : QObject(NULL)
+{
+    watchUsbPlug();
+}
+
+void DrawerNavigator::watchUsbPlug()
+{
+    QObject *manager = NickelBridge::plugWorkflowManager();
+    if (!manager) {
+        return;
+    }
+    for (size_t i = 0; i < sizeof(USB_PLUG_SIGNALS) / sizeof(USB_PLUG_SIGNALS[0]); i++) {
+        bool isConnected = connect(manager, USB_PLUG_SIGNALS[i], this, SLOT(onUsbPlugged()), Qt::DirectConnection);
+        DebugLog::write("navigator: USB plug signal %s %s", USB_PLUG_SIGNALS[i] + 1,
+                        isConnected ? "watched" : "not found, the drawer stays open on plug");
+    }
+}
+
+// Never in the way of Nickel's connect prompt: the drawer and every app screen
+// on it close, as on a tab tap (pending reads are killed with the session).
+void DrawerNavigator::onUsbPlugged()
+{
+    if (!view || !view->isVisible()) {
+        return; // closed, or already closing for the other plug signal
+    }
+    DebugLog::write("navigator: USB plugged, closing the drawer before Nickel's connect dialog");
+    if (ModSwitches::usesViewPushRoute()) {
+        closeViewPush();
+    } else if (controller) {
+        NickelBridge::popController(controller->asNickelController());
+    }
+}
 
 DrawerNavigator *DrawerNavigator::instance()
 {

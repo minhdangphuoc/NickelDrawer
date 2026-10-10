@@ -14,6 +14,7 @@ class QStackedWidget;
 //      (the controller becomes a child of the view).
 //   route B (flag .adds/nickeldrawer/pushview): pushView/popView the bare
 //      widget, and pop it ourselves when another view becomes current.
+// On a USB plug it closes the drawer before Nickel shows its connect dialog.
 class DrawerNavigator : public QObject {
     Q_OBJECT
 public:
@@ -29,12 +30,14 @@ signals:
 
 private slots:
     void onBackRequested();
+    void onUsbPlugged();
     void onStackCurrentChanged(int index);
     void onViewDestroyed();
 
 private:
     DrawerNavigator();
 
+    void watchUsbPlug();
     bool isOpen() const;
     bool hasRouteApi() const;
     void recordOpenedDrawer();

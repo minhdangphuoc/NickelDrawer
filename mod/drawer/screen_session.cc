@@ -5,6 +5,7 @@
 #include <NickelHook.h>
 
 #include "action_runner.h"
+#include "debug_log.h"
 #include "dialogs.h"
 #include "fallback_strings.h"
 #include "field_editor.h"
@@ -64,7 +65,7 @@ static ScreenModel errorScreen(const DrawerItem &app, const QString &failure)
 }
 
 ScreenSession::ScreenSession(const DrawerItem &screenApp, QWidget *drawerView, ActionRunner *actionRunner)
-    : QObject(NULL), app(screenApp), runner(actionRunner), client(NULL), view(new ScreenView(drawerView)),
+    : QObject(NULL), app(screenApp), runner(actionRunner), client(NULL), view(new ScreenView(screenApp.name, drawerView)),
       liveTimer(new QTimer(this)), isLoading(false), isEditingField(false), isConfirmOpen(false)
 {
     setParent(view);
@@ -186,9 +187,12 @@ void ScreenSession::onComponentTapped(int index, const QString &value)
 {
     const ScreenComponent *component = view->component(index);
     if (!component || runner->isRunning()) {
+        DebugLog::write("screen: tap on component %d dropped (%s)", index,
+                        component ? "an action is still running" : "no such component");
         return;
     }
     const QString &type = component->type;
+    DebugLog::write("screen: tap on %s %d, action \"%s\"", qPrintable(type), index, qPrintable(component->action));
     if (type == QLatin1String("button")) {
         tapButton(*component);
     } else if (type == QLatin1String("row") || type == QLatin1String("empty")) {
@@ -305,7 +309,8 @@ void ScreenSession::runWithValue(const QString &actionId, const QString &value)
 void ScreenSession::runEvent(const ScreenEvent &event)
 {
     if (event.actionId.isEmpty()) {
-        return; // a read-only control or an untappable row
+        DebugLog::write("screen: tap has no action (read-only control or untappable row)");
+        return;
     }
     ScreenEvent withScreen = event;
     withScreen.screenId = view->screen().screen;

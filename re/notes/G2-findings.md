@@ -703,3 +703,59 @@ label (border colour = item ink), no target.
 "←", thin divider), "Chưa nhận" at the right of the same row. 2. Press the arrow: black circle; release: back to
 the drawer. 3. Not receiving: Start black outline, Stop dim, pressing Stop shows nothing and does nothing.
 Receiving: the reverse. 4. Every tappable target inverts on press; the log has one "screen: tap on …" per tap.
+
+---
+
+## App screen taps / title / USB (2026-10-10, 23828 decompiled, not run on device)
+
+Evidence: `backups/2026-10-10-071412/debug.log`. The log was truncated at its 64 KB cap (first line 01:32:10, in the
+middle of a session); in what is left, each app screen (Library 53.1 → 55.2 s, LocalSend 57.2 → 59.1 s) was open
+under 2 s before back, so the log has no body tap at all, neither received nor dropped. Decompiled with headless
+Ghidra (`~/.cache/nickeldrawer/decomp/usb-title.c`, `tapgesture.c`).
+
+**Taps land on the canvas centre.** Every drawer tap logs "tap gesture without hot spot, using the centre":
+`TapGestureRecognizer::recognize(TapGesture*, QObject*, QTouchEvent*)` never sets the `QGesture` hot spot; on touch
+begin it stores `TouchPoint::scenePos()` (the screen position for widgets) with `TapGesture::setPosition` (+0x40).
+The gesture is delivered before the touch begin that started it (the recognizer filters it first), so
+`PressArea` began every press at `rect().center()` and the later touch begin was ignored (already pressed). For a
+row that is harmless; the app screen body is one `ScreenCanvas` with many targets, so every tap on a button or
+toggle was resolved at the canvas centre (632,713): no target there → no pressed state, "tap … ignored", nothing
+happens. The recognizer also cancels the gesture when the watched widget is hidden (`WA_WState_Visible` clear) and
+ignores it when disabled. Fix: `PressArea::setTapPositionProvider`; the drawer passes `NickelBridge::tapGesturePosition`
+(`_ZNK10TapGesture8positionEv`, 5/5 builds, gesture checked with `inherits("TapGesture")`). Without it, a press begun
+at the guessed centre moves to the touch begin's point ("press moved from the centre to the touch point").
+
+**Empty header title.** The screen header was built with an empty title and given one later
+(`TextHeader::setText` = `QLabel::setText` + `TextHeaderBase::onTextUpdated`). The title is an `N3ButtonLabel`, a
+`FontSizeAdjustingLabel` whose `paintEvent` fits the text into the `contentsRect` it has (`fontSizeForRect`); the
+row had laid the TextHeader out for no text (stretch 0, size hint), so the title had no room. The drawer works
+because it passes its title to the constructor. Fix: `ScreenView(title, …)` builds the header with the app's name;
+`PageHeader::setTitle` skips an unchanged title and otherwise re-activates the TextHeader's and the row's layouts
+at once ("header: title … set, TextHeader WxH, label WxH").
+
+**USB connect prompt.** `PlugWorkflowManager::plugged()` → `usbPlugAllowed()` (emits
+`usbPlugPermissionRequest(PermissionRequest*)`) → `doPluggedConnection()` (emits
+`connectConfirmationPermissionRequest(PermissionRequest*, bool*)`, returns early while an earlier connect dialog is
+still alive, then `MainWindowController::closeActiveDialogs()`, `ConfirmationDialogFactory::getConfirmationDialog(NULL)`,
+"Computer detected" / "Connect", shown). On Connect, `onCancelAndConnect()` sets the connected flag, emits
+`aboutToConnect()` and `MainWindowController::clear`s the stack. The dialog is a top-level window, so the drawer
+cannot cover it in Qt's stacking; what it can do is repaint under it (live app screens reload every 5 s, page
+changes flash with 0x80) and keep appsctl running from `/mnt/onboard`. Not proven which one the user hit; the
+drawer now leaves the way: `DrawerNavigator` connects both plug signals directly (signal-symbols, 5/5 builds) and
+pops the drawer (route A) or the view (route B) before the dialog is built, exactly as from Home; the session's
+pending reads are killed with it. Our full rescan (`onCancelAndConnect` + `unplugged`) does not emit those signals.
+
+**Logging.** "tap target constructed|shown: <ptr> <class> "<name>" local …, global …, visible, gesture 0x… grabbed,
+touch accepted, …" for the canvas and the header action; "screen: "<id>" page n/m, k tap target(s) on canvas WxH" and
+one line per target (kind, component, type, value, rect) on every new layout; "press area …: tap point from
+hot spot|TapGesture::position|centre…"; "… press dropped (input blocked)"; "screen view: touch begin at x,y reached
+the view, not the canvas (… under it: …)"; "screen: tap on <type> N, action …" / "… dropped (an action is still
+running|no such component)" / "tap has no action"; "navigator: USB plug signal … watched", "USB plugged, closing
+the drawer".
+
+**Validation (next session, `debug` flag on, after the G1 drill).** 1. LocalSend: header shows "LocalSend" next to
+"←" at once. 2. Press Start: only Start inverts; release: one "screen: tap on button …" line with the right
+action; log shows "tap point from TapGesture::position". 3. Toggle on a settings screen flips at once.
+4. Library screen: same. 5. With the drawer open, and again with an app screen open, plug USB: the drawer closes,
+"Computer detected" appears, Connect mounts the drive. 6. Copy `debug.log` to `backups/<date>/` right after the
+test (64 KB cap).

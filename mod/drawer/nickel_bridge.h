@@ -18,6 +18,8 @@
 #include "page_header.h"
 
 class AbstractController;
+class QGesture;
+class QPoint;
 class QDialog;
 class QLineEdit;
 class QMenu;
@@ -41,6 +43,15 @@ const char *firmware();
 // The gesture type of Nickel's tap gesture (TapGestureRecognizer::_gestureType),
 // read live; 0 when the symbol is missing, not yet registered, or the bridge is inert.
 int tapGestureType();
+
+// Where Nickel's tap gesture started, in screen coordinates
+// (TapGesture::position()); false when the gesture is not Nickel's TapGesture
+// or the symbol is missing. PressArea's tap position provider.
+bool tapGesturePosition(QGesture *gesture, QPoint *screenPosition);
+
+// Nickel's PlugWorkflowManager (a QObject; its USB plug signals are connected
+// by name), or NULL (logged).
+QObject *plugWorkflowManager();
 
 // Nickel's TextHeader for page headers; every entry NULL while inert.
 NickelTextHeaderApi textHeaderApi();

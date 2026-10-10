@@ -12,7 +12,7 @@
 
 #include <NickelHook.h>
 
-static const off_t MAX_LOG_BYTES = 64 * 1024;
+static const off_t MAX_LOG_BYTES = 256 * 1024;
 static const size_t MAX_LINE_BYTES = 512;
 static const size_t MAX_MOD_NAME_BYTES = 24;
 
@@ -35,14 +35,19 @@ static int formatLinePrefix(char *out, size_t outSize)
     return (size_t)length < outSize ? length : (int)outSize - 1;
 }
 
-// Truncates instead of appending when this line would pass the cap, so the
-// newest lines (the ones before a crash) are always kept.
+// When this line would pass the cap, the full log becomes debug.log.1 (one
+// previous file kept) and a new log starts, so a whole session survives and
+// the newest lines (the ones before a crash) are always kept.
 static int openForAppend(size_t lineBytes)
 {
     struct stat info;
     bool isFull = stat(DebugLog::LOG_PATH, &info) == 0 && info.st_size + (off_t)lineBytes > MAX_LOG_BYTES;
-    int flags = O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC | (isFull ? O_TRUNC : 0);
-    return open(DebugLog::LOG_PATH, flags, 0644);
+    if (isFull) {
+        char previousPath[256];
+        snprintf(previousPath, sizeof(previousPath), "%s.1", DebugLog::LOG_PATH);
+        rename(DebugLog::LOG_PATH, previousPath);
+    }
+    return open(DebugLog::LOG_PATH, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0644);
 }
 
 static void appendToFile(const char *line, size_t lineBytes)

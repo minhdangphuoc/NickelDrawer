@@ -53,6 +53,7 @@ private:
     bool handlePageKey(int key);
     void goToPage(int index);
     const TapTarget *targetAt(const QPoint &position) const;
+    void logTargets() const;
 
     QWidget *host;
     ScreenModel model;

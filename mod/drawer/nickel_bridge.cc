@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <QDialog>
+#include <QGesture>
 #include <QLineEdit>
 #include <QMenu>
 #include <QWidgetAction>
@@ -68,6 +69,10 @@ static void (*MenuTextItem_registerForTapGestures)(void *item);
 // Data symbol: the Qt::GestureType that Nickel's TapGestureRecognizer registered
 // (0 until Nickel registers it at startup, after our init).
 static int *TapGestureRecognizer_gestureType;
+// QPoint TapGesture::position() const: the touch point in screen coordinates
+// (TouchPoint::scenePos, which is the screen position for widgets), set on
+// touch begin; Nickel never sets the QGesture hot spot.
+static QPoint (*TapGesture_position)(const QGesture *gesture);
 // Original MoreView::MoreView(QWidget*), returned by the PLT hook.
 static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 }
@@ -80,6 +85,8 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN14TextHeaderBase6tappedEv
 // signal-symbol: _ZN14TextHeaderBase9mouseDownEv
 // signal-symbol: _ZN12MenuTextItem6tappedEb
+// signal-symbol: _ZN19PlugWorkflowManager24usbPlugPermissionRequestEP17PermissionRequest
+// signal-symbol: _ZN19PlugWorkflowManager36connectConfirmationPermissionRequestEP17PermissionRequestPb
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
 static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
@@ -180,6 +187,7 @@ struct nh_dlsym symbolTable[] = {
     NICKEL_SYMBOL("_ZN24SearchKeyboardController9setGoTextERK7QString", SearchKeyboardController_setGoText,
                   "field keyboard"),
     NICKEL_SYMBOL("_ZN20TapGestureRecognizer12_gestureTypeE", TapGestureRecognizer_gestureType, "taps"),
+    NICKEL_SYMBOL("_ZNK10TapGesture8positionEv", TapGesture_position, "tap point"),
     NICKEL_SYMBOL("_ZN10TextHeaderC1EP7QWidget", TextHeader_construct, "page header"),
     NICKEL_SYMBOL("_ZN10TextHeader7setTextERK7QString", TextHeader_setText, "page header"),
     NICKEL_SYMBOL("_ZN14TextHeaderBase19setDeselectedPixmapERK7QPixmap", TextHeaderBase_setDeselectedPixmap,
@@ -273,6 +281,27 @@ void setMoreViewCreatedHandler(MoreViewCreatedHandler handler)
 int tapGestureType()
 {
     return isBridgeActive && TapGestureRecognizer_gestureType ? *TapGestureRecognizer_gestureType : 0;
+}
+
+bool tapGesturePosition(QGesture *gesture, QPoint *screenPosition)
+{
+    // inherits(), not a C++ cast: the class is Nickel's (re/notes/G2-findings.md, RTTI).
+    if (!isBridgeActive || !TapGesture_position || !gesture || !gesture->inherits("TapGesture")) {
+        return false;
+    }
+    *screenPosition = TapGesture_position(gesture);
+    return true;
+}
+
+QObject *plugWorkflowManager()
+{
+    bool hasManager = isBridgeActive && PlugWorkflowManager_sharedInstance;
+    // Its QObject base is at offset 0 (its signals activate on this pointer).
+    QObject *manager = hasManager ? static_cast<QObject *>(PlugWorkflowManager_sharedInstance()) : NULL;
+    if (!manager) {
+        DebugLog::write("bridge: PlugWorkflowManager unavailable, USB plug not watched");
+    }
+    return manager;
 }
 
 NickelTextHeaderApi textHeaderApi()

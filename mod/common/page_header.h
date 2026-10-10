@@ -68,6 +68,8 @@ public:
 
     PageHeader(const QString &title, const NickelTextHeaderApi &nickelApi, QWidget *parent);
 
+    // Build the header with the title when it is known: it is laid out for it
+    // at once. A later title lays the row out again (FontSizeAdjustingLabel).
     void setTitle(const QString &title);
     void addTrailingWidget(QWidget *widget);
     // While a dialog or an action is pending the back arrow ignores presses.
@@ -88,6 +90,7 @@ private slots:
 private:
     QWidget *createDivider();
     bool createNickelHeader(const QString &title);
+    void relayoutNickelHeader();
     void createOwnHeader(const QString &title);
 
     NickelTextHeaderApi api;
@@ -95,6 +98,7 @@ private:
     QWidget *nickelHeader; // Nickel's TextHeader, or NULL
     BackArrowButton *ownBack;
     QLabel *ownTitle;
+    QString shownTitle;
 };
 
 #endif

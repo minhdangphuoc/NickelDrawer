@@ -125,6 +125,7 @@ void ScreenCanvas::applyPage(int index, bool isFullRefresh)
     ScreenPage next = layout.page(index);
     if (isFullRefresh) {
         page = next;
+        logTargets();
         scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy), QRegion());
         return;
     }
@@ -132,6 +133,7 @@ void ScreenCanvas::applyPage(int index, bool isFullRefresh)
     QRegion region = changedRegion(next, &isSameStructure);
     page = next;
     if (!isSameStructure) {
+        logTargets();
         scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy), QRegion());
     } else if (!region.isEmpty()) {
         scheduleRefresh(DrawerLogic::refreshForStatusChange(&refreshPolicy), region);
@@ -176,6 +178,21 @@ void ScreenCanvas::flashNow()
 }
 
 // ---- Input ----
+
+// Once per new page layout (not on live value updates): what a tap can hit.
+void ScreenCanvas::logTargets() const
+{
+    DebugLog::write("screen: \"%s\" page %d/%d, %d tap target(s) on canvas %dx%d%s", qPrintable(model.screen),
+                    pageIndex + 1, layout.pageCount(), page.targets.size(), width(), height(),
+                    isInputBlocked ? ", input blocked" : "");
+    for (int i = 0; i < page.targets.size(); i++) {
+        const TapTarget &target = page.targets[i];
+        const ScreenComponent *tapped = component(target.component);
+        DebugLog::write("screen: target %d: %s %d (%s \"%s\") at %d,%d %dx%d", i, targetName(target.kind),
+                        target.component, tapped ? qPrintable(tapped->type) : "-", qPrintable(target.value),
+                        target.rect.x(), target.rect.y(), target.rect.width(), target.rect.height());
+    }
+}
 
 bool ScreenCanvas::eventFilter(QObject *watched, QEvent *event)
 {

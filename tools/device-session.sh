@@ -99,7 +99,7 @@ commandFlags() {
     local flag wanted keep
     for flag in "$FLAG_DIR"/*; do
         [ -f "$flag" ] || continue
-        case "$(basename "$flag")" in uninstall* | debug.log) continue ;; esac
+        case "$(basename "$flag")" in uninstall* | debug.log | debug.log.1) continue ;; esac
         keep=0
         for wanted in "$@"; do
             [ "$wanted" = "$(basename "$flag")" ] && keep=1
@@ -118,6 +118,12 @@ commandLog() {
     [ -f "$log" ] || fail "no debug.log in $FLAG_DIR (was the debug flag set and the Kobo rebooted?)"
     local target=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
     mkdir -p "$target"
+    # The mod rotates a full log to debug.log.1; keep it ahead of the current one.
+    if [ -f "$log.1" ]; then
+        cp "$log.1" "$target/debug.log.1"
+        rm "$log.1"
+        cat "$target/debug.log.1"
+    fi
     cp "$log" "$target/debug.log"
     rm "$log"
     cat "$target/debug.log"

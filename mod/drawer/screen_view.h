@@ -35,7 +35,9 @@ private:
 class ScreenView : public QWidget {
     Q_OBJECT
 public:
-    explicit ScreenView(QWidget *drawerView);
+    // title: the app's name, shown until the screen model arrives; the header
+    // is built with it (an empty TextHeader leaves no room for a later title).
+    ScreenView(const QString &title, QWidget *drawerView);
 
     // A different screen starts at page 1; the same screen keeps its page.
     void showScreen(const ScreenModel &model);
@@ -56,15 +58,17 @@ signals:
     void componentTapped(int component, const QString &value);
 
 protected:
+    bool event(QEvent *event);
     bool eventFilter(QObject *watched, QEvent *event);
     void resizeEvent(QResizeEvent *event);
+    void showEvent(QShowEvent *event);
 
 private slots:
     void onBackTapped();
     void onHeaderActionTapped();
 
 private:
-    PageHeader *createHeader();
+    PageHeader *createHeader(const QString &title);
     void showHeader();
     void placeBelowStatusBar();
 

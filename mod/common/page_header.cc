@@ -4,6 +4,7 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QLayout>
 #include <QPainter>
 #include <QVBoxLayout>
 
@@ -120,7 +121,8 @@ void BackArrowButton::paintEvent(QPaintEvent *)
 // ---- Header ----
 
 PageHeader::PageHeader(const QString &title, const NickelTextHeaderApi &nickelApi, QWidget *parent)
-    : QWidget(parent), api(nickelApi), rowLayout(NULL), nickelHeader(NULL), ownBack(NULL), ownTitle(NULL)
+    : QWidget(parent), api(nickelApi), rowLayout(NULL), nickelHeader(NULL), ownBack(NULL), ownTitle(NULL),
+      shownTitle(title)
 {
     setObjectName(QStringLiteral("drawerHeader"));
     setFixedHeight(ROW_HEIGHT + DIVIDER_HEIGHT);
@@ -216,13 +218,36 @@ void PageHeader::createOwnHeader(const QString &title)
                     BackArrowIcon::pixmap(false).isNull() ? "drawn" : "Nickel's image", qPrintable(title));
 }
 
+// TextHeader's title is an N3ButtonLabel, a FontSizeAdjustingLabel: it fits
+// the text into the width the row layout last gave it. A header built with an
+// empty title was laid out with no room for one, so a later title is drawn
+// into nothing unless the row is laid out again now.
 void PageHeader::setTitle(const QString &title)
 {
-    if (nickelHeader) {
-        api.setText(nickelHeader, title);
-    } else {
-        ownTitle->setText(title);
+    if (title == shownTitle) {
+        return; // live screens set the same title every few seconds
     }
+    shownTitle = title;
+    if (!nickelHeader) {
+        ownTitle->setText(title);
+        return;
+    }
+    api.setText(nickelHeader, title);
+    relayoutNickelHeader();
+    QWidget *label = nickelHeader->findChild<QWidget *>(QStringLiteral("label"));
+    DebugLog::write("header: title \"%s\" set, TextHeader %dx%d, label %dx%d", qPrintable(title), nickelHeader->width(),
+                    nickelHeader->height(), label ? label->width() : -1, label ? label->height() : -1);
+}
+
+void PageHeader::relayoutNickelHeader()
+{
+    if (QLayout *inner = nickelHeader->layout()) {
+        inner->invalidate();
+        inner->activate();
+    }
+    nickelHeader->updateGeometry();
+    rowLayout->invalidate();
+    rowLayout->activate();
 }
 
 void PageHeader::addTrailingWidget(QWidget *widget)

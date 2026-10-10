@@ -4,6 +4,8 @@
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMouseEvent>
+#include <QTouchEvent>
 
 #include "debug_log.h"
 
@@ -52,16 +54,19 @@ void HeaderActionButton::setText(const QString &text)
 
 // ---- Screen view ----
 
-ScreenView::ScreenView(QWidget *drawerView)
+ScreenView::ScreenView(const QString &title, QWidget *drawerView)
     : QWidget(drawerView), host(drawerView), canvas(NULL), header(NULL), statusLabel(NULL), actionButton(NULL),
       isInputBlocked(false)
 {
     setObjectName(QStringLiteral("nickelDrawerScreen"));
     setStyleSheet(NickelFonts::styleSheet(HEADER_SIDE_STYLE));
+    // Only to log touches that miss the canvas (event()); they are not accepted here.
+    setAttribute(Qt::WA_AcceptTouchEvents, true);
     // The canvas first, the header after it: a later sibling lies on top.
     canvas = new ScreenCanvas(host, this);
     connect(canvas, SIGNAL(componentTapped(int, QString)), this, SIGNAL(componentTapped(int, QString)));
-    header = createHeader();
+    header = createHeader(title);
+    canvas->logTapTarget("constructed");
     placeBelowStatusBar();
     host->installEventFilter(this);
     raise();
@@ -70,9 +75,9 @@ ScreenView::ScreenView(QWidget *drawerView)
 
 // The drawer's header (page_header.h) with the status text and the header
 // action at the right of the same row.
-PageHeader *ScreenView::createHeader()
+PageHeader *ScreenView::createHeader(const QString &title)
 {
-    PageHeader *pageHeader = new PageHeader(QString(), NickelBridge::textHeaderApi(), this);
+    PageHeader *pageHeader = new PageHeader(title, NickelBridge::textHeaderApi(), this);
     connect(pageHeader, SIGNAL(backTapped()), this, SLOT(onBackTapped()));
     statusLabel = new QLabel(pageHeader);
     statusLabel->setObjectName(QStringLiteral("screenHeaderStatus"));
@@ -105,6 +110,46 @@ void ScreenView::resizeEvent(QResizeEvent *event)
     header->setGeometry(GUTTER, 0, CONTENT_WIDTH, header->height());
     canvas->setGeometry(rect());
     header->raise();
+}
+
+// Geometry is final only once shown (the pending resize lays out the canvas).
+void ScreenView::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    canvas->logTapTarget("shown");
+    actionButton->logTapTarget("shown");
+}
+
+// Where a touch or mouse press landed (view coordinates); false for other events.
+static bool inputPosition(QEvent *event, QPoint *position)
+{
+    if (event->type() == QEvent::TouchBegin) {
+        const QList<QTouchEvent::TouchPoint> &points = static_cast<QTouchEvent *>(event)->touchPoints();
+        *position = points.isEmpty() ? QPoint() : points.first().pos().toPoint();
+        return true;
+    }
+    if (event->type() == QEvent::MouseButtonPress) {
+        *position = static_cast<QMouseEvent *>(event)->pos();
+        return true;
+    }
+    return false;
+}
+
+// The canvas covers this view and takes every touch, so a press arriving here
+// means a body tap missed the canvas: the log names what lies under it.
+bool ScreenView::event(QEvent *event)
+{
+    QPoint position;
+    if (inputPosition(event, &position)) {
+        QWidget *under = childAt(position);
+        DebugLog::write("screen view: %s at %d,%d reached the view, not the canvas (canvas %dx%d visible %d; "
+                        "under it: %s \"%s\")",
+                        event->type() == QEvent::TouchBegin ? "touch begin" : "mouse press", position.x(),
+                        position.y(), canvas->width(), canvas->height(), canvas->isVisible() ? 1 : 0,
+                        under ? under->metaObject()->className() : "nothing",
+                        under ? qPrintable(under->objectName()) : "");
+    }
+    return QWidget::event(event);
 }
 
 bool ScreenView::eventFilter(QObject *watched, QEvent *event)

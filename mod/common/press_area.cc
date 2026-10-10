@@ -31,7 +31,12 @@ static const char *const SOURCE_GESTURE = "nickel tap gesture";
 static const char *const SOURCE_TOUCH = "touch";
 static const char *const SOURCE_MOUSE = "mouse";
 
+static const char *const ORIGIN_HOT_SPOT = "hot spot";
+static const char *const ORIGIN_TAP_POSITION = "TapGesture::position";
+static const char *const ORIGIN_CENTRE = "centre, refined by the touch begin";
+
 static PressArea::TapGestureTypeProvider tapGestureTypeProvider = NULL;
+static PressArea::TapPositionProvider tapPositionProvider = NULL;
 static bool hasLoggedGestureChoice = false;
 
 // The pressed look of an inverted area: a picture laid over it, so child
@@ -115,9 +120,14 @@ void PressArea::setTapGestureTypeProvider(TapGestureTypeProvider provider)
     tapGestureTypeProvider = provider;
 }
 
+void PressArea::setTapPositionProvider(TapPositionProvider provider)
+{
+    tapPositionProvider = provider;
+}
+
 PressArea::PressArea(QWidget *parent)
     : QWidget(parent), longPressTimer(new QTimer(this)), overlay(NULL), pressHighlight(HIGHLIGHT_INVERT),
-      tapGestureType(0), isPressed(false), isPressedShown(false), hasFiredLongPress(false), acceptsPresses(true)
+      tapGestureType(0), isPressed(false), isPressPositionGuessed(false), isPressedShown(false), hasFiredLongPress(false), acceptsPresses(true)
 {
     // Qt 5.2's QElapsedTimer is not invalid when default-constructed; without this
     // it holds garbage and every first tap is dropped as "too soon" (seen on device).
@@ -202,20 +212,19 @@ bool PressArea::handleGestureEvent(QGestureEvent *event)
     if (!gesture) {
         return QWidget::event(event);
     }
-    // TapGestureRecognizer sets the hot spot (screen coordinates).
-    QPoint position = gesture->hasHotSpot() ? mapFromGlobal(gesture->hotSpot().toPoint()) : rect().center();
-    if (!gesture->hasHotSpot()) {
-        // Areas with many targets (app screens) then hit the centre: the device log must show it.
-        DebugLog::write("press area %p: tap gesture without hot spot, using the centre", static_cast<void *>(this));
-    }
+    const char *origin = ORIGIN_CENTRE;
+    QPoint position = gesturePosition(gesture, &origin);
+    bool isGuessed = origin == ORIGIN_CENTRE;
     switch (gesture->state()) {
     case Qt::GestureStarted:
         logEvent(SOURCE_GESTURE, "started", position);
+        DebugLog::write("press area %p: tap point from %s", static_cast<void *>(this), origin);
         beginPress(SOURCE_GESTURE, position);
+        isPressPositionGuessed = isPressed && isGuessed;
         break;
     case Qt::GestureFinished:
         logEvent(SOURCE_GESTURE, "finished", position);
-        endPress(SOURCE_GESTURE, !gesture->hasHotSpot() || rect().contains(position));
+        endPress(SOURCE_GESTURE, isGuessed || rect().contains(position));
         break;
     case Qt::GestureCanceled:
         logEvent(SOURCE_GESTURE, "canceled", position);
@@ -229,6 +238,49 @@ bool PressArea::handleGestureEvent(QGestureEvent *event)
     return true;
 }
 
+// Nickel leaves the hot spot unset; TapGestureRecognizer keeps the touch
+// point (screen coordinates) in TapGesture::position(). Without it the centre
+// is used and the touch begin right after the gesture corrects it.
+QPoint PressArea::gesturePosition(QGesture *gesture, const char **origin) const
+{
+    if (gesture->hasHotSpot()) {
+        *origin = ORIGIN_HOT_SPOT;
+        return mapFromGlobal(gesture->hotSpot().toPoint());
+    }
+    QPoint screenPosition;
+    if (tapPositionProvider && tapPositionProvider(gesture, &screenPosition)) {
+        QPoint position = mapFromGlobal(screenPosition);
+        if (rect().contains(position)) {
+            *origin = ORIGIN_TAP_POSITION;
+            return position;
+        }
+        DebugLog::write("press area %p: TapGesture::position %d,%d is outside the area, not used",
+                        static_cast<const void *>(this), screenPosition.x(), screenPosition.y());
+    }
+    *origin = ORIGIN_CENTRE;
+    return rect().center();
+}
+
+// A press begun at the guessed centre moves to the real finger position; the
+// pressed state is redrawn only when that changes what is highlighted.
+void PressArea::refineGuessedPress(const QPoint &position)
+{
+    isPressPositionGuessed = false;
+    if (!rect().contains(position)) {
+        return;
+    }
+    lastPressPosition = position;
+    PressFeedback feedback = feedbackAt(position);
+    feedback.rect &= rect();
+    if (feedback.rect == pressedFeedback.rect) {
+        return;
+    }
+    DebugLog::write("press area %p: press moved from the centre to the touch point %d,%d", static_cast<void *>(this),
+                    position.x(), position.y());
+    clearPressedState("press point refined");
+    showPressedState(SOURCE_TOUCH);
+}
+
 bool PressArea::handleTouchEvent(QEvent *event)
 {
     QTouchEvent *touch = static_cast<QTouchEvent *>(event);
@@ -237,6 +289,9 @@ bool PressArea::handleTouchEvent(QEvent *event)
     switch (event->type()) {
     case QEvent::TouchBegin:
         logEvent(SOURCE_TOUCH, "begin", position);
+        if (isPressed && isPressPositionGuessed && hasPoint) {
+            refineGuessedPress(position);
+        }
         beginPress(SOURCE_TOUCH, position);
         break;
     case QEvent::TouchUpdate:
@@ -283,7 +338,12 @@ void PressArea::hideEvent(QHideEvent *event)
 
 void PressArea::beginPress(const char *source, const QPoint &position)
 {
-    if (!acceptsPresses || isPressed) {
+    if (isPressed) {
+        return; // the same finger on a second path (gesture, touch, mouse)
+    }
+    if (!acceptsPresses) {
+        DebugLog::write("press area %p (%s \"%s\"): %s press dropped (input blocked)", static_cast<void *>(this),
+                        metaObject()->className(), qPrintable(objectName()), source);
         return;
     }
     if (isWithinDebounce()) {
@@ -320,6 +380,7 @@ void PressArea::endPress(const char *source, bool isInside)
     }
     bool isTap = isInside && !hasFiredLongPress;
     isPressed = false;
+    isPressPositionGuessed = false;
     longPressTimer->stop();
     if (!isTap) {
         DebugLog::write("press area %p: released via %s, %s", static_cast<void *>(this), source,
@@ -338,6 +399,7 @@ void PressArea::cancelPress(const char *source)
         DebugLog::write("press area %p: press canceled (%s)", static_cast<void *>(this), source);
     }
     isPressed = false;
+    isPressPositionGuessed = false;
     longPressTimer->stop();
     clearPressedState(source);
 }
@@ -434,6 +496,20 @@ void PressArea::logEvent(const char *source, const char *phase, const QPoint &po
     DebugLog::write("press area %p (%s \"%s\"): %s %s at %d,%d%s", static_cast<const void *>(this),
                     metaObject()->className(), qPrintable(objectName()), source, phase, position.x(), position.y(),
                     acceptsPresses ? "" : " (input blocked)");
+}
+
+void PressArea::logTapTarget(const char *when) const
+{
+    QRect local = geometry();
+    QPoint global = mapToGlobal(QPoint(0, 0));
+    DebugLog::write("tap target %s: %p %s \"%s\" local %d,%d %dx%d global %d,%d visible %d, gesture 0x%x %s, "
+                    "touch %s, mouse-transparent %d, %s",
+                    when, static_cast<const void *>(this), metaObject()->className(), qPrintable(objectName()),
+                    local.x(), local.y(), local.width(), local.height(), global.x(), global.y(), isVisible() ? 1 : 0,
+                    tapGestureType, tapGestureType ? "grabbed" : "not grabbed",
+                    testAttribute(Qt::WA_AcceptTouchEvents) ? "accepted" : "not accepted",
+                    testAttribute(Qt::WA_TransparentForMouseEvents) ? 1 : 0,
+                    acceptsPresses ? "accepting presses" : "input blocked");
 }
 
 bool PressArea::isWithinDebounce() const
