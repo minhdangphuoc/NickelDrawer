@@ -199,7 +199,7 @@ Nickel `N3Dialog` when available (serif 42 title, 36 text, two 120 px buttons, c
 Don't: three buttons; "OK / Cancel" for a destructive choice; text over 200 chars.
 
 ### 4.10 Buttons
-Primary: 120 × 1120, black fill, white 40 bold label, in the footer, **one per screen** (V). Secondary: 3 px black outline, 40 bold black label, in the body or above the primary. Destructive: a secondary with a `confirm`; the label carries "…". Disabled: outline and label `ink.dim`, no target. Pending: label "Working…". A label that wraps makes the button 168. Footer bar (viewer): secondary 360 px at the left + primary filling the rest, 24 px apart.
+Primary: 120 × 1120, black fill, white 40 bold label, in the footer, **one per screen** (V). Secondary: 3 px black outline, 40 bold black label, in the body or above the primary. Destructive: a secondary with a `confirm`; the label carries "…". Disabled: outline and label `ink.dim`, no target. Pending: label "Working…". **Labels are centred horizontally and vertically and never overflow the box**: a long label wraps to at most two lines, each line centred, and the button grows to 168; past two lines it is elided at the end. Fixed-size controls (state samples, tiles, cells) keep one centred line and elide. Vietnamese diacritics must never be clipped (line height ≥ 1.4 × size). Footer bar (viewer): secondary 360 px at the left + primary filling the rest, 24 px apart.
 Don't: two primaries (V); a button to flip a setting (use a toggle); icons in buttons; ALL CAPS.
 
 ### 4.11 Toggle (switch)
