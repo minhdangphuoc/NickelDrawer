@@ -107,6 +107,9 @@ func (signal *screenSignal) add(line signalLine) {
 }
 
 func applyScreenSignal(result RunResult, signal screenSignal, screen ScreenReply) RunResult {
+	// Reading the screen hands over the app's one-shot state requests (a finished job's
+	// rescan); they would be lost if this reply did not carry them on.
+	result.Requests = appendNewRequests(result.Requests, screen.Requests)
 	if toast, found := screen.Toasts[signal.Toast]; found {
 		result.Toast = toast
 		result.Text = ""
@@ -153,4 +156,21 @@ func offersListMenu(screen *uikit.Screen, bind, actionID string) bool {
 		}
 	}
 	return false
+}
+
+// appendNewRequests adds the requests from more that are not already in requests.
+func appendNewRequests(requests, more []Request) []Request {
+	for _, candidate := range more {
+		isKnown := false
+		for _, existing := range requests {
+			if existing == candidate {
+				isKnown = true
+				break
+			}
+		}
+		if !isKnown {
+			requests = append(requests, candidate)
+		}
+	}
+	return requests
 }

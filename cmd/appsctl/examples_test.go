@@ -21,6 +21,10 @@ type todoDrawer struct {
 	config  drawer.Config
 }
 
+// These tests check app behaviour, not the 1 s state budget (internal/drawer tests that). A
+// loaded CI runner can take longer, which would only make the reply stale and the test flaky.
+const exampleStateBudget = 10 * time.Second
+
 func newTodoDrawer(t *testing.T) *todoDrawer {
 	t.Helper()
 	root := newDrawerRoot(t)
@@ -41,7 +45,8 @@ func newTodoDrawer(t *testing.T) *todoDrawer {
 		t.Fatal(err)
 	}
 	session := drawer.Config{
-		AppsDir: root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
+		StatusTimeout: exampleStateBudget,
+		AppsDir:       root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
 		ScriptEnv: []string{"TODO_DATA_DIR=" + dataDir, "TODO_COMMON=" + common, "TODO_APPSCTL=" + fakeAppsctl},
 	}
 	return &todoDrawer{t: t, dataDir: dataDir, config: session}
@@ -199,7 +204,8 @@ func TestImageviewExampleBuildsAlbumsAndAsksForOneRescan(t *testing.T) {
 	}
 	common, _ := filepath.Abs(filepath.Join("..", "..", "host", "lib", "common.sh"))
 	config := drawer.Config{
-		AppsDir: root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
+		StatusTimeout: exampleStateBudget,
+		AppsDir:       root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
 		ScriptEnv: []string{"IMAGEVIEW_IMAGES_DIR=" + images, "IMAGEVIEW_STATE_DIR=" + work, "IMAGEVIEW_MKCBZ=" + fakePacker, "IMAGEVIEW_COMMON=" + common},
 	}
 
@@ -207,19 +213,22 @@ func TestImageviewExampleBuildsAlbumsAndAsksForOneRescan(t *testing.T) {
 	if err != nil || result.Toast != "Making albums..." {
 		t.Fatalf("start: %+v %v", result, err)
 	}
+	// A fast job may finish before RunEvent reads the screen for its toast; the request then
+	// arrives in the event reply instead of a later screen read. Either is fine, once.
+	requests := result.Requests
 	deadline := time.Now().Add(10 * time.Second)
-	var reply drawer.ScreenReply
-	for time.Now().Before(deadline) {
-		if reply, err = config.Screen("imageview", "", nil); err != nil {
+	for len(requests) == 0 && time.Now().Before(deadline) {
+		reply, err := config.Screen("imageview", "", nil)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if len(reply.Requests) > 0 {
-			break
+		requests = reply.Requests
+		if len(requests) == 0 {
+			time.Sleep(100 * time.Millisecond)
 		}
-		time.Sleep(100 * time.Millisecond)
 	}
-	if len(reply.Requests) != 1 || reply.Requests[0].Name != "rescan" || reply.Requests[0].Mode != "quick" {
-		t.Fatalf("the finished job must ask for a quick rescan: %+v", reply.Requests)
+	if len(requests) != 1 || requests[0].Name != "rescan" || requests[0].Mode != "quick" {
+		t.Fatalf("the finished job must ask for a quick rescan: %+v", requests)
 	}
 	again, _ := config.Screen("imageview", "", nil)
 	if len(again.Requests) != 0 {
@@ -247,7 +256,8 @@ func TestUIKitIsHiddenAndItsScreensFollowTheStoredControlsAndPictures(t *testing
 		t.Fatal(err)
 	}
 	config := drawer.Config{
-		AppsDir: root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
+		StatusTimeout: exampleStateBudget,
+		AppsDir:       root.apps, HostDir: root.host, Locale: "en", Bundle: fallbackBundle(),
 		ScriptEnv: []string{
 			"UIKIT_DATA_DIR=" + filepath.Join(work, "data"), "UIKIT_KOBO_DIR=" + filepath.Join(work, "kobo"),
 			"UIKIT_PICTURES_DIR=" + pictures, "UIKIT_COMMON=" + common, "UIKIT_APPSCTL=" + fakeAppsctl,
