@@ -15,13 +15,12 @@
 #include "nickel_bridge.h"
 
 static const char *const ROW_OBJECT_NAME = "nickelDrawerButton";
-// Our own icon (cmd/iconsgen, 50x50 like Nickel's More icons), installed by the
-// koboapps installer. Nickel's flask is only the fallback: with it the row
-// looked like a copy of "Beta Features".
+// Nickel has no apps/grid icon (re/notes/system-icons.md): the Tabler "apps"
+// icon (cmd/iconsgen, 50x50 like Nickel's More icons) installed by koboapps.
 static const MoreRow::Spec ROW_SPEC = {
     ROW_OBJECT_NAME,
+    NULL,
     "/mnt/onboard/.adds/koboapps/icons/apps.png",
-    ":/images/reading/beta_features.png",
     "betaFeaturesButton", // our row goes right after it
 };
 static const int DOT_RIGHT_MARGIN = 72;

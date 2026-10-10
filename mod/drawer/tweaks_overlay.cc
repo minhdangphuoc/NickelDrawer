@@ -7,16 +7,14 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
-#include "plain_dialog.h"
+#include "debug_log.h"
 #include "nickel_fonts.h"
+#include "plain_dialog.h"
+#include "system_icon.h"
 
 static const int BOX_WIDTH = 1140;
 static const int BORDER_WIDTH = 1;
 static const int CLOSE_SIDE = 110; // N3Dialog.qss #closeContainer on Storm
-static const int CROSS_INSET = 36;
-static const int CROSS_PEN_WIDTH = 4;
-static const char *const CLOSE_IMAGE = ":/images/search/global_close.png";
-static const char *const CLOSE_PRESSED_IMAGE = ":/images/search/global_close_hit.png";
 
 static const char *const OVERLAY_STYLE = "#tweaksOverlayBox { background: white; border: 1px solid black; }"
                                          "#tweaksOverlayTitle { font-family: @BODY_FAMILY@; font-size: 30px; "
@@ -26,28 +24,22 @@ CloseCrossButton::CloseCrossButton(QWidget *parent) : PressArea(parent)
 {
     setObjectName(QStringLiteral("tweaksClose"));
     setFixedSize(CLOSE_SIDE, CLOSE_SIDE);
-    setPressHighlight(HIGHLIGHT_SELF_PAINTED);
+    const SystemIcon::Icon &cross = SystemIcon::icon(SystemIcon::CLOSE);
+    setPressHighlight(cross.pressed.isNull() ? HIGHLIGHT_CIRCLE : HIGHLIGHT_SELF_PAINTED);
+}
+
+bool CloseCrossButton::hasIcon()
+{
+    return !SystemIcon::icon(SystemIcon::CLOSE).isNull();
 }
 
 void CloseCrossButton::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.fillRect(rect(), Qt::white);
-    QPixmap image(QString::fromLatin1(isPressedStateShown() ? CLOSE_PRESSED_IMAGE : CLOSE_IMAGE));
-    if (!image.isNull()) {
-        painter.drawPixmap((width() - image.width()) / 2, (height() - image.height()) / 2, image);
-        return;
-    }
-    if (isPressedStateShown()) {
-        painter.setBrush(Qt::black);
-        painter.setPen(Qt::NoPen);
-        painter.drawEllipse(rect().adjusted(CROSS_INSET / 2, CROSS_INSET / 2, -CROSS_INSET / 2, -CROSS_INSET / 2));
-    }
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(isPressedStateShown() ? Qt::white : Qt::black, CROSS_PEN_WIDTH));
-    QRect cross = rect().adjusted(CROSS_INSET, CROSS_INSET, -CROSS_INSET, -CROSS_INSET);
-    painter.drawLine(cross.topLeft(), cross.bottomRight());
-    painter.drawLine(cross.topRight(), cross.bottomLeft());
+    const SystemIcon::Icon &cross = SystemIcon::icon(SystemIcon::CLOSE);
+    bool isPressedImage = isPressedStateShown() && !cross.pressed.isNull();
+    SystemIcon::drawCentred(&painter, rect(), isPressedImage ? cross.pressed : cross.normal);
 }
 
 TweaksOverlay::TweaksOverlay(const QString &title, QWidget *content)
@@ -92,6 +84,11 @@ QWidget *TweaksOverlay::createTitleRow(const QString &title, QWidget *box)
     titleLabel->setAlignment(Qt::AlignCenter);
     titleLabel->setTextFormat(Qt::PlainText);
     layout->addWidget(titleLabel, 1);
+    if (!CloseCrossButton::hasIcon()) {
+        DebugLog::write("tweaks overlay: close icon not installed, no close button (tap outside closes)");
+        layout->addSpacing(CLOSE_SIDE);
+        return row;
+    }
     CloseCrossButton *close = new CloseCrossButton(row);
     connect(close, SIGNAL(tapped()), this, SLOT(reject()));
     layout->addWidget(close);

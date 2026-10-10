@@ -23,20 +23,30 @@ static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout, const 
     return anchorIndex + 1;
 }
 
+static const int ROW_ICON_SIDE = 50; // Nickel's More icons on the Libra 2 class (beta_features.png)
+
 // QPixmap reads the whole file and closes it before returning: nothing stays
 // open on /mnt/onboard (USB mass storage must be able to take it).
 static QPixmap loadIcon(const MoreRow::Spec &spec)
 {
-    QPixmap icon(QString::fromLatin1(spec.iconPath));
-    if (!icon.isNull()) {
-        DebugLog::write("more row: icon %s loaded (%dx%d)", spec.iconPath, icon.width(), icon.height());
-        return icon;
+    if (spec.nickelIcon) {
+        QPixmap nickelIcon(QString::fromLatin1(spec.nickelIcon));
+        if (!nickelIcon.isNull()) {
+            DebugLog::write("more row: Nickel icon %s (%dx%d)", spec.nickelIcon, nickelIcon.width(), nickelIcon.height());
+            return nickelIcon;
+        }
+        nh_log("more row: Nickel icon %s missing, trying %s", spec.nickelIcon, spec.ownIcon);
     }
-    nh_log("more row: icon %s missing or invalid, using Nickel's %s", spec.iconPath, spec.fallbackIcon);
-    icon = QPixmap(QString::fromLatin1(spec.fallbackIcon));
-    DebugLog::write("more row: fallback icon %s %s (%dx%d)", spec.fallbackIcon, icon.isNull() ? "missing" : "loaded",
-                    icon.width(), icon.height());
-    return icon;
+    QPixmap ownIcon(QString::fromLatin1(spec.ownIcon));
+    if (ownIcon.isNull()) {
+        nh_log("more row: icon %s missing or invalid, %s row without icon", spec.ownIcon, spec.objectName);
+        return ownIcon;
+    }
+    DebugLog::write("more row: icon %s loaded (%dx%d)", spec.ownIcon, ownIcon.width(), ownIcon.height());
+    if (ownIcon.width() > ROW_ICON_SIDE || ownIcon.height() > ROW_ICON_SIDE) {
+        return ownIcon.scaled(ROW_ICON_SIDE, ROW_ICON_SIDE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    return ownIcon;
 }
 
 // The exact signal the rows connect to, checked on the live object.

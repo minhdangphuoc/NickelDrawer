@@ -6,10 +6,8 @@
 
 #include "press_area.h"
 
-class QColor;
 class QHBoxLayout;
 class QLabel;
-class QPainter;
 
 // The header of a pushed page, as Nickel's More sub-pages draw it (Wishlist,
 // N3Dialog): the back arrow, the title in Nickel's sans font and a thin
@@ -19,7 +17,8 @@ class QPainter;
 // Preferred: Nickel's own TextHeader with our title, so its look and its
 // pressed state (black circle, white arrow) are Nickel's. Each mod passes the
 // entry points from its symbol table; when one is missing, or Nickel's arrow
-// image is not in the resources, the header draws its own copy instead.
+// image is not in the resources, the header builds its own copy with the
+// arrow from system_icon.h (a Tabler PNG when Nickel's is missing).
 // Extra widgets (the drawer's list/grid toggles) sit at the right, in the same
 // row; the divider is a separate full-width line under the whole row.
 //
@@ -44,18 +43,8 @@ struct NickelTextHeaderApi {
     }
 };
 
-// Nickel's back arrow (":/images/reading/back_arrow.png", pressed:
-// "back_arrow_hit.png"), centred in area; drawn with QPainter when the images
-// are not in Nickel's resources.
-namespace BackArrowIcon {
-QPixmap pixmap(bool isPressed); // null when the resource is missing
-void paint(QPainter *painter, const QRect &area, bool isPressed);
-// The drawn arrow alone (three round-capped lines), in ink, centred in box;
-// also the viewer's full-view back button (mod/drawer/screen_canvas.cc).
-void paintStroke(QPainter *painter, const QRect &box, const QColor &ink, int stroke);
-} // namespace BackArrowIcon
-
-// Our back arrow, for the fallback header: a 120 px tap target.
+// Our back arrow, for the fallback header: a 120 px tap target with the
+// back icon of system_icon.h at the left (none installed: an empty target).
 class BackArrowButton : public PressArea {
 public:
     explicit BackArrowButton(QWidget *parent);

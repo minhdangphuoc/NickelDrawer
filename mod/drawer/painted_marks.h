@@ -6,8 +6,9 @@
 
 #include "press_area.h"
 
-// Small marks drawn with QPainter instead of font glyphs, so they look the
-// same whatever fonts the device has. Black on white only (e-ink).
+// The drawer's small marks and icon buttons. Icons are never drawn here: they
+// come from system_icon.h (Nickel's own images, else installed Tabler PNGs).
+// Black on white only (e-ink).
 
 // The black update dot (docs/spec/ui-kit.md §5.1, §5.2).
 class UpdateDot : public QWidget {
@@ -18,29 +19,30 @@ protected:
     void paintEvent(QPaintEvent *event);
 };
 
-// Header view toggle: three bars (list) or 2 x 2 squares (grid); the active
-// one is underlined (state is never shown by colour alone).
+// Header view toggle: the list or grid icon (Tabler; Nickel has none); the
+// active one is underlined (state is never shown by colour alone). Without the
+// icon installed hasIcon() is false and the owner hides the toggle.
 class ViewToggleIcon : public PressArea {
 public:
     enum Shape { SHAPE_LIST, SHAPE_GRID };
 
     ViewToggleIcon(Shape shape, QWidget *parent);
     void setActive(bool isActive);
+    bool hasIcon() const;
 
 protected:
     void paintEvent(QPaintEvent *event);
 
 private:
-    void paintList(QPainter *painter, const QRect &area);
-    void paintGrid(QPainter *painter, const QRect &area);
-
     Shape shape;
     bool isActive;
 };
 
 // A 120 px icon button at the right of an app screen header (ui.json header
-// "actions"): tray-down (import), gear (settings), circular arrow (refresh) or
-// plus (add). Pressed: Nickel's black circle with the icon in white.
+// "actions"): Nickel's download (import), gear (settings), reload (refresh) or
+// plus (add) icon, pressed: Nickel's "_hit" image (white on a black disc).
+// With a Tabler icon the press inverts it in a circle; with no icon at all the
+// button shows the action's label instead.
 class HeaderIconButton : public PressArea {
 public:
     enum Icon { ICON_IMPORT, ICON_SETTINGS, ICON_REFRESH, ICON_ADD };
@@ -48,27 +50,28 @@ public:
     // False for a name the kit does not define.
     static bool iconNamed(const QString &name, Icon *icon);
 
-    HeaderIconButton(Icon icon, QWidget *parent);
+    HeaderIconButton(Icon icon, const QString &label, QWidget *parent);
 
 protected:
     void paintEvent(QPaintEvent *event);
 
 private:
     Icon icon;
+    QString label; // shown only when no icon is available
 };
 
-// An app's outline icon (from its icon file) or, without one, its initial in
-// an outlined square. Reads the icon file once when built.
+// An app's outline icon (from its icon file) or, without one, the generic
+// "apps" icon (system_icon.h); nothing when neither is readable. Reads the
+// icon file once when built.
 class AppMark : public QWidget {
 public:
-    AppMark(const QString &iconPath, const QString &name, int side, QWidget *parent);
+    AppMark(const QString &iconPath, int side, QWidget *parent);
 
 protected:
     void paintEvent(QPaintEvent *event);
 
 private:
     QPixmap icon;
-    QString initial;
 };
 
 #endif

@@ -35,11 +35,12 @@ Rules: no shadows, no gradients, no animation. Title font about 1.25 x body. Tex
 
 ## 3. Components
 
-Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Extra components of `ui-json.md`: `gallery` and `viewer` (§3.19, §3.20), `section` (small-caps group label), `row` (128 px tappable row with detail and chevron), `qr` (QR of one value), `empty` (§3.17); dialogs and toasts are declared per screen (`dialogs`, `toasts`). Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
+Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Extra components of `ui-json.md`: `gallery` and `viewer` (§3.19, §3.20), `section` (small-caps group label), `row` (128 px tappable row with detail and chevron; `action` runs an app action, `push` opens a screen, a row bound to an empty variable is hidden), `qr` (QR of one value), `empty` (§3.17); dialogs and toasts are declared per screen (`dialogs`, `toasts`). Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
 
 Common to all components:
 - **E-ink refresh:** a bound-value change repaints only that widget (partial). Push or pop does one full refresh. After 8 partial updates, the next change forces a full refresh. At most 2 updates per second per screen.
 - **Press feedback:** every tappable widget shows its pressed state on finger down, as Nickel does: rows, tiles and buttons invert; icon buttons (back, toggles, page arrows) show a black circle with the icon in white. It is pushed to the panel at once (Kobo's "repaint now" hint); the action runs on release, then the normal look returns. A long press keeps the pressed state until the menu is open; a drag out cancels it. Back to normal is one plain update of the pressed rect (Nickel's `defaultColors()`), so no ghost stays. The page header shows the press on the arrow only (`TextHeaderBase::setInvertImageOnly`), never on the title.
+- **Icons are never drawn by us.** On the device every icon is Nickel's own image from its Qt resources (back arrow, close, gear, download, reload, plus, the gallery check badge; list in `re/notes/system-icons.md`), drawn at Nickel's size with Nickel's `_hit` image as the pressed state. Where Nickel has none (list/grid toggles, picture placeholder, generic app icon, the Apps and Tweaks More-row fallbacks) or its image fails to load, the mod uses the Tabler Icons PNG (MIT) installed in `.adds/koboapps/icons/ui/<name>-<64|96>.png`; with neither, the control shows its text label or is hidden, and the log says which (`icon <name>: Nickel|Tabler|none WxH`). `ndpreview` cannot ship Kobo images, so its icons are approximations: on the device they are Nickel's.
 - **Accessibility:** every tappable row or button is at least 120 px high. State is never shown by colour alone (use text, underline or a check mark). Text follows Nickel's size setting. Dark mode inverts through the stylesheet.
 - **i18n:** all text is a string or `{en, vi}` map. Host strings come from `res/strings_<lang>.json`. Layout never depends on string length (see §8).
 
@@ -55,7 +56,7 @@ Purpose: title, back, one status text, one optional action.
 - Parts: back arrow (left), title, then at the right of the same row the status text (sans 32 px, dark grey, at most 340 px, elided) and the optional action (underlined, 120 px tap target, inverts while pressed). **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
 - Size: 121 px (row + divider); the body starts 24 px below it. `cmd/ndpreview` draws the same boxes ("←" stands for Nickel's arrow image).
 - Events: `action` (when `action.action` is set); back pops the screen (a pushed screen returns to the one under it, the start screen returns to the drawer). Back is ignored while an action is pending.
-- **Icon actions** (`actions`, 1 to 2, instead of the text `action`): `{ "icon": "import", "label": "Import", "action": "import" }`. Icons: `import` (arrow into a tray), `settings` (gear), `refresh`, `add`. Each is a 120 x 120 px tap target at the right end of the header row (the last one rightmost, the status text left of them); pressed, it shows Nickel's black circle with the icon in white. `label` is the accessible name (ndpreview's sidebar, the log), not drawn. Exactly one of `push` / `action` per icon.
+- **Icon actions** (`actions`, 1 to 2, instead of the text `action`): `{ "icon": "import", "label": "Import", "action": "import" }`. Icons (Nickel's own, see §3 "Icons"): `import` (download arrow in a circle), `settings` (gear), `refresh` (reload arrow), `add` (plus). Each is a 120 x 120 px tap target at the right end of the header row (the last one rightmost, the status text left of them); pressed, it shows Nickel's black circle with the icon in white. `label` is the accessible name (ndpreview's sidebar, the log); it is drawn only when no icon image is available. Exactly one of `push` / `action` per icon.
 - States: status empty (hidden), status long (elided at the end, one line).
 - Refresh: status change repaints the header text only.
 - Drawer header differs: see §5.1.
@@ -194,7 +195,7 @@ Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. 
 
 **New.** `{ "gallery": "$pictures", "on_tap": { "push": "viewer" }, "on_long_press": [ … ], "pending": "$pending", "empty": { … } }`. Contract: [wallpaper-gallery.md](wallpaper-gallery.md) §2.1, §3.2.
 
-- A grid of picture tiles, 4 columns x 3 rows by default (`columns`, `rows` 1 to 6). Side padding 56 px, gutter 24 px; with 4 columns a tile is 270 x 360 px (3:4, the screen's aspect), 1 px black border, the thumbnail fitted inside on white, no caption. When the rows do not fit the free height, fewer rows are drawn.
+- A grid of picture tiles, 4 columns x 3 rows by default (`columns`, `rows` 1 to 6). The grid spans the content width (same gutters as the header), gutter 24 px; with 4 columns a tile is 262 x 349 px (3:4, the screen's aspect, a leftover pixel split between the sides), 1 px black border, the thumbnail fitted inside on white, no caption. When the rows do not fit the free height, fewer rows are drawn.
 - The current picture (`badge: current`): 4 px border and a black 56 px circle with a white check at the top-right corner (12 px inset).
 - `pending` adds that many dashed placeholder tiles (2 px dashes, grey 140, no fill) after the items. A tile whose thumbnail is missing keeps the border and shows a small outline picture glyph in dim grey.
 - More than one page: pager `‹ 1 / 2 ›` at the bottom; page-turn keys flip grid pages. Components before the gallery repeat on every grid page.
@@ -242,7 +243,7 @@ Default is **list**. The choice is remembered (written on change, small file in 
 - 7 rows per page.
 
 **Grid view (optional)**
-- 3 columns of square outlined tiles. Each tile: mark (icon or initial) at the top, status line, name. 3 x 2 per page.
+- 3 columns of square outlined tiles. Each tile: the app's icon (or the generic apps icon) at the top, status line, name. 3 x 2 per page.
 - Same long-press menu and update dot (top-right corner of the tile).
 
 ### 5.3 Paging and hard keys

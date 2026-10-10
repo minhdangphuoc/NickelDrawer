@@ -223,7 +223,7 @@ void ScreenView::showHeaderIcons()
             DebugLog::write("screen view: unknown header icon \"%s\" skipped", qPrintable(names[i]));
             continue;
         }
-        HeaderIconButton *button = new HeaderIconButton(icon, header);
+        HeaderIconButton *button = new HeaderIconButton(icon, model.headerActions[i].label, header);
         button->setObjectName(QStringLiteral("screenHeaderIcon%1").arg(i));
         button->setToolTip(model.headerActions[i].label);
         button->setProperty("actionIndex", i);

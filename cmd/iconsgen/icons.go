@@ -43,6 +43,7 @@ var uiIcons = []uiIcon{
 	{"picture", "photo"},
 	{"picture-off", "photo-off"},
 	{"tweaks", "adjustments-horizontal"},
+	{"apps", "apps"},
 }
 
 var icons = buildIconTable()

@@ -109,6 +109,16 @@ PressArea *DrawerView::createArrow(const char *glyph, const char *slotOrSignal, 
     return button;
 }
 
+// We never draw icons: a toggle whose icon is not installed is hidden (the
+// drawer stays in the saved view).
+static void hideToggleWithoutIcon(ViewToggleIcon *toggle, const char *name)
+{
+    if (!toggle->hasIcon()) {
+        toggle->hide();
+        DebugLog::write("drawer view: %s toggle icon not installed, toggle hidden", name);
+    }
+}
+
 // Nickel's own TextHeader (back arrow, title, divider) when the firmware has
 // it, else page_header.h's copy; our list/grid toggles at the right.
 PageHeader *DrawerView::createHeader()
@@ -123,6 +133,8 @@ PageHeader *DrawerView::createHeader()
     pressables << listToggle << gridToggle;
     pageHeader->addTrailingWidget(listToggle);
     pageHeader->addTrailingWidget(gridToggle);
+    hideToggleWithoutIcon(listToggle, "list");
+    hideToggleWithoutIcon(gridToggle, "grid");
     DebugLog::write("drawer view: header created (%s back, title, list/grid toggles)",
                     pageHeader->usesNickelHeader() ? "Nickel's" : "own");
     return pageHeader;

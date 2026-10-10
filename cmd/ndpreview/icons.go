@@ -1,7 +1,8 @@
 package main
 
-// Header icon actions and the missing-picture glyph, drawn from plain rectangles and ellipses
-// so the preview needs no icon font (the mod paints the same shapes with QPainter).
+// Header icon actions and the missing-picture glyph, approximated from plain rectangles and
+// ellipses: the preview cannot ship Kobo's images. On the device the icons are Nickel's own
+// (re/notes/system-icons.md, mod/common/system_icon.cc), else installed Tabler PNGs.
 
 func solidRect(x, y, w, h, level int) Item {
 	return Item{Shape: "rect", X: x, Y: y, W: w, H: h, Fill: level}
@@ -45,8 +46,8 @@ func trayDownShapes(x, y int) []Item {
 	return items
 }
 
-// gearShapes approximates the mod's thin outline gear (mod/drawer/painted_marks.cc
-// paintGearIcon): a 4 px ring, a 4 px hub and eight small teeth on the ring.
+// gearShapes approximates Nickel's settings gear: a 4 px ring, a 4 px hub and eight small
+// teeth on the ring.
 func gearShapes(x, y int) []Item {
 	const tooth, center = 8, 32
 	items := []Item{ringItem(x+11, y+11, 42, 4, inkBlack), ringItem(x+24, y+24, 16, 4, inkBlack)}

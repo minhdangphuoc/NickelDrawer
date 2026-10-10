@@ -49,7 +49,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `appsctl_call.{h,cc}` | one `appsctl` QProcess run with a hard timeout, working dir `/` |
 | `model_client.{h,cc}` | `drawer model / run / info / remove --confirm`, maps every failure to a localized reply |
 | `view_settings.{h,cc}` | list/grid choice in `.adds/koboapps/data/drawer.ini` (open, write, close; only on change) |
-| `painted_marks.{h,cc}` | update dot, list/grid toggle icons, app mark (icon or initial) drawn with QPainter |
+| `painted_marks.{h,cc}` | update dot, list/grid toggles, header icon buttons, app mark; icons from `../common/system_icon` (Nickel's images, else Tabler PNGs, never drawn) |
 | `item_widgets.{h,cc}` | list row (152 px) and grid tile; status/dot change in place |
 | `drawer_view.{h,cc}` | header, page of rows/tiles with section labels, hint, `1 / N` with arrows, page keys |
 | `plain_dialog.{h,cc}` | plain Qt dialog (menu, fallback for Nickel dialogs), 120 s timeout |
@@ -129,7 +129,7 @@ run removes only one of them).
 | `AbstractController` offset not 8, or push did not stack the view | page discarded, toast |
 | appsctl missing / slow / crashing / bad JSON / too new | problem row + "Try again" row; the More row just reads "Apps" |
 | `drawer.ini` not writable | logged, list/grid choice not kept |
-| icon not loadable (e.g. SVG plugin missing) | the app's initial in an outlined square |
+| icon not loadable (e.g. SVG plugin missing) | the generic Tabler `apps` icon (`icons/ui/apps-96.png`), else no icon |
 | `drawer screen` fails (no/invalid `ui.json`, appsctl error) | blocking error screen: reason, **Back**, **Try again** |
 | keyboard symbols missing or `no-keyboard` | a `field` tap shows a toast "Change this from your phone or computer." |
 | a QR value too long (> 666 bytes) | an empty square frame, the address stays as text |

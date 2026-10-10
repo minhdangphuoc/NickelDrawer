@@ -11,10 +11,10 @@
 #include "tweaks_session.h"
 
 static const char *const ROW_OBJECT_NAME = "nickelDrawerTweaksButton";
-// Our icon (cmd/iconsgen, 50x50), installed by koboapps; Nickel's settings
-// gear when it is missing.
-static const char *const ROW_ICON_PATH = "/mnt/onboard/.adds/koboapps/icons/tweaks.png";
-static const char *const FALLBACK_ROW_ICON = ":/images/reading/settings_gear.png";
+// The gear of Nickel's own Settings row (Ui_MoreView::setupUi); the Tabler
+// "adjustments-horizontal" icon installed by koboapps when it is missing.
+static const char *const NICKEL_ROW_ICON = ":/images/reading/settings_gear.png";
+static const char *const OWN_ROW_ICON = "/mnt/onboard/.adds/koboapps/icons/ui/adjustments-horizontal-64.png";
 // Without the Apps row (IconLeftButton fine but its row failed) it follows Beta Features.
 static const char *const SECOND_ANCHOR_NAME = "betaFeaturesButton";
 static const int RUN_FROM_EVENT_LOOP = 0;
@@ -23,7 +23,7 @@ void TweaksRow::addTo(QWidget *moreView)
 {
     const char *appsRowName = EntryRow::rowObjectName();
     bool hasAppsRow = moreView->findChild<QWidget *>(QString::fromLatin1(appsRowName)) != NULL;
-    MoreRow::Spec spec = {ROW_OBJECT_NAME, ROW_ICON_PATH, FALLBACK_ROW_ICON,
+    MoreRow::Spec spec = {ROW_OBJECT_NAME, NICKEL_ROW_ICON, OWN_ROW_ICON,
                           hasAppsRow ? appsRowName : SECOND_ANCHOR_NAME};
     QWidget *row = MoreRow::insert(moreView, spec, FallbackStrings::text(FallbackStrings::TWEAKS_TITLE));
     if (!row) {

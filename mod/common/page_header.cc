@@ -10,19 +10,14 @@
 
 #include "debug_log.h"
 #include "nickel_fonts.h"
-
-// Nickel's back arrow pair, as N3Dialog's back button sets them (Wishlist sets
-// only the first; its TouchLabel then inverts the image).
-static const char *const BACK_ARROW_PATH = ":/images/reading/back_arrow.png";
-static const char *const BACK_ARROW_PRESSED_PATH = ":/images/reading/back_arrow_hit.png";
+#include "system_icon.h"
 
 // TextHeader is 0x90 bytes on 23828 (Ui_WishlistView allocates that much);
 // allocate generously and zeroed, as for IconLeftButton.
 static const size_t TEXT_HEADER_ALLOCATION = 256;
 
 static const int BACK_BUTTON_SIDE = 120;  // minimum tap target (ui-kit §1.5)
-static const int DRAWN_ARROW_SIDE = 64;   // Nickel's header icon on the Libra 2 class ("headerIconWidth")
-static const int DRAWN_ARROW_STROKE = 5;
+static const int BACK_ICON_SIDE = 64;     // Nickel's header icon on the Libra 2 class ("headerIconWidth")
 
 // Nickel's QSS sizes the TextHeader title (N3ButtonLabel, 34 px on the Libra 2
 // class) but makes it Georgia italic; Wishlist turns it into the sans upright
@@ -36,85 +31,20 @@ static const char *const HEADER_STYLE =
     "#drawerHeaderTitle { font-family: @BODY_FAMILY@; font-size: 34px; font-style: normal; color: black;"
     " background: transparent; }";
 
-// ---- Back arrow icon ----
-
-namespace BackArrowIcon {
-
-QPixmap pixmap(bool isPressed)
-{
-    static QPixmap *images = NULL; // loaded on first use, once Nickel's resources are registered
-    if (!images) {
-        images = new QPixmap[2];
-        images[0] = QPixmap(QString::fromLatin1(BACK_ARROW_PATH));
-        images[1] = QPixmap(QString::fromLatin1(BACK_ARROW_PRESSED_PATH));
-        for (int i = 0; i < 2; i++) {
-            const char *path = i ? BACK_ARROW_PRESSED_PATH : BACK_ARROW_PATH;
-            if (images[i].isNull()) {
-                DebugLog::write("header: %s missing from Nickel's resources, arrow drawn instead", path);
-            } else {
-                DebugLog::write("header: %s %dx%d", path, images[i].width(), images[i].height());
-            }
-        }
-    }
-    return images[isPressed ? 1 : 0];
-}
-
-void paintStroke(QPainter *painter, const QRect &box, const QColor &ink, int stroke)
-{
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    painter->setPen(QPen(ink, stroke, Qt::SolidLine, Qt::RoundCap));
-    qreal reach = qMin(box.width(), box.height()) * 0.28; // half the shaft
-    QPointF centre = QRectF(box).center();
-    QPointF tip(centre.x() - reach, centre.y());
-    painter->drawLine(QPointF(centre.x() + reach, centre.y()), tip);
-    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() - reach * 0.8));
-    painter->drawLine(tip, QPointF(tip.x() + reach * 0.8, centre.y() + reach * 0.8));
-    painter->restore();
-}
-
-// "←" in a circle-sized box: black on white, or white on a black circle when pressed.
-static void paintDrawnArrow(QPainter *painter, const QRect &area, bool isPressed)
-{
-    int side = qMin(DRAWN_ARROW_SIDE, qMin(area.width(), area.height()));
-    QRect box(0, 0, side, side);
-    box.moveCenter(area.center());
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    if (isPressed) {
-        painter->setPen(Qt::NoPen);
-        painter->setBrush(Qt::black);
-        painter->drawEllipse(box);
-    }
-    painter->restore();
-    paintStroke(painter, box, isPressed ? Qt::white : Qt::black, DRAWN_ARROW_STROKE);
-}
-
-void paint(QPainter *painter, const QRect &area, bool isPressed)
-{
-    QPixmap image = pixmap(isPressed);
-    if (image.isNull()) {
-        paintDrawnArrow(painter, area, isPressed);
-        return;
-    }
-    QSize size = image.size();
-    if (size.width() > area.width() || size.height() > area.height()) {
-        size.scale(area.size(), Qt::KeepAspectRatio);
-    }
-    QRect target(QPoint(0, 0), size);
-    target.moveCenter(area.center());
-    painter->drawPixmap(target, image);
-}
-
-} // namespace BackArrowIcon
-
 // ---- Fallback back button ----
 
+// With Nickel's pressed image the button paints it; otherwise the press
+// inverts the arrow in a circle (or the empty target when no icon is installed).
 BackArrowButton::BackArrowButton(QWidget *parent) : PressArea(parent)
 {
     setObjectName(QStringLiteral("drawerBack"));
     setFixedSize(BACK_BUTTON_SIDE, BACK_BUTTON_SIDE);
-    setPressHighlight(HIGHLIGHT_SELF_PAINTED); // Nickel's own pressed arrow image
+    const SystemIcon::Icon &arrow = SystemIcon::icon(SystemIcon::BACK);
+    if (!arrow.pressed.isNull()) {
+        setPressHighlight(HIGHLIGHT_SELF_PAINTED);
+    } else {
+        setPressHighlight(arrow.isNull() ? HIGHLIGHT_INVERT : HIGHLIGHT_CIRCLE);
+    }
 }
 
 void BackArrowButton::paintEvent(QPaintEvent *)
@@ -122,8 +52,10 @@ void BackArrowButton::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.fillRect(rect(), Qt::white);
     // Left-aligned like Nickel's header icon; the rest of the target is padding.
-    QRect icon(0, (height() - DRAWN_ARROW_SIDE) / 2, DRAWN_ARROW_SIDE, DRAWN_ARROW_SIDE);
-    BackArrowIcon::paint(&painter, icon, isPressedStateShown());
+    QRect area(0, (height() - BACK_ICON_SIDE) / 2, BACK_ICON_SIDE, BACK_ICON_SIDE);
+    const SystemIcon::Icon &arrow = SystemIcon::icon(SystemIcon::BACK);
+    bool isPressedImage = isPressedStateShown() && !arrow.pressed.isNull();
+    SystemIcon::drawCentred(&painter, area, isPressedImage ? arrow.pressed : arrow.normal);
 }
 
 // ---- Header ----
@@ -175,11 +107,12 @@ bool PageHeader::createNickelHeader(const QString &title)
         DebugLog::write("header: Nickel TextHeader symbols missing, own header");
         return false;
     }
-    QPixmap arrow = BackArrowIcon::pixmap(false);
-    if (arrow.isNull()) {
-        DebugLog::write("header: no back arrow image for Nickel's TextHeader, own header");
+    const SystemIcon::Icon &backIcon = SystemIcon::icon(SystemIcon::BACK);
+    if (backIcon.source != SystemIcon::SOURCE_NICKEL) {
+        DebugLog::write("header: Nickel's back arrow image missing, own header");
         return false;
     }
+    QPixmap arrow = backIcon.normal;
     void *memory = calloc(1, TEXT_HEADER_ALLOCATION);
     if (!memory) {
         DebugLog::write("header: out of memory for TextHeader, own header");
@@ -190,7 +123,7 @@ bool PageHeader::createNickelHeader(const QString &title)
     QWidget *header = reinterpret_cast<QWidget *>(memory);
     header->setObjectName(QStringLiteral("nickelDrawerTextHeader"));
     api.setDeselectedPixmap(header, arrow);
-    QPixmap pressedArrow = BackArrowIcon::pixmap(true);
+    QPixmap pressedArrow = backIcon.pressed;
     if (!pressedArrow.isNull()) {
         api.setSelectedPixmap(header, pressedArrow);
     }
@@ -222,8 +155,9 @@ void PageHeader::createOwnHeader(const QString &title)
     connect(ownBack, SIGNAL(tapped()), this, SLOT(onOwnBackTapped()));
     rowLayout->addWidget(ownBack, 0, Qt::AlignVCenter);
     rowLayout->addWidget(ownTitle, 1, Qt::AlignVCenter);
-    DebugLog::write("header: own copy (arrow %s), title \"%s\"",
-                    BackArrowIcon::pixmap(false).isNull() ? "drawn" : "Nickel's image", qPrintable(title));
+    DebugLog::write("header: own copy (back icon %s), title \"%s\"",
+                    SystemIcon::icon(SystemIcon::BACK).isNull() ? "missing, empty target" : "loaded",
+                    qPrintable(title));
 }
 
 // TextHeader's title is an N3ButtonLabel, a FontSizeAdjustingLabel: it fits

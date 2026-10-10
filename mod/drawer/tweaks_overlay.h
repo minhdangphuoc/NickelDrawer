@@ -9,10 +9,13 @@
 class QVBoxLayout;
 
 // Close button of the own overlay: Nickel's N3Dialog close image
-// (":/images/search/global_close.png", pressed "…_hit.png"), else a painted ✕.
+// (":/images/search/global_close.png", pressed "…_hit.png"), else the Tabler
+// "x" icon (system_icon.h). Without either, hasIcon() is false and the
+// overlay leaves the button out (a tap outside the box still closes).
 class CloseCrossButton : public PressArea {
 public:
     explicit CloseCrossButton(QWidget *parent);
+    static bool hasIcon();
 
 protected:
     void paintEvent(QPaintEvent *event);

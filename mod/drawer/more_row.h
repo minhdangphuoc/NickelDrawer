@@ -11,11 +11,13 @@ class QWidget;
 // Apps row (EntryRow) and the Tweaks row (TweaksRow).
 namespace MoreRow {
 
+// The icon is Nickel's own when it has a fitting one, else a Tabler PNG that
+// koboapps installs, else none (the row shows its title only). We never draw it.
 struct Spec {
-    const char *objectName;   // e.g. "nickelDrawerButton"
-    const char *iconPath;     // our icon on the user partition (installed by koboapps)
-    const char *fallbackIcon; // Nickel resource used when ours is missing
-    const char *anchorName;   // the row goes right after this row; missing: appended
+    const char *objectName; // e.g. "nickelDrawerButton"
+    const char *nickelIcon; // Nickel resource (as its own More rows use), or NULL
+    const char *ownIcon;    // Tabler PNG on the user partition, scaled to Nickel's row icon size
+    const char *anchorName; // the row goes right after this row; missing: appended
 };
 
 // Builds and inserts the row; its tapped() signal is checked. NULL (logged)

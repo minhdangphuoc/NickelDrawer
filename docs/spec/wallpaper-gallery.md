@@ -27,10 +27,11 @@ value** (the picture id); see §6.
   Nickel's black circle with the icon in white.
 - Under the divider: a summary line, caption style (small, muted): `12 ảnh · Đang dùng: Núi trắng · Lấp đầy`.
   Hidden when empty (no pictures).
-- The sleep-screen notice (notice box) only while the Kobo settings are not ready.
+- The sleep-screen notice: one tappable line (`row` with `push: options`), `Màn hình ngủ chưa bật · Xem Tùy chọn`,
+  only while the Kobo settings are not ready; the options screen has the full explanation.
 - While importing: header status `Đang nhập 3/7` and a notice `Đang chuyển đổi 3/7 · bien-xanh.jpg`.
-- Grid: **4 columns x 3 rows = 12 per page**. Side padding 56 px (content width 1152), gutter 24 px,
-  tiles **270 x 360** (3:4, the screen's aspect), 1 px black border, the thumbnail fitted inside on
+- Grid: **4 columns x 3 rows = 12 per page**. The grid spans the content width (1120 px, the same gutters as the header), gutter 24 px,
+  tiles **262 x 349** (3:4, the screen's aspect; a leftover pixel is split between the sides), 1 px black border, the thumbnail fitted inside on
   white. No captions. The 3 rows are 1128 px high.
 - Current wallpaper tile: 4 px black border and a black circular badge (56 px) with a white ✓ in its
   top-right corner (12 px inset).
@@ -221,7 +222,7 @@ its confirm) sends the shown id.
 - Gallery and viewer are native: thumbnails are `QPixmap`s decoded from bytes read with
   open-read-close (`QFile` read whole, closed, then `QImageReader` on a `QBuffer` with
   `setScaledSize` to the tile or picture rect; no file stays open on `/mnt/onboard`). Files over 8 MB
-  are not decoded. No QtSvg: icons, badge, dashed tiles and glyphs are painted with `QPainter`.
+  are not decoded. No QtSvg: dashed tiles and discs are painted with `QPainter`; icons (check badge, picture placeholder, back arrow) are Nickel's images or installed Tabler PNGs (`re/notes/system-icons.md`).
 - Thumbnail cache: the current grid page only; changing page drops the old page's pixmaps; pop,
   close and a tab-tap clear drop all.
 - Each tile is a tap target with press feedback (inverted rect) through the canvas `PressArea`

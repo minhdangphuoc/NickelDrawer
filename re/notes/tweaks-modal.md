@@ -96,7 +96,7 @@ ligatures); `geometricPrecision` is valid CSS but not that tweak. Removing the k
 
 ## Validation (next device session, `debug` flag on, user present, after the G1 drill)
 
-1. More tab: "Tinh chỉnh" row right under "Ứng dụng" with its icon (gear if `icons/tweaks.png` is missing).
+1. More tab: "Tinh chỉnh" row right under "Ứng dụng" with Nickel's Settings gear as its icon (re/notes/system-icons.md).
 2. Tap it: Nickel's dialog: small centred "Tinh chỉnh", ✕ top-right, no status bar over it, tab bar hidden,
    our rule and the 2-column grid (italic serif labels, Bật/Tắt or the IP under them, thin dividers).
    Log: "bridge: settings dialog … (N3Dialog)", "tweaks: Nickel N3Dialog … pushed", "tweaks panel: 9 tweak(s)".

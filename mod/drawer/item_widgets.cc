@@ -68,7 +68,7 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(SPACING);
     if (!item.isProblem) {
-        layout->addWidget(new AppMark(item.iconPath, item.name, ROW_ICON_SIDE, this), 0, Qt::AlignVCenter);
+        layout->addWidget(new AppMark(item.iconPath, ROW_ICON_SIDE, this), 0, Qt::AlignVCenter);
     }
     layout->addLayout(texts, 1);
     layout->addWidget(updateDot, 0, Qt::AlignVCenter);
@@ -92,7 +92,7 @@ AppTile::AppTile(const DrawerItem &item, int side, QWidget *parent) : ItemWidget
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(TILE_PADDING, TILE_PADDING, TILE_PADDING, TILE_PADDING);
     layout->setSpacing(SPACING / 2);
-    layout->addWidget(new AppMark(item.iconPath, item.name, TILE_MARK_SIDE, this), 0, Qt::AlignHCenter);
+    layout->addWidget(new AppMark(item.iconPath, TILE_MARK_SIDE, this), 0, Qt::AlignHCenter);
     layout->addStretch(1);
     layout->addWidget(statusLabel);
     layout->addWidget(name);

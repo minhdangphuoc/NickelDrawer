@@ -5,8 +5,6 @@
 #include <QKeyEvent>
 #include <QPaintEvent>
 #include <QPainter>
-#include <QPainterPath>
-#include <QPolygonF>
 #include <QVector>
 #include <QTimer>
 
@@ -16,8 +14,8 @@
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
 #include "open_popups.h"
-#include "page_header.h"
 #include "picture_loader.h"
+#include "system_icon.h"
 
 using namespace ScreenLogic;
 
@@ -26,7 +24,6 @@ static const int ONE_PAGE_PER_STEP = 1;
 static const qreal DASH_LENGTH = 4; // in pen widths
 static const int MISSING_GLYPH_WIDTH = 96;
 static const int MISSING_GLYPH_HEIGHT = 80;
-static const int MISSING_GLYPH_STROKE = 3;
 
 static QColor grey(int level)
 {
@@ -611,48 +608,40 @@ static void paintQr(QPainter *painter, const PaintItem &item)
     }
 }
 
-// A picture icon: frame, sun and two hills, drawn in ink.
-static void paintPictureGlyph(QPainter *painter, const QRect &box, int ink, int stroke)
+// Icons come from system_icon.h (Nickel's, else Tabler PNGs); we never draw
+// them. Black icons take a lighter ink as opacity on the white paper.
+static void paintIcon(QPainter *painter, const QRect &box, const QPixmap &image, int ink)
 {
     painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    QPen pen(grey(ink), stroke);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-    painter->setBrush(Qt::NoBrush);
-    qreal inset = stroke / 2.0;
-    QRectF frame = QRectF(box).adjusted(inset, inset, -inset, -inset);
-    painter->drawRoundedRect(frame, 6, 6);
-    qreal w = frame.width();
-    qreal h = frame.height();
-    painter->drawEllipse(QPointF(frame.x() + 0.28 * w, frame.y() + 0.32 * h), 0.08 * w, 0.08 * w);
-    QPolygonF hills;
-    hills << QPointF(frame.x() + 0.06 * w, frame.y() + 0.86 * h) << QPointF(frame.x() + 0.36 * w, frame.y() + 0.52 * h)
-          << QPointF(frame.x() + 0.55 * w, frame.y() + 0.72 * h) << QPointF(frame.x() + 0.70 * w, frame.y() + 0.56 * h)
-          << QPointF(frame.x() + 0.94 * w, frame.y() + 0.86 * h);
-    painter->drawPolyline(hills);
+    painter->setOpacity(1.0 - ink / 255.0);
+    SystemIcon::drawCentred(painter, box, image);
     painter->restore();
 }
 
+static void paintPictureIcon(QPainter *painter, const QRect &box, int ink)
+{
+    paintIcon(painter, box, SystemIcon::icon(SystemIcon::PICTURE).normal, ink);
+}
+
+// The current picture's badge: Nickel's check on its black disc (it covers the
+// layout's disc), or the Tabler check drawn white on that disc.
 static void paintCheck(QPainter *painter, const PaintItem &item)
 {
     if (item.border <= 0) {
         return;
     }
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing, true);
-    QPen pen(grey(item.ink), item.border);
-    pen.setJoinStyle(Qt::RoundJoin);
-    pen.setCapStyle(Qt::RoundCap);
-    painter->setPen(pen);
-    const QRect &r = item.rect;
-    QPolygonF mark;
-    mark << QPointF(r.x() + 0.28 * r.width(), r.y() + 0.52 * r.height())
-         << QPointF(r.x() + 0.44 * r.width(), r.y() + 0.68 * r.height())
-         << QPointF(r.x() + 0.74 * r.width(), r.y() + 0.34 * r.height());
-    painter->drawPolyline(mark);
-    painter->restore();
+    const SystemIcon::Icon &check = SystemIcon::icon(SystemIcon::CHECK_BADGE);
+    if (check.source != SystemIcon::SOURCE_TABLER) {
+        SystemIcon::drawCentred(painter, item.rect, check.normal);
+        return;
+    }
+    static QPixmap whiteCheck = SystemIcon::whiteInk(check.normal);
+    SystemIcon::drawCentred(painter, item.rect, whiteCheck);
+}
+
+static void paintBackArrow(QPainter *painter, const PaintItem &item)
+{
+    paintIcon(painter, item.rect, SystemIcon::icon(SystemIcon::BACK).normal, item.ink);
 }
 
 // The picture centred in its box (it was decoded to fit); the glyph when it is missing.
@@ -666,7 +655,7 @@ static void paintImage(QPainter *painter, const PaintItem &item, const QPixmap *
     if (item.showsMissingGlyph) {
         QRect glyph(0, 0, MISSING_GLYPH_WIDTH, MISSING_GLYPH_HEIGHT);
         glyph.moveCenter(item.rect.center());
-        paintPictureGlyph(painter, glyph, INK_DIM, MISSING_GLYPH_STROKE);
+        paintPictureIcon(painter, glyph, INK_DIM);
     }
 }
 
@@ -692,10 +681,10 @@ static void paintItem(QPainter *painter, const PaintItem &item, const QPixmap *p
         paintCheck(painter, item);
         break;
     case PaintItem::SHAPE_PICTURE_GLYPH:
-        paintPictureGlyph(painter, item.rect, item.ink, item.border);
+        paintPictureIcon(painter, item.rect, item.ink);
         break;
     case PaintItem::SHAPE_BACK_ARROW:
-        BackArrowIcon::paintStroke(painter, item.rect, grey(item.ink), item.border);
+        paintBackArrow(painter, item);
         break;
     }
 }
