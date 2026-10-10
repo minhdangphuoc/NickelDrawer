@@ -11,8 +11,11 @@ ADDS=$KOBO_ROOT/.adds
 DIST_ADDS=$REPO_ROOT/dist/onboard/.adds
 APPSCTL_HOST=$REPO_ROOT/build/appsctl-host
 NMSTRIP_HOST=$REPO_ROOT/build/nmstrip-host
-DEVICE_APPS_ROOT=/mnt/onboard/.adds/apps
-DEVICE_KOBOAPPS_ROOT=/mnt/onboard/.adds/koboapps
+# NickelMenu's nav-bar tab (the "Ứng dụng" tab) is switched off with this setting; the drawer
+# replaces it. The reader-menu items (Dark Mode) are not touched.
+TAB_KEY_PATTERN='^experimental[[:space:]]*:[[:space:]]*menu_main_15505_enabled[[:space:]]*:'
+TAB_OFF_LINE='experimental:menu_main_15505_enabled:0'
+TAB_OFF_VALUE_PATTERN=':[[:space:]]*0[[:space:]]*$'
 
 isDryRun=false
 shouldRemoveLegacy=false
@@ -143,16 +146,65 @@ install_apps() {
     done
 }
 
-generate_menu() {
-    act "$APPSCTL_HOST" gen-menu \
-        --apps-dir "$ADDS/apps" \
-        --out "$ADDS/nm/koboapps" \
-        --errors-file "$ADDS/koboapps/data/errors.txt" \
-        --device-apps-root "$DEVICE_APPS_ROOT" \
-        --device-koboapps-root "$DEVICE_KOBOAPPS_ROOT" \
-        --koboapps-dir "$ADDS/koboapps" \
-        --conf "$KOBO_ROOT/.kobo/Kobo/Kobo eReader.conf"
-    note_change "generated .adds/nm/koboapps"
+# Older versions generated NickelMenu items for the apps; the drawer replaces them. The whole
+# .adds/nm folder was backed up first (backup_before_writing).
+remove_generated_menu() {
+    local generated=$ADDS/nm/koboapps
+    if [ -e "$generated" ]; then
+        act rm -f "$generated"
+        note_change "removed generated .adds/nm/koboapps (backed up)"
+    fi
+    if [ -e "$ADDS/koboapps/data/errors.txt" ]; then
+        act rm -f "$ADDS/koboapps/data/errors.txt"
+    fi
+}
+
+# Writes the file with every tab line replaced by the "off" line, via a temp file and a rename.
+rewrite_tab_lines_off() {
+    local file=$1 temp="$1.tmp"
+    if $isDryRun; then
+        echo "[dry-run] set $TAB_OFF_LINE in $file"
+        return 0
+    fi
+    awk -v pattern="$TAB_KEY_PATTERN" -v off="$TAB_OFF_LINE" '$0 ~ pattern { print off; next } { print }' "$file" >"$temp"
+    mv "$temp" "$file"
+}
+
+append_tab_off_line() {
+    local file=$1
+    if $isDryRun; then
+        echo "[dry-run] append $TAB_OFF_LINE to $file"
+        return 0
+    fi
+    mkdir -p "$(dirname "$file")"
+    # A file that does not end in a newline would glue our line onto its last one.
+    if [ -s "$file" ] && [ -n "$(tail -c 1 "$file")" ]; then
+        echo >>"$file"
+    fi
+    echo "$TAB_OFF_LINE" >>"$file"
+}
+
+# True when the file has a tab line whose value is not 0.
+has_tab_line_not_off() {
+    grep -E "$TAB_KEY_PATTERN" "$1" | grep -Eqv "$TAB_OFF_VALUE_PATTERN"
+}
+
+# Ensures the NickelMenu tab setting is 0 in the user's .adds/nm config. Idempotent: a file that
+# already says 0 is left alone; with no tab line anywhere the line is added to .adds/nm/items.
+disable_nickelmenu_tab() {
+    local file hasTabLine=false
+    for file in "$ADDS"/nm/*; do
+        [ -f "$file" ] && grep -Eq "$TAB_KEY_PATTERN" "$file" || continue
+        hasTabLine=true
+        if has_tab_line_not_off "$file"; then
+            rewrite_tab_lines_off "$file"
+            note_change "NickelMenu tab switched off in .adds/nm/$(basename "$file")"
+        fi
+    done
+    if ! $hasTabLine; then
+        append_tab_off_line "$ADDS/nm/items"
+        note_change "NickelMenu tab switched off (line added to .adds/nm/items)"
+    fi
 }
 
 remove_legacy() {
@@ -166,7 +218,7 @@ remove_legacy() {
     fi
 }
 
-# macOS writes ._* and .DS_Store next to anything it copies; Nickel and the menu generator must not see them.
+# macOS writes ._* and .DS_Store next to anything it copies; Nickel and NickelMenu must not see them.
 # Sweeps whole trees (not only the copied folders) so stray files from earlier copies go too.
 clean_appledouble_files() {
     local folder
@@ -195,7 +247,8 @@ main() {
     if $shouldRemoveLegacy; then
         remove_legacy
     fi
-    generate_menu
+    remove_generated_menu
+    disable_nickelmenu_tab
     clean_appledouble_files
     act sync
     print_summary

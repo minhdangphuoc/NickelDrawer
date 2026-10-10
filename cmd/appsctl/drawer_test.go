@@ -16,7 +16,7 @@ var updateGolden = flag.Bool("update", false, "rewrite the golden files in testd
 
 // drawerRoot is a fake onboard root: apps/ and koboapps/ with the shipped host locales.
 type drawerRoot struct {
-	apps, host, menu, errors string
+	apps, host string
 }
 
 func newDrawerRoot(t *testing.T) drawerRoot {
@@ -24,9 +24,8 @@ func newDrawerRoot(t *testing.T) drawerRoot {
 	base := t.TempDir()
 	root := drawerRoot{
 		apps: filepath.Join(base, "apps"), host: filepath.Join(base, "koboapps"),
-		menu: filepath.Join(base, "nm", "koboapps"), errors: filepath.Join(base, "errors.txt"),
 	}
-	for _, dir := range []string{root.apps, filepath.Join(root.host, "data"), filepath.Dir(root.menu)} {
+	for _, dir := range []string{root.apps, filepath.Join(root.host, "data")} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -37,7 +36,7 @@ func newDrawerRoot(t *testing.T) drawerRoot {
 
 func (r drawerRoot) flags(locale string) []string {
 	return []string{"--apps-dir", r.apps, "--koboapps-dir", r.host, "--locale", locale,
-		"--out", r.menu, "--errors-file", r.errors, "--cache-dir", filepath.Join(filepath.Dir(r.apps), "cache"),
+		"--cache-dir", filepath.Join(filepath.Dir(r.apps), "cache"),
 		"--conf", filepath.Join(filepath.Dir(r.apps), "no-such.conf")}
 }
 
@@ -151,13 +150,13 @@ func TestDrawerRun(t *testing.T) {
 	installFixtureApps(t, root)
 	t.Run("success", func(t *testing.T) {
 		reply, code, _ := root.call(t, "en", "run", "alpha", "start")
-		if code != exitOK || reply["ok"] != true || reply["text"] != "started\nline two" || reply["rescan"] != "quick" {
+		if code != exitOK || reply["ok"] != true || reply["text"] != "" || reply["rescan"] != "quick" {
 			t.Errorf("unexpected reply (exit %d): %v", code, reply)
 		}
 	})
-	t.Run("failure keeps stdout and skips rescan", func(t *testing.T) {
+	t.Run("failure shows a short localized message and skips rescan", func(t *testing.T) {
 		reply, code, _ := root.call(t, "en", "run", "alpha", "stop")
-		if code != exitOK || reply["ok"] != false || reply["text"] != "failing" || reply["rescan"] != "none" {
+		if code != exitOK || reply["ok"] != false || reply["text"] != "Stop did not work." || reply["rescan"] != "none" {
 			t.Errorf("unexpected reply (exit %d): %v", code, reply)
 		}
 	})
@@ -201,8 +200,11 @@ func TestDrawerRunRefreshHostItem(t *testing.T) {
 	if code != exitOK || reply["ok"] != true {
 		t.Fatalf("unexpected reply (exit %d): %v", code, reply)
 	}
-	if menu, err := os.ReadFile(root.menu); err != nil || !strings.Contains(string(menu), "Alpha") {
-		t.Errorf("menu file not regenerated: %v %s", err, menu)
+	if text, _ := reply["text"].(string); !strings.HasPrefix(text, "Refreshed: ") {
+		t.Errorf("refresh summary = %q", text)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(root.apps), "nm")); !os.IsNotExist(err) {
+		t.Error("refresh must not write NickelMenu files")
 	}
 }
 
@@ -257,9 +259,6 @@ func TestDrawerRemove(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root.apps, "beta")); !os.IsNotExist(err) {
 		t.Error("beta folder still exists")
-	}
-	if menu, _ := os.ReadFile(root.menu); strings.Contains(string(menu), "Beta") {
-		t.Errorf("menu still lists Beta: %s", menu)
 	}
 	if _, err := os.Stat(filepath.Join(root.apps, "alpha")); err != nil {
 		t.Errorf("other apps must survive: %v", err)

@@ -71,6 +71,17 @@
       "enabled": true
     }
   ],
+  "toasts": {
+    "failed": "That did not work. See data/log.txt.",
+    "sort_done": "Old files sorted.",
+    "sort_nothing": "No old files to sort.",
+    "sort_running": "Still sorting old files.",
+    "sort_started": "Sorting old files in the background.",
+    "start_failed": "Could not start. See data/log.txt.",
+    "started": "Receiving. Enter the PIN on your phone.",
+    "stopped": "Stopped. Updating the library.",
+    "wifi_missing": "No Wi-Fi. Connect, then try again."
+  },
   "live": true
 }
 

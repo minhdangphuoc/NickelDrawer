@@ -71,7 +71,13 @@
       ],
       "footer": [
         { "button": "@ui.scan", "action": "scan", "style": "primary", "enabled": "!$running", "async": true }
-      ]
+      ],
+      "toasts": {
+        "started": "@ui.toast_started",
+        "busy": "@ui.toast_busy",
+        "trashed": "@ui.toast_trashed",
+        "failed": "@ui.toast_failed"
+      }
     }
   }
 }

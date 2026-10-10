@@ -52,18 +52,6 @@ func (f *updateFlags) resolve(flags *flag.FlagSet) {
 	}
 }
 
-func (f updateFlags) menuOptions() genMenuOptions {
-	root := f.onboardRoot
-	return genMenuOptions{
-		appsDir:     filepath.Join(root, ".adds", "apps"),
-		deviceApps:  defaultAppsDir(),
-		deviceHost:  defaultKoboappsDir(),
-		menuFile:    filepath.Join(root, ".adds", "nm", "koboapps"),
-		errorsFile:  filepath.Join(root, ".adds", "koboapps", "data", "errors.txt"),
-		localeFlags: f.localeFlags,
-	}
-}
-
 func (f updateFlags) newUpdater() *update.Updater {
 	return update.New(update.Options{
 		OnboardRoot:    f.onboardRoot,
@@ -71,10 +59,6 @@ func (f updateFlags) newUpdater() *update.Updater {
 		TempDir:        f.tempDir,
 		CurrentVersion: version,
 		AllowDowngrade: f.allowDowngrade,
-		RegenerateMenu: func() error {
-			_, err := generateMenu(f.menuOptions())
-			return err
-		},
 	})
 }
 

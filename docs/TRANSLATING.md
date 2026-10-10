@@ -11,6 +11,6 @@ Language codes follow the Kobo setting (`CurrentLocale` in `Kobo eReader.conf`):
 5. Keep every `{placeholder}` exactly as written (you may move it within the sentence). Keep `\n` for line breaks.
 6. Keep it short: the screen is small. Labels are at most 32 characters (names 24) and must not contain `:`.
 7. Check your work: `appsctl validate --apps-dir apps` (run `make build` first and use `build/appsctl-host`). It reports unknown keys, mismatched placeholders and labels that break the rules.
-8. Try it: `build/appsctl-host gen-menu --locale fr --apps-dir apps --koboapps-dir host --out /tmp/menu --errors-file /tmp/errors.txt` and read `/tmp/menu`.
+8. Try it: `build/appsctl-host drawer tweaks --locale fr --koboapps-dir host --conf /tmp/x.conf` and read the labels.
 
-After installing, change the Kobo's language, then tap the refresh item once so the menu is regenerated in the new language.
+After installing, change the Kobo's language; the drawer picks it up the next time it opens.

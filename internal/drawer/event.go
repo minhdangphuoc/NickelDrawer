@@ -25,14 +25,14 @@ type screenSignal struct {
 
 // RunEvent runs an app action for a screen tap, like Run, with the value in the environment.
 // When the script prints {"toast":"id"} or {"dialog":"id"} naming one declared on the screen,
-// the reply carries that resolved toast or dialog instead of the raw text.
+// the reply carries that resolved toast or dialog; a signal naming nothing declared is dropped.
 func (c Config) RunEvent(event Event) (RunResult, error) {
 	if event.Value != nil {
 		c.ScriptEnv = append(append([]string{}, c.ScriptEnv...), ValueEnvName+"="+*event.Value)
 	}
-	result, err := c.Run(event.AppID, event.ActionID)
+	result, err := c.run(event.AppID, event.ActionID)
 	if err != nil || event.ScreenID == "" || result.Text == "" {
-		return result, err
+		return withoutSignal(result), err
 	}
 	signal, isSignal := parseScreenSignal(result.Text)
 	if !isSignal {
@@ -40,9 +40,9 @@ func (c Config) RunEvent(event Event) (RunResult, error) {
 	}
 	screen, err := c.Screen(event.AppID, event.ScreenID, event.Value)
 	if err != nil {
-		return result, nil // the action already ran; show its text rather than fail
+		return withoutSignal(result), nil // the action already ran; there is no screen to answer on
 	}
-	return applyScreenSignal(result, signal, screen), nil
+	return withoutSignal(applyScreenSignal(result, signal, screen)), nil
 }
 
 func parseScreenSignal(text string) (screenSignal, bool) {

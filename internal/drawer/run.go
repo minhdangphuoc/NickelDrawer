@@ -22,15 +22,22 @@ type RunResult struct {
 	Dialog *ScreenDialog `json:"dialog,omitempty"`
 }
 
-// Run executes an action declared in the app's manifest; nothing else can run.
+// Run executes an action declared in the app's manifest; nothing else can run. Without a
+// screen there is nowhere to show a toast or dialog, so a signal the script prints is dropped.
 func (c Config) Run(appID, actionID string) (RunResult, error) {
+	result, err := c.run(appID, actionID)
+	return withoutSignal(result), err
+}
+
+// run is Run before unresolved toast and dialog signals are dropped.
+func (c Config) run(appID, actionID string) (RunResult, error) {
 	app, err := c.loadApp(appID)
 	if err != nil {
 		return RunResult{}, err
 	}
 	for _, action := range app.Actions {
 		if action.ID == actionID {
-			return c.RunAction(app.Dir, action)
+			return c.runAction(app.Dir, action, true)
 		}
 	}
 	return RunResult{}, newError(CodeUnknownAction, "app", appID, "action", actionID)
@@ -39,6 +46,12 @@ func (c Config) Run(appID, actionID string) (RunResult, error) {
 // RunAction runs one validated action whose script path is relative to baseDir. It is also
 // used for host scripts, which the manifest scan never sees.
 func (c Config) RunAction(baseDir string, action manifest.Action) (RunResult, error) {
+	return c.runAction(baseDir, action, false)
+}
+
+// runAction is RunAction; fromApp marks a script written by an app, whose prose never
+// reaches the screen (see appText).
+func (c Config) runAction(baseDir string, action manifest.Action, fromApp bool) (RunResult, error) {
 	result := RunResult{V: ProtocolVersion, Rescan: manifest.RescanNone, Wifi: action.Wifi}
 	if action.Wifi && !c.hasIP() {
 		result.NeedsWifi = true
@@ -48,7 +61,7 @@ func (c Config) RunAction(baseDir string, action manifest.Action) (RunResult, er
 	if action.Output == manifest.OutputNone {
 		return c.startBackground(result, script, action)
 	}
-	return c.runForeground(result, script, action)
+	return c.runForeground(result, script, action, fromApp)
 }
 
 func (c Config) startBackground(result RunResult, script string, action manifest.Action) (RunResult, error) {
@@ -60,7 +73,7 @@ func (c Config) startBackground(result RunResult, script string, action manifest
 	return result, nil
 }
 
-func (c Config) runForeground(result RunResult, script string, action manifest.Action) (RunResult, error) {
+func (c Config) runForeground(result RunResult, script string, action manifest.Action, fromApp bool) (RunResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.showTimeout())
 	defer cancel()
 	output := c.runScript()(ctx, script)
@@ -74,6 +87,9 @@ func (c Config) runForeground(result RunResult, script string, action manifest.A
 	}
 	result.Text = scriptText(output)
 	result.OK = output.ExitCode == 0
+	if fromApp {
+		result.Text = c.appText(action, result.Text, result.OK)
+	}
 	if result.OK {
 		result.Rescan = action.RescanMode() // a failed action must not trigger a rescan
 	}
@@ -88,4 +104,28 @@ func scriptText(output ScriptOutput) string {
 		text = strings.TrimRight(output.Stderr, "\r\n")
 	}
 	return text
+}
+
+// appText keeps only what an app may send to the screen: a toast or dialog signal. Any other
+// output is prose written for a text dialog; apps talk through the NickelDrawer API, so it
+// goes to the debug log and is dropped. A failed action is reported by a short localized
+// message instead of the script's words.
+func (c Config) appText(action manifest.Action, text string, isOK bool) string {
+	if _, isSignal := parseScreenSignal(text); isSignal {
+		return text
+	}
+	if text != "" {
+		c.debugf("action %q printed text outside the drawer protocol, dropped: %s", action.ID, text)
+	}
+	if !isOK {
+		return c.message("drawer.script_failed", map[string]string{"label": action.Label})
+	}
+	return ""
+}
+
+func withoutSignal(result RunResult) RunResult {
+	if _, isSignal := parseScreenSignal(result.Text); isSignal {
+		result.Text = ""
+	}
+	return result
 }

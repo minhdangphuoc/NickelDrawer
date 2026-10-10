@@ -20,20 +20,17 @@ const usage = `usage: appsctl <command> [flags]
 
 commands:
   validate [--apps-dir DIR] [APP_DIR...]   check app manifests
-  gen-menu [--apps-dir DIR] [--out FILE]   write the NickelMenu config in the device language
-  refresh                                  gen-menu with device defaults, short summary
-  errors                                   show apps that failed validation
   msg --app ID KEY [NAME=VALUE...]         print an app message in the device language
   device-name                              print the Kobo model name
   host-msg KEY [NAME=VALUE...]             print a host message in the device language
   inbox route|sort|status|purge            sort received files into Books, Documents, Comics, Pictures (docs/spec/inbox.md)
   new ID [--name N] [--with-ui] [--dir D]  scaffold a new app folder from templates/app
-  drawer model|run|info|remove              JSON for the native drawer (docs/spec/drawer-protocol.md)
+  drawer model|run|screen|event|info|remove|tweaks|tweak  JSON for the native drawer (docs/spec/drawer-protocol.md)
   update check|apply|status|rollback       signed updates from GitHub Releases (see docs/UPDATES.md)
   --version                                print the version
 
 update takes --onboard-root, --api-base, --tmp-dir and --allow-downgrade (apply).
-gen-menu, refresh, errors, msg, host-msg and update also take --locale, --conf and --koboapps-dir.
+msg, host-msg and update also take --locale, --conf and --koboapps-dir.
 `
 
 func main() {
@@ -51,9 +48,6 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 	commands := map[string]func([]string, io.Writer, io.Writer) int{
 		"validate": runValidate,
-		"gen-menu": runGenMenu,
-		"refresh":  runRefresh,
-		"errors":   runErrors,
 		"msg":      runMsg,
 		"host-msg": runHostMsg,
 		"update":   runUpdate,

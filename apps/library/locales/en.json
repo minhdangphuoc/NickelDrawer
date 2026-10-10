@@ -68,5 +68,9 @@
   "ui.trash_confirm": "Move the selected book to the trash? You can restore it for 30 days.",
   "ui.trash_ok": "Move",
   "ui.cancel": "Cancel",
-  "ui.note": "Fixing backs up each book first and never edits the Kobo database. Afterwards run Library Reload."
+  "ui.note": "Fixing backs up each book first and never edits the Kobo database. Afterwards run Library Reload.",
+  "ui.toast_started": "Working on your library. Watch the screen.",
+  "ui.toast_busy": "Still working. Please wait.",
+  "ui.toast_trashed": "Moved to trash. Kept for 30 days.",
+  "ui.toast_failed": "That did not work. See data/log.txt."
 }

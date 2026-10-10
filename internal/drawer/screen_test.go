@@ -191,7 +191,7 @@ func TestRunEventPassesValueAndOpensDeclaredToast(t *testing.T) {
 	}
 }
 
-func TestRunEventDialogAndPlainText(t *testing.T) {
+func TestRunEventDialogAndUndeclaredSignal(t *testing.T) {
 	output := `{"dialog":"ask"}`
 	config, _ := testConfig(t, func(_ context.Context, script string) ScriptOutput { return ScriptOutput{Stdout: output} })
 	writeScreenApp(t, config.AppsDir)
@@ -200,8 +200,8 @@ func TestRunEventDialogAndPlainText(t *testing.T) {
 		t.Errorf("dialog: %+v %v", result, err)
 	}
 	output = `{"toast":"unknown"}`
-	if result, _ := config.RunEvent(Event{AppID: "demo", ActionID: "go", ScreenID: "main"}); result.Text != output {
-		t.Errorf("an undeclared toast id stays plain text: %+v", result)
+	if result, _ := config.RunEvent(Event{AppID: "demo", ActionID: "go", ScreenID: "main"}); result.Text != "" || result.Toast != "" {
+		t.Errorf("an undeclared toast id is dropped: %+v", result)
 	}
 	if _, err := config.RunEvent(Event{AppID: "demo", ActionID: "nope"}); err == nil {
 		t.Error("only declared actions can run")

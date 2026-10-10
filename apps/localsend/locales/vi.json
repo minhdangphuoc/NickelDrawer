@@ -4,7 +4,7 @@
   "actions.start.label": "Bắt đầu nhận",
   "actions.stop.label": "Dừng nhận",
   "msg.wifi_missing": "Chưa kết nối Wi-Fi.\nĐợi Wi-Fi kết nối rồi bấm lại.",
-  "msg.start_failed": "Lỗi khởi động:",
+  "msg.start_failed": "Không khởi động được LocalSend. Xem data/log.txt.",
   "msg.started": "LocalSend đang nhận sách\n\nTên máy: {device}\nIP: {ip}\nPIN: {pin}\n\nGiữ máy thức khi gửi.\nXong bấm 'Dừng nhận'.",
   "msg.stopped": "Đã dừng LocalSend.\nĐang cập nhật thư viện...",
   "actions.sort.label": "Sắp xếp tệp cũ",
@@ -21,5 +21,14 @@
   "actions.state.label": "Trạng thái màn hình",
   "ui.status_receiving": "Đang nhận",
   "ui.status_idle": "Chưa nhận",
-  "ui.start": "Bắt đầu nhận"
+  "ui.start": "Bắt đầu nhận",
+  "ui.toast_started": "Đang nhận. Nhập PIN trên điện thoại.",
+  "ui.toast_stopped": "Đã dừng. Đang cập nhật thư viện.",
+  "ui.toast_wifi_missing": "Chưa có Wi-Fi. Kết nối rồi thử lại.",
+  "ui.toast_start_failed": "Không khởi động được. Xem data/log.txt.",
+  "ui.toast_failed": "Không thành công. Xem data/log.txt.",
+  "ui.toast_sort_started": "Đang sắp xếp tệp cũ trong nền.",
+  "ui.toast_sort_running": "Vẫn đang sắp xếp tệp cũ.",
+  "ui.toast_sort_nothing": "Không có tệp cũ để sắp xếp.",
+  "ui.toast_sort_done": "Đã sắp xếp tệp cũ."
 }

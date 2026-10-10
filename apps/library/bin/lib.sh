@@ -1,6 +1,9 @@
 # Shared by the library action scripts. Source it; do not execute.
-# Scanning hashes and opens many books, which can take longer than NickelMenu's 10 s limit on
-# the Kobo's CPU, so those commands run detached and the screen shows the progress.
+# Scanning hashes and opens many books, which can take a long time on the Kobo's CPU, so those
+# commands run detached and the screen shows the progress.
+#
+# Two callers: the app drawer (NICKELDRAWER=1), which never gets prose and only a declared
+# {"toast":"id"}, and the command line (tests, debugging), which gets the localized text.
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
 . /mnt/onboard/.adds/koboapps/lib/common.sh
@@ -13,9 +16,7 @@ RESULT_WAIT_SECONDS=7
 
 require_binary() {
     if [ ! -x "$APP_DIR/bin/library" ]; then
-        app_log "$APP_DIR" "bin/library missing or not executable"
-        msg "$APP_ID" msg.binary_missing
-        exit 1
+        fail_with "$APP_DIR" "$(msg "$APP_ID" msg.binary_missing)"
     fi
 }
 
@@ -30,21 +31,33 @@ run_library() {
     "$APP_DIR/bin/library" "$subcommand" --app-dir "$APP_DIR" "$@"
 }
 
-# Runs a subcommand detached and shows the result if it ends in time. All fds are redirected
-# so NickelMenu does not wait for the child.
+# Runs a fast subcommand in the foreground (see run_quick_command in common.sh).
+# Usage: run_quick <drawer-toast-or-empty> <subcommand> [args...]
+run_quick() {
+    success_toast=$1
+    shift
+    run_quick_command "$APP_DIR" "$success_toast" run_library "$@"
+}
+
+# Runs a subcommand detached. All fds are redirected so the caller does not wait for the child.
+# Drawer: returns at once with the "started" toast. Command line: shows the result if it ends in time.
 run_library_in_background() {
     subcommand=$1
     shift
     if is_working; then
-        msg "$APP_ID" msg.busy
+        report busy "$APP_ID" msg.busy
         exit 0
     fi
     sh -c 'echo $$ >"$1"; app=$2; shift 2; "$app/bin/library" "$@"' sh "$PID_FILE" "$APP_DIR" \
         "$subcommand" --app-dir "$APP_DIR" "$@" </dev/null >"$OUTPUT_FILE" 2>&1 &
+    if is_drawer; then
+        emit_toast started
+        return 0
+    fi
     wait_for_result
 }
 
-# NickelMenu shows the dialog for at most 9.5 s.
+# The command line waits a few seconds and shows the result if the work ends in time.
 wait_for_result() {
     waited=0
     while [ "$waited" -lt "$RESULT_WAIT_SECONDS" ]; do

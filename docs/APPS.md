@@ -46,7 +46,7 @@ Apps run as **root** on a device that holds the user's library. So:
 
 ### Running inside the drawer
 
-Every script the native drawer starts (actions, events, the `state` read) has `NICKELDRAWER=1` in its environment. In that case return at once (no waiting loops) and print only a JSON signal (`{"toast":"id"}`, `{"dialog":"id"}`) or nothing; never print prose meant for a dialog. Declare the toast or dialog in `ui.json` instead.
+Every script the native drawer starts (actions, events, the `state` read) has `NICKELDRAWER=1` in its environment. In that case return at once (no waiting loops) and print only a JSON signal (`{"toast":"id"}`, `{"dialog":"id"}`) or nothing; never print prose meant for a dialog (`appsctl` logs and drops it). Declare the toast or dialog in `ui.json` instead. In `common.sh`, `report <toast-id> <app> <msg-key>` prints the signal in the drawer and the localized text on the command line; `report_failure`, `fail_with` and `run_quick_command` do the same for failures and quick commands. Declare a `failed` toast on every screen.
 
 ### Naming and versioning
 
@@ -60,7 +60,7 @@ Every script the native drawer starts (actions, events, the `state` read) has `N
 1. **Validate:** `build/appsctl-host validate <app>` or `go run ./cmd/appsctl validate <app>` has no errors or warnings.
 2. **Lint:** `sh -n bin/*.sh` and `shellcheck bin/*.sh`.
 3. **Mac run with temp dirs:** give every script an environment variable for each path it uses (data dir, input folder, `appsctl`), defaulting to the Kobo path. Run the scripts against a temp copy and check output length, exit codes and that nothing is left open or half written. The examples show this (`TODO_DATA_DIR`, `IMAGEVIEW_IMAGES_DIR`).
-4. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir. Also run `appsctl gen-menu --apps-dir <dir> --out /tmp/menu` and read the generated lines.
+4. **Fake-Kobo install test:** `tools/test-install.sh` installs into a fake Kobo in a temp dir. It also checks that the old generated NickelMenu file is removed and the NickelMenu tab setting is off.
 5. **Device checklist** (user present, backups first): refresh list shows the items; each action finishes within its timeout; output is under 12 lines in English and Vietnamese (switch language, tap refresh); failure paths (no Wi-Fi, empty input, missing file) print a clear message; eject works right after (nothing held open); a rescan shows new files; battery and sleep: let the Kobo sleep during a background job and confirm it ends cleanly.
 
 ### v1 menu app or v2 native screen (`ui.json`)
@@ -319,7 +319,7 @@ The scripts need `/mnt/onboard`, so test the logic with a fake root:
 
 - Run `shellcheck` and `sh -n bin/*.sh`.
 - Keep real logic in a Go or Python program that you can unit test, and keep the shell script thin.
-- Run `appsctl gen-menu --apps-dir <dir> --out /tmp/menu` and read the generated menu lines.
+- Run `appsctl drawer model --apps-dir <dir>` and read the JSON the drawer would show.
 - `tools/test-install.sh` runs the installer against a fake Kobo in a temp dir. Run it before touching a real device.
 
 ## 8. Test on the device

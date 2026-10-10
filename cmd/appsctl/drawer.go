@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"strings"
 
 	"koboapps/internal/drawer"
 	"koboapps/internal/i18n"
@@ -16,13 +15,11 @@ import (
 // paths, tests and the installer override them.
 type drawerOptions struct {
 	localeFlags
-	appsDir    string
-	cacheDir   string
-	menuFile   string
-	errorsFile string
-	confirm    bool
-	screenID   string
-	value      optionalValue
+	appsDir  string
+	cacheDir string
+	confirm  bool
+	screenID string
+	value    optionalValue
 }
 
 // optionalValue is a string flag that remembers whether it was given, because an empty
@@ -51,8 +48,6 @@ func (o *drawerOptions) register(flags *flag.FlagSet) {
 	o.localeFlags.register(flags)
 	flags.StringVar(&o.appsDir, "apps-dir", defaultAppsDir(), "folder containing app folders")
 	flags.StringVar(&o.cacheDir, "cache-dir", "", "folder for the status cache (default: the system temp folder)")
-	flags.StringVar(&o.menuFile, "out", defaultMenuFile, "NickelMenu config file regenerated after changes")
-	flags.StringVar(&o.errorsFile, "errors-file", defaultErrorsFile, "file receiving one line per invalid app")
 	flags.BoolVar(&o.confirm, "confirm", false, "confirm a destructive command (remove)")
 	flags.StringVar(&o.screenID, "screen", "", "screen id (screen, event; default: the start screen)")
 	flags.Var(&o.value, "value", "value of a toggle, radio option, field or list row (event)")
@@ -81,6 +76,8 @@ func runDrawer(args []string, stdout, stderr io.Writer) int {
 		"remove": drawerRemove,
 		"screen": drawerScreen,
 		"event":  drawerEvent,
+		"tweaks": drawerTweaks,
+		"tweak":  drawerTweak,
 	}
 	handler, found := subcommands[args[0]]
 	if !found {
@@ -118,6 +115,7 @@ func newDrawerSession(name string, args []string, stdout, stderr io.Writer) (dra
 	session.config = drawer.Config{
 		AppsDir: session.options.appsDir, HostDir: session.options.hostDir,
 		Locale: session.options.effectiveLocale(), Bundle: bundle, CacheDir: session.options.cacheDir,
+		DebugLog: stderr,
 	}
 	drawerHooks(&session.config)
 	return session, nil
@@ -187,16 +185,6 @@ func runHostItem(session drawerSession, itemID, actionID string) (any, error) {
 	return nil, &drawer.Error{Code: drawer.CodeUnknownAction, Params: map[string]string{"app": itemID, "action": actionID}}
 }
 
-func refreshHostItem(session drawerSession) (any, error) {
-	result, err := regenerateMenu(session)
-	if err != nil {
-		return nil, &drawer.Error{Code: drawer.CodeIO, Params: map[string]string{"detail": err.Error()}}
-	}
-	return drawer.RunResult{
-		V: drawer.ProtocolVersion, OK: true, Text: strings.TrimRight(refreshSummary(result), "\n"), Rescan: manifest.RescanNone,
-	}, nil
-}
-
 func drawerScreen(session drawerSession) (any, error) {
 	if len(session.positions) != 1 {
 		return nil, drawerUsageError()
@@ -225,18 +213,7 @@ func drawerRemove(session drawerSession) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := regenerateMenu(session); err != nil {
-		return nil, &drawer.Error{Code: drawer.CodeIO, Params: map[string]string{"detail": err.Error()}}
-	}
 	return removed, nil
-}
-
-func regenerateMenu(session drawerSession) (genMenuResult, error) {
-	return generateMenu(genMenuOptions{
-		appsDir: session.options.appsDir, deviceApps: session.options.appsDir,
-		deviceHost: session.options.hostDir, menuFile: session.options.menuFile,
-		errorsFile: session.options.errorsFile, localeFlags: session.options.localeFlags,
-	})
 }
 
 func writeDrawerJSON(out io.Writer, value any) error {
@@ -257,6 +234,9 @@ type drawerErrorField struct {
 
 // writeDrawerFailure prints the protocol error document; the exit code tells the mod to read it.
 func writeDrawerFailure(stdout io.Writer, bundle *i18n.Bundle, err error) int {
+	if writeTweakFailure(stdout, err) {
+		return exitFailure
+	}
 	var drawerErr *drawer.Error
 	if !errors.As(err, &drawerErr) {
 		drawerErr = &drawer.Error{Code: drawer.CodeIO, Params: map[string]string{"detail": err.Error()}}

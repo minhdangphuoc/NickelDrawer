@@ -115,5 +115,13 @@
   "ui.pair_title": "Pair with phone",
   "ui.pair": "Pair with phone",
   "ui.sync": "Sync now",
-  "msg.state_pair_until": "Valid until {time}"
+  "msg.state_pair_until": "Valid until {time}",
+  "ui.toast_syncing": "Syncing in the background.",
+  "ui.toast_already_running": "A sync is already running.",
+  "ui.toast_sync_done": "Sync finished.",
+  "ui.toast_sync_failed": "Sync failed. See data/log.txt.",
+  "ui.toast_pair_started": "Open the address on your phone.",
+  "ui.toast_pair_failed": "Pairing did not start. See data/log.txt.",
+  "ui.toast_wifi_missing": "No Wi-Fi. Connect, then try again.",
+  "ui.toast_failed": "That did not work. See data/log.txt."
 }

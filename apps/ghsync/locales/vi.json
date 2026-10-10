@@ -121,5 +121,13 @@
   "ui.pair_title": "Kết nối điện thoại",
   "ui.pair": "Kết nối điện thoại",
   "ui.sync": "Đồng bộ ngay",
-  "msg.state_pair_until": "Có hiệu lực đến {time}"
+  "msg.state_pair_until": "Có hiệu lực đến {time}",
+  "ui.toast_syncing": "Đang đồng bộ trong nền.",
+  "ui.toast_already_running": "Đang đồng bộ rồi.",
+  "ui.toast_sync_done": "Đã đồng bộ xong.",
+  "ui.toast_sync_failed": "Đồng bộ lỗi. Xem data/log.txt.",
+  "ui.toast_pair_started": "Mở địa chỉ trên điện thoại.",
+  "ui.toast_pair_failed": "Chưa kết nối được. Xem data/log.txt.",
+  "ui.toast_wifi_missing": "Chưa có Wi-Fi. Kết nối rồi thử lại.",
+  "ui.toast_failed": "Không thành công. Xem data/log.txt."
 }

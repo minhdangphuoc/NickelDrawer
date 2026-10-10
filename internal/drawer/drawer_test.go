@@ -1,9 +1,11 @@
 package drawer
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -143,5 +145,51 @@ func TestRunShowTimeoutIsReportedNotRaised(t *testing.T) {
 	result, err := config.Run("one", "status")
 	if err != nil || result.OK || result.Rescan != "none" {
 		t.Errorf("result = %+v, err = %v", result, err)
+	}
+}
+
+func TestAppProseNeverReachesTheScreen(t *testing.T) {
+	tests := []struct {
+		name     string
+		output   ScriptOutput
+		wantOK   bool
+		wantText string
+		wantLog  bool
+	}{
+		{"prose on success is dropped", ScriptOutput{Stdout: "All done\n"}, true, "", true},
+		{"silent success", ScriptOutput{}, true, "", false},
+		{"toast signal is kept", ScriptOutput{Stdout: "{\"toast\":\"saved\"}\n"}, true, "{\"toast\":\"saved\"}", false},
+		{"failure becomes a short message", ScriptOutput{Stdout: "oops", ExitCode: 1}, false, "Status did not work.", true},
+		{"silent failure too", ScriptOutput{ExitCode: 3}, false, "Status did not work.", false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			config, _ := testConfig(t, func(context.Context, string) ScriptOutput { return test.output })
+			config.Bundle = i18n.NewBundle(i18n.Catalog{"drawer.script_failed": "{label} did not work."})
+			var debugLog bytes.Buffer
+			config.DebugLog = &debugLog
+			writeStatusApp(t, config.AppsDir, "one")
+			result, err := config.run("one", "status")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if result.OK != test.wantOK || result.Text != test.wantText {
+				t.Errorf("result = %+v", result)
+			}
+			if hasLog := strings.Contains(debugLog.String(), "dropped"); hasLog != test.wantLog {
+				t.Errorf("debug log = %q, want a drop entry: %v", debugLog.String(), test.wantLog)
+			}
+		})
+	}
+}
+
+func TestRunDropsSignalsWithoutAScreen(t *testing.T) {
+	config, _ := testConfig(t, func(context.Context, string) ScriptOutput {
+		return ScriptOutput{Stdout: "{\"toast\":\"saved\"}\n"}
+	})
+	writeStatusApp(t, config.AppsDir, "one")
+	result, err := config.Run("one", "status")
+	if err != nil || !result.OK || result.Text != "" {
+		t.Fatalf("result = %+v, err = %v", result, err)
 	}
 }

@@ -1,5 +1,6 @@
 #!/bin/sh
-# Start the LocalSend receiver. Received files land in the inbox and are routed one by one. NickelMenu runs this after nickel_wifi:autoconnect.
+# Start the LocalSend receiver. Received files land in the inbox and are routed one by one.
+# In the drawer it answers with a toast; the screen shows the PIN and IP from state.sh.
 . "$(dirname "$0")/env.sh"
 
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_STATE_HOME" "$XDG_CACHE_HOME" "$INBOX"
@@ -10,11 +11,10 @@ if [ ! -s "$DATA_DIR/pin.txt" ]; then
 fi
 PIN=$(cat "$DATA_DIR/pin.txt")
 
-# NickelMenu's cmd_output limit is 10s, so wait at most 8s for Wi-Fi.
-if ! IP=$(wait_for_wifi 8); then
-    msg "$APP_ID" msg.wifi_missing
-    exit 1
+if ! ensure_wifi; then
+    report_failure wifi_missing "$APP_ID" msg.wifi_missing
 fi
+IP=$(current_ip)
 
 DEVICE_NAME=$(device_name)
 
@@ -25,10 +25,9 @@ if ! is_running; then
     echo $! >"$PIDFILE"
     sleep 1
     if ! is_running; then
-        msg "$APP_ID" msg.start_failed
-        tail -n 3 "$TMP_LOG" 2>/dev/null
-        exit 1
+        app_log "$APP_DIR" "start failed: $(tail -n 3 "$TMP_LOG" 2>/dev/null)"
+        report_failure start_failed "$APP_ID" msg.start_failed
     fi
 fi
 
-msg "$APP_ID" msg.started device="$DEVICE_NAME" ip="$IP" pin="$PIN"
+report started "$APP_ID" msg.started device="$DEVICE_NAME" ip="$IP" pin="$PIN"

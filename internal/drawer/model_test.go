@@ -93,15 +93,17 @@ func TestModelOmitsHiddenAppsAndNeverRunsTheirStatus(t *testing.T) {
 }
 
 func TestHiddenAppStillRunsById(t *testing.T) {
+	var runs atomic.Int32
 	config, _ := testConfig(t, func(ctx context.Context, script string) ScriptOutput {
-		return ScriptOutput{Stdout: "ran\n"}
+		runs.Add(1)
+		return ScriptOutput{}
 	})
 	writeHiddenApp(t, config.AppsDir)
 	result, err := config.Run("postponed", "status")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(result.Text, "ran") {
-		t.Fatalf("result = %+v", result)
+	if !result.OK || runs.Load() != 1 {
+		t.Fatalf("result = %+v, runs = %d", result, runs.Load())
 	}
 }

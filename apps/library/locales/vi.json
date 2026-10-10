@@ -77,5 +77,9 @@
   "ui.trash_confirm": "Chuyển sách đã chọn vào thùng rác? Có thể khôi phục trong 30 ngày.",
   "ui.trash_ok": "Chuyển",
   "ui.cancel": "Hủy",
-  "ui.note": "Sửa luôn sao lưu từng sách trước và không đụng đến cơ sở dữ liệu Kobo. Sau đó hãy chạy Library Reload."
+  "ui.note": "Sửa luôn sao lưu từng sách trước và không đụng đến cơ sở dữ liệu Kobo. Sau đó hãy chạy Library Reload.",
+  "ui.toast_started": "Đang xử lý thư viện. Xem màn hình.",
+  "ui.toast_busy": "Vẫn đang xử lý. Vui lòng đợi.",
+  "ui.toast_trashed": "Đã chuyển vào thùng rác 30 ngày.",
+  "ui.toast_failed": "Không thành công. Xem data/log.txt."
 }

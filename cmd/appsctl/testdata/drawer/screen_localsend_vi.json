@@ -71,6 +71,17 @@
       "enabled": true
     }
   ],
+  "toasts": {
+    "failed": "Không thành công. Xem data/log.txt.",
+    "sort_done": "Đã sắp xếp tệp cũ.",
+    "sort_nothing": "Không có tệp cũ để sắp xếp.",
+    "sort_running": "Vẫn đang sắp xếp tệp cũ.",
+    "sort_started": "Đang sắp xếp tệp cũ trong nền.",
+    "start_failed": "Không khởi động được. Xem data/log.txt.",
+    "started": "Đang nhận. Nhập PIN trên điện thoại.",
+    "stopped": "Đã dừng. Đang cập nhật thư viện.",
+    "wifi_missing": "Chưa có Wi-Fi. Kết nối rồi thử lại."
+  },
   "live": true
 }
 

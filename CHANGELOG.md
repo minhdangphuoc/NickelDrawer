@@ -4,6 +4,15 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+
+- Apps answer only through the NickelDrawer API: script text never becomes a dialog (toasts and `set` signals only). LocalSend, Library and GitHub sync follow Wallpaper.
+- NickelMenu items are no longer generated (`gen-menu`, `refresh`, `errors` removed). The installer removes the old generated file and switches the NickelMenu tab off.
+
+### Added
+
+- `appsctl drawer tweaks` and `drawer tweak <id>`: backend of the native "Tinh chỉnh" modal ([docs/spec/tweaks.md](docs/spec/tweaks.md)).
+
 ## [0.1.0] - unreleased
 
 ### Added

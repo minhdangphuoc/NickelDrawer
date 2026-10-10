@@ -96,7 +96,7 @@ func TestDrawerEvent(t *testing.T) {
 	root := newDrawerRoot(t)
 	writeScriptApp(t, root.apps, `{"schema":1,"id":"echo","name":"Echo","version":"1.0.0",
  "actions":[{"id":"mode","label":"Mode","run":"bin/mode.sh","output":"show"}]}`,
-		map[string]string{"mode.sh": `echo "value=[${NICKELDRAWER_VALUE-unset}]"`})
+		map[string]string{"mode.sh": `printf 'value=[%s]' "${NICKELDRAWER_VALUE-unset}" >"$(dirname "$0")/seen.txt"; echo "prose that must not reach the screen"`})
 	cases := map[string]struct {
 		args []string
 		want string
@@ -108,8 +108,9 @@ func TestDrawerEvent(t *testing.T) {
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			reply, code, raw := root.call(t, "en", append([]string{"event"}, test.args...)...)
-			if code != exitOK || reply["ok"] != true || reply["text"] != test.want {
-				t.Errorf("exit %d: %s", code, raw)
+			seen, _ := os.ReadFile(filepath.Join(root.apps, "echo", "bin", "seen.txt"))
+			if code != exitOK || reply["ok"] != true || reply["text"] != "" || string(seen) != test.want {
+				t.Errorf("exit %d: %s (script saw %q)", code, raw, seen)
 			}
 		})
 	}

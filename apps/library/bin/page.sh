@@ -1,4 +1,4 @@
 #!/bin/sh
 . "$(dirname "$0")/lib.sh"
 require_binary
-run_library page
+run_quick "" page

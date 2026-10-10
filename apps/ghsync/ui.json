@@ -69,7 +69,17 @@
           "style": "primary",
           "enabled": "$can_sync"
         }
-      ]
+      ],
+      "toasts": {
+        "syncing": "@ui.toast_syncing",
+        "already_running": "@ui.toast_already_running",
+        "sync_done": "@ui.toast_sync_done",
+        "sync_failed": "@ui.toast_sync_failed",
+        "pair_started": "@ui.toast_pair_started",
+        "pair_failed": "@ui.toast_pair_failed",
+        "wifi_missing": "@ui.toast_wifi_missing",
+        "failed": "@ui.toast_failed"
+      }
     }
   }
 }

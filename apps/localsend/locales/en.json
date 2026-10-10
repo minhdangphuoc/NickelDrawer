@@ -1,6 +1,6 @@
 {
   "msg.wifi_missing": "Wi-Fi is not connected.\nWait for Wi-Fi, then tap again.",
-  "msg.start_failed": "Could not start:",
+  "msg.start_failed": "Could not start LocalSend. See data/log.txt.",
   "msg.started": "LocalSend is receiving books\n\nDevice name: {device}\nIP: {ip}\nPIN: {pin}\n\nKeep the device awake while sending.\nWhen done, tap 'Stop receiving'.",
   "msg.stopped": "LocalSend stopped.\nUpdating the library...",
   "msg.sort_started": "Sorting old files in the background.\nTap 'Sort old files' again to see the result.",
@@ -16,5 +16,14 @@
   "actions.state.label": "Screen state",
   "ui.status_receiving": "Receiving",
   "ui.status_idle": "Not receiving",
-  "ui.start": "Start receiving"
+  "ui.start": "Start receiving",
+  "ui.toast_started": "Receiving. Enter the PIN on your phone.",
+  "ui.toast_stopped": "Stopped. Updating the library.",
+  "ui.toast_wifi_missing": "No Wi-Fi. Connect, then try again.",
+  "ui.toast_start_failed": "Could not start. See data/log.txt.",
+  "ui.toast_failed": "That did not work. See data/log.txt.",
+  "ui.toast_sort_started": "Sorting old files in the background.",
+  "ui.toast_sort_running": "Still sorting old files.",
+  "ui.toast_sort_nothing": "No old files to sort.",
+  "ui.toast_sort_done": "Old files sorted."
 }

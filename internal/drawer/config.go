@@ -4,6 +4,8 @@ package drawer
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"net"
 	"os"
 	"time"
@@ -38,6 +40,7 @@ type Config struct {
 	StartScript func(string) error // default: detached start
 	HasIP       func() bool        // default: a non-loopback IPv4 address exists
 	Now         func() time.Time   // default time.Now
+	DebugLog    io.Writer          // receives dropped script output; nil discards it
 }
 
 func (c Config) message(key string, params map[string]string) string {
@@ -113,4 +116,10 @@ func HasNonLoopbackIP() bool {
 		}
 	}
 	return false
+}
+
+func (c Config) debugf(format string, args ...any) {
+	if c.DebugLog != nil {
+		fmt.Fprintf(c.DebugLog, "drawer: "+format+"\n", args...)
+	}
 }

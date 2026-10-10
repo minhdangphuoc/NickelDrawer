@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"koboapps/internal/i18n"
 )
 
 func writeApp(t *testing.T, appsDir, id, manifestJSON string) {
@@ -79,85 +77,23 @@ func writeConf(t *testing.T, locale string) string {
 	return path
 }
 
-func newOptions(t *testing.T) genMenuOptions {
+// testOptions are the host-folder and apps-folder settings the tests share.
+type testOptions struct {
+	localeFlags
+	appsDir string
+}
+
+func newOptions(t *testing.T) testOptions {
 	root := t.TempDir()
 	hostDir := filepath.Join(root, "koboapps")
 	copyHostLocales(t, hostDir)
-	return genMenuOptions{
+	return testOptions{
 		localeFlags: localeFlags{locale: "en", hostDir: hostDir},
 		appsDir:     filepath.Join(root, "apps"),
-		deviceApps:  "/mnt/onboard/.adds/apps",
-		deviceHost:  "/mnt/onboard/.adds/koboapps",
-		menuFile:    filepath.Join(root, "nm", "koboapps"),
-		errorsFile:  filepath.Join(root, "data", "errors.txt"),
 	}
 }
 
 const viLocale = `{"name":"Tốt","actions.go.label":"Chạy"}`
-
-func TestGenMenuWritesMenuAndErrorsInEnglish(t *testing.T) {
-	options := newOptions(t)
-	writeApp(t, options.appsDir, "good-app", validManifest)
-	writeLocale(t, options.appsDir, "good-app", "vi", viLocale)
-	writeApp(t, options.appsDir, "bad-app", invalidManifest)
-
-	result, err := generateMenu(options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.appCount != 1 || result.itemCount != 1 || len(result.failures) != 1 {
-		t.Fatalf("result = %+v", result)
-	}
-	menu, _ := os.ReadFile(options.menuFile)
-	if !strings.Contains(string(menu), "Good · Run") || !strings.Contains(string(menu), "Apps · Errors (1)") {
-		t.Fatalf("menu =\n%s", menu)
-	}
-	errorsText, _ := os.ReadFile(options.errorsFile)
-	if !strings.HasPrefix(string(errorsText), "bad-app: name") {
-		t.Fatalf("errors = %q", errorsText)
-	}
-	wantSummary := "Refreshed: 1 apps, 1 items\n1 apps have errors. Open 'Apps · Errors'.\n"
-	if got := refreshSummary(result); got != wantSummary {
-		t.Fatalf("summary = %q", got)
-	}
-}
-
-func TestGenMenuRendersVietnameseFromTheConf(t *testing.T) {
-	options := newOptions(t)
-	options.locale = ""
-	options.confPath = writeConf(t, "vi")
-	writeApp(t, options.appsDir, "good-app", validManifest)
-	writeLocale(t, options.appsDir, "good-app", "vi", viLocale)
-	writeApp(t, options.appsDir, "bad-app", invalidManifest)
-
-	result, err := generateMenu(options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	menu, _ := os.ReadFile(options.menuFile)
-	for _, want := range []string{"Tốt · Chạy", "Ứng dụng · Lỗi (1)", "Ứng dụng · Làm mới danh sách"} {
-		if !strings.Contains(string(menu), want) {
-			t.Errorf("menu lacks %q:\n%s", want, menu)
-		}
-	}
-	if got := refreshSummary(result); !strings.HasPrefix(got, "Đã làm mới: 1 ứng dụng, 1 mục\n") {
-		t.Fatalf("summary = %q", got)
-	}
-}
-
-func TestGenMenuFallsBackToEnglishForUnknownLocale(t *testing.T) {
-	options := newOptions(t)
-	options.locale = "fr"
-	writeApp(t, options.appsDir, "good-app", validManifest)
-	writeLocale(t, options.appsDir, "good-app", "vi", viLocale)
-	if _, err := generateMenu(options); err != nil {
-		t.Fatal(err)
-	}
-	menu, _ := os.ReadFile(options.menuFile)
-	if !strings.Contains(string(menu), "Good · Run") || !strings.Contains(string(menu), "Apps · Refresh list") {
-		t.Fatalf("menu =\n%s", menu)
-	}
-}
 
 func TestMsgResolvesLocaleFallbackAndPlaceholders(t *testing.T) {
 	appsDir := t.TempDir()
@@ -244,77 +180,5 @@ func TestUnknownCommandIsAUsageError(t *testing.T) {
 	var out, errOut bytes.Buffer
 	if code := run([]string{"nope"}, &out, &errOut); code != exitFailure {
 		t.Fatalf("exit = %d", code)
-	}
-}
-
-func TestErrorsDialogIsCapped(t *testing.T) {
-	var lines []string
-	for i := 0; i < 20; i++ {
-		lines = append(lines, "app: problem")
-	}
-	bundle := i18n.NewBundle(i18n.Catalog{"errors.more": "... and {count} more", "errors.none": "No errors."})
-	got := strings.Split(strings.TrimSpace(formatErrorDialog(lines, bundle)), "\n")
-	if len(got) != maxErrorLines || got[len(got)-1] != "... and 9 more" {
-		t.Fatalf("dialog = %v", got)
-	}
-	if formatErrorDialog(nil, bundle) != "No errors.\n" {
-		t.Fatal("empty dialog wrong")
-	}
-}
-
-func TestErrorsReadsMissingFileAsEmpty(t *testing.T) {
-	options := newOptions(t)
-	var out, errOut bytes.Buffer
-	code := run([]string{"errors", "--locale", "vi", "--koboapps-dir", options.hostDir,
-		"--errors-file", filepath.Join(t.TempDir(), "none.txt")}, &out, &errOut)
-	if code != exitOK || out.String() != "Không có lỗi.\n" {
-		t.Fatalf("code=%d out=%q", code, out.String())
-	}
-}
-
-func TestGenMenuScanDirIsIndependentOfDevicePaths(t *testing.T) {
-	options := newOptions(t)
-	root := t.TempDir()
-	scanDir := filepath.Join(root, "Volumes", "KOBO", ".adds", "apps")
-	writeApp(t, scanDir, "good-app", validManifest)
-	menuFile := filepath.Join(root, "nm", "koboapps")
-	var stdout, stderr bytes.Buffer
-	code := runGenMenu([]string{
-		"--apps-dir", scanDir, "--out", menuFile,
-		"--errors-file", filepath.Join(root, "errors.txt"),
-		"--device-apps-root", "/dev/apps", "--device-koboapps-root", "/dev/host",
-		"--locale", "en", "--koboapps-dir", options.hostDir,
-	}, &stdout, &stderr)
-	if code != exitOK {
-		t.Fatalf("code %d: %s", code, stderr.String())
-	}
-	menu, _ := os.ReadFile(menuFile)
-	if !strings.Contains(string(menu), ":/dev/apps/good-app/bin/run.sh") || !strings.Contains(string(menu), ":/dev/host/bin/appsctl refresh") {
-		t.Fatalf("menu =\n%s", menu)
-	}
-	if strings.Contains(string(menu), root) {
-		t.Fatalf("scan path leaked into menu:\n%s", menu)
-	}
-}
-
-func TestGenMenuWarnsWhenAppItemsExceedTheLimit(t *testing.T) {
-	options := newOptions(t)
-	var actions []string
-	for _, id := range []string{"a", "b", "c", "d", "e", "f", "g"} {
-		actions = append(actions, `{"id":"`+id+`","label":"Act `+id+`","run":"bin/run.sh","output":"show"}`)
-	}
-	writeApp(t, options.appsDir, "good-app",
-		`{"schema":1,"id":"good-app","name":"Good","version":"1.0.0","actions":[`+strings.Join(actions, ",")+`]}`)
-
-	result, err := generateMenu(options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.warnings) != 1 || !strings.Contains(result.warnings[0], "7 app items exceed 6") {
-		t.Fatalf("warnings = %v", result.warnings)
-	}
-	errorsText, _ := os.ReadFile(options.errorsFile)
-	if !strings.Contains(string(errorsText), "NickelMenu cannot scroll") {
-		t.Fatalf("errors file = %q", errorsText)
 	}
 }

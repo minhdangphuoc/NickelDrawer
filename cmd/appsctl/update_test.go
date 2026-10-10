@@ -17,36 +17,8 @@ func TestEmbeddedEnglishEqualsHostLocale(t *testing.T) {
 		t.Fatal("cmd/appsctl/embedded/en.json differs from host/locales/en.json; run `make sync-embedded`")
 	}
 	catalog, err := embeddedEnglish()
-	if err != nil || catalog["menu.refresh"] == "" {
+	if err != nil || catalog["refresh.summary"] == "" {
 		t.Fatalf("embedded English unusable: %v", err)
-	}
-}
-
-func TestMissingLocalesFolderStillRendersEnglishHostLabels(t *testing.T) {
-	options := newOptions(t)
-	options.hostDir = filepath.Join(t.TempDir(), "no-such-koboapps")
-	options.locale = "vi"
-	writeUpdateConfig(t, options.hostDir)
-	writeApp(t, options.appsDir, "good-app", validManifest)
-	writeApp(t, options.appsDir, "bad-app", invalidManifest)
-
-	result, err := generateMenu(options)
-	if err != nil {
-		t.Fatal(err)
-	}
-	menu, _ := os.ReadFile(options.menuFile)
-	for _, want := range []string{"Apps · Refresh list", "Apps · Errors (1)", "Apps · Check for updates", "Apps · Update status"} {
-		if !strings.Contains(string(menu), want) {
-			t.Errorf("menu lacks %q:\n%s", want, menu)
-		}
-	}
-	for _, raw := range []string{"menu.refresh", "menu.errors", "menu.update"} {
-		if strings.Contains(string(menu), raw) {
-			t.Errorf("raw key %q reached the menu:\n%s", raw, menu)
-		}
-	}
-	if got := refreshSummary(result); !strings.HasPrefix(got, "Refreshed: 1 apps") {
-		t.Fatalf("summary = %q", got)
 	}
 }
 
@@ -59,33 +31,8 @@ func TestBrokenLocaleFileFallsBackToEnglishAndWarns(t *testing.T) {
 	if err == nil {
 		t.Fatal("broken files should be reported")
 	}
-	if got := bundle.Message("menu.update_status", nil); got != "Apps · Update status" {
+	if got := bundle.Message("refresh.summary", map[string]string{"apps": "2"}); got != "Refreshed: 2 apps" {
 		t.Fatalf("message = %q", got)
-	}
-}
-
-func TestMenuHasLocalizedUpdateItems(t *testing.T) {
-	cases := map[string][]string{
-		"en": {"Apps · Check for updates", "Apps · Update status"},
-		"vi": {"Ứng dụng · Kiểm tra cập nhật", "Ứng dụng · Trạng thái cập nhật"},
-	}
-	for locale, labels := range cases {
-		options := newOptions(t)
-		options.locale = locale
-		writeUpdateConfig(t, options.hostDir)
-		writeApp(t, options.appsDir, "good-app", validManifest)
-		if _, err := generateMenu(options); err != nil {
-			t.Fatal(err)
-		}
-		menu, _ := os.ReadFile(options.menuFile)
-		for _, label := range labels {
-			if !strings.Contains(string(menu), label) {
-				t.Errorf("%s menu lacks %q:\n%s", locale, label, menu)
-			}
-		}
-		if !strings.Contains(string(menu), "/koboapps/bin/update-apply.sh") || !strings.Contains(string(menu), "/koboapps/bin/update-status.sh") {
-			t.Errorf("%s menu lacks the update scripts:\n%s", locale, menu)
-		}
 	}
 }
 

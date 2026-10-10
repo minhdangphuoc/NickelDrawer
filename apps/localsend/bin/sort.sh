@@ -1,6 +1,6 @@
 #!/bin/sh
 # Sort files that older versions received into /mnt/onboard/LocalSend. The work runs in the
-# background (NickelMenu waits under 10 s); tap again to see the result.
+# background; run it again to see the result.
 . "$(dirname "$0")/env.sh"
 
 SORT_PID_FILE=/tmp/localsend-sort.pid
@@ -16,28 +16,32 @@ has_old_files() {
 
 start_background_sort() {
     rm -f "$SORT_DONE_FILE"
-    # All fds are redirected so NickelMenu does not wait for the child.
+    # All fds are redirected so the caller does not wait for the child.
     sh -c 'echo $$ >"$1"; "$2" inbox sort --source localsend --source-dir "$3" >/dev/null 2>&1; touch "$4"; rm -f "$1"' \
         sh "$SORT_PID_FILE" "$APPSCTL" "$LEGACY_FOLDER" "$SORT_DONE_FILE" \
         </dev/null >/dev/null 2>&1 &
 }
 
 if is_sorting; then
-    msg "$APP_ID" msg.sort_running
+    report sort_running "$APP_ID" msg.sort_running
     exit 0
 fi
 
 if [ -f "$SORT_DONE_FILE" ]; then
     rm -f "$SORT_DONE_FILE"
-    print_inbox_summary
+    if is_drawer; then
+        emit_toast sort_done
+    else
+        print_inbox_summary
+    fi
     exit 0
 fi
 
 if ! has_old_files; then
-    msg "$APP_ID" msg.sort_nothing
+    report sort_nothing "$APP_ID" msg.sort_nothing
     exit 0
 fi
 
 start_background_sort
 sleep 1
-msg "$APP_ID" msg.sort_started
+report sort_started "$APP_ID" msg.sort_started

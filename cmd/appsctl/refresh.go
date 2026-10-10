@@ -1,50 +1,30 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"io"
 	"strconv"
 
+	"koboapps/internal/drawer"
 	"koboapps/internal/i18n"
+	"koboapps/internal/manifest"
 )
 
-// runRefresh is what the "Refresh list" menu item runs; its stdout is shown in a dialog.
-func runRefresh(args []string, stdout, stderr io.Writer) int {
-	flags := flag.NewFlagSet("refresh", flag.ContinueOnError)
-	flags.SetOutput(stderr)
-	options := deviceGenMenuOptions()
-	options.localeFlags.register(flags)
-	if err := flags.Parse(args); err != nil {
-		return exitFailure
-	}
-	result, err := generateMenu(options)
+// refreshHostItem rescans the apps folder. The drawer model is rebuilt from disk on every
+// call, so there is nothing to write; the reply only tells the user what was found.
+func refreshHostItem(session drawerSession) (any, error) {
+	scan, err := manifest.LoadAll(session.options.appsDir)
 	if err != nil {
-		bundle, _ := options.hostBundle()
-		fmt.Fprintln(stdout, bundle.Message("refresh.failed", nil))
-		fmt.Fprintln(stderr, err)
-		return exitFailure
+		return nil, &drawer.Error{Code: drawer.CodeIO, Params: map[string]string{"detail": err.Error()}}
 	}
-	printLocaleWarnings(stderr, result.warnings)
-	fmt.Fprint(stdout, refreshSummary(result))
-	return exitOK
+	return drawer.RunResult{
+		V: drawer.ProtocolVersion, OK: true, Rescan: manifest.RescanNone,
+		Text: refreshSummary(session.bundle, len(scan.Apps), len(scan.Failures)),
+	}, nil
 }
 
-func deviceGenMenuOptions() genMenuOptions {
-	return genMenuOptions{
-		appsDir:    defaultAppsDir(),
-		deviceApps: defaultAppsDir(),
-		deviceHost: defaultKoboappsDir(),
-		menuFile:   defaultMenuFile,
-		errorsFile: defaultErrorsFile,
-	}
-}
-
-func refreshSummary(result genMenuResult) string {
-	summary := result.bundle.Message("refresh.summary", i18n.Params(
-		"apps", strconv.Itoa(result.appCount), "items", strconv.Itoa(result.itemCount))) + "\n"
-	if len(result.failures) > 0 {
-		summary += result.bundle.Message("refresh.failures", i18n.Params("count", strconv.Itoa(len(result.failures)))) + "\n"
+func refreshSummary(bundle *i18n.Bundle, appCount, failureCount int) string {
+	summary := bundle.Message("refresh.summary", i18n.Params("apps", strconv.Itoa(appCount)))
+	if failureCount > 0 {
+		summary += "\n" + bundle.Message("refresh.failures", i18n.Params("count", strconv.Itoa(failureCount)))
 	}
 	return summary
 }

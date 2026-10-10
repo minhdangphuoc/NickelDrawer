@@ -53,7 +53,7 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
 
 - `kind`: `show` (run, then show the printed result in a native dialog) or `background` (start, show a toast).
 - `primary`: the action run when the row is tapped. Other actions appear in the long-press menu (with Info and Remove).
-- Items with app-level `menu: false` still appear in the drawer (the menu flag only affects NickelMenu). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
+- Items with app-level `menu: false` still appear in the drawer (the flag is a leftover of the retired NickelMenu items and has no effect). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
 - `screen: true` (omitted otherwise) when the app folder has a `ui.json`: with the screens flag on, a tap opens the app screen (`drawer screen`) instead of running the primary action.
 - Ids starting with `_` are host items: `_refresh` (action `refresh`) and `_updates` (action `check`, only when `data/update.json` exists). `drawer run` accepts both. Host items have no `running` field; `icon` is the absolute path of a 96x96 PNG, omitted when the file does not exist: apps use `<app>/icon.png`, host items `<koboapps>/icons/refresh.png` and `updates.png`.
 - `primary` is set on the first action in manifest order (no manifest field). The `status` action stays in `actions`.
@@ -62,7 +62,7 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
 
 ## `appsctl drawer run <app-id> <action-id>`
 
-Runs the declared action exactly like the NickelMenu item would (same script, same `wifi`/`rescan` semantics), but returns JSON:
+Runs the declared action (same `wifi`/`rescan` semantics as the manifest says) and returns JSON. An app never sends prose to the screen: its output is only a toast or dialog signal (see `drawer event`); any other output is written to appsctl's stderr and dropped, so `text` is empty for app actions. Host items (`_refresh`, `_updates`) may return a short `text`.
 
 ```json
 {"v": 1, "ok": true, "text": "LocalSend đang nhận sách\nPIN: 4821", "rescan": "quick", "wifi": false}
@@ -70,7 +70,7 @@ Runs the declared action exactly like the NickelMenu item would (same script, sa
 
 - `wifi: true` in the manifest → `appsctl` returns `{"v":1,"ok":false,"needs_wifi":true,…}` without running when there is no IP; the mod then calls Nickel's Wi-Fi connect and retries once.
 - `rescan`: the mod triggers Nickel's library rescan (quick/full) after showing the result.
-- A script that exits non-zero still returns exit 0 with `"ok": false` and its stdout (stderr if stdout is empty) as `text`; `rescan` is then `none`. `kind: show` is capped at 30 s (then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH`, `HOME=/` and `NICKELDRAWER=1` (the script runs inside the drawer: return at once, print only JSON signals or nothing).
+- A script that exits non-zero still returns exit 0 with `"ok": false` and `text` set to the short localized message "<action label> did not work."; `rescan` is then `none`. `kind: show` is capped at 30 s (then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH`, `HOME=/` and `NICKELDRAWER=1` (the script runs inside the drawer: return at once, print only JSON signals or nothing).
 - Only actions declared in `app.json` can run (same validation as the menu). Unknown app/action → error.
 
 ## `appsctl drawer screen <app-id> [--screen <id>] [--value <v>]`
@@ -143,7 +143,7 @@ When `--screen` is given and the script's stdout is one JSON object `{"toast":"<
 {"v": 1, "ok": true, "text": "", "rescan": "none", "wifi": false, "dialog": {"title": "…", "text": "…", "ok": "…", "cancel": "…", "action": "…"}}
 ```
 
-The mod shows the toast, or the dialog and on OK runs its `action` as another event. An undeclared id stays plain text.
+The mod shows the toast, or the dialog and on OK runs its `action` as another event. An undeclared id is dropped (empty `text`); without `--screen` a signal is dropped too.
 
 ## `appsctl drawer info <app-id>`
 
@@ -151,7 +151,11 @@ The mod shows the toast, or the dialog and on OK runs its `action` as another ev
 
 ## `appsctl drawer remove <app-id> --confirm`
 
-Removes an app folder (without `--confirm` it fails with `need_confirm`; a symlink, `..`, a host id or anything resolving outside the apps root is refused with `remove_refused`; an app with a broken manifest can be removed; never `data/` of other apps, never host items), regenerates the NickelMenu file, returns `{"v":1,"ok":true,"text":"…"}`. The mod always shows a confirm dialog first.
+Removes an app folder (without `--confirm` it fails with `need_confirm`; a symlink, `..`, a host id or anything resolving outside the apps root is refused with `remove_refused`; an app with a broken manifest can be removed; never `data/` of other apps, never host items), returns `{"v":1,"ok":true,"text":"…"}`. The mod always shows a confirm dialog first.
+
+## `appsctl drawer tweaks` and `appsctl drawer tweak <id>`
+
+The backend of the "Tinh chỉnh" modal; see [tweaks.md](tweaks.md).
 
 ## Versioning
 
