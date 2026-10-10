@@ -21,7 +21,7 @@ func runVerify(args []string, stdout, stderr io.Writer) int {
 	if err := verifyReleaseDir(*dir, *publicPath); err != nil {
 		return fail(stderr, err)
 	}
-	fmt.Fprintf(stdout, "%s verifies: signature, every file sha256 and size\n", *dir)
+	fmt.Fprintf(stdout, "%s verifies: signature, every file and app zip sha256 and size\n", *dir)
 	return exitOK
 }
 
@@ -46,5 +46,8 @@ func verifyReleaseDir(dir, publicPath string) error {
 	if err != nil {
 		return err
 	}
-	return release.VerifyZip(manifest, filepath.Join(dir, zipName(manifest.Version)))
+	if err := release.VerifyZip(manifest, filepath.Join(dir, zipName(manifest.Version))); err != nil {
+		return err
+	}
+	return release.VerifyAppPackages(manifest, dir)
 }

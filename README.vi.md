@@ -23,7 +23,7 @@ go run ./cmd/ndpreview drawer-grid --installed --locale vi --out docs/img/drawer
 - **Tinh chỉnh.** Bảng giống phần cài đặt: màn hình ngủ, chụp màn hình, tự kết nối USB, chữ rõ nét, địa chỉ IP, khởi động lại và quét lại thư viện.
 - **Ứng dụng là thư mục.** Chép một thư mục có tệp mô tả và vài tập lệnh vào `.adds/apps/` là nó hiện ra. Không cần C++ ([docs/APPS.md](docs/APPS.md)).
 - **Màn hình ứng dụng gốc.** Ứng dụng mô tả danh sách, nút gạt, nút bấm, mã QR và trạng thái trực tiếp trong tệp `ui.json`; Ngăn vẽ ra.
-- **Cập nhật có chữ ký.** Ứng dụng và công cụ chủ cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
+- **Cập nhật có chữ ký.** Ngăn (công cụ chủ và mod) cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
 - **Mọi ngôn ngữ.** Tiếng Anh là bản gốc; tiếng Việt có sẵn đầu tiên. Ngôn ngữ theo cài đặt của chính Kobo ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 
 ## Firmware hỗ trợ
@@ -46,19 +46,21 @@ Trong 27 mẫu Kobo đã bán, **1 mẫu đã thử** (Libra 2, firmware 4.38.23
 
 ## Cài đặt
 
-Bạn cần Kobo Libra 2 chạy một trong các bản trên, một máy tính, cáp USB và các tệp của [bản phát hành](../../releases) mới nhất: `koboapps-<phiên bản>.zip` (ứng dụng và công cụ chủ) và `KoboRoot-nickeldrawer.tgz` (ngăn gốc).
+Bạn cần Kobo Libra 2 chạy một trong các bản trên, một máy tính, cáp USB và các tệp của [bản phát hành](../../releases) mới nhất: `koboapps-<phiên bản>.zip` (công cụ chủ của ngăn) và `KoboRoot-nickeldrawer.tgz` (ngăn gốc).
 
 1. **Sao lưu trước.** Cắm Kobo, chép toàn bộ thư mục `.kobo` và `.adds` vào máy tính. Giữ cho đến khi bạn hài lòng.
-2. Giải nén `koboapps-<phiên bản>.zip`. Chép thư mục `.adds` trong `onboard/` vào thư mục gốc của ổ Kobo và gộp với `.adds` có sẵn (thư mục ẩn: Cmd+Shift+. trong Finder của macOS, "hiện tệp ẩn" trên Windows và Linux). Tệp zip không có thư mục `data/`; có một cấu hình GitHub mẫu cạnh ứng dụng (`.adds/apps/ghsync/config.example.json`). **Finder trên macOS: nếu hỏi có Thay thế (Replace) thư mục đã có không, đừng chọn.** Thay thế xóa nội dung hiện có của thư mục (cài đặt ứng dụng, token, tệp của mod khác). Giữ phím Option rồi chọn **Gộp (Merge)**, hoặc dùng tập lệnh cài bên dưới.
+2. Giải nén `koboapps-<phiên bản>.zip`. Chép thư mục `.adds` trong `onboard/` vào thư mục gốc của ổ Kobo và gộp với `.adds` có sẵn (thư mục ẩn: Cmd+Shift+. trong Finder của macOS, "hiện tệp ẩn" trên Windows và Linux). Tệp zip không có ứng dụng và không có thư mục `data/`. **Finder trên macOS: nếu hỏi có Thay thế (Replace) thư mục đã có không, đừng chọn.** Thay thế xóa nội dung hiện có của thư mục (cài đặt ứng dụng, token, tệp của mod khác). Giữ phím Option rồi chọn **Gộp (Merge)**, hoặc dùng tập lệnh cài bên dưới.
 3. Chép `KoboRoot-nickeldrawer.tgz` vào `.kobo/KoboRoot.tgz` trên ổ (đổi tên khi chép).
 4. Ngắt kết nối (eject) Kobo khỏi máy tính. Máy tự cài ngăn và khởi động lại. Sau khi lên, tab Thêm có hàng **Ứng dụng**.
+
+Lúc đầu ngăn còn trống. **Ứng dụng tách riêng khỏi ngăn:** mỗi ứng dụng là một tệp `app-<id>-<phiên bản>.zip` trong bản phát hành, cài từng cái; xem [apps/README.vi.md](apps/README.vi.md). Cài hay cập nhật ngăn không bao giờ thêm, đổi hay xóa ứng dụng nào.
 
 Trên macOS hoặc Linux, với bản checkout của kho mã này có tập lệnh cài an toàn hơn: nó sao lưu mọi thứ nó thay vào `backups/<ngày-giờ>/` và không bao giờ đụng vào thư mục `data/`:
 
 ```sh
 make check build dist
 tools/install-to-kobo.sh --dry-run     # cho xem việc sẽ làm
-tools/install-to-kobo.sh               # tìm /Volumes/KOBOeReader, /media/$USER/KOBOeReader hoặc /run/media/$USER/KOBOeReader; không thì đặt KOBO_ROOT=/đường/dẫn
+tools/install-to-kobo.sh               # chỉ cài ngăn; tìm /Volumes/KOBOeReader, /media/$USER/KOBOeReader hoặc /run/media/$USER/KOBOeReader; không thì đặt KOBO_ROOT=/đường/dẫn
 ```
 
 [NickelMenu](https://github.com/pgaskin/NickelMenu) là tùy chọn. NickelDrawer không cần nó và chạy chung được với nó.
@@ -134,7 +136,11 @@ NickelDrawer là dự án độc lập. Không do Rakuten Kobo làm ra, không l
 
 ## Công cụ và cài đặt thêm
 
-Tùy chọn, tách riêng khỏi NickelDrawer và không nằm trong bản phát hành của nó. Chỉ cài khi bạn cần.
+Tùy chọn, tách riêng khỏi ngăn. Chỉ cài thứ bạn cần.
+
+### Ứng dụng
+
+[apps/README.vi.md](apps/README.vi.md): LocalSend, GitHub, Thư viện, Hình nền và Việc cần làm (cùng UI Kit chỉ dành cho nhà phát triển). Mỗi ứng dụng là một tệp zip riêng trong bản phát hành, được cài, cập nhật và gỡ từng cái; ngăn và các bản cập nhật của nó không bao giờ đụng vào chúng.
 
 ### Nút chụp màn hình trên thanh trạng thái
 

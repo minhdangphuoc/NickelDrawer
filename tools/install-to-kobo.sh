@@ -1,6 +1,7 @@
 #!/bin/bash
 # Installs, updates or removes NickelDrawer on a mounted Kobo (macOS or Linux).
 #   tools/install-to-kobo.sh [--dry-run] [--remove-legacy] [--with-mod | --no-mod]
+#   tools/install-to-kobo.sh [--dry-run] --app <id> [--app <id> ...] | --apps all
 #   tools/install-to-kobo.sh --uninstall [--purge] [--dry-run]
 # Env: KOBO_ROOT, the mounted Kobo. Default: the first KOBOeReader volume found under
 #        /Volumes (macOS), /media/$USER, /run/media/$USER or /mnt (Linux); KOBO_SEARCH_DIRS
@@ -11,6 +12,11 @@
 # The Nickel mod (build/mod/KoboRoot-nickeldrawer.tgz) is staged as .kobo/KoboRoot.tgz when it
 # exists and differs from the one installed last time; Nickel installs it at the next reboot.
 # --with-mod forces it, --no-mod skips it. --uninstall removes the drawer, the apps and the mod.
+#
+# Without --app/--apps the run installs the drawer (host tool + mod) only; apps already on the
+# Kobo are left alone. --app <id> (repeatable) and --apps all install apps from the zips in
+# dist/apps (app-<id>-<version>.zip) and nothing else: the apps' bin/, locales/ and files are
+# replaced, their data/ is kept. Apps are never removed by an install.
 set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -23,6 +29,8 @@ ADDS=$KOBO_ROOT/.adds
 FLAG_DIR=$ADDS/nickeldrawer
 STAGED_TGZ=$KOBO_ROOT/.kobo/KoboRoot.tgz
 DIST_ADDS=$REPO_ROOT/dist/onboard/.adds
+DIST_APPS=${DIST_APPS:-$REPO_ROOT/dist/apps}
+APP_ID_PATTERN='^[a-z0-9][a-z0-9-]{1,30}$'
 APPSCTL_HOST=$REPO_ROOT/build/appsctl-host
 MOD_TGZ=${MOD_TGZ:-$REPO_ROOT/build/mod/KoboRoot-nickeldrawer.tgz}
 # The archive staged last time, kept on the Kobo so the next install can tell whether the mod changed.
@@ -41,6 +49,10 @@ shouldRemoveLegacy=false
 modMode=auto # auto | force | skip
 isUninstall=false
 isPurge=false
+shouldInstallAllApps=false
+requestedAppIds=()
+selectedAppIds=()
+appsWorkDir=
 backupDir=
 changes=()
 
@@ -64,24 +76,47 @@ act() {
 
 usage() {
     echo "Usage: $0 [--dry-run] [--remove-legacy] [--with-mod | --no-mod]"
+    echo "       $0 [--dry-run] --app <id> [--app <id> ...] | --apps all"
     echo "       $0 --uninstall [--purge] [--dry-run]"
 }
 
 parse_flags() {
-    for flag in "$@"; do
-        case $flag in
+    while [ "$#" -gt 0 ]; do
+        case $1 in
         --dry-run) isDryRun=true ;;
         --remove-legacy) shouldRemoveLegacy=true ;;
         --with-mod) modMode=force ;;
         --no-mod) modMode=skip ;;
         --uninstall) isUninstall=true ;;
         --purge) isPurge=true ;;
-        *) fail "unknown flag '$flag'. $(usage)" ;;
+        --app)
+            [ "$#" -ge 2 ] || fail "--app needs an app id. $(usage)"
+            requestedAppIds+=("$2")
+            shift
+            ;;
+        --apps)
+            [ "${2:-}" = all ] || fail "--apps only accepts 'all' (use --app <id> for one app). $(usage)"
+            shouldInstallAllApps=true
+            shift
+            ;;
+        *) fail "unknown flag '$1'. $(usage)" ;;
         esac
+        shift
     done
     if $isPurge && ! $isUninstall; then
         fail "--purge only goes with --uninstall."
     fi
+    if $isUninstall && is_installing_apps; then
+        fail "--uninstall cannot be combined with --app/--apps."
+    fi
+    if is_installing_apps && { $shouldRemoveLegacy || [ "$modMode" != auto ]; }; then
+        fail "--remove-legacy, --with-mod and --no-mod belong to the drawer install; run them without --app/--apps."
+    fi
+}
+
+# True when the run installs apps (and then only apps, not the drawer).
+is_installing_apps() {
+    $shouldInstallAllApps || [ "${#requestedAppIds[@]}" -gt 0 ]
 }
 
 require_mounted_kobo() {
@@ -119,10 +154,23 @@ backup_koboapps() {
     done
 }
 
+# An apps-only run backs up just the apps it replaces.
+backup_apps_before_writing() {
+    local appId
+    backupDir=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
+    for appId in "${selectedAppIds[@]}"; do
+        backup_path "$ADDS/apps/$appId"
+    done
+    note_change "backup written to $backupDir"
+}
+
+# The drawer install never touches the apps, so only --uninstall (which removes them) backs them up.
 backup_before_writing() {
     backupDir=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
     backup_path "$ADDS/nm"
-    backup_path "$ADDS/apps"
+    if $isUninstall; then
+        backup_path "$ADDS/apps"
+    fi
     backup_path "$FLAG_DIR"
     backup_path "$STAGED_TGZ"
     backup_koboapps
@@ -260,19 +308,92 @@ install_host() {
     note_change "installed .adds/koboapps (bin, lib, locales, config, icons, screens, inbox)"
 }
 
+# --- apps (from dist/apps/app-<id>-<version>.zip) -----------------------------------------------
+
+# Prints the zip for an app id, or fails with the fix.
+app_zip_path() {
+    local appId=$1 candidates
+    candidates=$(find "$DIST_APPS" -maxdepth 1 -type f -name "app-$appId-[0-9]*.zip" 2>/dev/null | sort)
+    [ -n "$candidates" ] || fail "no zip for app '$appId' in dist/apps. Run: make check build dist (apps: $(available_app_ids))"
+    [ "$(echo "$candidates" | wc -l | tr -d ' ')" -eq 1 ] ||
+        fail "more than one zip for app '$appId' in dist/apps. Run: make dist (it rebuilds the folder)."
+    echo "$candidates"
+}
+
+available_app_ids() {
+    local zip ids=()
+    for zip in "$DIST_APPS"/app-*.zip; do
+        [ -e "$zip" ] || continue
+        ids+=("$(app_id_of_zip "$zip")")
+    done
+    echo "${ids[*]:-none}"
+}
+
+# Sets selectedAppIds from --app/--apps and checks that each has a zip, before anything is written.
+select_apps() {
+    local appId zip
+    selectedAppIds=()
+    if $shouldInstallAllApps; then
+        for zip in "$DIST_APPS"/app-*.zip; do
+            [ -e "$zip" ] || continue
+            selectedAppIds+=("$(app_id_of_zip "$zip")")
+        done
+        [ "${#selectedAppIds[@]}" -gt 0 ] || fail "no app zips in dist/apps. Run: make check build dist"
+    else
+        selectedAppIds=("${requestedAppIds[@]}")
+    fi
+    for appId in "${selectedAppIds[@]}"; do
+        echo "$appId" | grep -Eq "$APP_ID_PATTERN" || fail "'$appId' is not a valid app id (lowercase letters, digits, hyphen)."
+        app_zip_path "$appId" >/dev/null
+    done
+}
+
+app_id_of_zip() {
+    unzip -Z1 "$1" | sed -n '1s|^\.adds/apps/\([^/]*\)/.*|\1|p'
+}
+
+# Refuses a zip with an entry outside .adds/apps/<id>/ or inside a data/ folder: an app zip may
+# only add to its own app.
+assert_zip_stays_in_app() {
+    local zip=$1 appId=$2 entry
+    while IFS= read -r entry; do
+        case $entry in
+        ".adds/apps/$appId/"*) ;;
+        *) fail "$(basename "$zip") holds '$entry', outside .adds/apps/$appId/. Rebuild with: make dist" ;;
+        esac
+        case /$entry/ in
+        */../* | */data/*) fail "$(basename "$zip") holds '$entry' (a data/ folder or '..'). Rebuild with: make dist" ;;
+        esac
+    done < <(unzip -Z1 "$zip")
+    # unzip writes through a symlink an earlier entry created, so a zip may hold regular files only.
+    if unzip -Z "$zip" | grep -q '^l'; then
+        fail "$(basename "$zip") holds a symbolic link. Rebuild with: make dist"
+    fi
+}
+
+install_app() {
+    local appId=$1 zip extractDir
+    zip=$(app_zip_path "$appId")
+    assert_zip_stays_in_app "$zip" "$appId"
+    extractDir=$appsWorkDir/$appId
+    mkdir -p "$extractDir"
+    unzip -q -o "$zip" -d "$extractDir"
+    if [ -d "$ADDS/apps/$appId" ]; then
+        note_change "updated app $appId from $(basename "$zip") (data/ kept)"
+    else
+        note_change "installed new app $appId from $(basename "$zip")"
+    fi
+    install_folder "$extractDir/.adds/apps/$appId" "$ADDS/apps/$appId" bin locales screens
+    install_example_config "$extractDir/.adds/apps/$appId" "$ADDS/apps/$appId"
+}
+
 install_apps() {
-    local appSource appId
+    local appId
+    appsWorkDir=$(mktemp -d "${TMPDIR:-/tmp}/koboapps-apps.XXXXXX")
+    trap 'rm -rf "$appsWorkDir"' EXIT
     act mkdir -p "$ADDS/apps"
-    for appSource in "$DIST_ADDS"/apps/*/; do
-        appSource=${appSource%/}
-        appId=$(basename "$appSource")
-        if [ -d "$ADDS/apps/$appId" ]; then
-            note_change "updated app $appId (data/ kept)"
-        else
-            note_change "installed new app $appId"
-        fi
-        install_folder "$appSource" "$ADDS/apps/$appId" bin locales screens
-        install_example_config "$appSource" "$ADDS/apps/$appId"
+    for appId in "${selectedAppIds[@]}"; do
+        install_app "$appId"
     done
 }
 
@@ -399,8 +520,15 @@ remove_legacy() {
 # macOS writes ._* and .DS_Store next to anything it copies; Nickel and NickelMenu must not see them.
 # Sweeps whole trees (not only the copied folders) so stray files from earlier copies go too.
 clean_appledouble_files() {
-    local folder
-    for folder in "$ADDS/apps" "$ADDS/koboapps" "$ADDS/nm" "$FLAG_DIR"; do
+    local folder folders=("$ADDS/koboapps" "$ADDS/nm" "$FLAG_DIR")
+    # Each run cleans only what it backed up: the drawer install leaves the apps alone, an apps
+    # run cleans only the apps, an uninstall everything.
+    if is_installing_apps; then
+        folders=("$ADDS/apps")
+    elif $isUninstall; then
+        folders+=("$ADDS/apps")
+    fi
+    for folder in "${folders[@]}"; do
         [ -d "$folder" ] || continue
         act find "$folder" \( -name '._*' -o -name '.DS_Store' \) -type f -delete
     done
@@ -498,13 +626,12 @@ print_summary() {
     echo "Eject the Kobo before unplugging."
 }
 
-install() {
+install_drawer() {
     require_fresh_dist
     local isModStaged=false
     should_stage_mod && isModStaged=true
     backup_before_writing
     install_host
-    install_apps
     prepare_flag_folder
     if $isModStaged; then
         stage_mod
@@ -517,13 +644,23 @@ install() {
     clean_appledouble_files
 }
 
+install_selected_apps() {
+    require_fresh_dist
+    select_apps
+    backup_apps_before_writing
+    install_apps
+    clean_appledouble_files
+}
+
 main() {
     parse_flags "$@"
     require_mounted_kobo
     if $isUninstall; then
         uninstall
+    elif is_installing_apps; then
+        install_selected_apps
     else
-        install
+        install_drawer
     fi
     act sync
     print_summary

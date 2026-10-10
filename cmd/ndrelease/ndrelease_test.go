@@ -9,7 +9,7 @@ import (
 )
 
 type workspace struct {
-	dir, keyPath, specPub, embeddedPub, dist, out string
+	dir, keyPath, specPub, embeddedPub, dist, out, appsTree, appsDir string
 }
 
 func newWorkspace(t *testing.T) workspace {
@@ -18,6 +18,7 @@ func newWorkspace(t *testing.T) workspace {
 		dir: dir, keyPath: filepath.Join(dir, "config", "release.key"),
 		specPub: filepath.Join(dir, "spec", "release-ed25519.pub"), embeddedPub: filepath.Join(dir, "embed", "release-ed25519.pub"),
 		dist: filepath.Join(dir, "dist", "onboard"), out: filepath.Join(dir, "dist", "release"),
+		appsTree: filepath.Join(dir, "build", "apps-tree"), appsDir: filepath.Join(dir, "dist", "apps"),
 	}
 	for relative, content := range map[string]string{
 		".adds/koboapps/bin/appsctl":     "binary",
@@ -45,7 +46,7 @@ func (w workspace) keygen(t *testing.T) (code int, stdout, stderr string) {
 
 func (w workspace) sign(version string) (int, string) {
 	var out, errOut bytes.Buffer
-	code := run([]string{"sign", "--dist", w.dist, "--version", version, "--out", w.out, "--key", w.keyPath, "--pub", w.specPub}, &out, &errOut)
+	code := run([]string{"sign", "--dist", w.dist, "--version", version, "--out", w.out, "--key", w.keyPath, "--pub", w.specPub, "--apps-dir", w.appsDir}, &out, &errOut)
 	return code, errOut.String()
 }
 
@@ -174,5 +175,54 @@ func TestSignRejectsBadVersion(t *testing.T) {
 	w.keygen(t)
 	if code, _ := w.sign("1.0"); code == exitOK {
 		t.Fatal("bad version accepted")
+	}
+}
+
+func (w workspace) packApps(t *testing.T) {
+	t.Helper()
+	for relative, content := range map[string]string{
+		".adds/apps/demo/app.json":   `{"id":"demo","version":"1.0.0"}`,
+		".adds/apps/demo/bin/run.sh": "run",
+	} {
+		full := filepath.Join(w.appsTree, filepath.FromSlash(relative))
+		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var out, errOut bytes.Buffer
+	if code := run([]string{"pack-apps", "--tree", w.appsTree, "--out", w.appsDir}, &out, &errOut); code != exitOK {
+		t.Fatalf("pack-apps: %s", errOut.String())
+	}
+}
+
+func TestSignIndexesAppZipsAndVerifyChecksThem(t *testing.T) {
+	w := newWorkspace(t)
+	w.keygen(t)
+	w.packApps(t)
+	if code, stderr := w.sign("1.2.3"); code != exitOK {
+		t.Fatalf("sign: %s", stderr)
+	}
+	manifest, _ := os.ReadFile(filepath.Join(w.out, "release.json"))
+	if !strings.Contains(string(manifest), `"zip": "app-demo-1.0.0.zip"`) {
+		t.Fatalf("app zip not in the signed index:\n%s", manifest)
+	}
+	if strings.Contains(string(manifest), ".adds/apps/") {
+		t.Fatal("an app file is part of the drawer release files")
+	}
+	appZip := filepath.Join(w.out, "app-demo-1.0.0.zip")
+	if _, err := os.Stat(appZip); err != nil {
+		t.Fatal("app zip not copied next to the release")
+	}
+	if code, stderr := w.verify(); code != exitOK {
+		t.Fatalf("verify: %s", stderr)
+	}
+	data, _ := os.ReadFile(appZip)
+	data[len(data)/2] ^= 0xff
+	os.WriteFile(appZip, data, 0o644)
+	if code, _ := w.verify(); code == exitOK {
+		t.Fatal("tampered app zip verified")
 	}
 }

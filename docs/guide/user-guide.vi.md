@@ -98,7 +98,7 @@ Sạc Kobo **từ 50 % trở lên**. Việc cài sẽ khởi động lại máy;
 | Ở đâu | Cái gì |
 |---|---|
 | `.adds/koboapps/` | Công cụ chủ, tệp dùng chung, bản dịch, biểu tượng. |
-| `.adds/apps/` | Mỗi ứng dụng một thư mục. Mỗi ứng dụng giữ cài đặt riêng trong thư mục `data/` của nó. |
+| `.adds/apps/` | Mỗi ứng dụng một thư mục. Cài ngăn không thêm ứng dụng nào và không bao giờ xóa ứng dụng nào; ứng dụng được cài từng cái (xem [Cài ứng dụng](#cai-ung-dung)). Mỗi ứng dụng giữ cài đặt riêng trong thư mục `data/` của nó. |
 | Hệ thống Kobo (`/usr/local/Kobo/imageformats/`) | Một tệp: mod NickelDrawer, do chính Kobo cài từ `KoboRoot.tgz` khi khởi động lại. |
 | `.adds/nickeldrawer/` | Thư mục cho các tệp công tắc, xem [An toàn và gỡ cài đặt](#s-an-toan-va-go-cai-at). |
 
@@ -114,16 +114,16 @@ Có hai cách. Đa số dùng **cách A**.
 
 Bạn cần: Kobo, cáp USB, máy tính, và hai tệp trong bản phát hành mới nhất của NickelDrawer:
 
-- `koboapps-<phiên bản>.zip`: các ứng dụng và công cụ chủ.
+- `koboapps-<phiên bản>.zip`: công cụ chủ của ngăn (không có ứng dụng; ứng dụng tách riêng, xem [Cài ứng dụng](#cai-ung-dung)).
 - `KoboRoot-nickeldrawer.tgz`: mod cho Kobo. (Tệp này cũng có trong tệp zip, ở `onboard/.adds/koboapps/mod/`.)
 
 Các bước:
 
 1. [Sao lưu](#s-sao-luu) và sạc pin.
 2. Cắm Kobo, bấm **Kết nối**. Cho hiện tệp ẩn (xem trên).
-3. Giải nén `koboapps-<phiên bản>.zip` trên máy tính. Bên trong, mở `onboard`, rồi `.adds`. Bạn thấy hai thư mục: `koboapps` và `apps`.
+3. Giải nén `koboapps-<phiên bản>.zip` trên máy tính. Bên trong, mở `onboard`, rồi `.adds`. Bạn thấy một thư mục: `koboapps`.
 4. Trên ổ Kobo, mở thư mục `.adds`. Nếu chưa có, tạo thư mục tên `.adds` (có dấu chấm) ở ngay gốc ổ.
-5. Chép hai thư mục `koboapps` và `apps` vào thư mục `.adds` của Kobo.
+5. Chép thư mục `koboapps` vào thư mục `.adds` của Kobo.
 
     > **Cảnh báo với macOS Finder.** Nếu Kobo đã có thư mục cùng tên, Finder hỏi có **Thay thế** (Replace) không. **Thay thế sẽ xóa mọi thứ trong thư mục cũ**, kể cả cài đặt ứng dụng và tệp của mod khác. Giữ phím Option khi kéo thả và chọn **Gộp** (Merge), hoặc chỉ chép theo cách này ở lần cài đầu. Windows tự gộp thư mục.
 
@@ -135,9 +135,17 @@ Các bước:
 
 Nếu không thấy hai hàng đó, xem [Xử lý sự cố](#s-xu-ly-su-co).
 
+Lúc đầu ngăn còn trống: ứng dụng cài ở bước sau.
+
+<a id="cai-ung-dung"></a>
+
+### Cài ứng dụng
+
+Ứng dụng tách riêng khỏi ngăn. Mỗi ứng dụng là một tệp tải riêng trong cùng bản phát hành, `app-<id>-<phiên bản>.zip` (ví dụ `app-todo-1.0.1.zip`), và bạn chỉ cài cái mình cần. Giải nén rồi gộp thư mục `.adds` bên trong vào thư mục gốc của ổ Kobo (cùng cảnh báo **Gộp** của Finder như trên), ngắt kết nối, và ứng dụng hiện trong ngăn sau khi làm mới. Muốn cập nhật ứng dụng, cài tệp zip mới theo cách đó; `data/` được giữ. Muốn gỡ, nhấn giữ ứng dụng trong ngăn rồi chọn **Gỡ**. Danh sách ứng dụng và các bước đầy đủ nằm ở [apps/README.vi.md](../../apps/README.vi.md). Với tập lệnh cài (cách B bên dưới) là `tools/install-to-kobo.sh --app todo` hoặc `--apps all`.
+
 ### Cách B: tập lệnh cài (macOS hoặc Linux, từ mã nguồn)
 
-Cách này dành cho người tự dựng NickelDrawer từ mã nguồn. Nó sao lưu mọi thứ nó thay và không bao giờ đụng vào thư mục `data/` của ứng dụng.
+Cách này dành cho người tự dựng NickelDrawer từ mã nguồn. Nó sao lưu mọi thứ nó thay và không bao giờ đụng vào thư mục `data/` của ứng dụng. Không có tùy chọn nào thì nó chỉ cài ngăn (công cụ chủ và mod) và không đụng vào ứng dụng đang có trên Kobo.
 
 ```sh
 make check build dist                 # dựng mọi thứ (cần Go; mod cần Docker)
@@ -149,7 +157,9 @@ tools/install-to-kobo.sh              # cài
 |---|---|
 | `--dry-run` | In từng bước, không đổi gì. |
 | `--with-mod` | Luôn đặt mod Kobo vào chỗ chờ cài, kể cả khi mod không đổi. |
-| `--no-mod` | Chỉ cài ứng dụng và công cụ chủ, không cài mod. |
+| `--no-mod` | Chỉ cài công cụ chủ, không cài mod. |
+| `--app <id>` | Cài một ứng dụng từ `dist/apps` thay cho ngăn. Lặp lại để cài nhiều cái. Sao lưu ứng dụng và giữ `data/`. |
+| `--apps all` | Cài mọi ứng dụng từ `dist/apps` thay cho ngăn. |
 | `--remove-legacy` | Gỡ thêm bản LocalSend tự làm kiểu cũ (`.adds/localsend` và các mục NickelMenu của nó). |
 | `--uninstall` | Gỡ NickelDrawer (xem [Gỡ cài đặt](#s-go-cai-at)). |
 | `--purge` | Dùng cùng `--uninstall`: xóa luôn thư mục `data/` của các ứng dụng. |
@@ -494,7 +504,7 @@ Các công tắc ghi vào tệp cài đặt của chính Kobo (`.kobo/Kobo/Kobo 
 
 ## Cập nhật
 
-NickelDrawer có thể cập nhật các ứng dụng, công cụ chủ và mod Kobo qua Wi-Fi. Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
+NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng không cập nhật theo cách này: hãy cài tệp zip mới của ứng dụng (xem [Cài ứng dụng](#cai-ung-dung)). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
 
 ### Cài đặt: bánh răng
 
@@ -516,7 +526,7 @@ Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình c
 
 ### Khởi động lại sau cập nhật làm gì
 
-Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới vào `.kobo/KoboRoot.tgz`. Kobo cài nó trong lần khởi động lại kế tiếp, giống hệt lần cài đầu. Ứng dụng và công cụ chủ đã được cập nhật xong trước khi khởi động lại.
+Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới vào `.kobo/KoboRoot.tgz`. Kobo cài nó trong lần khởi động lại kế tiếp, giống hệt lần cài đầu. Công cụ chủ đã được cập nhật xong trước khi khởi động lại.
 
 ### Nếu có trục trặc
 

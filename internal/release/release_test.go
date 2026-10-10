@@ -59,28 +59,28 @@ func TestBuildManifestListsOnlyUpdatableFiles(t *testing.T) {
 	for _, file := range manifest.Files {
 		paths = append(paths, file.Path)
 	}
-	want := ".adds/apps/demo/app.json,.adds/apps/demo/bin/run.sh,.adds/apps/demo/icon.png," +
-		".adds/apps/demo/locales/vi.json,.adds/koboapps/bin/appsctl,.adds/koboapps/icons/refresh.png,.adds/koboapps/lib/common.sh,.adds/koboapps/locales/en.json"
+	want := ".adds/koboapps/bin/appsctl,.adds/koboapps/icons/refresh.png,.adds/koboapps/lib/common.sh,.adds/koboapps/locales/en.json"
 	if strings.Join(paths, ",") != want {
-		t.Fatalf("paths = %v", paths)
+		t.Fatalf("paths = %v (apps must never be part of a drawer release)", paths)
 	}
-	if len(manifest.Apps) != 1 || manifest.Apps[0] != (AppVersion{ID: "demo", Version: "1.2.3"}) {
-		t.Fatalf("apps = %+v", manifest.Apps)
+	if len(manifest.AppPackages) != 0 {
+		t.Fatalf("app packages = %+v", manifest.AppPackages)
 	}
-	if manifest.Files[1].Mode != "0755" {
+	if manifest.Files[0].Mode != "0755" {
 		t.Fatalf("mode = %s", manifest.Files[1].Mode)
 	}
 }
 
 func TestCheckPathRefusesUserDataAndEscapes(t *testing.T) {
 	good := []string{
-		".adds/koboapps/bin/appsctl", ".adds/koboapps/lib/common.sh", ".adds/apps/ghsync/app.json",
-		".adds/apps/ghsync/bin/ghsync", ".adds/apps/ghsync/locales/vi.json",
-		".adds/apps/ghsync/icon.png", ".adds/koboapps/icons/updates.png", ModPath,
+		".adds/koboapps/bin/appsctl", ".adds/koboapps/lib/common.sh",
+		".adds/koboapps/icons/updates.png", ModPath,
 		".adds/koboapps/screens/settings/ui.json", ".adds/koboapps/screens/settings/locales/vi.json",
 		".adds/koboapps/config/project.json",
 	}
 	bad := []string{
+		".adds/apps/ghsync/app.json", ".adds/apps/ghsync/bin/ghsync", ".adds/apps/ghsync/locales/vi.json",
+		".adds/apps/ghsync/icon.png", ".adds/apps/ghsync/config.example.json",
 		"", "/etc/passwd", "../x", ".adds/apps/ghsync/data/token", ".adds/koboapps/data/update.json",
 		".adds/apps/ghsync/bin/../data/token", ".adds/apps/ghsync/app.json/x", ".adds/apps/Bad/app.json",
 		".adds/nm/koboapps", ".kobo/KoboReader.sqlite", ".adds/apps/ghsync/bin", ".adds/koboapps/bin",
@@ -243,5 +243,117 @@ func TestZipRoundTripAndTamperDetection(t *testing.T) {
 	tampered.Files = tampered.Files[1:]
 	if VerifyZip(&tampered, zipPath) == nil {
 		t.Error("unlisted zip entry accepted")
+	}
+}
+
+func writeDemoAppTree(t *testing.T, treeRoot string, extra map[string]string) {
+	t.Helper()
+	files := map[string]string{
+		".adds/apps/demo/app.json":        `{"id":"demo","version":"1.2.3"}`,
+		".adds/apps/demo/bin/run.sh":      "run",
+		".adds/apps/demo/locales/en.json": "{}",
+		".adds/apps/demo/data/token":      "secret",
+		".adds/apps/demo/bin/._run.sh":    "appledouble",
+	}
+	for name, content := range extra {
+		files[name] = content
+	}
+	writeTree(t, treeRoot, files)
+}
+
+func TestPackAppIsDeterministicAndSkipsNothingElse(t *testing.T) {
+	tree := t.TempDir()
+	writeDemoAppTree(t, tree, nil)
+	// data/ in the staged tree is a mistake the packer must report, not hide.
+	if _, err := PackApp(tree, "demo", t.TempDir()); err == nil {
+		t.Fatal("a data/ folder in the staged app was packed")
+	}
+	if err := os.RemoveAll(filepath.Join(tree, ".adds/apps/demo/data")); err != nil {
+		t.Fatal(err)
+	}
+	first, err := PackApp(tree, "demo", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := PackApp(tree, "demo", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Base(first) != "app-demo-1.2.3.zip" {
+		t.Fatalf("name = %s", first)
+	}
+	firstHash, _ := HashFile(first)
+	secondHash, _ := HashFile(second)
+	if firstHash != secondHash {
+		t.Fatal("the same sources gave different zips")
+	}
+}
+
+func TestAppPackagesAreIndexedAndVerified(t *testing.T) {
+	tree := t.TempDir()
+	writeDemoAppTree(t, tree, nil)
+	os.RemoveAll(filepath.Join(tree, ".adds/apps/demo/data"))
+	appsDir := t.TempDir()
+	if _, err := PackApp(tree, "demo", appsDir); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := BuildManifest(sampleDist(t), "1.0.0", "0.1.0", time.Unix(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := manifest.AddAppPackages(appsDir); err != nil {
+		t.Fatal(err)
+	}
+	if len(manifest.AppPackages) != 1 || manifest.AppPackages[0].ID != "demo" || manifest.AppPackages[0].Version != "1.2.3" ||
+		manifest.AppPackages[0].Zip != "app-demo-1.2.3.zip" || manifest.AppPackages[0].Size <= 0 {
+		t.Fatalf("app packages = %+v", manifest.AppPackages)
+	}
+	if err := VerifyAppPackages(manifest, appsDir); err != nil {
+		t.Fatal(err)
+	}
+	zipPath := filepath.Join(appsDir, "app-demo-1.2.3.zip")
+	data, _ := os.ReadFile(zipPath)
+	data[len(data)/2] ^= 0xff
+	os.WriteFile(zipPath, data, 0o644)
+	if VerifyAppPackages(manifest, appsDir) == nil {
+		t.Error("a tampered app zip verified")
+	}
+	os.Remove(zipPath)
+	if VerifyAppPackages(manifest, appsDir) == nil {
+		t.Error("a missing app zip verified")
+	}
+}
+
+func TestAppZipEntriesStayInsideTheirApp(t *testing.T) {
+	good := []string{".adds/apps/demo/app.json", ".adds/apps/demo/config.example.json", ".adds/apps/demo/screens/a.json"}
+	bad := []string{".adds/apps/other/app.json", ".adds/apps/demo/data/token", ".adds/koboapps/bin/appsctl",
+		".adds/apps/demo/../../koboapps/x", "/.adds/apps/demo/app.json", ".kobo/KoboRoot.tgz", ".adds/apps/demo"}
+	for _, entry := range good {
+		if err := CheckAppEntry("demo", entry); err != nil {
+			t.Errorf("CheckAppEntry(%q) = %v", entry, err)
+		}
+	}
+	for _, entry := range bad {
+		if CheckAppEntry("demo", entry) == nil {
+			t.Errorf("CheckAppEntry(%q) accepted", entry)
+		}
+	}
+}
+
+func TestAppPackageIndexRejectsBadEntries(t *testing.T) {
+	manifest, err := BuildManifest(sampleDist(t), "1.0.0", "0.1.0", time.Unix(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifest.AppPackages = []AppPackage{{ID: "demo", Version: "1.2.3", Zip: "app-demo-1.0.0.zip", SHA256: strings.Repeat("a", 64), Size: 10}}
+	if manifest.Validate() == nil {
+		t.Error("a zip name that does not match the version was accepted")
+	}
+	manifest.AppPackages = []AppPackage{
+		{ID: "demo", Version: "1.2.3", Zip: "app-demo-1.2.3.zip", SHA256: strings.Repeat("a", 64), Size: 10},
+		{ID: "demo", Version: "1.2.3", Zip: "app-demo-1.2.3.zip", SHA256: strings.Repeat("a", 64), Size: 10},
+	}
+	if manifest.Validate() == nil {
+		t.Error("a duplicate app package was accepted")
 	}
 }

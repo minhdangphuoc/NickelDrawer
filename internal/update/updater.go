@@ -328,10 +328,9 @@ func (updater *Updater) swap(changed []release.File) error {
 	return nil
 }
 
-// selfCheck proves the new files work: no app became invalid, every app the release lists is
-// present at its version, and a replaced appsctl runs.
+// selfCheck proves the new files work: no installed app became invalid and a replaced appsctl runs.
 func (updater *Updater) selfCheck(parsed *release.Manifest, changed []release.File, appsBefore map[string]bool) error {
-	if err := updater.checkApps(parsed, appsBefore); err != nil {
+	if err := updater.checkApps(appsBefore); err != nil {
 		return err
 	}
 	if !replacedAppsctl(changed) {
@@ -363,7 +362,9 @@ func (updater *Updater) invalidAppIDs() map[string]bool {
 	return invalid
 }
 
-func (updater *Updater) checkApps(parsed *release.Manifest, appsBefore map[string]bool) error {
+// checkApps only proves the update broke no installed app; a drawer update never installs or
+// changes apps, so it does not expect any app version.
+func (updater *Updater) checkApps(appsBefore map[string]bool) error {
 	scan, err := manifest.LoadAll(updater.layout.appsDir())
 	if err != nil {
 		return fmt.Errorf("apps cannot be listed: %w", err)
@@ -371,15 +372,6 @@ func (updater *Updater) checkApps(parsed *release.Manifest, appsBefore map[strin
 	for _, failure := range scan.Failures {
 		if !appsBefore[failure.AppID] {
 			return fmt.Errorf("app %s is invalid after the update: %s", failure.AppID, failure.Reason())
-		}
-	}
-	installed := map[string]string{}
-	for _, app := range scan.Apps {
-		installed[app.ID] = app.Version
-	}
-	for _, app := range parsed.Apps {
-		if installed[app.ID] != app.Version {
-			return fmt.Errorf("app %s should be version %s after the update but is %q", app.ID, app.Version, installed[app.ID])
 		}
 	}
 	return nil

@@ -4,6 +4,13 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Changed
+
+- **The release is the drawer only; apps are separate.** `make dist` now writes `dist/onboard` with just the host tool and the Nickel mod (and the drawer zip `koboapps-<version>.zip`), plus one zip per app in `dist/apps/` named `app-<id>-<version>.zip`, each holding only `.adds/apps/<id>/` (no `data/`, previews or READMEs). Apps are installed one by one: see the new `apps/README.md` (English and Vietnamese).
+- `tools/install-to-kobo.sh` installs the drawer only by default and leaves apps already on the Kobo alone; `--app <id>` (repeatable) and `--apps all` install apps from `dist/apps`, with the same backup and `data/`-keeping rules and `--dry-run`.
+- Signed drawer updates cover the drawer only: the update path rules now refuse every `.adds/apps/` path, so an update can never change or delete an installed app (a test pins this). `release.json` gains `app_packages` (id, version, zip name, sha256, size of every app zip) so a future in-drawer app update can verify them; nothing applies them yet. `ndrelease` gets `pack-apps` and `sign --apps-dir`; `verify` checks the app zips too.
+- CI release inputs include the per-app zips; the READMEs, user guides and release docs describe the new install flow. Every app README has Install, update and remove steps.
+
 ## [1.0.0-beta.4] - 2026-10-11
 
 ### Added

@@ -1,6 +1,6 @@
 // Command ndrelease is the maintainer's release tool (run on the Mac, never on the Kobo):
-// it creates the signing key, signs a dist tree into release.json + signature + zip, and
-// verifies such a release. See docs/UPDATES.md.
+// it creates the signing key, packs the per-app zips, signs a dist tree (host + mod) and the app
+// zips into release.json + signature + zip, and verifies such a release. See docs/UPDATES.md.
 package main
 
 import (
@@ -24,6 +24,7 @@ const usage = `usage: ndrelease <command> [flags]
 commands:
   keygen   create the signing key (private key stays in ~/.config/nickeldrawer) and write the public key
   sign     --dist dist/onboard --version X.Y.Z   write dist/release/{release.json,release.json.sig,nickeldrawer-X.Y.Z.zip}
+  pack-apps  --tree build/apps-tree --out dist/apps   write one deterministic app-<id>-<version>.zip per app of the tree
   verify   check a dist/release folder against the public key
 `
 
@@ -37,9 +38,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitUsage
 	}
 	commands := map[string]func([]string, io.Writer, io.Writer) int{
-		"keygen": runKeygen,
-		"sign":   runSign,
-		"verify": runVerify,
+		"keygen":    runKeygen,
+		"sign":      runSign,
+		"pack-apps": runPackApps,
+		"verify":    runVerify,
 	}
 	command, found := commands[args[0]]
 	if !found {

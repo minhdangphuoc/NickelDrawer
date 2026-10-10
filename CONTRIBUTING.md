@@ -15,13 +15,17 @@ Common commands:
 ```sh
 make check          # CopperUI tokens, gofmt check, go vet, go test, shellcheck (if installed)
 make build          # ARMv7 binaries for the Kobo, plus host tools (build/appsctl-host, build/ndpreview-host)
-make dist           # dist/ tree and dist/koboapps-<version>.zip
+make dist           # dist/ drawer tree, dist/koboapps-<version>.zip, and one dist/apps/app-<id>-<version>.zip per app
 tools/test-install.sh   # runs the installer against a fake Kobo
 ```
 
 After you edit a page in `docs/guide/`, refresh its HTML with `python3 tools/guide2html.py docs/guide/<page>.md docs/guide/<page>.html` (needs `pip install markdown`).
 
 Run `make check build dist` before you open a pull request. You do not need a Kobo for most work.
+
+## Adding an app
+
+Every app lives in `apps/<id>/` with a `README.md` (what it does, plus install, update and remove steps that point at [apps/README.md](apps/README.md)) and a row in the table of [apps/README.md](apps/README.md) and [apps/README.vi.md](apps/README.vi.md). `make dist` packs each folder that has an `app.json` into its own zip, so a new app needs no Makefile change unless it has a built binary (add it to `APP_BINARIES`). Apps are not part of the drawer release or its updates.
 
 ## Code rules (Clean Code)
 

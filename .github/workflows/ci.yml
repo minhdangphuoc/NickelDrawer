@@ -101,7 +101,7 @@ jobs:
           echo "$version" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$' ||
             { echo "tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH[-prerelease]" >&2; exit 1; }
           echo "RELEASE_VERSION=$version" >>"$GITHUB_ENV"
-      - name: Build apps and host tree
+      - name: Build the drawer tree and the per-app zips
         run: make check build dist VERSION="$RELEASE_VERSION"
       - name: Build the drawer mod
         run: make -C mod/drawer docker-build
@@ -111,6 +111,7 @@ jobs:
           mkdir -p release-inputs
           cp "dist/koboapps-$RELEASE_VERSION.zip" release-inputs/
           cp build/mod/KoboRoot-nickeldrawer.tgz release-inputs/
+          cp dist/apps/app-*.zip release-inputs/
           (cd release-inputs && sha256sum -- * >../SHA256SUMS.txt) && mv SHA256SUMS.txt release-inputs/
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

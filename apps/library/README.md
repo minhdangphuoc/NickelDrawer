@@ -12,6 +12,12 @@ Sửa ngôn ngữ cho sách EPUB tiếng Việt và tìm sách trùng, trong `Bo
 
 Chỉ đọc `Books`, `Documents`, `Comics` (không theo liên kết tượng trưng, bỏ qua tệp ẩn, tối đa 200 MB mỗi tệp). Chi tiết: `docs/spec/library.md`.
 
+### Cài đặt, cập nhật, gỡ
+
+- **Cài:** tải `app-library-<phiên bản>.zip` từ [bản phát hành](../../../../releases), giải nén và gộp thư mục `.adds` trong đó vào thư mục gốc của ổ Kobo (Finder: chọn **Gộp (Merge)**, đừng chọn Thay thế). Hoặc từ bản checkout: `make dist` rồi `tools/install-to-kobo.sh --app library`. Ngăn ứng dụng phải được cài trước. Các bước chi tiết: [apps/README.vi.md](../README.vi.md).
+- **Cập nhật:** cài zip mới theo cách trên. Tệp của ứng dụng được thay, `data/` được giữ.
+- **Gỡ:** nhấn giữ ứng dụng trong ngăn rồi chọn Gỡ (Remove), hoặc xóa thư mục `.adds/apps/library` trên ổ.
+
 ## English
 
 Fixes the language of Vietnamese EPUBs and finds duplicate books in `Books`, `Documents` and `Comics`.
@@ -25,3 +31,9 @@ Fixes the language of Vietnamese EPUBs and finds duplicate books in `Books`, `Do
 It only reads `Books`, `Documents` and `Comics` (no symbolic links followed, hidden files skipped, 200 MB per file at most). Details: `docs/spec/library.md`.
 
 `bin/library` is copied from `build/` by `make dist` and is not committed.
+
+### Install, update, remove
+
+- **Install:** download `app-library-<version>.zip` from the [release](../../../../releases), unzip it and merge its `.adds` folder onto the root of the Kobo drive (Finder: choose **Merge**, never Replace). Or, from a checkout, `make dist` then `tools/install-to-kobo.sh --app library`. The drawer must already be installed. Steps and details: [apps/README.md](../README.md).
+- **Update:** install the new zip the same way. The app's files are replaced and its `data/` is kept.
+- **Remove:** long-press the app in the drawer and choose Remove, or delete `.adds/apps/library` on the drive.

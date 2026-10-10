@@ -17,11 +17,12 @@ import (
 )
 
 // BuildManifest lists the updatable files under distRoot (the tree that mirrors the Kobo's
-// onboard root) and hashes them. Files outside the allowed folders, such as data/, are skipped.
+// onboard root) and hashes them. Files outside the allowed folders, such as apps and data/, are
+// skipped. App zips are added separately (AddAppPackages).
 func BuildManifest(distRoot, version, minAppsctl string, created time.Time) (*Manifest, error) {
 	manifest := &Manifest{
 		Schema: SchemaVersion, Version: version, MinAppsctl: minAppsctl,
-		Created: created.UTC().Format(time.RFC3339),
+		Created: created.UTC().Format(time.RFC3339), AppPackages: []AppPackage{},
 	}
 	err := filepath.WalkDir(distRoot, func(fullPath string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil || entry.IsDir() {
@@ -37,9 +38,6 @@ func BuildManifest(distRoot, version, minAppsctl string, created time.Time) (*Ma
 		return nil, fmt.Errorf("cannot list %s: %w", distRoot, err)
 	}
 	sort.Slice(manifest.Files, func(i, j int) bool { return manifest.Files[i].Path < manifest.Files[j].Path })
-	if manifest.Apps, err = readAppVersions(distRoot, manifest.Files); err != nil {
-		return nil, err
-	}
 	if err := manifest.Validate(); err != nil {
 		return nil, fmt.Errorf("built manifest is invalid: %w", err)
 	}
@@ -89,26 +87,6 @@ func HashFile(filePath string) (string, error) {
 		return "", fmt.Errorf("cannot read %s: %w", filePath, err)
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func readAppVersions(distRoot string, files []File) ([]AppVersion, error) {
-	var apps []AppVersion
-	for _, file := range files {
-		parts := strings.Split(file.Path, "/")
-		if len(parts) != 4 || parts[3] != "app.json" || parts[1] != "apps" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(distRoot, filepath.FromSlash(file.Path)))
-		if err != nil {
-			return nil, err
-		}
-		var header AppVersion
-		if err := json.Unmarshal(data, &header); err != nil || header.ID != parts[2] {
-			return nil, fmt.Errorf("%s must be JSON whose id equals the folder name %q", file.Path, parts[2])
-		}
-		apps = append(apps, header)
-	}
-	return apps, nil
 }
 
 // Marshal renders release.json with a stable layout; the signature covers exactly these bytes.

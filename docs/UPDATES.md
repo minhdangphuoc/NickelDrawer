@@ -1,6 +1,6 @@
 # Signed updates
 
-NickelDrawer can update its own apps, host tool and Nickel mod over Wi-Fi. An update is only applied if it is signed with the maintainer's release key. Nothing touches the network unless you start a check or an update from the settings screen of the Apps drawer (the gear in its header).
+NickelDrawer can update itself over Wi-Fi: the drawer's host tool and the Nickel mod. Apps are separate and are never part of a drawer update (see [apps/README.md](../apps/README.md)). An update is only applied if it is signed with the maintainer's release key. Nothing touches the network unless you start a check or an update from the settings screen of the Apps drawer (the gear in its header).
 
 ## For users
 
@@ -22,11 +22,15 @@ If `update.json` is missing or has an empty `repo`, or this build has no release
 
 ## Trust model
 
+This page covers drawer updates. Apps are released and updated separately; the planned app update design is in [spec/app-updates.md](spec/app-updates.md). The signed `release.json` also lists the project's own app zips (`app_packages`: id, version, file, sha256, size) so they can be verified; the device does not install from that list yet.
+
+
 - The release key pair is ed25519. The **private key** lives only on the maintainer's Mac (`~/.config/nickeldrawer/release-ed25519.key`, mode 600). It is never in the repo, never on the Kobo, never printed.
 - The **public key** is `spec/release-ed25519.pub` (base64 of the raw 32 bytes). `appsctl` embeds it at build time. A placeholder or empty key means updates are refused.
-- A release has three assets on GitHub: `release.json`, `release.json.sig` and `nickeldrawer-<version>.zip`. `release.json` may carry an optional plain-text `notes` summary (up to 600 characters; `ndrelease sign --notes-file`) that the settings screen shows. The signature is detached, base64 of the raw 64 bytes, over the exact bytes of `release.json`.
-- `release.json` lists every file with its path, sha256, size and mode. The device checks the signature first, then every file of the zip against that list. A valid signature on a wrong file is still rejected.
-- Updates can only write host `bin/`, `lib/`, `locales/`, `icons/`, `screens/`, `config/`, the one file `mod/KoboRoot-nickeldrawer.tgz`, and each app's `app.json`, `icon.png`, `bin/`, `locales/`. Any other path, including every `data/` folder, makes the manifest invalid, even when it is signed. App data (tokens, configs, PINs) is never read or written.
+- A release has three update assets on GitHub: `release.json`, `release.json.sig` and `nickeldrawer-<version>.zip` (the drawer only), plus one `app-<id>-<version>.zip` per app. `release.json` may carry an optional plain-text `notes` summary (up to 600 characters; `ndrelease sign --notes-file`) that the settings screen shows. The signature is detached, base64 of the raw 64 bytes, over the exact bytes of `release.json`.
+- `release.json` lists every drawer file with its path, sha256, size and mode. The device checks the signature first, then every file of the zip against that list. A valid signature on a wrong file is still rejected.
+- `release.json` also carries `app_packages`: for each app zip of the release its `id`, `version`, `zip` name, `sha256` and `size`. The drawer update does not download or install them. They are in the signed index so a future in-drawer "app updates" feature can verify an app zip before using it (`ndrelease verify` already checks them, and `release.VerifyAppPackages` is the check the device will use). Nothing applies an app zip on the device yet. The field is separate from the old `apps` list on purpose: older `appsctl` builds read `apps` as versions that must be installed.
+- Updates can only write host `bin/`, `lib/`, `locales/`, `icons/`, `screens/`, `config/` and the one file `mod/KoboRoot-nickeldrawer.tgz`. Any other path makes the manifest invalid, even when it is signed: every path under `.adds/apps/` (apps are installed and removed by hand, never by an update) and every `data/` folder. Installed apps and their data (tokens, configs, PINs) are never read, changed or deleted by an update or a rollback; a test (`TestDrawerUpdateNeverTouchesInstalledApps`) pins this.
 - Downgrades are refused unless you pass `--allow-downgrade`. `min_appsctl` in the manifest stops an old `appsctl` from applying a release it does not understand.
 - The GitHub account is not trusted for integrity: only the signature is. TLS uses CA roots embedded in `appsctl`, because the Kobo may lack a system bundle.
 
@@ -41,7 +45,7 @@ If the private key is lost or leaked, generate a new one, ship a build that embe
 5. Stages the files that differ into `.adds/koboapps/data/update/staging/` (same storage as the targets, so the final step is a rename).
 6. Copies the files it will replace into `.adds/koboapps/data/rollback/<old-version>/` and writes a journal. New files are recorded so a rollback deletes them. The two newest backups are kept.
 7. Renames each staged file over its target. Replacing the running `appsctl` works because the rename leaves the running copy alone.
-8. Self-checks: no app became invalid, every app in the manifest has the listed version, and the new `appsctl --version` runs and reports the release version.
+8. Self-checks: no installed app became invalid, and the new `appsctl --version` runs and reports the release version.
 9. If the release carries a changed mod, stages it (next section). The cached check result is dropped.
 10. If anything from step 7 on fails, the backup is restored automatically and the status says the old version was restored. The last result is kept in `.adds/koboapps/data/update/status.json`.
 
@@ -78,10 +82,10 @@ Publish a release:
 ```sh
 make release VERSION=0.2.0         # check + build + dist + sign + verify; stops if the key is missing
 gh release create v0.2.0 dist/release/release.json dist/release/release.json.sig \
-    dist/release/nickeldrawer-0.2.0.zip --title "v0.2.0" --notes-file CHANGELOG-0.2.0.md
+    dist/release/nickeldrawer-0.2.0.zip dist/release/app-*.zip --title "v0.2.0" --notes-file CHANGELOG-0.2.0.md
 # beta: add --prerelease and set "channel": "beta" on the test device
 ```
 
-To show a changelog summary on the device, pass `build/ndrelease-host sign ... --notes-file notes.txt` (plain text, up to 600 characters). Build the mod first (`build/mod/KoboRoot-nickeldrawer.tgz`) so `make dist` includes it. `make release` builds `appsctl` with the version baked in (`appsctl --version`), signs `dist/onboard` and writes `dist/release/`. `build/ndrelease-host verify` re-checks the signature, every sha256 and the zip. The first install still goes through `tools/install-to-kobo.sh`; updates only work on a device that already has `appsctl` with the embedded key and an `update.json`.
+To show a changelog summary on the device, pass `build/ndrelease-host sign ... --notes-file notes.txt` (plain text, up to 600 characters). Build the mod first (`build/mod/KoboRoot-nickeldrawer.tgz`) so `make dist` includes it. `make release` builds `appsctl` with the version baked in (`appsctl --version`), signs `dist/onboard` (host + mod only) together with the app zips in `dist/apps` (`ndrelease sign --apps-dir`), and writes `dist/release/` (the three update files plus a copy of each app zip). `build/ndrelease-host verify` re-checks the signature, every sha256, the zip and every app zip against the index. The first install still goes through `tools/install-to-kobo.sh`; updates only work on a device that already has `appsctl` with the embedded key and an `update.json`.
 
 Two files are mirrored because `go:embed` cannot read outside a package folder: `spec/release-ed25519.pub` to `internal/release/` and `host/locales/en.json` to `cmd/appsctl/embedded/`. `make sync-embedded` (part of `check` and `build`) refreshes them and a test fails if they drift.

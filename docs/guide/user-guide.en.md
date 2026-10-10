@@ -96,7 +96,7 @@ Charge the Kobo to **50 % or more**. An install restarts the Kobo; a flat batter
 | Where | What |
 |---|---|
 | `.adds/koboapps/` | The host tool, shared files, translations, icons. |
-| `.adds/apps/` | One folder per app. Each app keeps its own settings in its `data/` folder. |
+| `.adds/apps/` | One folder per app. Installing the drawer adds no app and never removes one; apps are installed one by one (see [Install apps](#install-apps)). Each app keeps its own settings in its `data/` folder. |
 | Kobo system (`/usr/local/Kobo/imageformats/`) | One file, the NickelDrawer mod, installed by the Kobo itself from `KoboRoot.tgz` at restart. |
 | `.adds/nickeldrawer/` | A folder for the switch files described in [Safety and uninstall](#safety-and-uninstall). |
 
@@ -112,16 +112,16 @@ There are two ways. Most people use **way A**.
 
 You need: the Kobo, a USB cable, a computer, and two files from the latest NickelDrawer release:
 
-- `koboapps-<version>.zip`: the apps and the host tool.
+- `koboapps-<version>.zip`: the drawer's host tool (no apps; those are separate, see [Install apps](#install-apps)).
 - `KoboRoot-nickeldrawer.tgz`: the Kobo mod. (The same file is also inside the zip, at `onboard/.adds/koboapps/mod/`.)
 
 Steps:
 
 1. Do the [backup](#back-up) and charge the battery.
 2. Connect the Kobo and tap **Connect**. Make hidden files visible (see above).
-3. Unzip `koboapps-<version>.zip` on the computer. Inside, open `onboard`, then `.adds`. You see two folders: `koboapps` and `apps`.
+3. Unzip `koboapps-<version>.zip` on the computer. Inside, open `onboard`, then `.adds`. You see one folder: `koboapps`.
 4. On the Kobo drive, open the `.adds` folder. If there is none, create a folder named `.adds` (with the dot) at the top level of the drive.
-5. Copy the two folders `koboapps` and `apps` into the Kobo's `.adds` folder.
+5. Copy the folder `koboapps` into the Kobo's `.adds` folder.
 
     > **macOS Finder warning.** If the Kobo already has a folder with the same name, Finder asks whether to **Replace** it. **Replace deletes everything inside the old folder**, including app settings and other mods' files. Hold the Option key while you drag and choose **Merge** instead, or copy only on a first install. Windows merges folders by default.
 
@@ -133,9 +133,15 @@ Steps:
 
 If the rows are not there, see [Troubleshooting](#troubleshooting).
 
+The drawer is empty at first: apps come next.
+
+### Install apps
+
+Apps are separate from the drawer. Each one is its own download in the same release, `app-<id>-<version>.zip` (for example `app-todo-1.0.1.zip`), and you install only the ones you want. Unzip it and merge its `.adds` folder onto the root of the Kobo drive (same Finder **Merge** warning as above), eject, and the app shows in the drawer after a refresh. To update an app, install its newer zip the same way; its `data/` stays. To remove one, long-press it in the drawer and choose **Remove**. The list of apps and the full steps are in [apps/README.md](../../apps/README.md). With the installer script (way B below) it is `tools/install-to-kobo.sh --app todo` or `--apps all`.
+
 ### Way B: the installer script (macOS or Linux, from the source code)
 
-This way is for people who build NickelDrawer from its source code. It backs up everything it replaces and never touches app `data/` folders.
+This way is for people who build NickelDrawer from its source code. It backs up everything it replaces and never touches app `data/` folders. With no options it installs the drawer only (host tool and mod) and leaves any apps on the Kobo alone.
 
 ```sh
 make check build dist                 # build everything (needs Go; the mod needs Docker)
@@ -147,7 +153,9 @@ tools/install-to-kobo.sh              # install
 |---|---|
 | `--dry-run` | Print every step, change nothing. |
 | `--with-mod` | Always stage the Kobo mod, even if it did not change. |
-| `--no-mod` | Install apps and host tool only, not the mod. |
+| `--no-mod` | Install the host tool only, not the mod. |
+| `--app <id>` | Install one app from `dist/apps` instead of the drawer. Repeat it for more apps. Backs up the app and keeps its `data/`. |
+| `--apps all` | Install every app from `dist/apps` instead of the drawer. |
 | `--remove-legacy` | Also remove an old hand-made LocalSend setup (`.adds/localsend` and its NickelMenu items). |
 | `--uninstall` | Remove NickelDrawer (see [Uninstall](#uninstall)). |
 | `--purge` | With `--uninstall`: also delete the apps' `data/` folders. |
@@ -490,7 +498,7 @@ The switches write to the Kobo's own settings file (`.kobo/Kobo/Kobo eReader.con
 
 ## Updates
 
-NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
+NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. Apps are not updated this way: install an app's newer zip instead (see [Install apps](#install-apps)). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
 
 ### Settings: the gear
 
@@ -512,13 +520,13 @@ Updates come from the project's GitHub repository by default; the installer sets
 
 ### What a restart does after an update
 
-When a release changes the Kobo mod, the update puts the new mod in `.kobo/KoboRoot.tgz`. The Kobo installs it during the next restart, the same way as the first install. Apps and the host tool are already updated before the restart.
+When a release changes the Kobo mod, the update puts the new mod in `.kobo/KoboRoot.tgz`. The Kobo installs it during the next restart, the same way as the first install. The host tool is already updated before the restart.
 
 ### If something goes wrong
 
 - Every file is checked against the signed list before anything is replaced. A bad signature or a damaged file stops the update, and nothing changes.
 - If a problem shows up after the files were replaced, the old version is put back by itself.
-- Your app data (tokens, settings, pictures, trash) is never part of an update.
+- Your apps and their data (tokens, settings, pictures, trash) are never touched by an update.
 - An older release is never installed over a newer one.
 - "A system update is already waiting for a restart": restart the Kobo, then update again.
 

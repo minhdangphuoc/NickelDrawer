@@ -35,16 +35,22 @@ func writeFile(t *testing.T, root, relative, content string, mode os.FileMode) {
 	}
 }
 
-// writeVersionTree writes the files of one release (host plus the demo app) under root.
+// writeVersionTree writes the files of one drawer release (host only) under root.
 // printedVersion is what the fake appsctl prints for --version.
 func writeVersionTree(t *testing.T, root, version, printedVersion string) {
 	t.Helper()
 	writeFile(t, root, ".adds/koboapps/bin/appsctl", "#!/bin/sh\necho appsctl "+printedVersion+"\n", 0o755)
 	writeFile(t, root, ".adds/koboapps/lib/common.sh", "# lib "+version+"\n", 0o644)
 	writeFile(t, root, ".adds/koboapps/locales/en.json", `{"v":"`+version+`"}`, 0o644)
-	writeFile(t, root, ".adds/apps/demo/app.json", fmt.Sprintf(demoManifestTemplate, version), 0o644)
-	writeFile(t, root, ".adds/apps/demo/bin/run.sh", "#!/bin/sh\necho "+version+"\n", 0o755)
-	writeFile(t, root, ".adds/apps/demo/locales/en.json", `{"name":"Demo"}`, 0o644)
+}
+
+// writeInstalledApp writes an app the user installed on its own, with its own version.
+func writeInstalledApp(t *testing.T, root, id, version string) {
+	t.Helper()
+	manifestText := strings.ReplaceAll(fmt.Sprintf(demoManifestTemplate, version), `"id":"demo"`, `"id":"`+id+`"`)
+	writeFile(t, root, ".adds/apps/"+id+"/app.json", manifestText, 0o644)
+	writeFile(t, root, ".adds/apps/"+id+"/bin/run.sh", "#!/bin/sh\necho "+version+"\n", 0o755)
+	writeFile(t, root, ".adds/apps/"+id+"/locales/en.json", `{"name":"Demo"}`, 0o644)
 }
 
 type publishedRelease struct {
@@ -165,6 +171,7 @@ func newFixture(t *testing.T, installedVersion string) *fixture {
 	}
 	f := &fixture{t: t, root: t.TempDir(), github: newFakeGitHub(t), publicKey: publicKey, privateKey: privateKey}
 	writeVersionTree(t, f.root, installedVersion, installedVersion)
+	writeInstalledApp(t, f.root, "demo", "0.5.0")
 	writeFile(t, f.root, ".adds/koboapps/data/update.json", `{"repo":"o/r","channel":"stable"}`, 0o644)
 	writeFile(t, f.root, ".adds/apps/demo/data/token", "secret-token", 0o600)
 	writeFile(t, f.root, ".adds/apps/demo/data/nested/state.json", `{"n":1}`, 0o644)
@@ -269,7 +276,7 @@ func TestValidUpdateIsApplied(t *testing.T) {
 	}
 	want := t.TempDir()
 	writeVersionTree(t, want, "1.1.0", "1.1.0")
-	got := snapshot(t, f.root, ".adds/koboapps/data/", ".adds/apps/demo/data/")
+	got := snapshot(t, f.root, ".adds/koboapps/data/", ".adds/apps/")
 	sameSnapshot(t, "installed files", got, snapshot(t, want))
 	sameSnapshot(t, "app data", appDataSnapshot(t, f.root), dataBefore)
 	if _, err := os.Stat(filepath.Join(f.root, ".adds/koboapps/data/rollback/1.0.0/journal.json")); err != nil {
@@ -309,7 +316,7 @@ func TestShaMismatchChangesNothing(t *testing.T) {
 	writeVersionTree(t, good, "1.1.0", "1.1.0")
 	evil := t.TempDir()
 	writeVersionTree(t, evil, "1.1.0", "1.1.0")
-	writeFile(t, evil, ".adds/apps/demo/bin/run.sh", "#!/bin/sh\necho evil-same-size!\n", 0o755)
+	writeFile(t, evil, ".adds/koboapps/lib/common.sh", "# evil 1.1.0\n", 0o644)
 	f.github.publishStable("1.1.0", buildRelease(t, good, "1.1.0", f.privateKey, evil))
 	before := snapshot(t, f.root, bookkeeping)
 
@@ -333,6 +340,53 @@ func TestSignedManifestCannotReachUserData(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 	sameSnapshot(t, "app data", appDataSnapshot(t, f.root), dataBefore)
+}
+
+func TestSignedManifestCannotListAnAppFile(t *testing.T) {
+	f := newFixture(t, "1.0.0")
+	manifestJSON := `{"schema":1,"version":"1.1.0","created":"2026-10-08T10:00:00Z","min_appsctl":"0.1.0",` +
+		`"files":[{"path":".adds/apps/demo/bin/run.sh","sha256":"` + strings.Repeat("a", 64) + `","size":1,"mode":"0755"}],"app_packages":[]}`
+	f.github.releases["v1.1.0"] = publishedRelease{[]byte(manifestJSON), release.Sign(f.privateKey, []byte(manifestJSON)), nil}
+	f.github.stable = "v1.1.0"
+	before := snapshot(t, f.root, bookkeeping)
+
+	_, err := f.updater("1.0.0").Apply(context.Background())
+	if messageKey(err) != "update.bad_manifest" {
+		t.Fatalf("err = %v", err)
+	}
+	sameSnapshot(t, "tree", snapshot(t, f.root, bookkeeping), before)
+}
+
+// A drawer update must leave every installed app as it is: no file changed, none deleted,
+// even when the release tree happens to hold an app folder or the app is not part of the release.
+func TestDrawerUpdateNeverTouchesInstalledApps(t *testing.T) {
+	f := newFixture(t, "1.0.0")
+	writeInstalledApp(t, f.root, "other", "2.0.0")
+	appsBefore := withPrefix(snapshot(t, f.root), ".adds/apps/")
+	dist := t.TempDir()
+	writeVersionTree(t, dist, "1.1.0", "1.1.0")
+	writeInstalledApp(t, dist, "demo", "9.9.9") // must be ignored by the release builder
+	f.github.publishStable("1.1.0", buildRelease(t, dist, "1.1.0", f.privateKey, ""))
+
+	if _, err := f.updater("1.0.0").Apply(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	sameSnapshot(t, "installed apps", withPrefix(snapshot(t, f.root), ".adds/apps/"), appsBefore)
+
+	if _, err := f.updater("1.1.0").Rollback(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	sameSnapshot(t, "installed apps after rollback", withPrefix(snapshot(t, f.root), ".adds/apps/"), appsBefore)
+}
+
+func withPrefix(files map[string]string, prefix string) map[string]string {
+	kept := map[string]string{}
+	for path, content := range files {
+		if strings.HasPrefix(path, prefix) {
+			kept[path] = content
+		}
+	}
+	return kept
 }
 
 func TestDowngradeNeedsExplicitPermission(t *testing.T) {

@@ -1,0 +1,70 @@
+# Builds the unsigned release inputs for {{.Name}} on a version tag (v1.2.0).
+# Planned for NickelDrawer 1.1: `appsctl app` does not exist in current builds.
+# Signing stays on your machine: download the artifact, then run
+#   appsctl app sign dist --key <your key file> && appsctl app verify dist
+# and attach the three files to the GitHub release. See docs/guide/publishing-apps.md.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  pack:
+    runs-on: ubuntu-24.04
+    steps:
+      # Pin actions by commit SHA; the comment names the version.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: "1.24"
+      - name: Install appsctl
+        # TODO before 1.1: replace with the official install step (a pinned, signed appsctl release).
+        run: echo "install appsctl here" && exit 1
+      - name: Pack
+        # Fails when the tag does not match app.json version, so a typo never ships.
+        run: |
+          appsctl validate .
+          appsctl app pack . --out dist --expect-tag "$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: {{.ID}}-unsigned-release
+          path: dist/
+          if-no-files-found: error
+
+  # Optional: sign in CI. Discouraged; read "Using GitHub Actions" in the publishing guide first.
+  # Create an environment named "release-signing" with required reviewers, and store only the
+  # signing key (never the recovery key) in its secret APP_SIGNING_KEY. Uncomment to use.
+  #
+  # sign:
+  #   needs: pack
+  #   runs-on: ubuntu-24.04
+  #   environment: release-signing
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #     - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+  #       with:
+  #         go-version: "1.24"
+  #     - run: echo "install appsctl here (same step as above)" && exit 1
+  #     - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+  #       with:
+  #         name: {{.ID}}-unsigned-release
+  #         path: dist/
+  #     - name: Sign and verify
+  #       env:
+  #         APP_SIGNING_KEY: {{"${{ secrets.APP_SIGNING_KEY }}"}}
+  #       run: |
+  #         umask 077
+  #         printf '%s' "$APP_SIGNING_KEY" > "$RUNNER_TEMP/signing.key"
+  #         appsctl app sign dist --key "$RUNNER_TEMP/signing.key"
+  #         rm -f "$RUNNER_TEMP/signing.key"
+  #         appsctl app verify dist
+  #     - name: Attach to the release
+  #       env:
+  #         GH_TOKEN: {{"${{ github.token }}"}}
+  #       run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --draft

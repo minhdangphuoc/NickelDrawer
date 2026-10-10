@@ -25,7 +25,7 @@ Add `--locale vi` for Vietnamese. `ndpreview render <app-dir>` draws an app's ow
 - **Tweaks.** A settings-style panel for sleep screen, screenshots, auto USB connect, text legibility, IP address, reboot and library rescan.
 - **Apps are folders.** Copy a folder with a manifest and a few scripts to `.adds/apps/` and it appears. No C++ needed ([docs/APPS.md](docs/APPS.md)).
 - **Native app screens.** Apps describe lists, toggles, buttons, QR codes and live status in a `ui.json` file; the drawer draws them.
-- **Signed updates.** Apps and the host tool update over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
+- **Signed updates.** The drawer (host tool and mod) updates over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
 - **Any language.** English is the source; Vietnamese ships first. The language follows the Kobo's own setting ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
 
 ## Supported firmware
@@ -48,19 +48,21 @@ Of the 27 Kobo models ever sold, **1 is tested** (Libra 2, firmware 4.38.23828),
 
 ## Install
 
-You need a Kobo Libra 2 on one of the builds above, a computer, a USB cable and the files from the latest [release](../../releases): `koboapps-<version>.zip` (apps and host tool) and `KoboRoot-nickeldrawer.tgz` (the native drawer).
+You need a Kobo Libra 2 on one of the builds above, a computer, a USB cable and the files from the latest [release](../../releases): `koboapps-<version>.zip` (the drawer's host tool) and `KoboRoot-nickeldrawer.tgz` (the native drawer).
 
 1. **Back up first.** Connect the Kobo, copy the whole `.kobo` and `.adds` folders to your computer. Keep them until you are happy.
-2. Unzip `koboapps-<version>.zip`. Copy the `.adds` folder inside `onboard/` into the root of the Kobo drive and merge it with the existing `.adds` (hidden folders: Cmd+Shift+. in macOS Finder, "show hidden files" on Windows and Linux). The zip holds no `data/` folders; an example GitHub config sits next to the app (`.adds/apps/ghsync/config.example.json`). **macOS Finder: if it asks whether to Replace a folder that already exists, do not.** Replace deletes the folder's existing contents (app settings, tokens, other mods' files). Hold Option and choose **Merge**, or use the installer below.
+2. Unzip `koboapps-<version>.zip`. Copy the `.adds` folder inside `onboard/` into the root of the Kobo drive and merge it with the existing `.adds` (hidden folders: Cmd+Shift+. in macOS Finder, "show hidden files" on Windows and Linux). The zip holds no apps and no `data/` folders. **macOS Finder: if it asks whether to Replace a folder that already exists, do not.** Replace deletes the folder's existing contents (app settings, tokens, other mods' files). Hold Option and choose **Merge**, or use the installer below.
 3. Copy `KoboRoot-nickeldrawer.tgz` to `.kobo/KoboRoot.tgz` on the drive (rename it while copying).
 4. Eject the Kobo from the computer. It installs the drawer and reboots. After the boot, the More tab has an **Apps** row.
+
+The drawer is empty at first. **Apps are separate from the drawer:** each is its own `app-<id>-<version>.zip` in the release, installed one by one; see [apps/README.md](apps/README.md). A drawer install or update never adds, changes or removes an app.
 
 On macOS or Linux with a checkout of this repository there is a safer installer that backs up everything it replaces to `backups/<date-time>/` and never touches `data/` folders:
 
 ```sh
 make check build dist
 tools/install-to-kobo.sh --dry-run     # show what would happen
-tools/install-to-kobo.sh               # finds /Volumes/KOBOeReader, /media/$USER/KOBOeReader or /run/media/$USER/KOBOeReader; else set KOBO_ROOT=/path
+tools/install-to-kobo.sh               # installs the drawer only; finds /Volumes/KOBOeReader, /media/$USER/KOBOeReader or /run/media/$USER/KOBOeReader; else set KOBO_ROOT=/path
 ```
 
 [NickelMenu](https://github.com/pgaskin/NickelMenu) is optional. NickelDrawer does not need it, and it coexists with it.
@@ -137,6 +139,8 @@ NickelDrawer is an independent project. It is not made by, affiliated with or en
 
 ## Extra tools and setups
 
-Optional, separate from NickelDrawer and not part of its releases. Install them only if you want them.
+Optional, separate from the drawer. Install only what you want.
 
-- **Status-bar screenshot button** ([helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md)): a small separate mod that adds a screenshot button to Kobo's top status bar. A tap saves the screen as `screen_NNN.png` at the root of the Kobo drive. To turn it off, create an empty file `.adds/helpers/screenshot/off` on the Kobo over USB (delete it to turn it back on; `install.sh --off` / `--on` does this). Built and installed from the source; there is no release file.
+- **Apps** ([apps/README.md](apps/README.md)): LocalSend, GitHub sync, Library, Wallpaper and To-do (plus the developer-only UI Kit). Each is its own zip in the release and is installed, updated and removed one by one; the drawer and its updates never touch them.
+
+- **Status-bar screenshot button** ([helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md)): a small separate mod that adds a screenshot button to Kobo's top status bar. A tap saves the screen as `screen_NNN.png` at the root of the Kobo drive. To turn it off, create an empty file `.adds/helpers/screenshot/off` on the Kobo over USB (delete it to turn it back on; `install.sh --off` / `--on` does this). Built and installed from the source; there is no release file (it is not part of NickelDrawer's releases).

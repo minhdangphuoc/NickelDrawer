@@ -21,6 +21,9 @@ const (
 	hostPrefix = ".adds/koboapps"
 	appsPrefix = ".adds/apps"
 
+	// maxAppZipBytes bounds one app zip; apps are small, a larger file is a mistake or an attack.
+	maxAppZipBytes = 64 << 20
+
 	// ModPath is where a release carries the NickelHook mod. The updater never installs it
 	// itself: it copies it to .kobo/KoboRoot.tgz so Nickel installs it at the next reboot.
 	ModPath = hostPrefix + "/mod/KoboRoot-nickeldrawer.tgz"
@@ -35,7 +38,6 @@ var (
 	modePattern   = regexp.MustCompile(`^0[0-7]{3}$`)
 
 	hostFolders = []string{"bin", "lib", "locales", "icons", "mod", "screens", "config"}
-	appFolders  = []string{"bin", "locales"}
 )
 
 // File is one file of the release, addressed relative to the onboard root.
@@ -46,20 +48,27 @@ type File struct {
 	Mode   string `json:"mode"` // octal permission bits, e.g. "0755"
 }
 
-// AppVersion records which version of an app the release ships.
-type AppVersion struct {
+// AppPackage is the signed index entry of one app zip (app-<id>-<version>.zip) published next
+// to the release. The drawer update never installs it; the entry lets a future "app updates"
+// feature verify a downloaded zip before it is used.
+type AppPackage struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
+	Zip     string `json:"zip"`
+	SHA256  string `json:"sha256"`
+	Size    int64  `json:"size"`
 }
 
 // Manifest is the content of release.json.
 type Manifest struct {
-	Schema     int          `json:"schema"`
-	Version    string       `json:"version"`
-	Created    string       `json:"created"`
-	Files      []File       `json:"files"`
-	Apps       []AppVersion `json:"apps"`
-	MinAppsctl string       `json:"min_appsctl"`
+	Schema  int    `json:"schema"`
+	Version string `json:"version"`
+	Created string `json:"created"`
+	Files   []File `json:"files"`
+	// AppPackages is a new field on purpose: older appsctl builds read "apps" as versions that must
+	// be installed, which would wrongly fail a drawer-only update.
+	AppPackages []AppPackage `json:"app_packages"`
+	MinAppsctl  string       `json:"min_appsctl"`
 	// Notes is the changelog summary the drawer's update screen shows (optional, plain text).
 	Notes string `json:"notes,omitempty"`
 }
@@ -118,14 +127,30 @@ func (manifest *Manifest) validateFiles() error {
 
 func (manifest *Manifest) validateApps() error {
 	seen := map[string]bool{}
-	for _, app := range manifest.Apps {
-		if !appIDPattern.MatchString(app.ID) || !ValidVersion(app.Version) {
-			return fmt.Errorf("app %q version %q is not a valid id and MAJOR.MINOR.PATCH", app.ID, app.Version)
+	for _, app := range manifest.AppPackages {
+		if err := app.validate(); err != nil {
+			return fmt.Errorf("app package %q: %w", app.ID, err)
 		}
 		if seen[app.ID] {
-			return fmt.Errorf("app %q is listed twice", app.ID)
+			return fmt.Errorf("app package %q is listed twice", app.ID)
 		}
 		seen[app.ID] = true
+	}
+	return nil
+}
+
+func (app AppPackage) validate() error {
+	if !appIDPattern.MatchString(app.ID) || !ValidVersion(app.Version) {
+		return fmt.Errorf("id and version %q must be a valid app id and MAJOR.MINOR.PATCH", app.Version)
+	}
+	if app.Zip != AppZipName(app.ID, app.Version) {
+		return fmt.Errorf("zip must be named %s (got %q)", AppZipName(app.ID, app.Version), app.Zip)
+	}
+	if !sha256Pattern.MatchString(app.SHA256) {
+		return fmt.Errorf("sha256 must be 64 lowercase hex digits")
+	}
+	if app.Size <= 0 || app.Size > maxAppZipBytes {
+		return fmt.Errorf("size %d must be between 1 and %d bytes", app.Size, maxAppZipBytes)
 	}
 	return nil
 }
@@ -155,18 +180,17 @@ func (file File) ParseMode() (uint32, error) {
 	return uint32(bits), nil
 }
 
-// CheckPath accepts only paths an update may write: host bin/lib/locales/icons/screens/config and an app's
-// app.json, icon.png, bin/ and locales/. Everything else, above all any data/ folder, is refused,
-// so a signed manifest still cannot make an update touch user data.
+// CheckPath accepts only paths a drawer update may write: host bin/lib/locales/icons/screens/config
+// and the mod file. Apps are never part of a drawer update: an app path, and above all any data/
+// folder, is refused, so a signed manifest cannot touch the apps a user installed or their data.
 func CheckPath(filePath string) error {
 	if filePath == "" || strings.Contains(filePath, `\`) || path.Clean(filePath) != filePath || path.IsAbs(filePath) {
 		return fmt.Errorf("path must be clean, relative and use forward slashes")
 	}
-	parts := strings.Split(filePath, "/")
-	if isHostPath(parts) || isAppPath(parts) {
+	if isHostPath(strings.Split(filePath, "/")) {
 		return nil
 	}
-	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales,icons,screens,config} and the mod file %s, %s/<id>/{app.json,icon.png,bin,locales})", hostPrefix, ModPath, appsPrefix)
+	return fmt.Errorf("path is outside the folders an update may write (%s/{bin,lib,locales,icons,screens,config} and the mod file %s); apps are never updated with the drawer", hostPrefix, ModPath)
 }
 
 func isHostPath(parts []string) bool {
@@ -174,16 +198,6 @@ func isHostPath(parts []string) bool {
 		return false
 	}
 	return parts[2] != "mod" || strings.Join(parts, "/") == ModPath // the mod folder holds one file only
-}
-
-func isAppPath(parts []string) bool {
-	if len(parts) < 4 || parts[0]+"/"+parts[1] != appsPrefix || !appIDPattern.MatchString(parts[2]) {
-		return false
-	}
-	if len(parts) == 4 && (parts[3] == "app.json" || parts[3] == "icon.png") {
-		return true
-	}
-	return len(parts) >= 5 && contains(appFolders, parts[3])
 }
 
 func contains(list []string, item string) bool {

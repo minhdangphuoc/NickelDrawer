@@ -13,7 +13,7 @@ The ed25519 private key lives only at `~/.config/nickeldrawer/release-ed25519.ke
 ## Steps
 
 1. Start from a clean `main`. Update `CHANGELOG.md`: move "Unreleased" items under the new version and date.
-2. Bump the version in each changed app's `app.json` (semver, see [APPS.md](APPS.md)) and set the default `VERSION ?=` in the `Makefile`.
+2. Bump the version in each changed app's `app.json` (semver, see [APPS.md](APPS.md); it names the app zip and the row in [apps/README.md](../apps/README.md)) and set the default `VERSION ?=` in the `Makefile`.
 3. Run the checks, and the mod checks if the mod changed (needs Docker):
    ```sh
    make check
@@ -26,7 +26,7 @@ The ed25519 private key lives only at `~/.config/nickeldrawer/release-ed25519.ke
    ```sh
    make release VERSION=X.Y.Z
    ```
-   This runs `check build dist`, then `ndrelease sign` and `ndrelease verify`. Output is in `dist/release/`: `release.json`, `release.json.sig`, `nickeldrawer-X.Y.Z.zip`.
+   This runs `check build dist`, then `ndrelease sign` and `ndrelease verify`. Output is in `dist/release/`: `release.json`, `release.json.sig`, `nickeldrawer-X.Y.Z.zip` (the drawer: host tool and mod, no apps) and one `app-<id>-<version>.zip` per app (also in `dist/apps/`), all listed with sha256 and size in the signed `release.json`.
 5. Verify again by hand and record the hashes:
    ```sh
    build/ndrelease-host verify
@@ -38,12 +38,12 @@ The ed25519 private key lives only at `~/.config/nickeldrawer/release-ed25519.ke
    git tag -s vX.Y.Z -m "X.Y.Z"
    git push origin main vX.Y.Z
    ```
-7. Publish the assets: the three update files, plus `koboapps-X.Y.Z.zip`, `KoboRoot-nickeldrawer.tgz` and a `SHA256SUMS.txt` for users who install by hand. Use `--prerelease` for betas; `stable` clients ignore pre-releases.
+7. Publish the assets: the three update files, `koboapps-X.Y.Z.zip` (the drawer tree for a manual install), `KoboRoot-nickeldrawer.tgz`, every app zip from `dist/apps/` and a `SHA256SUMS.txt` for users who install by hand. Apps are installed one by one from these zips ([apps/README.md](../apps/README.md)). Use `--prerelease` for betas; `stable` clients ignore pre-releases.
    ```sh
    awk '/^## \[X.Y.Z\]/{keep=1;next} /^## \[/{keep=0} keep' CHANGELOG.md >/tmp/notes.md
    gh release create vX.Y.Z \
      dist/release/release.json dist/release/release.json.sig dist/release/nickeldrawer-X.Y.Z.zip \
-     dist/koboapps-X.Y.Z.zip build/mod/KoboRoot-nickeldrawer.tgz SHA256SUMS.txt \
+     dist/koboapps-X.Y.Z.zip build/mod/KoboRoot-nickeldrawer.tgz dist/apps/app-*.zip SHA256SUMS.txt \
      --title "NickelDrawer X.Y.Z" --notes-file /tmp/notes.md
    ```
 8. Test the update on a device you control: **Apps · Check for updates**, then **Apps · Update status**. Check `appsctl update rollback` still works.

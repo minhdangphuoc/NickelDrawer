@@ -11,6 +11,7 @@ NickelDrawer adds an **Apps** drawer and a **Tweaks** window to the More tab of 
 | [Hướng dẫn sử dụng](user-guide.vi.md) | Người dùng Kobo: cài, dùng các ứng dụng, xử lý sự cố, gỡ cài đặt | Tiếng Việt |
 | [User guide](user-guide.en.md) | Kobo owners: install, use the apps, fix problems, uninstall | English |
 | [Developer guide](developer-guide.md) | People who build apps for the drawer: a 15-minute tutorial and the reference | English |
+| [Publishing apps](publishing-apps.md) ([vi](publishing-apps.vi.md)) | App authors: signed releases and over-the-air updates (planned for 1.1) | English, Tiếng Việt |
 
 Rendered pages: [user-guide.vi.html](user-guide.vi.html), [user-guide.en.html](user-guide.en.html), [developer-guide.html](developer-guide.html).
 
@@ -31,6 +32,7 @@ The exact formats and contracts. When a guide and a spec disagree, the spec wins
 | [ui-json.md](../spec/ui-json.md) | The `ui.json` screen schema and validator error codes |
 | [ui-kit.md](../spec/ui-kit.md) | How each component looks, sizes, screen patterns |
 | [drawer-protocol.md](../spec/drawer-protocol.md) | The JSON protocol between the Kobo mod and `appsctl` |
+| [app-updates.md](../spec/app-updates.md) | Over-the-air app updates: formats, keys, verification (planned for 1.1) |
 | [tweaks.md](../spec/tweaks.md) | The Tweaks window and the settings it changes |
 | [inbox.md](../spec/inbox.md) | How received files are checked and sorted |
 | [ghsync-pairing.md](../spec/ghsync-pairing.md) | Phone pairing and token safety for GitHub sync |

@@ -19,6 +19,12 @@ Chi tiết lỗi: `data/log.txt`. Sách đã tải rồi bị bạn xóa trên m
 
 `bin/ghsync` do `make dist` chép từ `build/`, không nằm trong git.
 
+### Cài đặt, cập nhật, gỡ
+
+- **Cài:** tải `app-ghsync-<phiên bản>.zip` từ [bản phát hành](../../../../releases), giải nén và gộp thư mục `.adds` trong đó vào thư mục gốc của ổ Kobo (Finder: chọn **Gộp (Merge)**, đừng chọn Thay thế). Hoặc từ bản checkout: `make dist` rồi `tools/install-to-kobo.sh --app ghsync`. Ngăn ứng dụng phải được cài trước. Các bước chi tiết: [apps/README.vi.md](../README.vi.md).
+- **Cập nhật:** cài zip mới theo cách trên. Tệp của ứng dụng được thay, `data/` được giữ.
+- **Gỡ:** nhấn giữ ứng dụng trong ngăn rồi chọn Gỡ (Remove), hoặc xóa thư mục `.adds/apps/ghsync` trên ổ.
+
 ## English
 
 Downloads new books from a private GitHub repo. Add-only: never deletes or overwrites. Every file must pass the same allowlist as LocalSend (extension, size cap, content that really is that type) and is sorted by type: books into `Books/GitHub`, PDFs into `Documents/GitHub`, comics into `Comics/GitHub`. An older config with its own `dest`, such as `/mnt/onboard/GitHub`, keeps working: everything goes there.
@@ -37,3 +43,9 @@ By hand (over USB): put the token in `.adds/apps/ghsync/data/token`, copy `confi
 Errors are in `data/log.txt`. A book you deleted on the device is not downloaded again; use `bin/ghsync run --redownload-deleted` to override. A download cut short (power loss) is cleaned up on the next run and fetched again from the start, so a broken file never appears. When GitHub says nothing changed, the sync skips the downloads (and costs no API quota). Never share the `token` file.
 
 `bin/ghsync` is copied from `build/` by `make dist` and is not committed.
+
+### Install, update, remove
+
+- **Install:** download `app-ghsync-<version>.zip` from the [release](../../../../releases), unzip it and merge its `.adds` folder onto the root of the Kobo drive (Finder: choose **Merge**, never Replace). Or, from a checkout, `make dist` then `tools/install-to-kobo.sh --app ghsync`. The drawer must already be installed. Steps and details: [apps/README.md](../README.md).
+- **Update:** install the new zip the same way. The app's files are replaced and its `data/` is kept.
+- **Remove:** long-press the app in the drawer and choose Remove, or delete `.adds/apps/ghsync` on the drive.

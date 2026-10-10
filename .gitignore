@@ -32,4 +32,6 @@ apps/todo/bin/todo
 # CopperUI static library built inside the NickelTC container (removed by mod/drawer docker-clean)
 lib/copperui/libcopperui.a
 lib/copperui/src/*.o
+mod/*/*.o
+helpers/*/*.o
 lib/copperui/tests/*.bin

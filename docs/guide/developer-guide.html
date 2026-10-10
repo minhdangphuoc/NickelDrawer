@@ -804,7 +804,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 <tr>
 <td>Install</td>
 <td><code>tools/test-install.sh</code></td>
-<td>The installer against a fake Kobo in a temp folder, including <code>--uninstall</code>.</td>
+<td>The installer against a fake Kobo in a temp folder: the drawer-only install, <code>--app</code>/<code>--apps all</code>, the zip layout of <code>dist/</code>, and <code>--uninstall</code>.</td>
 </tr>
 <tr>
 <td>Preview</td>
@@ -850,7 +850,8 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 </li>
 <li>Users install by copying the folder to <code>.adds/apps/</code> and tapping the refresh button in the header.</li>
 </ol>
-<p>Signed over-the-air updates cover only the apps inside an official NickelDrawer release; a separate app is updated by copying the new folder over the old one (its <code>data/</code> stays). Never include Kobo binaries or firmware files.</p>
+<p>NickelDrawer's own signed updates cover the drawer only (host tool and mod), never an app. The apps in this repository ship as one zip each (<code>app-&lt;id&gt;-&lt;version&gt;.zip</code>, built into <code>dist/apps/</code> by <code>make dist</code>, installed as described in <a href="../../apps/README.md">apps/README.md</a>); a separate app is updated by copying the new folder over the old one (its <code>data/</code> stays). Never include Kobo binaries or firmware files.</p>
+<p>An app for this repository lives in <code>apps/&lt;id&gt;/</code> with a README and a row in <code>apps/README.md</code> (see <a href="../../CONTRIBUTING.md">CONTRIBUTING.md</a>).</p>
 <p>To propose an app for the main repository, follow <a href="../../CONTRIBUTING.md">CONTRIBUTING.md</a>. Code in this repository is under PolyForm Noncommercial 1.0.0.</p>
 <h2 id="versioning-and-min_host">Versioning and min_host</h2>
 <ul>
@@ -945,6 +946,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 <h2 id="further-reading">Further reading</h2>
 <ul>
 <li><a href="../APPS.md">docs/APPS.md</a>: the original app guide with more design rules.</li>
+<li><a href="publishing-apps.md">Publishing apps</a>: signed releases and over-the-air updates for your app (planned for 1.1; spec: <a href="../spec/app-updates.md">app-updates.md</a>).</li>
 <li><a href="../spec/app-format.md">spec/app-format.md</a>, <a href="../spec/ui-json.md">spec/ui-json.md</a>, <a href="../spec/ui-kit.md">spec/ui-kit.md</a>, <a href="../spec/drawer-protocol.md">spec/drawer-protocol.md</a>.</li>
 <li><a href="../../apps/todo/">apps/todo</a>, <a href="../../apps/uikit/">apps/uikit</a>, <a href="../../apps/library/">apps/library</a> (background jobs), <a href="../../apps/ghsync/">apps/ghsync</a> (phone pairing), <a href="../../examples/imageview/">examples/imageview</a>.</li>
 <li><a href="../../mod/drawer/README.md">mod/drawer/README.md</a>: how the Kobo side draws your screens and how it degrades.</li>

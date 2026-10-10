@@ -5,7 +5,7 @@ set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 INSTALLER=$REPO_ROOT/tools/install-to-kobo.sh
-WORK=$(mktemp -d)
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/koboapps-install-test.XXXXXX")
 export KOBO_ROOT=$WORK/KOBOeReader
 # Backups of the installer land in the temp dir, so a test never touches the real backups/.
 export BACKUP_ROOT=$WORK/backups
@@ -28,6 +28,8 @@ check() {
 
 contains() { grep -qF -- "$2" "$1"; }
 lacks() { ! grep -qF -- "$2" "$1"; }
+# True when the zip lists an entry containing the text (no early grep exit: it would SIGPIPE unzip).
+zip_has() { unzip -Z1 "$1" | grep -F -- "$2" >/dev/null; }
 
 write_kobo_conf() {
     mkdir -p "$KOBO_ROOT/.kobo/Kobo"
@@ -58,10 +60,84 @@ check "dry run announces the tab change" contains "$WORK/dry.out" "set experimen
 echo "--- first install"
 mkdir -p "$ADDS/apps" "$ADDS/koboapps"
 echo junk >"$ADDS/apps/._x"
+mkdir -p "$ADDS/apps/custom/data"
+echo '{"id":"custom","version":"1.0.0"}' >"$ADDS/apps/custom/app.json"
+echo "mine" >"$ADDS/apps/custom/data/note.txt"
 echo junk >"$ADDS/nm/.DS_Store"
 echo junk >"$ADDS/koboapps/._y"
 "$INSTALLER" >"$WORK/first.out"
 check "appsctl installed and executable" test -x "$ADDS/koboapps/bin/appsctl"
+check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
+check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
+check "UI icon installed" test -f "$ADDS/koboapps/icons/ui/settings-64.png"
+check "chevron icon installed" test -f "$ADDS/koboapps/icons/ui/chevron-right-64.png"
+check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
+check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
+check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
+check "inbox folder created" test -d "$ADDS/koboapps/inbox"
+check "inbox/rejected folder created" test -d "$ADDS/koboapps/inbox/rejected"
+check "project.json shipped" contains "$ADDS/koboapps/config/project.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "update.json template names the project repo" contains "$ADDS/koboapps/config/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "data/update.json created with the default repo" contains "$ADDS/koboapps/data/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "no user routing.json created by the installer" test ! -e "$ADDS/koboapps/data/routing.json"
+check "update-apply.sh installed and executable" test -x "$ADDS/koboapps/bin/update-apply.sh"
+check "update-check.sh installed and executable" test -x "$ADDS/koboapps/bin/update-check.sh"
+check "retired update-status.sh not shipped" test ! -e "$ADDS/koboapps/bin/update-status.sh"
+check "settings screen installed" test -f "$ADDS/koboapps/screens/settings/ui.json"
+check "settings screen locale installed" test -f "$ADDS/koboapps/screens/settings/locales/vi.json"
+check "retired updates screen not shipped" test ! -e "$ADDS/koboapps/screens/updates"
+check "flag folder created" test -d "$ADDS/nickeldrawer"
+check "the screens flag is not created (screens are on by default)" test ! -e "$ADDS/nickeldrawer/screens"
+check "no debug flag by default" test ! -e "$ADDS/nickeldrawer/debug"
+check "no mod staged when no mod was built" test ! -e "$KOBO_ROOT/.kobo/KoboRoot.tgz"
+check "generated NickelMenu app file removed" test ! -e "$ADDS/nm/koboapps"
+check "generated NickelMenu app file backed up" grep -rqF "LocalSend · Start receiving" "$BACKUP_ROOT"/*/.adds/nm/koboapps
+check "no NickelMenu app items generated" test -z "$(find "$ADDS/nm" -name 'koboapps*')"
+check "NickelMenu tab switched off" contains "$ADDS/nm/items" "experimental:menu_main_15505_enabled:0"
+check "NickelMenu tab line appears once" test "$(grep -c "menu_main_15505_enabled" "$ADDS/nm/items")" = 1
+check "other tab settings untouched" contains "$ADDS/nm/items" "experimental :menu_main_15505_0_enabled: 1"
+check "reader-menu Dark Mode item untouched" contains "$ADDS/nm/items" "menu_item :reader :Dark Mode"
+check "only the tab line changed in items" test "$(diff "$WORK/items.original" "$ADDS/nm/items" | grep -c '^[<>]')" = 2
+check "legacy items kept without --remove-legacy" contains "$ADDS/nm/items" "Nhận sách LocalSend"
+check "legacy folder kept without --remove-legacy" test -d "$ADDS/localsend"
+check "a drawer install leaves the apps folder untouched (even AppleDouble junk)" test -e "$ADDS/apps/._x"
+check ".DS_Store in .adds/nm removed" test ! -e "$ADDS/nm/.DS_Store"
+check "AppleDouble file in .adds/koboapps removed" test ! -e "$ADDS/koboapps/._y"
+check "backup created" test "$(installed_backup_count)" -ge 1
+
+check "a drawer-only install installs no app" test ! -e "$ADDS/apps/localsend"
+check "...and no other app folder appears" test "$(ls "$ADDS/apps" | tr '\n' ' ')" = "custom "
+check "an app already on the Kobo is left alone" contains "$ADDS/apps/custom/data/note.txt" "mine"
+check "an app's manifest already on the Kobo is left alone" contains "$ADDS/apps/custom/app.json" '"custom"'
+check "the drawer install does not read dist/apps" env DIST_APPS="$WORK/no-such-apps" "$INSTALLER" --dry-run
+
+echo "--- installing apps"
+cp "$ADDS/nm/items" "$WORK/items.before-apps"
+sleep 1
+"$INSTALLER" --app wallpaper --dry-run >"$WORK/app-dry.out"
+check "an app dry run installs nothing" test ! -e "$ADDS/apps/wallpaper"
+check "an app dry run prints actions" contains "$WORK/app-dry.out" "[dry-run]"
+"$INSTALLER" --app no-such-app >"$WORK/app-missing.out" 2>&1 && appMissingStatus=0 || appMissingStatus=$?
+check "an unknown app id is refused" test "$appMissingStatus" -ne 0
+check "...and the message lists the available apps" contains "$WORK/app-missing.out" "wallpaper"
+"$INSTALLER" --app ../x >/dev/null 2>&1 && appBadStatus=0 || appBadStatus=$?
+check "an app id with a path is refused" test "$appBadStatus" -ne 0
+"$INSTALLER" --app wallpaper --with-mod >/dev/null 2>&1 && appModStatus=0 || appModStatus=$?
+check "drawer flags with --app are refused" test "$appModStatus" -ne 0
+sleep 1
+"$INSTALLER" --app wallpaper --app todo >"$WORK/app-some.out"
+check "--app installs the named apps" test -x "$ADDS/apps/wallpaper/bin/wallpaper"
+check "--app installs a second named app" test -x "$ADDS/apps/todo/bin/todo"
+check "--app leaves the other apps out" test ! -e "$ADDS/apps/ghsync"
+check "--app leaves the NickelMenu settings alone" cmp -s "$ADDS/nm/items" "$WORK/items.before-apps"
+check "--app backs up only the apps it replaces" test ! -e "$BACKUP_ROOT"/*/.adds/koboapps
+check "AppleDouble file in .adds/apps removed by an apps install" test ! -e "$ADDS/apps/._x"
+check "an app already on the Kobo survives --app" contains "$ADDS/apps/custom/data/note.txt" "mine"
+sleep 1
+"$INSTALLER" --apps all >"$WORK/app-all.out"
+check "--apps all names the zips it installs from" contains "$WORK/app-all.out" "from app-ghsync-"
+check "the summary names the backup" contains "$WORK/app-all.out" "Backup:"
+
 check "localgo installed and executable" test -x "$ADDS/apps/localsend/bin/localgo"
 check "ghsync installed" test -x "$ADDS/apps/ghsync/bin/ghsync"
 check "wallpaper installed" test -x "$ADDS/apps/wallpaper/bin/wallpaper"
@@ -87,47 +163,10 @@ check "uikit icon installed" test -f "$ADDS/apps/uikit/icon.png"
 check "uikit ships hidden" contains "$ADDS/apps/uikit/app.json" '"hidden": true'
 check "config.example.json installed" test -f "$ADDS/apps/ghsync/config.example.json"
 check "ghsync ships no data files" test "$(ls "$ADDS/apps/ghsync/data" | wc -l | tr -d ' ')" = 0
-check "host icons installed" test -f "$ADDS/koboapps/icons/refresh.png"
-check "More-row apps icon installed" test -f "$ADDS/koboapps/icons/apps.png"
-check "UI icon installed" test -f "$ADDS/koboapps/icons/ui/settings-64.png"
 check "app icon installed" test -f "$ADDS/apps/localsend/icon.png"
 check "drawer row icon (64 px) installed" test -f "$ADDS/apps/localsend/icon-64.png"
-check "chevron icon installed" test -f "$ADDS/koboapps/icons/ui/chevron-right-64.png"
-check "locales installed (host)" test -f "$ADDS/koboapps/locales/vi.json"
-check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
-check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
-check "inbox folder created" test -d "$ADDS/koboapps/inbox"
-check "inbox/rejected folder created" test -d "$ADDS/koboapps/inbox/rejected"
-check "project.json shipped" contains "$ADDS/koboapps/config/project.json" '"repo": "minhdangphuoc/NickelDrawer"'
-check "update.json template names the project repo" contains "$ADDS/koboapps/config/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
-check "data/update.json created with the default repo" contains "$ADDS/koboapps/data/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
-check "no user routing.json created by the installer" test ! -e "$ADDS/koboapps/data/routing.json"
 check "localsend routes through the inbox hook" contains "$ADDS/apps/localsend/bin/env.sh" "inbox route --from-env --source localsend"
 check "locales installed (app)" test -f "$ADDS/apps/localsend/locales/vi.json"
-check "update-apply.sh installed and executable" test -x "$ADDS/koboapps/bin/update-apply.sh"
-check "update-check.sh installed and executable" test -x "$ADDS/koboapps/bin/update-check.sh"
-check "retired update-status.sh not shipped" test ! -e "$ADDS/koboapps/bin/update-status.sh"
-check "settings screen installed" test -f "$ADDS/koboapps/screens/settings/ui.json"
-check "settings screen locale installed" test -f "$ADDS/koboapps/screens/settings/locales/vi.json"
-check "retired updates screen not shipped" test ! -e "$ADDS/koboapps/screens/updates"
-check "flag folder created" test -d "$ADDS/nickeldrawer"
-check "the screens flag is not created (screens are on by default)" test ! -e "$ADDS/nickeldrawer/screens"
-check "no debug flag by default" test ! -e "$ADDS/nickeldrawer/debug"
-check "no mod staged when no mod was built" test ! -e "$KOBO_ROOT/.kobo/KoboRoot.tgz"
-check "generated NickelMenu app file removed" test ! -e "$ADDS/nm/koboapps"
-check "generated NickelMenu app file backed up" grep -rqF "LocalSend · Start receiving" "$BACKUP_ROOT"/*/.adds/nm/koboapps
-check "no NickelMenu app items generated" test -z "$(find "$ADDS/nm" -name 'koboapps*')"
-check "NickelMenu tab switched off" contains "$ADDS/nm/items" "experimental:menu_main_15505_enabled:0"
-check "NickelMenu tab line appears once" test "$(grep -c "menu_main_15505_enabled" "$ADDS/nm/items")" = 1
-check "other tab settings untouched" contains "$ADDS/nm/items" "experimental :menu_main_15505_0_enabled: 1"
-check "reader-menu Dark Mode item untouched" contains "$ADDS/nm/items" "menu_item :reader :Dark Mode"
-check "only the tab line changed in items" test "$(diff "$WORK/items.original" "$ADDS/nm/items" | grep -c '^[<>]')" = 2
-check "legacy items kept without --remove-legacy" contains "$ADDS/nm/items" "Nhận sách LocalSend"
-check "legacy folder kept without --remove-legacy" test -d "$ADDS/localsend"
-check "AppleDouble file in .adds/apps removed" test ! -e "$ADDS/apps/._x"
-check ".DS_Store in .adds/nm removed" test ! -e "$ADDS/nm/.DS_Store"
-check "AppleDouble file in .adds/koboapps removed" test ! -e "$ADDS/koboapps/._y"
-check "backup created" test "$(installed_backup_count)" -ge 1
 
 echo "--- second install keeps data"
 echo "secret-token" >"$ADDS/apps/ghsync/data/token"
@@ -142,6 +181,10 @@ echo "stale" >"$ADDS/apps/ghsync/bin/obsolete.sh"
 echo '{"version":0}' >"$ADDS/koboapps/config/routing.json"
 sleep 1
 "$INSTALLER" >"$WORK/second.out"
+check "a drawer-only reinstall keeps the apps' files as they are" test -e "$ADDS/apps/ghsync/bin/obsolete.sh"
+check "a drawer-only reinstall keeps every app" test -x "$ADDS/apps/todo/bin/todo"
+sleep 1
+"$INSTALLER" --apps all >"$WORK/second-apps.out"
 check "token preserved" contains "$ADDS/apps/ghsync/data/token" "secret-token"
 check "config preserved" contains "$ADDS/apps/ghsync/data/config.json" '"o/r"'
 check "todo list preserved" contains "$ADDS/apps/todo/data/todo.json" "Mua sữa"
@@ -340,6 +383,42 @@ check "...and uses that volume" grep -qF "$WORK/mounts/KOBOeReader/.adds" "$WORK
 env -u KOBO_ROOT KOBO_SEARCH_DIRS="$WORK/empty-mounts" "$INSTALLER" --dry-run >"$WORK/detect-none.out" 2>&1 && detectNoneStatus=0 || detectNoneStatus=$?
 check "reports a missing volume when none is found" test "$detectNoneStatus" -ne 0
 check "...and says how to set KOBO_ROOT" grep -qF "KOBO_ROOT" "$WORK/detect-none.out"
+
+echo "--- release layout"
+drawerZip=$(ls "$REPO_ROOT"/dist/koboapps-*.zip | head -n 1)
+check "the drawer zip has no .adds/apps" test -z "$(unzip -Z1 "$drawerZip" | grep -F '.adds/apps' || true)"
+check "the drawer zip holds the host tool" zip_has "$drawerZip" 'onboard/.adds/koboapps/bin/appsctl'
+check "dist/onboard has no apps folder" test ! -e "$REPO_ROOT/dist/onboard/.adds/apps"
+check "dist/apps has one zip per app folder" test "$(ls "$REPO_ROOT"/dist/apps/app-*.zip | wc -l | tr -d ' ')" = "$(ls "$REPO_ROOT"/apps/*/app.json | wc -l | tr -d ' ')"
+for appZip in "$REPO_ROOT"/dist/apps/app-*.zip; do
+    appName=$(basename "$appZip" .zip)
+    appId=$(echo "$appName" | sed -E 's/^app-(.*)-[0-9]+\.[0-9]+\.[0-9]+.*$/\1/')
+    check "$appName holds only .adds/apps/$appId" test -z "$(unzip -Z1 "$appZip" | grep -v "^\.adds/apps/$appId/" || true)"
+    check "$appName has no data/ or dev-only files" test -z "$(unzip -Z1 "$appZip" | grep -E '/data/|preview-state|README' || true)"
+    check "$appName is named after the version in app.json" grep -q "\"version\": \"$(echo "$appName" | sed -E "s/^app-$appId-//")\"" "$REPO_ROOT/apps/$appId/app.json"
+done
+ghsyncZip=$(ls "$REPO_ROOT"/dist/apps/app-ghsync-*.zip | head -n 1)
+check "the ghsync zip keeps config.example.json" zip_has "$ghsyncZip" '.adds/apps/ghsync/config.example.json'
+
+echo "--- an app zip cannot reach outside its app"
+evilTree=$WORK/evil-tree
+mkdir -p "$evilTree/.adds/apps/evil/bin" "$evilTree/.adds/koboapps/bin"
+echo '{"id":"evil","version":"1.0.0"}' >"$evilTree/.adds/apps/evil/app.json"
+echo x >"$evilTree/.adds/koboapps/bin/appsctl"
+mkdir -p "$WORK/evil-apps"
+(cd "$evilTree" && zip -qr "$WORK/evil-apps/app-evil-1.0.0.zip" .adds)
+DIST_APPS=$WORK/evil-apps "$INSTALLER" --app evil >"$WORK/evil-app.out" 2>&1 && evilAppStatus=0 || evilAppStatus=$?
+check "a zip with files outside its app is refused" test "$evilAppStatus" -ne 0
+check "...and nothing of it is installed" test ! -e "$ADDS/apps/evil"
+linkTree=$WORK/link-tree
+mkdir -p "$linkTree/.adds/apps/linky"
+echo '{"id":"linky","version":"1.0.0"}' >"$linkTree/.adds/apps/linky/app.json"
+ln -s /etc "$linkTree/.adds/apps/linky/bin"
+mkdir -p "$WORK/link-apps"
+(cd "$linkTree" && zip -qry "$WORK/link-apps/app-linky-1.0.0.zip" .adds)
+DIST_APPS=$WORK/link-apps "$INSTALLER" --app linky >"$WORK/link-app.out" 2>&1 && linkStatus=0 || linkStatus=$?
+check "a zip holding a symbolic link is refused" test "$linkStatus" -ne 0
+check "...and nothing of it is installed" test ! -e "$ADDS/apps/linky"
 
 echo "--- the optional helper stays out of the drawer"
 # helpers/statusbar-screenshot is a separate extra: nothing of it may ship in dist/ or live in the

@@ -548,7 +548,7 @@ Rules for jobs:
 | Protocol | `appsctl drawer screen <app> --apps-dir <dir>`; Go tests in `cmd/appsctl/examples_test.go` | The exact JSON the mod receives. The Go test runs the real protocol with `ScriptEnv` overrides; copy it for your app. |
 | Golden replies | `go test ./cmd/appsctl -run Golden` (`-update` rewrites, then review the diff) | Screen replies with bindings and locales resolved, in `cmd/appsctl/testdata/drawer/`. |
 | Whole repo | `make check` | `gofmt`, `go vet`, `go test ./...`, `shellcheck` if installed. |
-| Install | `tools/test-install.sh` | The installer against a fake Kobo in a temp folder, including `--uninstall`. |
+| Install | `tools/test-install.sh` | The installer against a fake Kobo in a temp folder: the drawer-only install, `--app`/`--apps all`, the zip layout of `dist/`, and `--uninstall`. |
 | Preview | `build/ndpreview-host render …` | A picture of each screen and language for review. |
 | Device | the device checklist below | What a computer cannot show. |
 
@@ -583,7 +583,9 @@ Icons come from **Nickel's own resources first, then Tabler Icons (MIT)**. Never
 3. Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.
 4. Users install by copying the folder to `.adds/apps/` and tapping the refresh button in the header.
 
-Signed over-the-air updates cover only the apps inside an official NickelDrawer release; a separate app is updated by copying the new folder over the old one (its `data/` stays). Never include Kobo binaries or firmware files.
+NickelDrawer's own signed updates cover the drawer only (host tool and mod), never an app. The apps in this repository ship as one zip each (`app-<id>-<version>.zip`, built into `dist/apps/` by `make dist`, installed as described in [apps/README.md](../../apps/README.md)); a separate app is updated by copying the new folder over the old one (its `data/` stays). Never include Kobo binaries or firmware files.
+
+An app for this repository lives in `apps/<id>/` with a README and a row in `apps/README.md` (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
 To propose an app for the main repository, follow [CONTRIBUTING.md](../../CONTRIBUTING.md). Code in this repository is under PolyForm Noncommercial 1.0.0.
 
@@ -624,6 +626,7 @@ Places where nothing has run on a device yet, or where the Kobo side differs fro
 ## Further reading
 
 - [docs/APPS.md](../APPS.md): the original app guide with more design rules.
+- [Publishing apps](publishing-apps.md): signed releases and over-the-air updates for your app (planned for 1.1; spec: [app-updates.md](../spec/app-updates.md)).
 - [spec/app-format.md](../spec/app-format.md), [spec/ui-json.md](../spec/ui-json.md), [spec/ui-kit.md](../spec/ui-kit.md), [spec/drawer-protocol.md](../spec/drawer-protocol.md).
 - [apps/todo](../../apps/todo/), [apps/uikit](../../apps/uikit/), [apps/library](../../apps/library/) (background jobs), [apps/ghsync](../../apps/ghsync/) (phone pairing), [examples/imageview](../../examples/imageview/).
 - [mod/drawer/README.md](../../mod/drawer/README.md): how the Kobo side draws your screens and how it degrades.

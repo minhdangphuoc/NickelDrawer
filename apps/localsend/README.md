@@ -18,3 +18,9 @@ The `--exec` string (`ROUTE_HOOK` in `bin/env.sh`) must never contain a `%` plac
 `bin/localgo` is not committed (third-party binary). `make dist` copies it from `build/localgo-linux-armv7` (built from `third_party/localgo`) into `bin/localgo`.
 
 State lives in `data/` (PIN in `data/pin.txt`, config in `data/home`). While running, localgo logs to `/tmp/localsend.log` so nothing stays open on the USB-visible storage; "Stop receiving" appends it to `data/log.txt` (last 500 lines kept). The journal of routed files is `.adds/koboapps/data/inbox-journal.jsonl`.
+
+## Install, update, remove
+
+- **Install:** download `app-localsend-<version>.zip` from the [release](../../../../releases), unzip it and merge its `.adds` folder onto the root of the Kobo drive (Finder: choose **Merge**, never Replace). Or, from a checkout, `make dist` then `tools/install-to-kobo.sh --app localsend`. The drawer must already be installed. Steps and details: [apps/README.md](../README.md).
+- **Update:** install the new zip the same way. The app's files are replaced and its `data/` is kept.
+- **Remove:** long-press the app in the drawer and choose Remove, or delete `.adds/apps/localsend` on the drive.
