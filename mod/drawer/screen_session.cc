@@ -375,6 +375,8 @@ void ScreenSession::onComponentTapped(int index, const QString &value)
     DebugLog::write("screen: tap on %s %d, action \"%s\"", qPrintable(type), index, qPrintable(component.action));
     if (type == QLatin1String("button")) {
         tapButton(component);
+    } else if (type == QLatin1String("row") && !component.push.isEmpty()) {
+        pushSubScreen(component.push, QString());
     } else if (type == QLatin1String("row") || type == QLatin1String("empty")) {
         runAction(component.action);
     } else if (type == QLatin1String("toggle")) {

@@ -34,8 +34,10 @@ type screenJSON struct {
 	ImportStep       string        `json:"import_step"`
 	SleepScreenReady bool          `json:"sleep_screen_ready"`
 	SleepScreenHint  string        `json:"sleep_screen_hint"`
-	SleepScreenLine  string        `json:"sleep_screen_line"`
-	LastImport       string        `json:"last_import"`
+	// SleepScreenNotice is the one-line link on the main screen to the options; empty when ready.
+	SleepScreenNotice string `json:"sleep_screen_notice"`
+	SleepScreenLine   string `json:"sleep_screen_line"`
+	LastImport        string `json:"last_import"`
 }
 
 // state prints the variables of the app screen as one JSON object. Texts are localized here;
@@ -60,6 +62,9 @@ func (current *session) screenOf(state wallpaper.ScreenState) screenJSON {
 	}
 	screen.Summary = current.summary(state)
 	screen.SleepScreenLine = screen.SleepScreenHint
+	if !state.SleepScreenReady {
+		screen.SleepScreenNotice = current.messages.Message("msg.sleep_screen_notice", nil)
+	}
 	if state.SleepScreenReady {
 		screen.SleepScreenLine = current.messages.Message("msg.sleep_screen_ready", nil)
 	}

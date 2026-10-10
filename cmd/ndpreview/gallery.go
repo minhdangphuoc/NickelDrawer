@@ -23,16 +23,18 @@ func galleryIndex(body []uikit.Component) int {
 type gridGeometry struct {
 	columns, rows int
 	tileW, tileH  int
+	left          int // x of the first column
 	pages         int
 }
 
 func (g gridGeometry) perPage() int { return g.columns * g.rows }
 
-// newGridGeometry sizes the tiles to fill the content width at the screen's 3:4 aspect and
+// newGridGeometry sizes the tiles to fill the content width (same gutters as the header) at the screen's 3:4 aspect and
 // reduces rows until the grid (and the pager, when there is more than one page) fits.
 func newGridGeometry(columns, wantedRows, cellCount, available int) gridGeometry {
-	tileW := (screenWidth - 2*gallerySidePadding - (columns-1)*galleryGutter) / columns
-	g := gridGeometry{columns: columns, tileW: tileW, tileH: tileW * 4 / 3}
+	tileW := (contentWidth - (columns-1)*galleryGutter) / columns
+	leftover := contentWidth - (columns*tileW + (columns-1)*galleryGutter)
+	g := gridGeometry{columns: columns, tileW: tileW, tileH: tileW * 4 / 3, left: gutter + leftover/2}
 	g.rows = fittingRows(wantedRows, g.tileH, available)
 	g.pages = pageCount(cellCount, g.perPage())
 	if g.pages > 1 {
@@ -112,7 +114,7 @@ func (rc renderContext) gridItems(gallery galleryView, pageIndex, top, bottom in
 	var items []Item
 	for cell := first; cell < min(cellCount, first+geometry.perPage()); cell++ {
 		position := cell - first
-		x := gallerySidePadding + (position%geometry.columns)*(geometry.tileW+galleryGutter)
+		x := geometry.left + (position%geometry.columns)*(geometry.tileW+galleryGutter)
 		y := top + (position/geometry.columns)*(geometry.tileH+galleryGutter)
 		box := image.Rect(x, y, x+geometry.tileW, y+geometry.tileH)
 		if cell < len(gallery.tiles) {

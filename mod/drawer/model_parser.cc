@@ -217,6 +217,7 @@ static ScreenComponent parseComponent(const QJsonObject &object)
     component.detail = stringField(object, "detail");
     component.caption = stringField(object, "caption");
     component.action = stringField(object, "action");
+    component.push = stringField(object, "push");
     component.bind = stringField(object, "bind");
     QJsonValue value = object.value(QLatin1String("value"));
     component.isOn = value.toBool(false);

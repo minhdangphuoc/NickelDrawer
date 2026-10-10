@@ -232,6 +232,7 @@ var Components = []ComponentSpec{
 	{Key: "row", Main: text(60), Props: []Prop{
 		optionalKey("detail", expr(60)),
 		optionalKey("action", actionID),
+		optionalKey("push", Shape{Kind: KindScreenRef}),
 	}},
 	{Key: "toggle", Main: text(60), Props: []Prop{
 		requiredKey("bind", varName),

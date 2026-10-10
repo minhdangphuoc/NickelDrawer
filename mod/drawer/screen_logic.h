@@ -142,8 +142,7 @@ QrPlacement placeQr(int moduleCount, int side);
 // ---- Gallery and viewer (docs/spec/wallpaper-gallery.md sections 2 and 5) ----
 // Constants mirror cmd/ndpreview/metrics.go GALLERY_* and VIEWER_*; change both.
 
-static const int GALLERY_SIDE_PADDING = 56;
-static const int GALLERY_CONTENT_WIDTH = SCREEN_WIDTH - 2 * GALLERY_SIDE_PADDING;
+// The grid spans the same gutters as the header title and divider (CONTENT_WIDTH).
 static const int GALLERY_GUTTER = 24;
 static const int GALLERY_DEFAULT_COLUMNS = 4;
 static const int GALLERY_DEFAULT_ROWS = 3;
@@ -185,6 +184,9 @@ struct IntRect {
 // 270 x 360 for 4 columns: 3:4, the screen's aspect.
 int galleryTileWidth(int columns);
 int galleryTileHeight(int columns);
+// Left edge of the grid: GUTTER plus half of the pixels the integer tile width leaves over,
+// so the grid stays centred inside the content width.
+int galleryGridLeft(int columns);
 
 struct GalleryFrame {
     int columns;

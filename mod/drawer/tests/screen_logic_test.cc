@@ -146,22 +146,36 @@ static void testQrPlacement()
 
 static void testGalleryMetricsMatchTheSpec()
 {
-    EXPECT_EQ(270, galleryTileWidth(4));
-    EXPECT_EQ(360, galleryTileHeight(4));
-    EXPECT_EQ(1152, GALLERY_CONTENT_WIDTH);
+    EXPECT_EQ(262, galleryTileWidth(4)); // (1120 - 3 * 24) / 4
+    EXPECT_EQ(349, galleryTileHeight(4)); // 3:4, rounded down
     IntRect last = galleryTileRect(11, 4, 100);
-    EXPECT_EQ(56 + 3 * (270 + 24), last.x);
-    EXPECT_EQ(100 + 2 * (360 + 24), last.y);
-    EXPECT_EQ(100 + 1128, last.y + last.height); // three rows are 1128 px
+    EXPECT_EQ(GUTTER + 3 * (262 + 24), last.x);
+    EXPECT_EQ(100 + 2 * (349 + 24), last.y);
+    EXPECT_EQ(100 + 1095, last.y + last.height); // three rows are 1095 px
+}
+
+static void testGalleryGridMatchesTheContentGutters()
+{
+    for (int columns = 1; columns <= GALLERY_MAX_COLUMNS; columns++) {
+        IntRect first = galleryTileRect(0, columns, 0);
+        IntRect lastInRow = galleryTileRect(columns - 1, columns, 0);
+        int leftGap = first.x - GUTTER;
+        int rightGap = (GUTTER + CONTENT_WIDTH) - (lastInRow.x + lastInRow.width);
+        EXPECT_EQ(1, leftGap >= 0 && rightGap >= 0); // never outside the header's gutters
+        EXPECT_EQ(1, rightGap - leftGap >= 0 && rightGap - leftGap <= 1); // a leftover pixel is split, not piled on one side
+    }
+    EXPECT_EQ(GUTTER, galleryTileRect(0, 4, 0).x); // 4 columns divide the content width exactly
+    EXPECT_EQ(GUTTER, galleryGridLeft(3));         // 3 columns leave 1 px over: 0 left, 1 right
+    EXPECT_EQ(GUTTER + 2, galleryGridLeft(5));     // 5 columns leave 4 px over: 2 each side
 }
 
 static void testGalleryRowsThatFit()
 {
-    GalleryFrame frame = galleryFrame(4, 3, 12, 1128);
+    GalleryFrame frame = galleryFrame(4, 3, 12, 1095);
     EXPECT_EQ(3, frame.rows);
     EXPECT_EQ(12, frame.perPage);
     EXPECT_EQ(1, frame.pageCount);
-    frame = galleryFrame(4, 3, 12, 1127); // one pixel short: two rows
+    frame = galleryFrame(4, 3, 12, 1094); // one pixel short: two rows
     EXPECT_EQ(2, frame.rows);
     EXPECT_EQ(8, frame.perPage);
     EXPECT_EQ(2, frame.pageCount);
@@ -173,10 +187,10 @@ static void testGalleryRowsThatFit()
 static void testGalleryPageBarTakesRoomOnlyWhenPaging()
 {
     EXPECT_EQ(3, galleryFrame(4, 3, 12, 1200).rows);
-    GalleryFrame paged = galleryFrame(4, 3, 13, 1200);
-    EXPECT_EQ(2, paged.rows); // 1200 - 80 = 1120 < 1128
+    GalleryFrame paged = galleryFrame(4, 3, 13, 1170);
+    EXPECT_EQ(2, paged.rows); // 1170 - 80 = 1090 < 1095
     EXPECT_EQ(2, paged.pageCount);
-    EXPECT_EQ(3, galleryFrame(4, 3, 13, 1208).rows);
+    EXPECT_EQ(3, galleryFrame(4, 3, 13, 1175).rows);
     EXPECT_EQ(1, galleryFrame(4, 3, 0, 1500).pageCount);
 }
 
@@ -289,6 +303,7 @@ static void testFitInside()
 int main()
 {
     testGalleryMetricsMatchTheSpec();
+    testGalleryGridMatchesTheContentGutters();
     testGalleryRowsThatFit();
     testGalleryPageBarTakesRoomOnlyWhenPaging();
     testGalleryClampsColumnsAndRows();

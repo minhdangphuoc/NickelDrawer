@@ -378,7 +378,7 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         LayoutBlock row = block(LayoutBlock::KIND_TAP_ROW, index, TAP_ROW_HEIGHT, RHYTHM);
         row.primary = c.text;
         row.secondary = c.detail;
-        row.isTappable = !c.action.isEmpty();
+        row.isTappable = !c.action.isEmpty() || !c.push.isEmpty();
         blocks->append(row);
     } else if (type == QLatin1String("toggle")) {
         LayoutBlock toggle = block(LayoutBlock::KIND_TOGGLE, index, ROW_HEIGHT, RHYTHM);

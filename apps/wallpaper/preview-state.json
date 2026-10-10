@@ -62,6 +62,7 @@
   "import_step": "",
   "sleep_screen_ready": false,
   "sleep_screen_hint": "Bật trong Cài đặt → Tiết kiệm pin và riêng tư: «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình».",
+  "sleep_screen_notice": "Màn hình ngủ chưa bật · Xem Tùy chọn",
   "sleep_screen_line": "Bật trong Cài đặt → Tiết kiệm pin và riêng tư: «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình».",
   "last_import": "Ảnh mới: 7. Đã có sẵn: 0."
 }

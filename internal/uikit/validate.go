@@ -653,6 +653,8 @@ func (v *validator) checkComponentRules(path string, component Component) {
 		v.primary++
 	}
 	switch component.Kind {
+	case "row":
+		v.checkRowTarget(path, component)
 	case "list":
 		v.checkListVar(path, component)
 	case "gallery":
@@ -706,6 +708,15 @@ func (v *validator) checkListVar(path string, component Component) {
 		if _, isArray := value.([]any); !isArray {
 			v.fail(CodeListNotArray, path+"."+component.Kind, "variable %q must default to an array (for example []) because a %s shows its items", reference, component.Kind)
 		}
+	}
+}
+
+// checkRowTarget: a row runs an action or pushes a screen, never both (it may also be plain).
+func (v *validator) checkRowTarget(path string, component Component) {
+	_, hasAction := component.Props["action"]
+	_, hasPush := component.Props["push"]
+	if hasAction && hasPush {
+		v.fail(CodeNeedsOne, path, "a row takes \"action\" or \"push\", not both")
 	}
 }
 

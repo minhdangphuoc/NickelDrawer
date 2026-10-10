@@ -54,7 +54,7 @@ func pushTargets(screen any) []string {
 		targets = append(targets, pushOf(icon))
 	}
 	for _, component := range componentObjects(object["body"], object["footer"]) {
-		targets = append(targets, galleryPushTargets(component)...)
+		targets = append(targets, componentPushTargets(component)...)
 	}
 	return targets
 }
@@ -72,7 +72,10 @@ func componentObjects(lists ...any) []map[string]any {
 	return objects
 }
 
-func galleryPushTargets(component map[string]any) []string {
+func componentPushTargets(component map[string]any) []string {
+	if _, isRow := component["row"]; isRow {
+		return []string{pushOf(component)}
+	}
 	if _, isGallery := component["gallery"]; !isGallery {
 		return nil
 	}

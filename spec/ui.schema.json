@@ -151,6 +151,10 @@
               "maxLength": 60,
               "type": "string"
             },
+            "push": {
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+              "type": "string"
+            },
             "row": {
               "anyOf": [
                 {

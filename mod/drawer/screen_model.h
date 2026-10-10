@@ -72,6 +72,7 @@ struct ScreenComponent {
     QString detail;
     QString caption;
     QString action;
+    QString push; // row: screen pushed on tap, instead of an action
     QString bind;
     QString value;        // radio: the selected option id; field: the shown text
     bool isOn = false;    // toggle value

@@ -122,6 +122,8 @@ type stateReply struct {
 	SleepScreenReady bool   `json:"sleep_screen_ready"`
 	SleepScreenHint  string `json:"sleep_screen_hint"`
 	SleepScreenLine  string `json:"sleep_screen_line"`
+
+	SleepScreenNotice string `json:"sleep_screen_notice"`
 }
 
 type pictureItem struct {
@@ -152,7 +154,8 @@ func TestStateOfFreshInstallIsEmptyButComplete(t *testing.T) {
 	_, appDir, _ := deviceRoot(t)
 	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
 	if reply.Mode != "fill" || reply.Rotation != "fixed" || reply.Status != "" || reply.SleepScreenHint != enSleepHint ||
-		reply.Count != 0 || reply.Summary != "" || reply.Pictures == nil || len(reply.Pictures) != 0 || reply.SleepScreenLine != enSleepHint {
+		reply.Count != 0 || reply.Summary != "" || reply.Pictures == nil || len(reply.Pictures) != 0 || reply.SleepScreenLine != enSleepHint ||
+		reply.SleepScreenNotice != "Sleep screen off · See Options" {
 		t.Fatalf("state = %+v", reply)
 	}
 }
@@ -183,7 +186,7 @@ func TestStateHidesHintWhenNickelSettingsAreOn(t *testing.T) {
 	_, appDir, _ := deviceRoot(t)
 	write(t, filepath.Join(appDir, "Kobo eReader.conf"), []byte("[PowerOptions]\nShowBookCover=true\nFullscreenCoverStretch=true\n"))
 	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
-	if !reply.SleepScreenReady || reply.SleepScreenHint != "" {
+	if !reply.SleepScreenReady || reply.SleepScreenHint != "" || reply.SleepScreenNotice != "" {
 		t.Fatalf("state = %+v, want ready with an empty hint", reply)
 	}
 }

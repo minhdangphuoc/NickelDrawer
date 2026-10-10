@@ -150,11 +150,7 @@ func withTrailingGap(blocks []block) []block {
 func (rc renderContext) rowBlock(c uikit.Component) block {
 	label := rc.text(c.Main())
 	detail := rc.text(c.Prop("detail"))
-	action, _ := c.Prop("action").(string)
-	event := ""
-	if action != "" {
-		event = actionEvent(action)
-	}
+	event := actionEventFor(map[string]any{"action": c.Prop("action"), "push": c.Prop("push")})
 	return block{height: tapRowHeight, gap: rhythm, draw: func(y int) []Item {
 		textWidth := contentWidth - 360
 		items := []Item{
@@ -166,7 +162,7 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 			item.Ink = inkMuted
 			items = append(items, item)
 		}
-		if action != "" {
+		if event != "" {
 			items = append(items, textItem(screenWidth-gutter-32, y+36, 32, 56, "›", rowTextSize, familySans, "end"))
 			items = append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: tapRowHeight, Fill: noFill, Event: event, Label: label})
 		}

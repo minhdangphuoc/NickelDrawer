@@ -120,7 +120,7 @@ func countItems(page Page, match func(Item) bool) int {
 }
 
 func isTileFrame(item Item) bool {
-	return item.Shape == "rect" && item.W == 270 && item.H == 360
+	return item.Shape == "rect" && item.W == 262 && item.H == 349
 }
 
 func TestGalleryDrawsTwelveTilesPerPageAndAPager(t *testing.T) {
@@ -138,7 +138,7 @@ func TestGalleryDrawsTwelveTilesPerPageAndAPager(t *testing.T) {
 		t.Errorf("want one pager text, got %d", pager)
 	}
 	// The thumbnail is black on white: its pixel is dark, the 1 px border of the next tile is not wide.
-	if got := canvas.GrayAt(gallerySidePadding+135, 213-68+rhythm+180).Y; got != 0 {
+	if got := canvas.GrayAt(gutter+131, 213-68+rhythm+174).Y; got != 0 {
 		t.Errorf("thumbnail centre pixel = %d, want 0 (black picture)", got)
 	}
 }
@@ -195,8 +195,8 @@ func TestGalleryEmptyStateAndHiddenSummary(t *testing.T) {
 
 func TestGalleryReducesRowsWhenTheGridDoesNotFit(t *testing.T) {
 	geometry := newGridGeometry(4, 3, 20, 700)
-	if geometry.tileW != 270 || geometry.tileH != 360 || geometry.rows != 1 {
-		t.Errorf("geometry %+v, want 270x360 tiles in 1 row", geometry)
+	if geometry.tileW != 262 || geometry.tileH != 349 || geometry.rows != 1 {
+		t.Errorf("geometry %+v, want 262x349 tiles in 1 row", geometry)
 	}
 	if full := newGridGeometry(4, 3, 20, 1395); full.rows != 3 || full.pages != 2 {
 		t.Errorf("geometry %+v, want 3 rows and 2 pages", full)
@@ -321,5 +321,19 @@ func TestServePageEmbedsPicturesAndKeepsValue(t *testing.T) {
 	grid := get(t, instance, "/").Body.String()
 	if strings.Count(grid, "data:image/png;base64,") != 3 || !strings.Contains(grid, "&#34;event&#34;:&#34;screen&#34;") {
 		t.Error("main page must embed 3 thumbnails and carry the tile tap event")
+	}
+}
+
+func TestGalleryGridSpansTheContentGutters(t *testing.T) {
+	for columns := 1; columns <= 6; columns++ {
+		geometry := newGridGeometry(columns, 3, 1, 2000)
+		right := geometry.left + columns*geometry.tileW + (columns-1)*galleryGutter
+		leftGap, rightGap := geometry.left-gutter, screenWidth-gutter-right
+		if leftGap < 0 || rightGap < leftGap || rightGap-leftGap > 1 {
+			t.Errorf("%d columns: gaps %d and %d, want a grid inside the gutters with the leftover pixel split", columns, leftGap, rightGap)
+		}
+	}
+	if geometry := newGridGeometry(4, 3, 1, 2000); geometry.left != gutter || geometry.tileW != 262 {
+		t.Errorf("4 columns %+v, want flush with the gutters", geometry)
 	}
 }

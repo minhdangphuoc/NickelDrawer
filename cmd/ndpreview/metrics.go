@@ -51,10 +51,7 @@ const (
 
 	// Gallery and viewer (docs/spec/wallpaper-gallery.md section 2). mod/drawer/screen_logic.h
 	// must have the same numbers; change both together.
-	gallerySidePadding  = 56
-	galleryGutter       = 24
-	galleryTileWidth    = 270 // 4 columns: (1264 - 2*56 - 3*24) / 4
-	galleryTileHeight   = 360 // 3:4, the screen's aspect
+	galleryGutter       = 24 // the grid spans the content gutters: no side padding of its own
 	galleryBorder       = 1
 	galleryCurrentBdr   = 4
 	galleryBadgeSize    = 56

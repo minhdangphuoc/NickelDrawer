@@ -15,6 +15,7 @@
     "import_step": "",
     "sleep_screen_ready": true,
     "sleep_screen_hint": "",
+    "sleep_screen_notice": "",
     "sleep_screen_line": "",
     "last_import": ""
   },
@@ -40,7 +41,8 @@
           "style": "caption"
         },
         {
-          "notice": "$sleep_screen_hint"
+          "row": "$sleep_screen_notice",
+          "push": "options"
         },
         {
           "notice": "$import_step"

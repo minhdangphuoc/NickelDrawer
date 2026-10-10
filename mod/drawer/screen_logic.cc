@@ -385,12 +385,19 @@ static int clampInt(int value, int low, int high)
 int galleryTileWidth(int columns)
 {
     columns = clampInt(columns, 1, GALLERY_MAX_COLUMNS);
-    return (GALLERY_CONTENT_WIDTH - (columns - 1) * GALLERY_GUTTER) / columns;
+    return (CONTENT_WIDTH - (columns - 1) * GALLERY_GUTTER) / columns;
 }
 
 int galleryTileHeight(int columns)
 {
     return galleryTileWidth(columns) * 4 / 3;
+}
+
+int galleryGridLeft(int columns)
+{
+    columns = clampInt(columns, 1, GALLERY_MAX_COLUMNS);
+    int leftover = CONTENT_WIDTH - (columns * galleryTileWidth(columns) + (columns - 1) * GALLERY_GUTTER);
+    return GUTTER + leftover / 2;
 }
 
 static int rowsThatFit(int columns, int wantedRows, int availableHeight)
@@ -425,7 +432,7 @@ IntRect galleryTileRect(int slotOnPage, int columns, int gridTop)
     int height = galleryTileHeight(columns);
     int row = slotOnPage / columns;
     int column = slotOnPage % columns;
-    IntRect rect = {GALLERY_SIDE_PADDING + column * (width + GALLERY_GUTTER), gridTop + row * (height + GALLERY_GUTTER),
+    IntRect rect = {galleryGridLeft(columns) + column * (width + GALLERY_GUTTER), gridTop + row * (height + GALLERY_GUTTER),
                     width, height};
     return rect;
 }

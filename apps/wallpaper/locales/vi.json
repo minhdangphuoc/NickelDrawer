@@ -17,6 +17,7 @@
   "msg.import_failed": "Ảnh không dùng được: {count}. Xem data/log.txt.",
   "msg.applied": "Màn hình chờ đã sẵn sàng: {count} ảnh. Bấm nút nguồn để xem.",
   "msg.sleep_screen_hint": "Bật trong Cài đặt → Tiết kiệm pin và riêng tư: «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình».",
+  "msg.sleep_screen_notice": "Màn hình ngủ chưa bật · Xem Tùy chọn",
   "msg.next": "Ảnh {number}: {name}",
   "msg.mode_fill": "Lấp đầy: ảnh phủ kín màn hình (cắt mép). Đã chỉnh lại: {count}.",
   "msg.mode_fit": "Vừa khung: cả ảnh trên nền trắng. Đã chỉnh lại: {count}.",

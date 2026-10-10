@@ -66,6 +66,7 @@ type ScreenComponent struct {
 	Detail  string      `json:"detail,omitempty"`
 	Caption string      `json:"caption,omitempty"`
 	Action  string      `json:"action,omitempty"`
+	Push    string      `json:"push,omitempty"` // row: screen pushed on tap
 	Bind    string      `json:"bind,omitempty"`
 	Value   any         `json:"value,omitempty"`
 	Enabled *bool       `json:"enabled,omitempty"`
@@ -316,7 +317,7 @@ func (s screenContext) components(components []uikit.Component) []ScreenComponen
 	resolved := make([]ScreenComponent, 0, len(components))
 	for _, component := range components {
 		next := s.component(component)
-		if (next.Type == "notice" || next.Type == "text") && next.Text == "" {
+		if (next.Type == "notice" || next.Type == "text" || next.Type == "row") && next.Text == "" {
 			continue // a notice or text bound to an empty variable is hidden
 		}
 		resolved = append(resolved, next)
@@ -364,7 +365,8 @@ func (s screenContext) kvComponent(c uikit.Component) ScreenComponent {
 }
 
 func (s screenContext) rowComponent(c uikit.Component) ScreenComponent {
-	return ScreenComponent{Text: s.text(c.Main()), Detail: s.text(c.Prop("detail")), Action: stringProp(c.Props, "action")}
+	return ScreenComponent{Text: s.text(c.Main()), Detail: s.text(c.Prop("detail")), Action: stringProp(c.Props, "action"),
+		Push: stringProp(c.Props, "push")}
 }
 
 // boundAction is the action an input control runs: the app action named like its variable.
