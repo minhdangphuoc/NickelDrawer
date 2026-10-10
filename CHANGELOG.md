@@ -4,6 +4,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [1.0.0-beta.2] - 2026-10-10
+
 ### Added
 
 - **CopperUI tokens** (`lib/copperui/`): one token file for every size, grey, line height and type setting; `make tokens` generates the C++ header, the Go constants and `docs/copperui-tokens.md`, and `make check` fails when one is stale. `mod/drawer` and `ndpreview` read the same numbers.

@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "localsend",
   "name": "LocalSend",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Receive books and files from your phone with LocalSend",
   "storage": {
     "reads": [

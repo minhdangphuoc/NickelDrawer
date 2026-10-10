@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "wallpaper",
   "name": "Wallpaper",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Use your own pictures as the sleep screen",
   "storage": {
     "reads": [

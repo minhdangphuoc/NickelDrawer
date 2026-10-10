@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "library",
   "name": "Library",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Fix the language of Vietnamese books and find duplicate books",
   "storage": {
     "reads": [

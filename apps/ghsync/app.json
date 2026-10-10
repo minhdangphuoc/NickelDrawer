@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "ghsync",
   "name": "GitHub",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Sync books from a private GitHub repo (add-only, never deletes)",
   "storage": {
     "reads": [],
