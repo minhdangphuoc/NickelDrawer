@@ -36,7 +36,7 @@ Tập lệnh cài giải nén các tệp zip trong `dist/apps/`, sao lưu các �
 
 ## Cập nhật một ứng dụng
 
-Cài tệp zip mới theo cách A hoặc B. Tệp của ứng dụng được thay; `data/` (cài đặt, token, danh sách) được giữ. Cập nhật ngăn (nút **Kiểm tra** trong cài đặt của ngăn) chỉ cập nhật ngăn. Tệp `release.json` có chữ ký của mỗi bản phát hành liệt kê mọi tệp zip ứng dụng cùng phiên bản, sha256 và kích thước để sau này chức năng cập nhật ứng dụng ngay trong ngăn có thể kiểm; hiện chưa có gì áp dụng chúng.
+Cài tệp zip mới theo cách A hoặc B. Tệp của ứng dụng được thay; `data/` (cài đặt, token, danh sách) được giữ. Bạn cũng có thể cập nhật ngay trong ngăn: **⚙** → **Cập nhật** → **Ứng dụng** (xem [docs/UPDATES.md](../docs/UPDATES.md)). Nó tải tệp zip của ứng dụng từ bản phát hành riêng (`<id>-v<phiên bản>`), kiểm danh sách có chữ ký, kích thước và sha256, rồi thay thư mục; `data/` được chuyển chỗ chứ không sao chép. Cũng màn hình đó cài các ứng dụng chưa có trên Kobo. Cập nhật ngăn (nút **Kiểm tra** trong cài đặt) chỉ cập nhật ngăn.
 
 ## Gỡ một ứng dụng
 

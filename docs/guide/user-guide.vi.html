@@ -265,7 +265,7 @@ blockquote p:last-child { margin-bottom: 0; }
 <p>Lúc đầu ngăn còn trống: ứng dụng cài ở bước sau.</p>
 <p><a id="cai-ung-dung"></a></p>
 <h3 id="cai-ung-dung">Cài ứng dụng</h3>
-<p>Ứng dụng tách riêng khỏi ngăn. Mỗi ứng dụng là một tệp tải riêng trong cùng bản phát hành, <code>app-&lt;id&gt;-&lt;phiên bản&gt;.zip</code> (ví dụ <code>app-todo-1.0.1.zip</code>), và bạn chỉ cài cái mình cần. Giải nén rồi gộp thư mục <code>.adds</code> bên trong vào thư mục gốc của ổ Kobo (cùng cảnh báo <strong>Gộp</strong> của Finder như trên), ngắt kết nối, và ứng dụng hiện trong ngăn sau khi làm mới. Muốn cập nhật ứng dụng, cài tệp zip mới theo cách đó; <code>data/</code> được giữ. Muốn gỡ, nhấn giữ ứng dụng trong ngăn rồi chọn <strong>Gỡ</strong>. Danh sách ứng dụng và các bước đầy đủ nằm ở <a href="../../apps/README.vi.md">apps/README.vi.md</a>. Với tập lệnh cài (cách B bên dưới) là <code>tools/install-to-kobo.sh --app todo</code> hoặc <code>--apps all</code>.</p>
+<p>Ứng dụng tách riêng khỏi ngăn. Mỗi ứng dụng là một tệp tải riêng trong cùng bản phát hành, <code>app-&lt;id&gt;-&lt;phiên bản&gt;.zip</code> (ví dụ <code>app-todo-1.0.1.zip</code>), và bạn chỉ cài cái mình cần. Giải nén rồi gộp thư mục <code>.adds</code> bên trong vào thư mục gốc của ổ Kobo (cùng cảnh báo <strong>Gộp</strong> của Finder như trên), ngắt kết nối, và ứng dụng hiện trong ngăn sau khi làm mới. Muốn cập nhật ứng dụng, dùng <strong>⚙</strong> → <strong>Ứng dụng</strong> trong Ngăn (<a href="#ung-dung-cap-nhat-va-cai">Ứng dụng: cập nhật và cài</a>), hoặc cài tệp zip mới theo cách đó; <code>data/</code> được giữ. Muốn gỡ, nhấn giữ ứng dụng trong ngăn rồi chọn <strong>Gỡ</strong>. Danh sách ứng dụng và các bước đầy đủ nằm ở <a href="../../apps/README.vi.md">apps/README.vi.md</a>. Với tập lệnh cài (cách B bên dưới) là <code>tools/install-to-kobo.sh --app todo</code> hoặc <code>--apps all</code>.</p>
 <h3 id="cach-b-tap-lenh-cai-macos-hoac-linux-tu-ma-nguon">Cách B: tập lệnh cài (macOS hoặc Linux, từ mã nguồn)</h3>
 <p>Cách này dành cho người tự dựng NickelDrawer từ mã nguồn. Nó sao lưu mọi thứ nó thay và không bao giờ đụng vào thư mục <code>data/</code> của ứng dụng. Không có tùy chọn nào thì nó chỉ cài ngăn (công cụ chủ và mod) và không đụng vào ứng dụng đang có trên Kobo.</p>
 <pre><code class="language-sh">make check build dist                 # dựng mọi thứ (cần Go; mod cần Docker)
@@ -730,12 +730,13 @@ tools/install-to-kobo.sh              # cài
 <p>Các công tắc ghi vào tệp cài đặt của chính Kobo (<code>.kobo/Kobo/Kobo eReader.conf</code>); <strong>Màn hình chờ</strong> đổi tên thư mục <code>.kobo/screensaver</code>. Chúng giữ nguyên như bạn để sau khi gỡ NickelDrawer, nên hãy đặt lại trước nếu muốn.</p>
 <p><em>Đã thử trên máy:</em> chưa.</p>
 <h2 id="cap-nhat">Cập nhật</h2>
-<p>NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng không cập nhật theo cách này: hãy cài tệp zip mới của ứng dụng (xem <a href="#cai-ung-dung">Cài ứng dụng</a>). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.</p>
+<p>NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng của dự án cập nhật riêng, từng cái một (xem <a href="#ung-dung-cap-nhat-va-cai">Ứng dụng: cập nhật và cài</a>); ứng dụng từ nguồn khác thì cập nhật bằng cách cài tệp zip mới của nó (xem <a href="#cai-ung-dung">Cài ứng dụng</a>). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.</p>
 <h3 id="cai-at-banh-rang">Cài đặt: bánh răng</h3>
-<p>Bấm <strong>⚙</strong> ở thanh tiêu đề của Ngăn để mở <strong>Cài đặt NickelDrawer</strong>. Màn hình có bốn phần:</p>
+<p>Bấm <strong>⚙</strong> ở thanh tiêu đề của Ngăn để mở <strong>Cài đặt NickelDrawer</strong>. Màn hình có bốn phần, và một hàng <strong>Ứng dụng</strong> trong <strong>Cập nhật</strong>:</p>
 <ul>
 <li><strong>Ứng dụng ẩn</strong>: một công tắc cho mỗi ứng dụng bị ẩn mặc định (hiện nay: <strong>Bộ giao diện</strong>). Bật thì ứng dụng hiện trong Ngăn khi bạn quay lại; tắt để ẩn lại. Không phải sửa tệp nào qua USB, và lựa chọn được giữ khi cập nhật.</li>
 <li><strong>Cập nhật</strong>: <strong>Phiên bản</strong> đang dùng, <strong>Bản mới</strong> (chỉ hiện sau khi kiểm tra thấy bản mới) và <strong>Nguồn</strong> (repo GitHub). Hai nút <strong>Kiểm tra</strong> và <strong>Cập nhật lên <phiên bản></strong>, và một dòng trạng thái cho lần kiểm tra hoặc cài gần nhất.</li>
+<li>Hàng <strong>Ứng dụng</strong> dưới <strong>Cập nhật</strong> mở màn <strong>Cập nhật ứng dụng</strong> (mục kế tiếp). Dòng thứ hai ghi "2 bản mới · 1 chưa cài" hoặc "Đã mới nhất".</li>
 <li><strong>Gỡ lỗi</strong>: <strong>Ghi nhật ký gỡ lỗi</strong> (xem "Gửi báo lỗi có ích" bên dưới). Có hiệu lực sau khi khởi động lại.</li>
 <li><strong>Thông tin</strong>: firmware của bạn, kèm ✓ nếu NickelDrawer hỗ trợ hoặc <strong>!</strong> nếu chưa, và <strong>Giới thiệu dự án</strong> (phiên bản, mã QR để mở trang dự án trên điện thoại, người bảo trì, giấy phép, ghi nhận).</li>
 </ul>
@@ -747,6 +748,17 @@ tools/install-to-kobo.sh              # cài
 <li>Bấm <strong>Cập nhật lên <phiên bản></strong>, rồi <strong>Cập nhật</strong> để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.</li>
 <li>Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (<strong>Tinh chỉnh</strong> → <strong>Khởi động lại</strong>).</li>
 </ol>
+<h3 id="ung-dung-cap-nhat-va-cai">Ứng dụng: cập nhật và cài</h3>
+<p>Ứng dụng của dự án (Việc cần làm, Hình nền, Thư viện và các ứng dụng khác) cập nhật ngay trong Ngăn, từng cái một, không cần khởi động lại.</p>
+<ol>
+<li>Mở <strong>⚙</strong> và bấm hàng <strong>Ứng dụng</strong> trong <strong>Cập nhật</strong>. Nút <strong>Kiểm tra</strong> ở màn Cài đặt kiểm tra cả ngăn lẫn ứng dụng; hai việc này độc lập, nên một bên lỗi không chặn bên kia.</li>
+<li>Ở màn <strong>Cập nhật ứng dụng</strong>, bấm <strong>Kiểm tra</strong>. Kobo tải danh sách ứng dụng có chữ ký từ GitHub của dự án và kiểm chữ ký; chưa có gì được cài. Một dòng dưới tiêu đề ghi lần kiểm tra gần nhất, và tiêu đề hiện "2 bản mới" khi có bản mới. Bánh răng ở thanh tiêu đề của Ngăn cũng có chấm đen.</li>
+<li><strong>Có bản mới</strong> liệt kê các ứng dụng có phiên bản mới hơn, ví dụ "0.3.0 → 0.4.0". Bấm một ứng dụng rồi xác nhận "Cập nhật <tên>?" để chỉ cập nhật ứng dụng đó: tệp của nó được thay, dữ liệu và cài đặt được giữ, không cần khởi động lại. <strong>Cập nhật tất cả (2)</strong> cập nhật mọi ứng dụng trong danh sách đó.</li>
+<li><strong>Đã cài</strong> cho biết phiên bản bạn đang có (không bấm được). <strong>Chưa cài</strong> liệt kê các ứng dụng khác của dự án; bấm một cái rồi xác nhận "Cài <tên>?" để cài. Ứng dụng ẩn (Bộ giao diện) chỉ hiện ở đây nếu bạn đã bật nó trong <strong>Ứng dụng ẩn</strong>.</li>
+<li>Khi đang làm, màn hình ghi "Đang cập nhật 1 / 2" cùng bước đang làm ("Hình nền · đang tải và kiểm chữ ký") và các nút mờ đi. Giữ Wi-Fi bật. Nếu ứng dụng đang chạy, bản cập nhật dừng nó trước khi thay nếu ứng dụng có hành động dừng; nếu không, dòng thông báo ghi ứng dụng đang chạy: hãy đóng nó rồi thử lại.</li>
+<li>Sự cố hiện thành một dòng ngắn dưới tiêu đề: chưa có Wi-Fi, không kết nối được GitHub, chữ ký sai, danh sách cũ, tệp bị hỏng, gói bị từ chối, không phải ứng dụng hợp lệ, cần NickelDrawer mới hơn, không đủ dung lượng, hoặc "cập nhật lỗi, đã khôi phục bản cũ". Sau một lần cập nhật lỗi, bản cũ và dữ liệu của bạn vẫn như trước.</li>
+</ol>
+<p>Phía sau, thư mục dữ liệu của mỗi ứng dụng được chuyển chỗ chứ không sao chép hay đọc, và bản trước được giữ lại một lần. Từ máy tính hay dòng lệnh, <code>appsctl update rollback-app &lt;id&gt;</code> đưa bản trước về. Nếu Kobo mất điện giữa chừng, lần mở Ngăn kế tiếp sẽ tự sửa cho đúng và dữ liệu của bạn được giữ.</p>
 <h3 id="khoi-ong-lai-sau-cap-nhat-lam-gi">Khởi động lại sau cập nhật làm gì</h3>
 <p>Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới vào <code>.kobo/KoboRoot.tgz</code>. Kobo cài nó trong lần khởi động lại kế tiếp, giống hệt lần cài đầu. Công cụ chủ đã được cập nhật xong trước khi khởi động lại.</p>
 <h3 id="neu-co-truc-trac">Nếu có trục trặc</h3>

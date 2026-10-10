@@ -1,0 +1,40 @@
+{
+  "apps_caption": "Đã mới nhất",
+  "apps_status": "",
+  "apps_checked": "Đã kiểm tra lúc 10/10/2026 17:02",
+  "apps_message": "",
+  "apps_step_label": "",
+  "apps_step_done": "",
+  "apps_step_total": "",
+  "apps_step_detail": "",
+  "apps_update_all_label": "",
+  "has_app_updates": false,
+  "can_apps_update": false,
+  "can_apps_check": true,
+  "apps_rows": [
+    {
+      "kind": "section",
+      "text": "Đã cài"
+    },
+    {
+      "kind": "kv",
+      "key": "Hình nền",
+      "value": "0.4.0"
+    },
+    {
+      "kind": "kv",
+      "key": "Thư viện",
+      "value": "1.1.0"
+    },
+    {
+      "kind": "kv",
+      "key": "Việc cần làm",
+      "value": "1.0.2"
+    },
+    {
+      "kind": "kv",
+      "key": "Đồng bộ GitHub",
+      "value": "1.0.0"
+    }
+  ]
+}

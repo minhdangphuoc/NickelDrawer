@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 	"time"
 
 	// Embedded CA roots: the Kobo may lack a system CA bundle, and updates need TLS.
 	_ "golang.org/x/crypto/x509roots/fallback"
 
+	"koboapps/internal/drawer"
 	"koboapps/internal/i18n"
 	"koboapps/internal/update"
 )
@@ -29,6 +31,9 @@ type updateFlags struct {
 	apiBase        string
 	tempDir        string
 	allowDowngrade bool
+	downloadBase   string
+	updateAll      bool     // apps: install every available update
+	positions      []string // app, rollback-app: the app id
 	localeFlags
 }
 
@@ -37,6 +42,8 @@ func (f *updateFlags) register(flags *flag.FlagSet) {
 	flags.StringVar(&f.apiBase, "api-base", defaultAPIBase, "GitHub API base URL (tests)")
 	flags.StringVar(&f.tempDir, "tmp-dir", defaultTempDir, "folder for downloads; keep it off the onboard storage")
 	flags.BoolVar(&f.allowDowngrade, "allow-downgrade", false, "apply a release older than the installed one")
+	flags.StringVar(&f.downloadBase, "download-base", "", "release download host for app updates (tests; default https://github.com)")
+	flags.BoolVar(&f.updateAll, "all", false, "apps: install every available app update")
 	f.localeFlags.register(flags)
 }
 
@@ -52,17 +59,36 @@ func (f *updateFlags) resolve(flags *flag.FlagSet) {
 	}
 }
 
+// updateOptionsHook lets tests inject the trusted release key.
+var updateOptionsHook = func(*update.Options) {}
+
 func (f updateFlags) newUpdater() *update.Updater {
-	return update.New(update.Options{
+	options := update.Options{
 		OnboardRoot:    f.onboardRoot,
 		APIBase:        f.apiBase,
+		DownloadBase:   f.downloadBase,
 		TempDir:        f.tempDir,
 		CurrentVersion: version,
 		AllowDowngrade: f.allowDowngrade,
-	})
+		Guard:          f.appGuard(),
+		Language:       f.languageCode(),
+	}
+	updateOptionsHook(&options)
+	return update.New(options)
 }
 
-const updateUsage = "usage: appsctl update check|apply|status|rollback [flags]\n"
+// appGuard stops a running app through the drawer's own status and stop actions.
+func (f updateFlags) appGuard() update.AppGuard {
+	return drawer.Config{AppsDir: filepath.Join(f.onboardRoot, ".adds", "apps"), HostDir: f.hostDir, Version: version}
+}
+
+// languageCode is the language part of the locale ("vi" for vi_VN), for catalog app names.
+func (f updateFlags) languageCode() string {
+	language, _, _ := strings.Cut(f.effectiveLocale(), "_")
+	return language
+}
+
+const updateUsage = "usage: appsctl update check|apply|status|rollback|apps|app|rollback-app [flags]\n"
 
 func runUpdate(args []string, stdout, stderr io.Writer) int {
 	if len(args) == 0 {
@@ -74,6 +100,10 @@ func runUpdate(args []string, stdout, stderr io.Writer) int {
 		"apply":    runUpdateApply,
 		"rollback": runUpdateRollback,
 		"status":   runUpdateStatus,
+
+		"apps":         runUpdateApps,
+		"app":          runUpdateApp,
+		"rollback-app": runUpdateRollbackApp,
 	}
 	action, found := actions[args[0]]
 	if !found {
@@ -84,9 +114,11 @@ func runUpdate(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	var options updateFlags
 	options.register(flags)
-	if err := flags.Parse(args[1:]); err != nil {
+	positions, err := parseInterspersed(flags, args[1:])
+	if err != nil {
 		return exitFailure
 	}
+	options.positions = positions
 	options.resolve(flags)
 	return action(options, stdout, stderr)
 }

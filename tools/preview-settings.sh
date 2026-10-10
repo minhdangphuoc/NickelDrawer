@@ -22,18 +22,21 @@ cat >"$SCREEN_DIR/app.json" <<'JSON'
 {"schema":1,"id":"settings","name":"Settings","version":"1.0.0","actions":[
 {"id":"check","label":"Check","run":"bin/x.sh","output":"show"},
 {"id":"apply","label":"Update","run":"bin/x.sh","output":"show"},
-{"id":"debug","label":"Debug","run":"bin/x.sh","output":"show"}]}
+{"id":"debug","label":"Debug","run":"bin/x.sh","output":"show"},
+{"id":"apps-check","label":"Check","run":"bin/x.sh","output":"show"},
+{"id":"apps-update-all","label":"Update all","run":"bin/x.sh","output":"show"},
+{"id":"apps-list","label":"Apps","run":"bin/x.sh","output":"show"}]}
 JSON
 
-# render LOCALE SCREEN PAGE NAME [STATE]: the state file is tools/preview/settings-state-<STATE>.json
+# render LOCALE SCREEN PAGE NAME [STATE]: the state file is tools/preview/settings-<STATE>.json (default state-<LOCALE>)
 render() {
-    locale=$1 screen=$2 page=$3 name=$4 state=${5:-$1}
+    locale=$1 screen=$2 page=$3 name=$4 state=${5:-state-$1}
     target="$OUT/$name-$locale.png"
     if [ -n "$PER_LOCALE" ]; then
         mkdir -p "$OUT/$locale"
         target="$OUT/$locale/$name.png"
     fi
-    $NDPREVIEW render "$SCREEN_DIR" --locale "$locale" --state "tools/preview/settings-state-$state.json" \
+    $NDPREVIEW render "$SCREEN_DIR" --locale "$locale" --state "tools/preview/settings-$state.json" \
         --screen "$screen" --page "$page" --font "$FONT" --out "$target"
 }
 
@@ -44,7 +47,13 @@ for locale in vi en; do
     render "$locale" about 2 settings-about-p2
     render "$locale" about 3 settings-about-p3
     # What the Updates section says after a check, while one runs, and when one fails.
-    render "$locale" main 1 settings-uptodate "$locale-uptodate"
-    render "$locale" main 1 settings-checking "$locale-checking"
-    render "$locale" main 1 settings-failed "$locale-failed"
+    render "$locale" main 1 settings-uptodate "state-$locale-uptodate"
+    render "$locale" main 1 settings-checking "state-$locale-checking"
+    render "$locale" main 1 settings-failed "state-$locale-failed"
+    # The App updates screen: updates waiting, all current, a job running, a job that failed.
+    render "$locale" apps 1 settings-apps "apps-state-$locale"
+    render "$locale" apps 2 settings-apps-p2 "apps-state-$locale"
+    render "$locale" apps 1 settings-apps-uptodate "apps-state-$locale-uptodate"
+    render "$locale" apps 1 settings-apps-working "apps-state-$locale-working"
+    render "$locale" apps 1 settings-apps-failed "apps-state-$locale-failed"
 done

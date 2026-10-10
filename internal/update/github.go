@@ -13,10 +13,12 @@ import (
 	"time"
 
 	"koboapps/internal/i18n"
+	"koboapps/internal/release"
 )
 
 const (
-	maxMetadataBytes = 1 << 20
+	maxMetadataBytes = 4 << 20 // a 50-release list
+	releaseListSize  = "50"
 	maxReleaseJSON   = 1 << 20
 	maxSignature     = 1 << 10
 	maxZipBytes      = 256 << 20
@@ -56,33 +58,45 @@ func newGithubClient(httpClient *http.Client, apiBase string) *githubClient {
 	return &githubClient{http: httpClient, apiBase: strings.TrimRight(apiBase, "/")}
 }
 
-// findRelease returns the newest release the channel allows. GitHub's "latest" endpoint
-// already skips drafts and prereleases; the beta channel reads the list instead.
+// findRelease returns the newest drawer release the channel allows. The repo also holds one
+// release per app (`<id>-v<version>`) and the rolling `apps` catalog release, so the answer
+// is chosen from the list by tag: GitHub's "latest" endpoint would return whichever release
+// was created last, whatever it holds.
 func (client *githubClient) findRelease(ctx context.Context, config Config) (releaseInfo, error) {
-	if config.Channel == ChannelBeta {
-		return client.newestOfList(ctx, config.Repo)
-	}
-	var info releaseInfo
-	if err := client.getJSON(ctx, "/repos/"+config.Repo+"/releases/latest", &info); err != nil {
+	var releases []releaseInfo
+	if err := client.getJSON(ctx, "/repos/"+config.Repo+"/releases?per_page="+releaseListSize, &releases); err != nil {
 		return releaseInfo{}, err
 	}
-	if info.Draft || info.Prerelease {
+	info, found := newestDrawerRelease(releases, config.Channel == ChannelBeta)
+	if !found {
 		return releaseInfo{}, i18n.NewError("update.no_release", "repo", config.Repo)
 	}
 	return info, nil
 }
 
-func (client *githubClient) newestOfList(ctx context.Context, repo string) (releaseInfo, error) {
-	var releases []releaseInfo
-	if err := client.getJSON(ctx, "/repos/"+repo+"/releases?per_page=10", &releases); err != nil {
-		return releaseInfo{}, err
-	}
+// isDrawerTag is true for `v` plus a semantic version, the only tags drawer releases use.
+func isDrawerTag(tag string) bool {
+	return strings.HasPrefix(tag, "v") && release.ValidVersion(strings.TrimPrefix(tag, "v"))
+}
+
+// newestDrawerRelease picks the highest drawer version among the published releases; app and
+// catalog releases, drafts and (unless allowed) prereleases are ignored.
+func newestDrawerRelease(releases []releaseInfo, allowPrerelease bool) (releaseInfo, bool) {
+	var newest releaseInfo
+	isFound := false
 	for _, info := range releases {
-		if !info.Draft {
-			return info, nil
+		if info.Draft || !isDrawerTag(info.Tag) || (info.Prerelease && !allowPrerelease) {
+			continue
 		}
+		if isFound {
+			order, err := release.CompareVersions(strings.TrimPrefix(info.Tag, "v"), strings.TrimPrefix(newest.Tag, "v"))
+			if err != nil || order <= 0 {
+				continue
+			}
+		}
+		newest, isFound = info, true
 	}
-	return releaseInfo{}, i18n.NewError("update.no_release", "repo", repo)
+	return newest, isFound
 }
 
 func (client *githubClient) getJSON(ctx context.Context, endpoint string, target any) error {

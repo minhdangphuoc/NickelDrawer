@@ -141,7 +141,7 @@ Lúc đầu ngăn còn trống: ứng dụng cài ở bước sau.
 
 ### Cài ứng dụng
 
-Ứng dụng tách riêng khỏi ngăn. Mỗi ứng dụng là một tệp tải riêng trong cùng bản phát hành, `app-<id>-<phiên bản>.zip` (ví dụ `app-todo-1.0.1.zip`), và bạn chỉ cài cái mình cần. Giải nén rồi gộp thư mục `.adds` bên trong vào thư mục gốc của ổ Kobo (cùng cảnh báo **Gộp** của Finder như trên), ngắt kết nối, và ứng dụng hiện trong ngăn sau khi làm mới. Muốn cập nhật ứng dụng, cài tệp zip mới theo cách đó; `data/` được giữ. Muốn gỡ, nhấn giữ ứng dụng trong ngăn rồi chọn **Gỡ**. Danh sách ứng dụng và các bước đầy đủ nằm ở [apps/README.vi.md](../../apps/README.vi.md). Với tập lệnh cài (cách B bên dưới) là `tools/install-to-kobo.sh --app todo` hoặc `--apps all`.
+Ứng dụng tách riêng khỏi ngăn. Mỗi ứng dụng là một tệp tải riêng trong cùng bản phát hành, `app-<id>-<phiên bản>.zip` (ví dụ `app-todo-1.0.1.zip`), và bạn chỉ cài cái mình cần. Giải nén rồi gộp thư mục `.adds` bên trong vào thư mục gốc của ổ Kobo (cùng cảnh báo **Gộp** của Finder như trên), ngắt kết nối, và ứng dụng hiện trong ngăn sau khi làm mới. Muốn cập nhật ứng dụng, dùng **⚙** → **Ứng dụng** trong Ngăn ([Ứng dụng: cập nhật và cài](#ung-dung-cap-nhat-va-cai)), hoặc cài tệp zip mới theo cách đó; `data/` được giữ. Muốn gỡ, nhấn giữ ứng dụng trong ngăn rồi chọn **Gỡ**. Danh sách ứng dụng và các bước đầy đủ nằm ở [apps/README.vi.md](../../apps/README.vi.md). Với tập lệnh cài (cách B bên dưới) là `tools/install-to-kobo.sh --app todo` hoặc `--apps all`.
 
 ### Cách B: tập lệnh cài (macOS hoặc Linux, từ mã nguồn)
 
@@ -504,14 +504,15 @@ Các công tắc ghi vào tệp cài đặt của chính Kobo (`.kobo/Kobo/Kobo 
 
 ## Cập nhật
 
-NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng không cập nhật theo cách này: hãy cài tệp zip mới của ứng dụng (xem [Cài ứng dụng](#cai-ung-dung)). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
+NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng của dự án cập nhật riêng, từng cái một (xem [Ứng dụng: cập nhật và cài](#ung-dung-cap-nhat-va-cai)); ứng dụng từ nguồn khác thì cập nhật bằng cách cài tệp zip mới của nó (xem [Cài ứng dụng](#cai-ung-dung)). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
 
 ### Cài đặt: bánh răng
 
-Bấm **⚙** ở thanh tiêu đề của Ngăn để mở **Cài đặt NickelDrawer**. Màn hình có bốn phần:
+Bấm **⚙** ở thanh tiêu đề của Ngăn để mở **Cài đặt NickelDrawer**. Màn hình có bốn phần, và một hàng **Ứng dụng** trong **Cập nhật**:
 
 - **Ứng dụng ẩn**: một công tắc cho mỗi ứng dụng bị ẩn mặc định (hiện nay: **Bộ giao diện**). Bật thì ứng dụng hiện trong Ngăn khi bạn quay lại; tắt để ẩn lại. Không phải sửa tệp nào qua USB, và lựa chọn được giữ khi cập nhật.
 - **Cập nhật**: **Phiên bản** đang dùng, **Bản mới** (chỉ hiện sau khi kiểm tra thấy bản mới) và **Nguồn** (repo GitHub). Hai nút **Kiểm tra** và **Cập nhật lên <phiên bản>**, và một dòng trạng thái cho lần kiểm tra hoặc cài gần nhất.
+- Hàng **Ứng dụng** dưới **Cập nhật** mở màn **Cập nhật ứng dụng** (mục kế tiếp). Dòng thứ hai ghi "2 bản mới · 1 chưa cài" hoặc "Đã mới nhất".
 - **Gỡ lỗi**: **Ghi nhật ký gỡ lỗi** (xem "Gửi báo lỗi có ích" bên dưới). Có hiệu lực sau khi khởi động lại.
 - **Thông tin**: firmware của bạn, kèm ✓ nếu NickelDrawer hỗ trợ hoặc **!** nếu chưa, và **Giới thiệu dự án** (phiên bản, mã QR để mở trang dự án trên điện thoại, người bảo trì, giấy phép, ghi nhận).
 
@@ -523,6 +524,19 @@ Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình c
 2. Ở phần **Cập nhật**, bấm **Kiểm tra**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút **Kiểm tra** mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra 09/10/2026 17:02 · Đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra 09/10/2026 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được 09/10/2026 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng **Bản mới** hiện ra, và nút lớn ghi **Cập nhật lên <phiên bản>** (kèm nút **Kiểm tra** bên cạnh). Khi không có gì để cài, **Kiểm tra** là nút lớn. Lúc đang kiểm tra hay cài, màn hình hiện tiến trình bằng chữ ("Đang kiểm tra cập nhật…") và các nút mờ đi.
 3. Bấm **Cập nhật lên <phiên bản>**, rồi **Cập nhật** để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.
 4. Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (**Tinh chỉnh** → **Khởi động lại**).
+
+### Ứng dụng: cập nhật và cài
+
+Ứng dụng của dự án (Việc cần làm, Hình nền, Thư viện và các ứng dụng khác) cập nhật ngay trong Ngăn, từng cái một, không cần khởi động lại.
+
+1. Mở **⚙** và bấm hàng **Ứng dụng** trong **Cập nhật**. Nút **Kiểm tra** ở màn Cài đặt kiểm tra cả ngăn lẫn ứng dụng; hai việc này độc lập, nên một bên lỗi không chặn bên kia.
+2. Ở màn **Cập nhật ứng dụng**, bấm **Kiểm tra**. Kobo tải danh sách ứng dụng có chữ ký từ GitHub của dự án và kiểm chữ ký; chưa có gì được cài. Một dòng dưới tiêu đề ghi lần kiểm tra gần nhất, và tiêu đề hiện "2 bản mới" khi có bản mới. Bánh răng ở thanh tiêu đề của Ngăn cũng có chấm đen.
+3. **Có bản mới** liệt kê các ứng dụng có phiên bản mới hơn, ví dụ "0.3.0 → 0.4.0". Bấm một ứng dụng rồi xác nhận "Cập nhật <tên>?" để chỉ cập nhật ứng dụng đó: tệp của nó được thay, dữ liệu và cài đặt được giữ, không cần khởi động lại. **Cập nhật tất cả (2)** cập nhật mọi ứng dụng trong danh sách đó.
+4. **Đã cài** cho biết phiên bản bạn đang có (không bấm được). **Chưa cài** liệt kê các ứng dụng khác của dự án; bấm một cái rồi xác nhận "Cài <tên>?" để cài. Ứng dụng ẩn (Bộ giao diện) chỉ hiện ở đây nếu bạn đã bật nó trong **Ứng dụng ẩn**.
+5. Khi đang làm, màn hình ghi "Đang cập nhật 1 / 2" cùng bước đang làm ("Hình nền · đang tải và kiểm chữ ký") và các nút mờ đi. Giữ Wi-Fi bật. Nếu ứng dụng đang chạy, bản cập nhật dừng nó trước khi thay nếu ứng dụng có hành động dừng; nếu không, dòng thông báo ghi ứng dụng đang chạy: hãy đóng nó rồi thử lại.
+6. Sự cố hiện thành một dòng ngắn dưới tiêu đề: chưa có Wi-Fi, không kết nối được GitHub, chữ ký sai, danh sách cũ, tệp bị hỏng, gói bị từ chối, không phải ứng dụng hợp lệ, cần NickelDrawer mới hơn, không đủ dung lượng, hoặc "cập nhật lỗi, đã khôi phục bản cũ". Sau một lần cập nhật lỗi, bản cũ và dữ liệu của bạn vẫn như trước.
+
+Phía sau, thư mục dữ liệu của mỗi ứng dụng được chuyển chỗ chứ không sao chép hay đọc, và bản trước được giữ lại một lần. Từ máy tính hay dòng lệnh, `appsctl update rollback-app <id>` đưa bản trước về. Nếu Kobo mất điện giữa chừng, lần mở Ngăn kế tiếp sẽ tự sửa cho đúng và dữ liệu của bạn được giữ.
 
 ### Khởi động lại sau cập nhật làm gì
 

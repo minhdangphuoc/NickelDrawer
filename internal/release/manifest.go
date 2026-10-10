@@ -65,9 +65,9 @@ type Manifest struct {
 	Version string `json:"version"`
 	Created string `json:"created"`
 	Files   []File `json:"files"`
-	// AppPackages is a new field on purpose: older appsctl builds read "apps" as versions that must
-	// be installed, which would wrongly fail a drawer-only update.
-	AppPackages []AppPackage `json:"app_packages"`
+	// AppPackages is read for old releases that still carry it. New releases leave it out: the
+	// device gets the app list only from the signed apps.json catalog.
+	AppPackages []AppPackage `json:"app_packages,omitempty"`
 	MinAppsctl  string       `json:"min_appsctl"`
 	// Notes is the changelog summary the drawer's update screen shows (optional, plain text).
 	Notes string `json:"notes,omitempty"`

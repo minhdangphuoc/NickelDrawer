@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"koboapps/internal/release"
 )
 
 type workspace struct {
@@ -46,7 +48,7 @@ func (w workspace) keygen(t *testing.T) (code int, stdout, stderr string) {
 
 func (w workspace) sign(version string) (int, string) {
 	var out, errOut bytes.Buffer
-	code := run([]string{"sign", "--dist", w.dist, "--version", version, "--out", w.out, "--key", w.keyPath, "--pub", w.specPub, "--apps-dir", w.appsDir}, &out, &errOut)
+	code := run([]string{"sign", "--dist", w.dist, "--version", version, "--out", w.out, "--key", w.keyPath, "--pub", w.specPub}, &out, &errOut)
 	return code, errOut.String()
 }
 
@@ -181,8 +183,9 @@ func TestSignRejectsBadVersion(t *testing.T) {
 func (w workspace) packApps(t *testing.T) {
 	t.Helper()
 	for relative, content := range map[string]string{
-		".adds/apps/demo/app.json":   `{"id":"demo","version":"1.0.0"}`,
+		".adds/apps/demo/app.json":   `{"id":"demo","name":"Demo","version":"1.0.0"}`,
 		".adds/apps/demo/bin/run.sh": "run",
+		".adds/apps/other/app.json":  `{"id":"other","name":"Other","version":"2.0.0"}`,
 	} {
 		full := filepath.Join(w.appsTree, filepath.FromSlash(relative))
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -198,7 +201,7 @@ func (w workspace) packApps(t *testing.T) {
 	}
 }
 
-func TestSignIndexesAppZipsAndVerifyChecksThem(t *testing.T) {
+func TestSignLeavesAppsOutOfTheDrawerRelease(t *testing.T) {
 	w := newWorkspace(t)
 	w.keygen(t)
 	w.packApps(t)
@@ -206,23 +209,96 @@ func TestSignIndexesAppZipsAndVerifyChecksThem(t *testing.T) {
 		t.Fatalf("sign: %s", stderr)
 	}
 	manifest, _ := os.ReadFile(filepath.Join(w.out, "release.json"))
-	if !strings.Contains(string(manifest), `"zip": "app-demo-1.0.0.zip"`) {
-		t.Fatalf("app zip not in the signed index:\n%s", manifest)
+	if strings.Contains(string(manifest), "app_packages") || strings.Contains(string(manifest), ".adds/apps/") {
+		t.Fatalf("an app is part of the drawer release:\n%s", manifest)
 	}
-	if strings.Contains(string(manifest), ".adds/apps/") {
-		t.Fatal("an app file is part of the drawer release files")
-	}
-	appZip := filepath.Join(w.out, "app-demo-1.0.0.zip")
-	if _, err := os.Stat(appZip); err != nil {
-		t.Fatal("app zip not copied next to the release")
+	entries, _ := os.ReadDir(w.out)
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "app-") {
+			t.Errorf("%s was copied into the drawer release folder", entry.Name())
+		}
 	}
 	if code, stderr := w.verify(); code != exitOK {
 		t.Fatalf("verify: %s", stderr)
 	}
-	data, _ := os.ReadFile(appZip)
-	data[len(data)/2] ^= 0xff
-	os.WriteFile(appZip, data, 0o644)
-	if code, _ := w.verify(); code == exitOK {
-		t.Fatal("tampered app zip verified")
+}
+
+func (w workspace) signApps(t *testing.T, args ...string) (int, string) {
+	t.Helper()
+	var out, errOut bytes.Buffer
+	base := []string{"sign-apps", "--apps-dir", w.appsDir, "--out", w.appsRelease(), "--key", w.keyPath, "--pub", w.specPub}
+	return run(append(base, args...), &out, &errOut), errOut.String()
+}
+
+func (w workspace) appsRelease() string { return filepath.Join(w.dir, "dist", "apps-release") }
+
+func (w workspace) verifyApps(extra ...string) (int, string) {
+	var out, errOut bytes.Buffer
+	args := append([]string{"verify-apps", "--dir", w.appsRelease(), "--pub", w.specPub}, extra...)
+	return run(args, &out, &errOut), errOut.String()
+}
+
+func TestSignAppsWritesCatalogOfAllAppsAndUploadsOnlyTheChosenZips(t *testing.T) {
+	w := newWorkspace(t)
+	w.keygen(t)
+	w.packApps(t)
+	if code, stderr := w.signApps(t, "--sequence", "3", "--only", "demo"); code != exitOK {
+		t.Fatalf("sign-apps: %s", stderr)
+	}
+	catalog := string(mustRead(t, filepath.Join(w.appsRelease(), "apps.json")))
+	for _, want := range []string{`"sequence": 3`, `"tag": "demo-v1.0.0"`, `"tag": "other-v2.0.0"`} {
+		if !strings.Contains(catalog, want) {
+			t.Errorf("catalog lacks %s:\n%s", want, catalog)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(w.appsRelease(), "app-demo-1.0.0.zip")); err != nil {
+		t.Error("the chosen zip was not copied for upload")
+	}
+	if _, err := os.Stat(filepath.Join(w.appsRelease(), "app-other-2.0.0.zip")); err == nil {
+		t.Error("a zip that was not chosen was copied")
+	}
+	if code, stderr := w.verifyApps(); code != exitOK {
+		t.Fatalf("verify-apps: %s", stderr)
+	}
+	if code, stderr := w.verifyApps("--apps-dir", w.appsDir); code != exitOK {
+		t.Fatalf("verify-apps against the full set: %s", stderr)
+	}
+}
+
+func TestSignAppsRefusesMissingSequenceUnknownOnlyAndWrongKey(t *testing.T) {
+	w := newWorkspace(t)
+	w.keygen(t)
+	w.packApps(t)
+	if code, _ := w.signApps(t); code == exitOK {
+		t.Error("signed without --sequence")
+	}
+	if code, _ := w.signApps(t, "--sequence", "1", "--only", "nothing"); code == exitOK {
+		t.Error("accepted --only for an app with no zip")
+	}
+}
+
+func TestVerifyAppsRejectsTamperingAndADrawerSignature(t *testing.T) {
+	w := newWorkspace(t)
+	w.keygen(t)
+	w.packApps(t)
+	if code, stderr := w.signApps(t, "--sequence", "1"); code != exitOK {
+		t.Fatalf("sign-apps: %s", stderr)
+	}
+	catalogPath := filepath.Join(w.appsRelease(), "apps.json")
+	signaturePath := filepath.Join(w.appsRelease(), "apps.json.sig")
+	original := mustRead(t, catalogPath)
+	os.WriteFile(catalogPath, bytes.Replace(original, []byte(`"sequence": 1`), []byte(`"sequence": 9`), 1), 0o644)
+	if code, _ := w.verifyApps(); code == exitOK {
+		t.Error("an edited catalog verified")
+	}
+	os.WriteFile(catalogPath, original, 0o644)
+	// The same key signing the catalog bytes the way release.json is signed (no prefix) must fail.
+	key, err := release.ParsePrivateKey(string(mustRead(t, w.keyPath)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(signaturePath, []byte(release.Sign(key, original)), 0o644)
+	if code, _ := w.verifyApps(); code == exitOK {
+		t.Error("the drawer's signature verified a catalog")
 	}
 }

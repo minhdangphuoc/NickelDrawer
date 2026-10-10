@@ -26,6 +26,8 @@ commands:
   sign     --dist dist/onboard --version X.Y.Z   write dist/release/{release.json,release.json.sig,nickeldrawer-X.Y.Z.zip}
   pack-apps  --tree build/apps-tree --out dist/apps   write one deterministic app-<id>-<version>.zip per app of the tree
   verify   check a dist/release folder against the public key
+  sign-apps    --apps-dir dist/apps --sequence N [--only ID...]   write dist/apps-release/{apps.json,apps.json.sig} (+ the zips to upload)
+  verify-apps  check dist/apps-release (and, with --apps-dir, every catalog entry against its zip)
 `
 
 func main() {
@@ -42,6 +44,9 @@ func run(args []string, stdout, stderr io.Writer) int {
 		"sign":      runSign,
 		"pack-apps": runPackApps,
 		"verify":    runVerify,
+
+		"sign-apps":   runSignApps,
+		"verify-apps": runVerifyApps,
 	}
 	command, found := commands[args[0]]
 	if !found {

@@ -1,5 +1,6 @@
 # koboapps build and packaging. `make check build dist` before tools/install-to-kobo.sh.
 # `make release VERSION=x.y.z` additionally signs dist/ (maintainer only, see docs/UPDATES.md).
+# `make release-app APP=<id> SEQUENCE=N` signs the app catalog for one app release (docs/RELEASING.md).
 # `make dist` writes the drawer (dist/onboard, dist/koboapps-<v>.zip) and one zip per app (dist/apps).
 VERSION ?= 1.0.0-beta.5
 ARM_ENV = CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7
@@ -9,7 +10,7 @@ PRIVATE_KEY = $(HOME)/.config/nickeldrawer/release-ed25519.key
 DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 
-.PHONY: check build dist release sync-embedded tokens schema golden-test shellcheck shellcheck-docker clean
+.PHONY: check build dist release release-app sync-embedded tokens schema golden-test shellcheck shellcheck-docker clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
@@ -109,8 +110,22 @@ release:
 		exit 1; \
 	fi
 	$(MAKE) check build dist VERSION=$(VERSION)
-	build/ndrelease-host sign --dist $(DIST_ONBOARD) --apps-dir $(APPS_ZIP_DIR) --version $(VERSION)
+	build/ndrelease-host sign --dist $(DIST_ONBOARD) --version $(VERSION)
 	build/ndrelease-host verify
+
+# Signs the catalog of every current app version (apps.json + apps.json.sig) and puts the zip of
+# APP (an id, or `all`) beside it in dist/apps-release, ready for `gh release`. SEQUENCE is one
+# more than the catalog now published. Needs the same private key as `release`.
+APPS_RELEASE_DIR = dist/apps-release
+release-app:
+	@if [ -z "$(APP)" ] || [ -z "$(SEQUENCE)" ]; then echo "Usage: make release-app APP=<id|all> SEQUENCE=N"; exit 1; fi
+	@if [ ! -f "$(PRIVATE_KEY)" ]; then \
+		echo "No signing key at $(PRIVATE_KEY)."; \
+		exit 1; \
+	fi
+	$(MAKE) check build dist
+	build/ndrelease-host sign-apps --apps-dir $(APPS_ZIP_DIR) --sequence $(SEQUENCE) --out $(APPS_RELEASE_DIR) $(if $(filter-out all,$(APP)),--only $(APP))
+	build/ndrelease-host verify-apps --dir $(APPS_RELEASE_DIR) --apps-dir $(APPS_ZIP_DIR)
 
 clean:
 	rm -rf build dist

@@ -158,25 +158,6 @@ func parseAppHeader(data []byte, id, source string) (string, error) {
 	return header.Version, nil
 }
 
-// AddAppPackages indexes every app-<id>-<version>.zip in dir: it checks that the zip holds only
-// its own app and an app.json matching the file name, and records the zip's sha256 and size.
-// A missing dir means a release without apps.
-func (manifest *Manifest) AddAppPackages(dir string) error {
-	names, err := filepath.Glob(filepath.Join(dir, "app-*.zip"))
-	if err != nil {
-		return err
-	}
-	for _, name := range names {
-		pkg, err := describeAppZip(name)
-		if err != nil {
-			return err
-		}
-		manifest.AppPackages = append(manifest.AppPackages, pkg)
-	}
-	sort.Slice(manifest.AppPackages, func(i, j int) bool { return manifest.AppPackages[i].ID < manifest.AppPackages[j].ID })
-	return manifest.Validate()
-}
-
 func describeAppZip(zipPath string) (AppPackage, error) {
 	id, version, err := identifyAppZip(zipPath)
 	if err != nil {
@@ -250,7 +231,7 @@ func readZippedVersion(entry *zip.File, id string) (string, error) {
 	return parseAppHeader(data, id, entry.Name)
 }
 
-// VerifyAppPackages checks every indexed app zip in dir against the signed sha256 and size and
+// VerifyAppPackages checks every app zip that an older release.json still indexes in dir against the signed sha256 and size and
 // re-checks its contents. Nothing is extracted or installed.
 func VerifyAppPackages(manifest *Manifest, dir string) error {
 	for _, app := range manifest.AppPackages {

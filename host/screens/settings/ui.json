@@ -28,7 +28,20 @@
     "has_update": false,
     "step_label": "",
     "step_done": "",
-    "step_total": ""
+    "step_total": "",
+    "apps_caption": "",
+    "apps_status": "",
+    "apps_checked": "",
+    "apps_message": "",
+    "apps_step_label": "",
+    "apps_step_done": "",
+    "apps_step_total": "",
+    "apps_step_detail": "",
+    "apps_update_all_label": "",
+    "has_app_updates": false,
+    "can_apps_update": false,
+    "can_apps_check": true,
+    "apps_rows": []
   },
   "screens": {
     "main": {
@@ -68,6 +81,11 @@
               "$source"
             ]
           ]
+        },
+        {
+          "row": "@ui.apps_row",
+          "detail": "$apps_caption",
+          "push": "apps"
         },
         {
           "steps": {
@@ -228,6 +246,62 @@
           "style": "caption"
         }
       ]
+    },
+    "apps": {
+      "title": "@ui.apps_title",
+      "status": "$apps_status",
+      "body": [
+        {
+          "steps": {
+            "label": "$apps_step_label",
+            "done": "$apps_step_done",
+            "total": "$apps_step_total",
+            "detail": "$apps_step_detail"
+          }
+        },
+        {
+          "notice": "$apps_message"
+        },
+        {
+          "text": "$apps_checked",
+          "style": "caption"
+        },
+        {
+          "row": "@ui.apps_list_marker",
+          "action": "apps-list"
+        }
+      ],
+      "footer": [
+        {
+          "button": "$apps_update_all_label",
+          "action": "apps-update-all",
+          "style": "primary",
+          "enabled": "$can_apps_update",
+          "show": "$has_app_updates",
+          "async": true
+        },
+        {
+          "button": "@ui.check",
+          "action": "apps-check",
+          "style": "secondary",
+          "enabled": "$can_apps_check",
+          "show": "$has_app_updates",
+          "async": true
+        },
+        {
+          "button": "@ui.check",
+          "action": "apps-check",
+          "style": "primary",
+          "enabled": "$can_apps_check",
+          "show": "!$has_app_updates",
+          "async": true
+        }
+      ],
+      "toasts": {
+        "check_started": "@ui.toast_apps_check_started",
+        "update_started": "@ui.toast_apps_update_started",
+        "failed": "@ui.toast_failed"
+      }
     }
   }
 }

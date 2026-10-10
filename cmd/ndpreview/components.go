@@ -21,6 +21,7 @@ func actionEvent(name string) string {
 }
 
 func (rc renderContext) blocksFor(components []uikit.Component) []block {
+	components = uikit.ExpandAppRows(components, rc.vars) // the host's App updates screen
 	var blocks []block
 	for _, component := range components {
 		blocks = append(blocks, rc.componentBlocks(component)...)

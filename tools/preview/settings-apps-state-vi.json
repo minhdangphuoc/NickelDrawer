@@ -1,0 +1,74 @@
+{
+  "apps_caption": "2 bản mới · 1 chưa cài",
+  "apps_status": "2 bản mới",
+  "apps_checked": "Đã kiểm tra lúc 10/10/2026 17:02",
+  "apps_message": "",
+  "apps_step_label": "",
+  "apps_step_done": "",
+  "apps_step_total": "",
+  "apps_step_detail": "",
+  "apps_update_all_label": "Cập nhật tất cả (2)",
+  "has_app_updates": true,
+  "can_apps_update": true,
+  "can_apps_check": true,
+  "apps_rows": [
+    {
+      "kind": "section",
+      "text": "Có bản mới"
+    },
+    {
+      "kind": "row",
+      "text": "Hình nền",
+      "detail": "0.3.0 → 0.4.0",
+      "action": "app_update_wallpaper",
+      "confirm": {
+        "title": "Cập nhật Hình nền?",
+        "text": "Lên bản 0.4.0. Dữ liệu và cài đặt của ứng dụng được giữ. Không cần khởi động lại.",
+        "ok": "Cập nhật",
+        "cancel": "Hủy"
+      }
+    },
+    {
+      "kind": "row",
+      "text": "Thư viện",
+      "detail": "1.0.1 → 1.1.0",
+      "action": "app_update_library",
+      "confirm": {
+        "title": "Cập nhật Thư viện?",
+        "text": "Lên bản 1.1.0. Dữ liệu và cài đặt của ứng dụng được giữ. Không cần khởi động lại.",
+        "ok": "Cập nhật",
+        "cancel": "Hủy"
+      }
+    },
+    {
+      "kind": "section",
+      "text": "Đã cài"
+    },
+    {
+      "kind": "kv",
+      "key": "Việc cần làm",
+      "value": "1.0.2"
+    },
+    {
+      "kind": "kv",
+      "key": "Đồng bộ GitHub",
+      "value": "1.0.0"
+    },
+    {
+      "kind": "section",
+      "text": "Chưa cài"
+    },
+    {
+      "kind": "row",
+      "text": "LocalSend",
+      "detail": "1.0.0",
+      "action": "app_install_localsend",
+      "confirm": {
+        "title": "Cài LocalSend?",
+        "text": "Bản 1.0.0. Không cần khởi động lại.",
+        "ok": "Cài",
+        "cancel": "Hủy"
+      }
+    }
+  ]
+}

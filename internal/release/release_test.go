@@ -289,7 +289,7 @@ func TestPackAppIsDeterministicAndSkipsNothingElse(t *testing.T) {
 	}
 }
 
-func TestAppPackagesAreIndexedAndVerified(t *testing.T) {
+func TestOldAppPackageIndexStillVerifies(t *testing.T) {
 	tree := t.TempDir()
 	writeDemoAppTree(t, tree, nil)
 	os.RemoveAll(filepath.Join(tree, ".adds/apps/demo/data"))
@@ -301,9 +301,11 @@ func TestAppPackagesAreIndexedAndVerified(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := manifest.AddAppPackages(appsDir); err != nil {
+	pkg, err := describeAppZip(filepath.Join(appsDir, "app-demo-1.2.3.zip"))
+	if err != nil {
 		t.Fatal(err)
 	}
+	manifest.AppPackages = []AppPackage{pkg}
 	if len(manifest.AppPackages) != 1 || manifest.AppPackages[0].ID != "demo" || manifest.AppPackages[0].Version != "1.2.3" ||
 		manifest.AppPackages[0].Zip != "app-demo-1.2.3.zip" || manifest.AppPackages[0].Size <= 0 {
 		t.Fatalf("app packages = %+v", manifest.AppPackages)

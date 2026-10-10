@@ -24,6 +24,7 @@ func (c Config) hostState(string) map[string]any {
 		"debug":   c.hasDebugFlag(),
 	}
 	c.addUpdateState(state)
+	c.addAppsState(state)
 	c.addProjectState(state)
 	c.addHiddenAppsState(state)
 	return state
@@ -33,7 +34,8 @@ func (c Config) addUpdateState(state map[string]any) {
 	status, hasStatus, _ := update.ReadStatus(c.updateLayout())
 	pending, hasPending := c.pendingUpdate()
 	source := c.updateRepo()
-	isBusy := hasStatus && status.State == update.StateRunning
+	appsJob, hasAppsJob := update.ReadAppsJob(c.updateLayout())
+	isBusy := (hasStatus && status.State == update.StateRunning) || (hasAppsJob && appsJob.State == update.StateRunning)
 	hasSource := source != ""
 	state["source"] = source
 	if !hasSource {

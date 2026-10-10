@@ -27,10 +27,11 @@ commands:
   new ID [--name N] [--with-ui] [--dir D]  scaffold a new app folder from templates/app
   drawer model|run|screen|event|info|remove|tweaks|tweak  JSON for the native drawer (docs/spec/drawer-protocol.md)
   project update-config                    print the default update.json from host/config/project.json
-  update check|apply|status|rollback       signed updates from GitHub Releases (see docs/UPDATES.md)
+  update check|apply|status|rollback       signed drawer updates from GitHub Releases (see docs/UPDATES.md)
+  update apps [--all]|app ID|rollback-app ID   check, install and roll back the project's apps (docs/spec/app-updates.md)
   --version                                print the version
 
-update takes --onboard-root, --api-base, --tmp-dir and --allow-downgrade (apply).
+update takes --onboard-root, --api-base, --download-base, --tmp-dir and --allow-downgrade (apply).
 msg, host-msg and update also take --locale, --conf and --koboapps-dir.
 `
 

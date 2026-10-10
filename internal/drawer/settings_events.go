@@ -11,6 +11,9 @@ import (
 // runSettingsEvent applies a toggle of the settings screen. handled is false for the actions
 // that run host scripts (check, apply); those go through the normal action path.
 func (c Config) runSettingsEvent(event Event) (result RunResult, handled bool, err error) {
+	if result, isApps, err := c.runAppsEvent(event); isApps {
+		return result, true, err
+	}
 	switch {
 	case event.ActionID == debugActionID:
 		return c.settingsDone(c.setDebugFlag(event.Value))

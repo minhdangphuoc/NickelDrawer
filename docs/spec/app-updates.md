@@ -1,8 +1,106 @@
 # App updates
 
-> **Status: planned for 1.1 — not implemented yet.** This is the approved design. Nothing here exists in the current build, and details may still change. How to publish an app with it: [publishing-apps.md](../guide/publishing-apps.md).
+> **Status.** Phase 1 is implemented: the project's own apps (`apps/*` in this repo) are installed and updated over the air from a signed catalog. Phase 2, the per-app `update.json` of third-party apps described from [Declaring the source](#declaring-the-source) onward, is still a design: nothing in those sections exists in the current build and details may still change. How to publish an app with it: [publishing-apps.md](../guide/publishing-apps.md).
 
-Over-the-air updates for apps, one app at a time, from the app's own source. Drawer updates are separate and keep the format in [UPDATES.md](../UPDATES.md). The app folder itself is defined in [app-format.md](app-format.md). The project's own apps are also listed in the drawer's signed `release.json` (`app_packages`); that list feeds the "Not installed" catalog and pins their keys, while each app's own `update.json` described here is what updates it.
+Over-the-air updates for apps, one app at a time. Drawer updates are separate and keep the format in [UPDATES.md](../UPDATES.md). The app folder itself is defined in [app-format.md](app-format.md).
+
+## Phase 1: project apps (implemented)
+
+The project's own apps are released one by one and listed in a signed catalog. The drawer installs, updates and rolls back from that catalog only.
+
+### Release model
+
+- Each app release is its own GitHub release in this repo with the tag `<id>-v<version>` (for example `todo-v1.0.2`). It holds one asset, `app-<id>-<version>.zip`, which carries only `.adds/apps/<id>/` (no `data/`, no previews).
+- One fixed release, tagged `apps`, holds the **catalog**: `apps.json` and `apps.json.sig`. It is created once with `--latest=false` and its two assets are replaced (`gh release upload apps ... --clobber`) on every app release.
+- The device downloads `https://github.com/<repo>/releases/download/apps/apps.json` (+ `.sig`) and each zip from `https://github.com/<repo>/releases/download/<tag>/<zip>`. Plain downloads, no API, no rate limit. `<repo>` is the `repo` of `data/update.json`, the same source as drawer updates. Apps have no channels.
+- The drawer's own release selection ignores these releases: it considers only tags that are `v` plus a semantic version, on both channels ([UPDATES.md](../UPDATES.md)).
+
+### apps.json
+
+```json
+{
+  "v": 1,
+  "sequence": 7,
+  "issued": "2026-10-11T09:00:00Z",
+  "apps": [
+    {"id": "todo", "version": "1.0.2", "tag": "todo-v1.0.2", "zip": "app-todo-1.0.2.zip",
+     "sha256": "9f2c...64 lowercase hex...", "size": 48213,
+     "name": "To-do", "names": {"vi": "Việc cần làm"}, "hidden": false,
+     "requires": {"drawer": ">=1.0.0"}}
+  ]
+}
+```
+
+| Field | Rules |
+|---|---|
+| `v` | must be `1` |
+| `sequence` | integer of 1 or more; one more than the catalog it replaces |
+| `issued` | RFC 3339 time |
+| `apps[].tag` | exactly `<id>-v<version>` |
+| `apps[].zip` | exactly `app-<id>-<version>.zip` |
+| `apps[].sha256`, `size` | of the zip; size 1 to 33554432 (32 MiB) |
+| `apps[].name`, `names` | English name, and translations by language code; at most 60 characters, no control characters |
+| `apps[].hidden` | copied from `app.json`; see [the Not installed list](#device-screen) |
+| `apps[].requires.drawer` | `>=X.Y.Z`, from the app's `min_host`; absent means any drawer |
+
+The file is at most 64 KiB and lists at most 200 apps.
+
+### Signature and anti-rollback
+
+- The catalog is signed with the project release key (ed25519, the same key as `release.json`) over the exact bytes `nickeldrawer-apps-v1\n` + the raw bytes of `apps.json`. `apps.json.sig` is base64 of the raw 64 bytes. The prefix separates the two uses of the key: a drawer `release.json` signature (which has no prefix, so that releases such as 1.0.0-beta.5 keep updating) never verifies a catalog, and a catalog signature never verifies a drawer release.
+- The device verifies the signature **before** it parses anything, and reads at most 64 KiB.
+- Anti-rollback: the device stores the last accepted `sequence` (`data/update/apps-sequence.json`). A lower sequence is refused ("old app list"); an equal one is the same catalog. An app version is never installed over an equal or higher installed version, whatever the catalog says.
+- The device checks that each zip has exactly the signed `size` and `sha256` before it opens it, and that the app inside has the signed id and version.
+- Phase 2 will add a drawer `release.json` v2 signed with its own prefix (`nickeldrawer-release-v2\n`), so that no signature of the project key can ever be replayed across formats.
+
+### The zip
+
+The rules in [The zip](#the-zip) below apply, with the folder layout used by `make dist`: entries are `.adds/apps/<id>/...` so a manual unzip merges onto the Kobo root. The device accepts only regular files and folders, nothing outside `.adds/apps/<id>/`, nothing under any `data/`, no `..`, backslash or absolute path, no `preview-state*` file, NFC names without case-fold duplicates, at most 4096 entries and 64 MiB unpacked. Modes become `0755` (executables) or `0644`.
+
+### Applying
+
+Everything runs in a detached `appsctl update ...` job that writes `data/update/apps-job.json` (state, which app, which phase, how many); the screen reads it. There is no reboot, and the job asks for a drawer rescan at the end.
+
+1. Recover any interrupted swap (below).
+2. Download the catalog and verify it. Pick the apps (`update app <id>`: one; `update apps --all`: every installed app with a newer version).
+3. For each app: refuse an equal or older target; check `requires.drawer`; if the app is installed and running, stop it through its `stop` action (the `status` action says if it runs) or fail with "app busy".
+4. Download the zip to the temp folder, check size then sha256, check the zip rules and that the free space is enough, unpack into the staging folder `.adds/apps/.<id>.new`.
+5. Move `<id>/data` into the staging folder, rename `<id>` to `.<id>.old`, rename the staging folder to `<id>`. Each is a rename on one file system, so `data/` is moved, never copied or read.
+6. Validate the installed folder with the manifest loader (and its version). On failure, undo: data goes back to the old folder, which is renamed back; the error says the old version was restored.
+7. On success the old folder (it holds no `data/`) becomes the app's one rollback copy in `data/update/app-rollback/<id>/`, replacing the earlier one.
+
+The staging and old folders start with a dot (`.<id>.new`, `.<id>.old`), so the app scanner never lists them, even after a crash. A failure on one app of `--all` does not stop the others; the result counts both.
+
+`appsctl update rollback-app <id>` swaps the rollback copy in with the same steps (data stays in place) and consumes it.
+
+### Recovery after power loss
+
+On every app job and every time the drawer model is built (opening the drawer), each app with a leftover `.<id>.old` or `.<id>.new` is recovered: a missing `<id>` is restored from `.<id>.old`; any `data/` in a leftover folder is moved into `<id>`; a `<id>` that does not load is replaced by the old folder (or the rollback copy), data moving along; leftovers are removed only when they hold no `data/`. A folder that holds `data/` is never deleted: if two folders hold one, both stay and the problem is logged. Tests cut the power after each step of the swap and require the data byte for byte.
+
+### Device screen
+
+Settings > Updates has an **Apps** row (caption "2 updates · 1 not installed", or "Up to date") that opens the **Updates for apps** screen. The gear in the drawer header gets the update dot when an app update waits, too.
+
+- Header status "2 updates". Sections **Updates available** (rows: name and `0.3.0 → 0.4.0`; a tap asks "Update <name>?" and says the data and settings are kept and no restart is needed), **Installed** (name and version, not tappable) and **Not installed** (tap asks "Install <name>?"). Hidden catalog apps (for example the UI kit) are offered for install only when the user switched them on in Settings > Hidden apps; installed ones are listed normally.
+- Footer: primary **Update all (n)** and secondary **Check** when n > 0, else **Check** is the primary. While a job runs: a steps block ("Updating 1 / 2", detail "Wallpaper · downloading and verifying") and disabled buttons.
+- The Settings **Check** button runs the drawer check and the catalog check independently: one failing does not block the other.
+- Errors are short localized lines: no Wi-Fi, cannot reach GitHub, bad signature, old app list, damaged file, refused package, not a valid app, needs a newer drawer, app is running, not enough space, update failed and old version restored.
+
+### Command line
+
+`appsctl update apps` (check, then list every catalog app), `update apps --all`, `update app <id>` (install or update), `update rollback-app <id>`; flags as for the other update commands, plus `--download-base` for tests.
+
+### Maintainer
+
+`ndrelease sign-apps --apps-dir dist/apps --sequence N [--only <id>...]` writes `dist/apps-release/{apps.json,apps.json.sig}` for every zip in `dist/apps` (the tags come from the id and version) and copies the `--only` zips beside them for upload; `ndrelease verify-apps` re-checks it. The steps are in [RELEASING.md](../RELEASING.md).
+
+### Not in phase 1
+
+Third-party apps, per-app signing keys, mirrors and channels for apps, background checks and delta updates. The drawer `release.json` no longer lists app zips (`app_packages`); the field is still parsed for old releases.
+
+## Phase 2: third-party apps (design, not implemented)
+
+The rest of this page. The catalog above stays the only source for project apps; phase 2 adds each app's own `update.json` for apps that are not in it.
 
 ## Goals and limits
 
@@ -112,7 +210,7 @@ The signature is Ed25519 over the exact bytes:
 nickeldrawer-app-update-v1\n  +  <raw bytes of update.json>
 ```
 
-The prefix is ASCII, `\n` is one line feed. Today the drawer's own `release.json` is signed over its raw bytes with no prefix. Release 1.1 introduces drawer domain separation: `release.json` v2 is signed over `nickeldrawer-release-v2\n` + the bytes, and a device accepts an unprefixed signature only for `release.json` schema v1. This is required before the project key signs any app update, so that a drawer signature can never be replayed as an app update or the other way round. The device verifies the signature **before** it parses the JSON, and refuses a file over 16 KiB before reading more.
+The prefix is ASCII, `\n` is one line feed. Today the drawer's own `release.json` is signed over its raw bytes with no prefix, and the project catalog (phase 1) is signed over `nickeldrawer-apps-v1\n` + its bytes. Phase 2 introduces drawer domain separation: `release.json` v2 is signed over `nickeldrawer-release-v2\n` + the bytes, and a device accepts an unprefixed signature only for `release.json` schema v1. This is required before the project key signs any third-party app update, so that a drawer signature can never be replayed as an app update or the other way round. The device verifies the signature **before** it parses the JSON, and refuses a file over 16 KiB before reading more.
 
 ### The zip
 
@@ -194,10 +292,10 @@ Only the zip is used from a mirror, so the script may skip the other files; they
   ```
 
   `recovery_key` is absent when the app has none. `source` is `usb` or `catalog`.
-- A pin is recorded at the first install or the first check, from the installed `app.json` (trust on first use, over USB). Project catalog apps are pinned from the drawer's signed release index instead: no trust on first use.
+- A pin is recorded at the first install or the first check, from the installed `app.json` (trust on first use, over USB). Project catalog apps are pinned from the signed `apps.json` catalog instead: no trust on first use.
 - An update's own `app.json` `update.key` and `update.recovery_key` must equal the pinned ones, or the update is rejected (`key_changed`). The recovery key can never change over the air.
 - The key inside a downloaded zip never verifies that same zip.
-- The project's own apps are signed with the project release key and listed in the drawer's signed release index. That index feeds the **Not installed** list, which is curated: only project apps. Third-party apps are installed by copying the folder, then update from their own source.
+- The project's own apps are signed with the project release key and listed in the signed `apps.json` catalog (phase 1). That catalog feeds the **Not installed** list, which is curated: only project apps. Third-party apps are installed by copying the folder, then update from their own source.
 - An author must never reuse the drawer's release key for an app.
 
 ### Key rotation

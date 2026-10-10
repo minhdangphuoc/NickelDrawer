@@ -1,0 +1,74 @@
+{
+  "apps_caption": "2 updates · 1 not installed",
+  "apps_status": "2 updates",
+  "apps_checked": "Checked 10/10/2026 17:02",
+  "apps_message": "Not enough space for Wallpaper",
+  "apps_step_label": "",
+  "apps_step_done": "",
+  "apps_step_total": "",
+  "apps_step_detail": "",
+  "apps_update_all_label": "Update all (2)",
+  "has_app_updates": true,
+  "can_apps_update": true,
+  "can_apps_check": true,
+  "apps_rows": [
+    {
+      "kind": "section",
+      "text": "Updates available"
+    },
+    {
+      "kind": "row",
+      "text": "Wallpaper",
+      "detail": "0.3.0 → 0.4.0",
+      "action": "app_update_wallpaper",
+      "confirm": {
+        "title": "Update Wallpaper?",
+        "text": "To version 0.4.0. The app's data and settings are kept. No restart needed.",
+        "ok": "Update",
+        "cancel": "Cancel"
+      }
+    },
+    {
+      "kind": "row",
+      "text": "Library",
+      "detail": "1.0.1 → 1.1.0",
+      "action": "app_update_library",
+      "confirm": {
+        "title": "Update Library?",
+        "text": "To version 1.1.0. The app's data and settings are kept. No restart needed.",
+        "ok": "Update",
+        "cancel": "Cancel"
+      }
+    },
+    {
+      "kind": "section",
+      "text": "Installed"
+    },
+    {
+      "kind": "kv",
+      "key": "To-do",
+      "value": "1.0.2"
+    },
+    {
+      "kind": "kv",
+      "key": "GitHub sync",
+      "value": "1.0.0"
+    },
+    {
+      "kind": "section",
+      "text": "Not installed"
+    },
+    {
+      "kind": "row",
+      "text": "LocalSend",
+      "detail": "1.0.0",
+      "action": "app_install_localsend",
+      "confirm": {
+        "title": "Install LocalSend?",
+        "text": "Version 1.0.0. No restart needed.",
+        "ok": "Install",
+        "cancel": "Cancel"
+      }
+    }
+  ]
+}

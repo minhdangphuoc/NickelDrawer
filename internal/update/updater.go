@@ -24,12 +24,17 @@ const selfCheckTimeout = 10 * time.Second
 type Options struct {
 	OnboardRoot    string
 	APIBase        string
+	DownloadBase   string // where release downloads live (default https://github.com); tests use a fake
 	TempDir        string // downloads land here, e.g. /tmp, never on the onboard storage
 	CurrentVersion string // version of the running appsctl, i.e. of the installed release
 	AllowDowngrade bool
 	HTTPClient     *http.Client
 	// PublicKey returns the trusted release key; ErrNoPublicKey refuses every update.
 	PublicKey func() (ed25519.PublicKey, error)
+	// Guard stops a running app before it is replaced; nil means no app is ever running.
+	Guard AppGuard
+	// Language picks app names in reports ("vi"); empty means English.
+	Language string
 }
 
 // Updater applies signed releases to one onboard root.
@@ -37,6 +42,10 @@ type Updater struct {
 	options Options
 	layout  Layout
 	github  *githubClient
+	// progress is set while an app job runs, so its steps reach the screen.
+	progress *appsProgress
+	// afterSwapStep lets tests cut the power in the middle of an app swap.
+	afterSwapStep func(step string) error
 }
 
 // New builds an Updater; zero-valued optional fields get safe defaults.

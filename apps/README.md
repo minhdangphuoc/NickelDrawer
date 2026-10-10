@@ -36,7 +36,7 @@ The installer unpacks the zips from `dist/apps/`, backs up the apps it replaces 
 
 ## Update an app
 
-Install the new zip the same way (A or B). The app's files are replaced; its `data/` (settings, tokens, lists) is kept. The drawer update (**Check** in the drawer's settings) updates only the drawer. The signed `release.json` of each release lists every app zip with its version, sha256 and size so a future in-drawer app update can verify them; nothing applies them yet.
+Install the new zip the same way (A or B). The app's files are replaced; its `data/` (settings, tokens, lists) is kept. You can also update from the drawer: **⚙** → **Updates** → **Apps** (see [docs/UPDATES.md](../docs/UPDATES.md)). It downloads the app's zip from its own release (`<id>-v<version>`), checks the signed catalog, size and sha256, and swaps the folder; `data/` is moved, never copied. The same screen installs apps that are not on your Kobo yet. The drawer update (**Check** in the settings) updates only the drawer.
 
 ## Remove an app
 

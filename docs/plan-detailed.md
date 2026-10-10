@@ -766,6 +766,21 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 | LIB-05 | Cancel mid-run | Stops at a safe point; no partial files | True |
 | LIB-06 | Run with USB connected (should be impossible) | Host refuses: "Đang kết nối USB" | True |
 
+**App updates (session T-final, after the first `apps` release)**
+
+| ID | Steps | Expected | Pass criteria |
+|---|---|---|---|
+| APPUPD-01 | ⚙ > Updates > Apps, tap Check with Wi-Fi on | Steps block "Checking apps…", then the header status and the Apps row caption ("2 bản mới · 1 chưa cài" or "Đã mới nhất") and a "Checked <time>" line | Log shows one catalog download; no install |
+| APPUPD-02 | Tap an app under "Có bản mới", confirm | Toast, steps "Đang cập nhật" with the app name and phase, then a line "Đã cập nhật <app> lên bản <v>"; the app row moves to "Đã cài"; the drawer list shows the new version after rescan | No reboot; the app's data and settings are as before |
+| APPUPD-03 | Tap an app under "Chưa cài", confirm "Cài <app>?" | App installs and appears in the drawer | True |
+| APPUPD-04 | Start an app that has a stop action (LocalSend receiving), update it | The app is stopped, then updated | True |
+| APPUPD-05 | Same, with an app that runs and has no stop action | One line "<app> đang chạy. Hãy đóng rồi thử lại"; nothing changes | Old version still installed |
+| APPUPD-06 | Wi-Fi off, tap Check or an update | The mod offers to connect; if refused, one line "Chưa có Wi-Fi" | No half-installed app |
+| APPUPD-07 | Power off the Kobo during an update (hold the power key while the steps block runs), then boot and open the drawer | The app is the old or the new version, never missing, its data intact; no `.<id>.old` or `.<id>.new` folder holds data | Compare the `data/` folder with a copy made before |
+| APPUPD-08 | `appsctl update rollback-app <id>` over SSH/script, then open the drawer | The previous version is back; data kept | True |
+| APPUPD-09 | UI kit: not installed and hidden | Not listed under "Chưa cài" until switched on in ⚙ > Ứng dụng ẩn | True |
+| APPUPD-10 | Update all (2) | Steps "Đang cập nhật 1 / 2", "2 / 2"; both updated; a failure on one leaves the other updated and the result counts both | True |
+
 ### 9.10 Sign-off record
 
 `docs/signoff/G<n>.md` template: gate, date, build hash, session IDs run, table of case IDs with pass/fail/notes, S-criteria measured values, S11 score, open issues with links to blocker reports, decision (go/no-go), user initials.

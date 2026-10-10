@@ -137,7 +137,7 @@ The drawer is empty at first: apps come next.
 
 ### Install apps
 
-Apps are separate from the drawer. Each one is its own download in the same release, `app-<id>-<version>.zip` (for example `app-todo-1.0.1.zip`), and you install only the ones you want. Unzip it and merge its `.adds` folder onto the root of the Kobo drive (same Finder **Merge** warning as above), eject, and the app shows in the drawer after a refresh. To update an app, install its newer zip the same way; its `data/` stays. To remove one, long-press it in the drawer and choose **Remove**. The list of apps and the full steps are in [apps/README.md](../../apps/README.md). With the installer script (way B below) it is `tools/install-to-kobo.sh --app todo` or `--apps all`.
+Apps are separate from the drawer. Each one is its own download in the same release, `app-<id>-<version>.zip` (for example `app-todo-1.0.1.zip`), and you install only the ones you want. Unzip it and merge its `.adds` folder onto the root of the Kobo drive (same Finder **Merge** warning as above), eject, and the app shows in the drawer after a refresh. To update an app, use **⚙** → **Apps** in the drawer ([Apps: update and install](#apps-update-and-install)), or install its newer zip the same way; its `data/` stays. To remove one, long-press it in the drawer and choose **Remove**. The list of apps and the full steps are in [apps/README.md](../../apps/README.md). With the installer script (way B below) it is `tools/install-to-kobo.sh --app todo` or `--apps all`.
 
 ### Way B: the installer script (macOS or Linux, from the source code)
 
@@ -498,14 +498,15 @@ The switches write to the Kobo's own settings file (`.kobo/Kobo/Kobo eReader.con
 
 ## Updates
 
-NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. Apps are not updated this way: install an app's newer zip instead (see [Install apps](#install-apps)). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
+NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. The project's own apps update separately, one by one (see [Apps: update and install](#apps-update-and-install)); apps from other sources are updated by installing their newer zip (see [Install apps](#install-apps)). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
 
 ### Settings: the gear
 
-Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It has four parts:
+Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It has four parts, and an **Apps** row inside **Updates**:
 
 - **Hidden apps**: a switch for every app that is hidden by default (today: **UI Kit**). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.
 - **Updates**: the installed **Version**, the **New version** (only after a check found one) and the **Source** (the GitHub repository). Buttons **Check** and **Update to <version>**, and a status line for the last check or install.
+- The **Apps** row under **Updates** opens **Updates for apps** (next section). Its second line says "2 updates · 1 not installed" or "Up to date".
 - **Debug**: **Write debug log** (see "Send a useful bug report" below). It takes effect after a restart.
 - **About**: your firmware with ✓ when NickelDrawer supports it or **!** when it does not, and **About the project** (version, a QR code to open the project page on your phone, maintainer, license, credits).
 
@@ -517,6 +518,19 @@ Updates come from the project's GitHub repository by default; the installer sets
 2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and **Check** is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked 09/10/2026 17:02 · Up to date (1.0.0-beta.1)", "Checked 09/10/2026 17:02 · New version 1.0.0-beta.2 available", or "Could not check 09/10/2026 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the **New version** row appears, and the big button reads **Update to <version>** (with **Check** beside it). With nothing to install, **Check** is the big button. While a check or an install runs, the screen shows its progress as text ("Checking for updates…") and the buttons are dimmed.
 3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.
 4. If the result says "restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
+
+### Apps: update and install
+
+The project's own apps (To-do, Wallpaper, Library and the rest) update from inside the drawer, one at a time, without a restart.
+
+1. Open **⚙** and tap the **Apps** row in **Updates**. The **Check** button on the Settings screen checks the drawer and the apps together; each check works on its own, so one failing does not stop the other.
+2. On **Updates for apps** tap **Check**. The Kobo downloads the signed app list from the project's GitHub and checks its signature; nothing is installed. A line under the title says when it last checked, and the title shows "2 updates" when there are updates. The gear in the drawer header gets the black dot too.
+3. **Updates available** lists apps with a newer version, for example "0.3.0 → 0.4.0". Tap one and confirm "Update <name>?" to update only that app: its files are replaced, its data and settings are kept, and no restart is needed. **Update all (2)** updates every app in that list.
+4. **Installed** shows the versions you have (not tappable). **Not installed** lists the project's other apps; tap one and confirm "Install <name>?" to install it. Hidden apps (UI Kit) show here only if you switched them on in **Hidden apps**.
+5. While it works the screen shows "Updating 1 / 2" and the step ("Wallpaper · downloading and verifying") and the buttons are dimmed. Keep Wi-Fi on. If an app is running, the update stops it first when the app has a stop action; otherwise the line says the app is running: close it and try again.
+6. Problems are one short line under the title: no Wi-Fi, cannot reach GitHub, bad signature, old app list, damaged file, refused package, not a valid app, needs a newer NickelDrawer, not enough space, or "update failed, old version restored". After a failed update the old version and your data are as they were.
+
+Behind the scenes, each app's data folder is moved, never copied or read, and the previous version is kept once. From a computer or a shell, `appsctl update rollback-app <id>` puts the previous version back. If the Kobo loses power in the middle, the next time you open the drawer it puts things right and your data is kept.
 
 ### What a restart does after an update
 

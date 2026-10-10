@@ -2100,6 +2100,79 @@ make release VERSION=1.0.0
 </tr>
 </tbody>
 </table></div>
+<p><strong>App updates (session T-final, after the first <code>apps</code> release)</strong></p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Steps</th>
+<th>Expected</th>
+<th>Pass criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>APPUPD-01</td>
+<td>⚙ &gt; Updates &gt; Apps, tap Check with Wi-Fi on</td>
+<td>Steps block "Checking apps…", then the header status and the Apps row caption ("2 bản mới · 1 chưa cài" or "Đã mới nhất") and a "Checked <time>" line</td>
+<td>Log shows one catalog download; no install</td>
+</tr>
+<tr>
+<td>APPUPD-02</td>
+<td>Tap an app under "Có bản mới", confirm</td>
+<td>Toast, steps "Đang cập nhật" with the app name and phase, then a line "Đã cập nhật <app> lên bản <v>"; the app row moves to "Đã cài"; the drawer list shows the new version after rescan</td>
+<td>No reboot; the app's data and settings are as before</td>
+</tr>
+<tr>
+<td>APPUPD-03</td>
+<td>Tap an app under "Chưa cài", confirm "Cài <app>?"</td>
+<td>App installs and appears in the drawer</td>
+<td>True</td>
+</tr>
+<tr>
+<td>APPUPD-04</td>
+<td>Start an app that has a stop action (LocalSend receiving), update it</td>
+<td>The app is stopped, then updated</td>
+<td>True</td>
+</tr>
+<tr>
+<td>APPUPD-05</td>
+<td>Same, with an app that runs and has no stop action</td>
+<td>One line "<app> đang chạy. Hãy đóng rồi thử lại"; nothing changes</td>
+<td>Old version still installed</td>
+</tr>
+<tr>
+<td>APPUPD-06</td>
+<td>Wi-Fi off, tap Check or an update</td>
+<td>The mod offers to connect; if refused, one line "Chưa có Wi-Fi"</td>
+<td>No half-installed app</td>
+</tr>
+<tr>
+<td>APPUPD-07</td>
+<td>Power off the Kobo during an update (hold the power key while the steps block runs), then boot and open the drawer</td>
+<td>The app is the old or the new version, never missing, its data intact; no <code>.&lt;id&gt;.old</code> or <code>.&lt;id&gt;.new</code> folder holds data</td>
+<td>Compare the <code>data/</code> folder with a copy made before</td>
+</tr>
+<tr>
+<td>APPUPD-08</td>
+<td><code>appsctl update rollback-app &lt;id&gt;</code> over SSH/script, then open the drawer</td>
+<td>The previous version is back; data kept</td>
+<td>True</td>
+</tr>
+<tr>
+<td>APPUPD-09</td>
+<td>UI kit: not installed and hidden</td>
+<td>Not listed under "Chưa cài" until switched on in ⚙ &gt; Ứng dụng ẩn</td>
+<td>True</td>
+</tr>
+<tr>
+<td>APPUPD-10</td>
+<td>Update all (2)</td>
+<td>Steps "Đang cập nhật 1 / 2", "2 / 2"; both updated; a failure on one leaves the other updated and the result counts both</td>
+<td>True</td>
+</tr>
+</tbody>
+</table></div>
 <h3 id="910-sign-off-record">9.10 Sign-off record</h3>
 <p><code>docs/signoff/G&lt;n&gt;.md</code> template: gate, date, build hash, session IDs run, table of case IDs with pass/fail/notes, S-criteria measured values, S11 score, open issues with links to blocker reports, decision (go/no-go), user initials.</p>
 <hr />

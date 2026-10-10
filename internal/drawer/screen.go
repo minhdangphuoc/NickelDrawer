@@ -358,6 +358,7 @@ func stringProp(object map[string]any, key string) string {
 }
 
 func (s screenContext) components(components []uikit.Component) []ScreenComponent {
+	components = s.expandAppRows(components)
 	resolved := make([]ScreenComponent, 0, len(components))
 	for i := 0; i < len(components); i++ {
 		if s.isHiddenByFlag(components[i]) {

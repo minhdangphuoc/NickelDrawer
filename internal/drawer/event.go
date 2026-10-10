@@ -66,6 +66,12 @@ func (c Config) RunEvent(event Event) (RunResult, error) {
 			ListEnvName+"="+event.List, IndexEnvName+"="+strconv.Itoa(event.Index))
 	}
 	result, err := c.run(event.AppID, event.ActionID)
+	return c.withSignal(event, result, err)
+}
+
+// withSignal turns the toast, dialog or request a script printed into the reply, when the
+// screen of the event declares it.
+func (c Config) withSignal(event Event, result RunResult, err error) (RunResult, error) {
 	if err != nil || event.ScreenID == "" || result.Text == "" {
 		return withoutSignal(result), err
 	}

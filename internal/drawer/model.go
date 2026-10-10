@@ -7,6 +7,7 @@ import (
 
 	"koboapps/internal/manifest"
 	"koboapps/internal/uikit"
+	"koboapps/internal/update"
 )
 
 const (
@@ -74,6 +75,7 @@ type AppProblem struct {
 // BuildModel scans the apps folder and assembles the drawer screen. It fails only when the
 // apps folder cannot be read.
 func (c Config) BuildModel() (Model, error) {
+	c.recoverInterruptedUpdates()
 	scan, err := manifest.LoadAll(c.AppsDir)
 	if err != nil {
 		return Model{}, newError(CodeIO, "detail", err.Error())
@@ -242,4 +244,12 @@ func (c Config) loadApp(appID string) (manifest.App, error) {
 // isPlainName is true for a single folder name: no separators, no dot names.
 func isPlainName(name string) bool {
 	return name != "" && name != "." && name != ".." && name == filepath.Base(name) && name[0] != '.'
+}
+
+// recoverInterruptedUpdates finishes an app update that a power cut interrupted. It runs when
+// the drawer opens, before apps are listed; it never deletes a folder that holds an app's data.
+func (c Config) recoverInterruptedUpdates() {
+	if err := update.RecoverApps(c.updateLayout()); err != nil {
+		c.debugf("app update recovery: %v", err)
+	}
 }

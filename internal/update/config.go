@@ -28,10 +28,17 @@ type Config struct {
 // Layout maps the onboard root to the files updates use.
 type Layout struct {
 	OnboardRoot string
+	// AppsDir overrides <root>/.adds/apps; set by callers (and tests) that keep apps elsewhere.
+	AppsDir string
 }
 
 func (layout Layout) hostDir() string { return filepath.Join(layout.OnboardRoot, ".adds", "koboapps") }
-func (layout Layout) appsDir() string { return filepath.Join(layout.OnboardRoot, ".adds", "apps") }
+func (layout Layout) appsDir() string {
+	if layout.AppsDir != "" {
+		return layout.AppsDir
+	}
+	return filepath.Join(layout.OnboardRoot, ".adds", "apps")
+}
 func (layout Layout) configFile() string {
 	return filepath.Join(layout.hostDir(), "data", "update.json")
 }

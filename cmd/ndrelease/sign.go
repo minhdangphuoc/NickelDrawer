@@ -21,7 +21,6 @@ type signOptions struct {
 	publicPath string
 	minAppsctl string
 	notesPath  string
-	appsDir    string
 }
 
 func runSign(args []string, stdout, stderr io.Writer) int {
@@ -35,7 +34,6 @@ func runSign(args []string, stdout, stderr io.Writer) int {
 	flags.StringVar(&options.publicPath, "pub", defaultPublicKey, "public key that appsctl embeds; the private key must match it")
 	flags.StringVar(&options.minAppsctl, "min-appsctl", "0.1.0", "oldest appsctl allowed to apply this release")
 	flags.StringVar(&options.notesPath, "notes-file", "", "text file with the changelog summary the drawer's update screen shows (optional)")
-	flags.StringVar(&options.appsDir, "apps-dir", "dist/apps", "folder with the app-<id>-<version>.zip files to index and publish (missing folder: no apps)")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
 	}
@@ -59,9 +57,6 @@ func sign(options signOptions) error {
 	}
 	manifest, err := release.BuildManifest(options.distRoot, options.version, options.minAppsctl, time.Now())
 	if err != nil {
-		return err
-	}
-	if err := manifest.AddAppPackages(options.appsDir); err != nil {
 		return err
 	}
 	if manifest.Notes, err = readNotes(options.notesPath); err != nil {
@@ -150,9 +145,6 @@ func writeReleaseFiles(options signOptions, manifest *release.Manifest, manifest
 	if err := zipFile.Close(); err != nil {
 		return err
 	}
-	if err := copyAppZips(options.appsDir, options.outDir, manifest); err != nil {
-		return err
-	}
 	if err := os.WriteFile(filepath.Join(options.outDir, release.ManifestName), manifestBytes, 0o644); err != nil {
 		return err
 	}
@@ -161,19 +153,4 @@ func writeReleaseFiles(options signOptions, manifest *release.Manifest, manifest
 
 func zipName(version string) string {
 	return releaseFilePrefix + version + ".zip"
-}
-
-// copyAppZips puts the indexed app zips next to the release files, so one folder holds
-// everything to upload.
-func copyAppZips(appsDir, outDir string, manifest *release.Manifest) error {
-	for _, app := range manifest.AppPackages {
-		data, err := os.ReadFile(filepath.Join(appsDir, app.Zip))
-		if err != nil {
-			return err
-		}
-		if err := os.WriteFile(filepath.Join(outDir, app.Zip), data, 0o644); err != nil {
-			return err
-		}
-	}
-	return nil
 }

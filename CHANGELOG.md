@@ -4,6 +4,18 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- **Over-the-air updates for the project's own apps** (phase 1 of `docs/spec/app-updates.md`). Settings > Updates has an **Apps** row ("2 updates · 1 not installed") that opens **Updates for apps**: sections Updates available, Installed and Not installed, a confirm question per app ("Update <name>?" with the note that data and settings are kept and no restart is needed), **Update all (n)**, **Check**, and a steps block while a job runs. The gear's update dot lights for app updates too, and Settings **Check** checks the drawer and the apps independently. From a shell: `appsctl update apps [--all]`, `update app <id>`, `update rollback-app <id>`.
+- Each app release is its own GitHub release (`<id>-v<version>`, one zip) and a signed catalog `apps.json` + `apps.json.sig` lives on a fixed `apps` release. The catalog is signed with the release key over `nickeldrawer-apps-v1\n` + its bytes (a drawer signature never verifies it), is read before parsing at most 64 KiB, and a lower `sequence` than the last accepted is refused. Zips must match the signed size and sha256, pass the zip safety rules, and an app is never replaced by an equal or older version.
+- The swap moves an app's `data/` into the new folder with renames, never copying it; a failed validation puts the old version and data back; one previous version is kept (without `data/`). After a power cut the next app job or opening the drawer recovers and never deletes a folder that holds `data/`. A running app is stopped through its `stop` action, or the update says the app is busy.
+- `ndrelease sign-apps` and `verify-apps`, `make release-app APP=<id> SEQUENCE=N`, and the exact `gh` steps in `docs/RELEASING.md`, with the ordering rule for the first `apps` release.
+
+### Changed
+
+- **The drawer updater picks its release by tag.** It now considers only tags that are `v` plus a version and takes the highest allowed by the channel (stable: no pre-releases), on both channels. App releases and the `apps` release are ignored; before, the beta channel took the newest release of any kind and stable took GitHub's "latest".
+- The drawer `release.json` no longer lists app zips (`app_packages`, `ndrelease sign --apps-dir`); the field is still parsed in older releases. The catalog is the only source of the app list.
+
 ## [1.0.0-beta.5] - 2026-10-11
 
 ### Changed

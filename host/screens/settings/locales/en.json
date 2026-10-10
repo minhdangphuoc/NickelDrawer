@@ -41,5 +41,10 @@
   "ui.credit_oksvg_value": "BSD-3-Clause",
   "ui.credit_viet": "kobo-tieng-viet",
   "ui.credit_viet_value": "redphx · separate, optional",
-  "ui.about_note": "An independent project, not affiliated with Rakuten Kobo. It collects no data and uses the network only when you start something."
+  "ui.about_note": "An independent project, not affiliated with Rakuten Kobo. It collects no data and uses the network only when you start something.",
+  "ui.apps_row": "Apps",
+  "ui.apps_title": "Updates for apps",
+  "ui.apps_list_marker": "Apps",
+  "ui.toast_apps_check_started": "Checking app updates.",
+  "ui.toast_apps_update_started": "Updating. Keep Wi-Fi on."
 }

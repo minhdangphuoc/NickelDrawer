@@ -263,7 +263,7 @@ blockquote p:last-child { margin-bottom: 0; }
 <p>If the rows are not there, see <a href="#troubleshooting">Troubleshooting</a>.</p>
 <p>The drawer is empty at first: apps come next.</p>
 <h3 id="install-apps">Install apps</h3>
-<p>Apps are separate from the drawer. Each one is its own download in the same release, <code>app-&lt;id&gt;-&lt;version&gt;.zip</code> (for example <code>app-todo-1.0.1.zip</code>), and you install only the ones you want. Unzip it and merge its <code>.adds</code> folder onto the root of the Kobo drive (same Finder <strong>Merge</strong> warning as above), eject, and the app shows in the drawer after a refresh. To update an app, install its newer zip the same way; its <code>data/</code> stays. To remove one, long-press it in the drawer and choose <strong>Remove</strong>. The list of apps and the full steps are in <a href="../../apps/README.md">apps/README.md</a>. With the installer script (way B below) it is <code>tools/install-to-kobo.sh --app todo</code> or <code>--apps all</code>.</p>
+<p>Apps are separate from the drawer. Each one is its own download in the same release, <code>app-&lt;id&gt;-&lt;version&gt;.zip</code> (for example <code>app-todo-1.0.1.zip</code>), and you install only the ones you want. Unzip it and merge its <code>.adds</code> folder onto the root of the Kobo drive (same Finder <strong>Merge</strong> warning as above), eject, and the app shows in the drawer after a refresh. To update an app, use <strong>⚙</strong> → <strong>Apps</strong> in the drawer (<a href="#apps-update-and-install">Apps: update and install</a>), or install its newer zip the same way; its <code>data/</code> stays. To remove one, long-press it in the drawer and choose <strong>Remove</strong>. The list of apps and the full steps are in <a href="../../apps/README.md">apps/README.md</a>. With the installer script (way B below) it is <code>tools/install-to-kobo.sh --app todo</code> or <code>--apps all</code>.</p>
 <h3 id="way-b-the-installer-script-macos-or-linux-from-the-source-code">Way B: the installer script (macOS or Linux, from the source code)</h3>
 <p>This way is for people who build NickelDrawer from its source code. It backs up everything it replaces and never touches app <code>data/</code> folders. With no options it installs the drawer only (host tool and mod) and leaves any apps on the Kobo alone.</p>
 <pre><code class="language-sh">make check build dist                 # build everything (needs Go; the mod needs Docker)
@@ -727,12 +727,13 @@ tools/install-to-kobo.sh              # install
 <p>The switches write to the Kobo's own settings file (<code>.kobo/Kobo/Kobo eReader.conf</code>); <strong>Sleep screen</strong> renames the <code>.kobo/screensaver</code> folder. They stay as you left them after you remove NickelDrawer, so set them back first if you want.</p>
 <p><em>Tried on a device:</em> not yet.</p>
 <h2 id="updates">Updates</h2>
-<p>NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. Apps are not updated this way: install an app's newer zip instead (see <a href="#install-apps">Install apps</a>). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.</p>
+<p>NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. The project's own apps update separately, one by one (see <a href="#apps-update-and-install">Apps: update and install</a>); apps from other sources are updated by installing their newer zip (see <a href="#install-apps">Install apps</a>). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.</p>
 <h3 id="settings-the-gear">Settings: the gear</h3>
-<p>Tap <strong>⚙</strong> in the header of the drawer to open <strong>NickelDrawer settings</strong>. It has four parts:</p>
+<p>Tap <strong>⚙</strong> in the header of the drawer to open <strong>NickelDrawer settings</strong>. It has four parts, and an <strong>Apps</strong> row inside <strong>Updates</strong>:</p>
 <ul>
 <li><strong>Hidden apps</strong>: a switch for every app that is hidden by default (today: <strong>UI Kit</strong>). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.</li>
 <li><strong>Updates</strong>: the installed <strong>Version</strong>, the <strong>New version</strong> (only after a check found one) and the <strong>Source</strong> (the GitHub repository). Buttons <strong>Check</strong> and <strong>Update to <version></strong>, and a status line for the last check or install.</li>
+<li>The <strong>Apps</strong> row under <strong>Updates</strong> opens <strong>Updates for apps</strong> (next section). Its second line says "2 updates · 1 not installed" or "Up to date".</li>
 <li><strong>Debug</strong>: <strong>Write debug log</strong> (see "Send a useful bug report" below). It takes effect after a restart.</li>
 <li><strong>About</strong>: your firmware with ✓ when NickelDrawer supports it or <strong>!</strong> when it does not, and <strong>About the project</strong> (version, a QR code to open the project page on your phone, maintainer, license, credits).</li>
 </ul>
@@ -744,6 +745,17 @@ tools/install-to-kobo.sh              # install
 <li>Tap <strong>Update to <version></strong>, then <strong>Update</strong> to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.</li>
 <li>If the result says "restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
 </ol>
+<h3 id="apps-update-and-install">Apps: update and install</h3>
+<p>The project's own apps (To-do, Wallpaper, Library and the rest) update from inside the drawer, one at a time, without a restart.</p>
+<ol>
+<li>Open <strong>⚙</strong> and tap the <strong>Apps</strong> row in <strong>Updates</strong>. The <strong>Check</strong> button on the Settings screen checks the drawer and the apps together; each check works on its own, so one failing does not stop the other.</li>
+<li>On <strong>Updates for apps</strong> tap <strong>Check</strong>. The Kobo downloads the signed app list from the project's GitHub and checks its signature; nothing is installed. A line under the title says when it last checked, and the title shows "2 updates" when there are updates. The gear in the drawer header gets the black dot too.</li>
+<li><strong>Updates available</strong> lists apps with a newer version, for example "0.3.0 → 0.4.0". Tap one and confirm "Update <name>?" to update only that app: its files are replaced, its data and settings are kept, and no restart is needed. <strong>Update all (2)</strong> updates every app in that list.</li>
+<li><strong>Installed</strong> shows the versions you have (not tappable). <strong>Not installed</strong> lists the project's other apps; tap one and confirm "Install <name>?" to install it. Hidden apps (UI Kit) show here only if you switched them on in <strong>Hidden apps</strong>.</li>
+<li>While it works the screen shows "Updating 1 / 2" and the step ("Wallpaper · downloading and verifying") and the buttons are dimmed. Keep Wi-Fi on. If an app is running, the update stops it first when the app has a stop action; otherwise the line says the app is running: close it and try again.</li>
+<li>Problems are one short line under the title: no Wi-Fi, cannot reach GitHub, bad signature, old app list, damaged file, refused package, not a valid app, needs a newer NickelDrawer, not enough space, or "update failed, old version restored". After a failed update the old version and your data are as they were.</li>
+</ol>
+<p>Behind the scenes, each app's data folder is moved, never copied or read, and the previous version is kept once. From a computer or a shell, <code>appsctl update rollback-app &lt;id&gt;</code> puts the previous version back. If the Kobo loses power in the middle, the next time you open the drawer it puts things right and your data is kept.</p>
 <h3 id="what-a-restart-does-after-an-update">What a restart does after an update</h3>
 <p>When a release changes the Kobo mod, the update puts the new mod in <code>.kobo/KoboRoot.tgz</code>. The Kobo installs it during the next restart, the same way as the first install. The host tool is already updated before the restart.</p>
 <h3 id="if-something-goes-wrong">If something goes wrong</h3>
