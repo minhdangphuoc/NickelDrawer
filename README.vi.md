@@ -6,16 +6,9 @@ Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel)
 
 | Dạng danh sách | Dạng lưới |
 |---|---|
-| ![Ngăn ứng dụng dạng danh sách](docs/img/drawer-list.vi.png) | ![Ngăn ứng dụng dạng lưới](docs/img/drawer-grid.vi.png) |
+| ![Ngăn ứng dụng dạng danh sách trên Kobo Libra 2](docs/img/device-list.png) | ![Ngăn ứng dụng dạng lưới trên Kobo Libra 2](docs/img/device-grid.png) |
 
-Ngăn ứng dụng dạng danh sách (tên, biểu tượng và trạng thái trực tiếp của từng ứng dụng) hoặc dạng lưới; hai nút trên thanh tiêu đề chuyển qua lại. Đây là ảnh dựng trên máy tính bằng `ndpreview` ở kích thước màn hình e-ink, không phải ảnh chụp máy thật. Cách dựng lại:
-
-```sh
-go run ./cmd/ndpreview drawer-list --installed --locale vi --out docs/img/drawer-list.vi.png
-go run ./cmd/ndpreview drawer-grid --installed --locale vi --out docs/img/drawer-grid.vi.png
-```
-
-`ndpreview render <thư-mục-ứng-dụng>` vẽ màn hình riêng của một ứng dụng. Ghi ảnh phụ vào `build/preview/` (không đưa lên git) và chép ảnh muốn giữ vào `docs/img/`.
+Ảnh chụp từ Kobo Libra 2 (tiếng Việt), chỉ giữ phần Ngăn (bỏ thanh trạng thái và thanh tab của Kobo). Ngăn hiện ứng dụng dạng danh sách (biểu tượng, tên, trạng thái trực tiếp) hoặc dạng lưới; các nút trên tiêu đề chuyển dạng xem, làm mới danh sách và mở cài đặt của Ngăn.
 
 ## Bạn được gì
 

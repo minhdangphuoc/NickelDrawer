@@ -8,16 +8,9 @@ Tiếng Việt: [README.vi.md](README.vi.md).
 
 | List view | Grid view |
 |---|---|
-| ![The drawer's list view](docs/img/drawer-list.png) | ![The drawer's grid view](docs/img/drawer-grid.png) |
+| ![The drawer's list view on a Kobo Libra 2](docs/img/device-list.png) | ![The drawer's grid view on a Kobo Libra 2](docs/img/device-grid.png) |
 
-The drawer as a list (name, icon and live status per app) or as a grid; the buttons in the header switch between them. These are renders made on a computer with `ndpreview` at the e-ink size, not photos of a device. To regenerate them:
-
-```sh
-go run ./cmd/ndpreview drawer-list --installed --out docs/img/drawer-list.png
-go run ./cmd/ndpreview drawer-grid --installed --out docs/img/drawer-grid.png
-```
-
-Add `--locale vi` for Vietnamese. `ndpreview render <app-dir>` draws an app's own screens. Write extra renders to `build/preview/` (gitignored) and copy the ones you want to show into `docs/img/`.
+Screenshots from a Kobo Libra 2 set to Vietnamese, cropped to the drawer (Kobo's own status bar and tab bar are left out). The drawer shows your apps as a list (icon, name, live status) or as a grid; the buttons in the header switch between them, refresh the list and open the drawer settings.
 
 ## What you get
 
