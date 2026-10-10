@@ -102,6 +102,12 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 	if !ok {
 		return exitFailure
 	}
+	fonts, err := loadFonts("", "", "") // system fonts: the layout measures with what the PNG preview draws with
+	if err != nil {
+		fmt.Fprintln(stderr, "ndpreview:", err)
+		return exitFailure
+	}
+	useFonts(fonts, stderr)
 	instance, err := newServer(serverConfig{AppDir: appDir, Locale: *locale, StatePath: *statePath, ExecEnabled: *isExec})
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)

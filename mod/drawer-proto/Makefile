@@ -23,7 +23,7 @@ override MOCS     += more_row.h ../common/press_area.h ../common/page_header.h d
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
-override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common
+override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common -I../../lib/copperui/include
 
 include $(NICKELHOOK_DIR)/NickelHook.mk
 

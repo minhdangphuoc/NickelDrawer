@@ -8,9 +8,9 @@ Màn hình mẫu cho mọi thành phần của NickelDrawer (`ui.json`, kit 1), 
 
 Ba màn hình:
 
-- **Bộ giao diện** (chính): văn bản, khoá-giá trị, mã lớn, ghi chú (và ghi chú tự ẩn khi trống), các bước, dòng chạm được, dòng sang màn khác, danh sách có menu nhấn giữ, nút chính. Biểu tượng làm mới quét lại ảnh.
+- **Bộ giao diện** (chính): văn bản, khóa-giá trị, mã lớn, ghi chú (và ghi chú tự ẩn khi trống), các bước, dòng chạm được, dòng sang màn khác, danh sách có menu nhấn giữ, nút chính. Biểu tượng làm mới quét lại ảnh.
 - **Thêm thành phần**: công tắc, lựa chọn (radio) có dòng phụ, ô nhập chữ và ô nhập số, các nút (phụ, tắt/bật nhờ biến, có xác nhận), mã QR, khối ghép nối, và liên kết trên tiêu đề.
-- **Thư viện ảnh**: lưới ảnh lấy từ các tệp PNG nhỏ (tối đa 1 MB, tối đa 6 ảnh) trong `Pictures`. Không có ảnh thì hiện màn trống. Ứng dụng chỉ **chép** ảnh vào `data/samples/`, không đổi hay xoá ảnh gốc.
+- **Thư viện ảnh**: lưới ảnh lấy từ các tệp PNG nhỏ (tối đa 1 MB, tối đa 6 ảnh) trong `Pictures`. Không có ảnh thì hiện màn trống. Ứng dụng chỉ **chép** ảnh vào `data/samples/`, không đổi hay xóa ảnh gốc.
 
 Mọi thao tác chỉ phản hồi bằng toast đã khai báo để bạn kiểm tra cú chạm. Giá trị của công tắc, lựa chọn và ô nhập được lưu trong `data/` để màn hình hiện lại đúng giá trị. Các ca thử KIT-* trong `docs/testing/final-checklist.md` (mục 5b, UIK-*) dùng ứng dụng này.
 

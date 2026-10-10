@@ -7,34 +7,40 @@
 #include <QPainter>
 #include <QTimer>
 
+#include "copperui/tokens.h"
 #include "debug_log.h"
 #include "drawer_logic.h"
 #include "nickel_fonts.h"
 #include "press_area.h"
 
-static const int DIALOG_WIDTH = 1000;
-static const int MENU_WIDTH = 760;
-static const int PADDING = 48;
-static const int MENU_SIDE_PADDING = 32;
-static const int SPACING = 24;
-static const int BUTTON_HEIGHT = 120;
-static const int MENU_ROW_HEIGHT = 120;
-static const int DIVIDER_HEIGHT = 1;
+// The dialog's width, text size and button border are "legacy" tokens until PlainDialog moves
+// to the dialog tokens (fix 2.8).
+static const int DIALOG_WIDTH = copperui::v1::LEGACY_DIALOG_WIDTH;
+static const int MENU_WIDTH = copperui::v1::MENU_WIDTH;
+static const int PADDING = copperui::v1::SPACE_DIALOG_PADDING;
+static const int MENU_SIDE_PADDING = copperui::v1::SPACE_MENU_SIDE;
+static const int SPACING = copperui::v1::RHYTHM;
+static const int BUTTON_HEIGHT = copperui::v1::BUTTON_HEIGHT;
+static const int MENU_ROW_HEIGHT = copperui::v1::TARGET_MIN;
+static const int DIVIDER_HEIGHT = copperui::v1::STROKE_HAIRLINE;
+static const int BOX_BORDER = copperui::v1::STROKE_BUTTON;
 
 // Menu look from Nickel's NickelTouchMenu.qss: 3 px black border, white box,
-// 1 px #666666 separators; the title row bold.
+// 1 px separators in the row line grey; the title row bold.
 static const char *const DIALOG_STYLE =
     "QWidget { font-family: @BODY_FAMILY@; }"
-    "QLabel { color: black; background: transparent; }"
-    "#plainDialogBox { background: white; border: 3px solid black; }"
-    "#plainDialogTitle { font-family: @TITLE_FAMILY@; font-size: 42px; font-weight: bold; }"
-    "#plainDialogText { font-size: 32px; }"
-    "#plainDialogButton { border: 2px solid black; background: white; }"
-    "#plainDialogButtonLabel { font-size: 32px; }"
-    "#plainMenuTitle { font-size: 34px; font-weight: bold; }"
-    "#plainMenuRow { background: white; }"
-    "#plainMenuRowLabel { font-size: 34px; }"
-    "#plainMenuDivider { background: #666666; }";
+    "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
+    "#plainDialogBox { background: " COPPERUI_GREY_PAPER_WHITE "; border: " COPPERUI_PX_STROKE_BUTTON " solid "
+    COPPERUI_GREY_INK_BLACK "; }"
+    "#plainDialogTitle { font-family: @TITLE_FAMILY@; font-size: " COPPERUI_PX_TYPE_DIALOG_TITLE_SIZE "; font-weight: bold; }"
+    "#plainDialogText { font-size: " COPPERUI_PX_LEGACY_DIALOG_TEXT_SIZE "; }"
+    "#plainDialogButton { border: " COPPERUI_PX_LEGACY_DIALOG_BUTTON_BORDER " solid " COPPERUI_GREY_INK_BLACK
+    "; background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#plainDialogButtonLabel { font-size: " COPPERUI_PX_LEGACY_DIALOG_TEXT_SIZE "; }"
+    "#plainMenuTitle { font-size: " COPPERUI_PX_TYPE_MENU_SIZE "; font-weight: bold; }"
+    "#plainMenuRow { background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#plainMenuRowLabel { font-size: " COPPERUI_PX_TYPE_MENU_SIZE "; }"
+    "#plainMenuDivider { background: " COPPERUI_GREY_LINE_ROW "; }";
 
 static QLabel *createLabel(const QString &text, const char *objectName, QWidget *parent)
 {
@@ -101,7 +107,7 @@ void PlainDialog::addMessageContent(const QString &title, const QString &text, c
 
 void PlainDialog::addMenuContent(const QString &title, const QList<DialogChoice> &choices)
 {
-    boxLayout->setContentsMargins(3, 3, 3, 3); // inside the 3 px border
+    boxLayout->setContentsMargins(BOX_BORDER, BOX_BORDER, BOX_BORDER, BOX_BORDER); // inside the border
     boxLayout->setSpacing(0);
     QLabel *titleRow = createLabel(title, "plainMenuTitle", box);
     titleRow->setFixedHeight(MENU_ROW_HEIGHT);

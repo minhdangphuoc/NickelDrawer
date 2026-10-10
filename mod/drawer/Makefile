@@ -8,6 +8,7 @@ REPO_ROOT       := $(abspath $(CURDIR)/../..)
 NICKELTC_IMAGE  ?= ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840
 OUTPUT_DIR      := $(REPO_ROOT)/build/mod
 NICKELHOOK_DIR  := ../../third_party/NickelHook
+COPPERUI_INCLUDE := ../../lib/copperui/include
 GENERATED_IN_VENDOR := nhplugin.json nhplugin.moc nhplugin.moc.o nh.o
 LIBRARY_NAME    := libnickeldrawer.so
 
@@ -24,7 +25,7 @@ override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar
                      model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc ../common/system_icon.cc \
                      painted_marks.cc item_widgets.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
-                     drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc ../common/nickel_fonts.cc \
+                     drawer_navigator.cc entry_row.cc screen_logic.cc text_meter.cc qr_encoder.cc ../common/nickel_fonts.cc \
                      screen_layout.cc screen_canvas.cc screen_view.cc field_editor.cc screen_session.cc \
                      navigation_stack.cc navigation.cc event_queue.cc picture_loader.cc tile_menu.cc \
                      more_row.cc tweaks_logic.cc tweaks_parser.cc tweaks_panel.cc tweaks_overlay.cc tweaks_session.cc \
@@ -37,7 +38,7 @@ override MOCS     += host_request_runner.h nickel_bridge.h appsctl_call.h model_
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
-override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common $(EXTRA_CPPFLAGS)
+override CPPFLAGS += -I$(NICKELHOOK_DIR) -I../common -I$(COPPERUI_INCLUDE) $(EXTRA_CPPFLAGS)
 
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
@@ -49,7 +50,7 @@ TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue
 # Other Qt-free units a test links besides its own (unit=dependency).
 TEST_LINKS  := tweaks_logic=drawer_logic
 TEST_BINARY := tests/unit_test.bin
-TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++
+TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -I$(COPPERUI_INCLUDE)
 
 .PHONY: docker-build docker-clean docker-test
 docker-build:

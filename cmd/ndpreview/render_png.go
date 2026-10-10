@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"sync"
 
 	xfont "golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -45,9 +46,11 @@ var fontPaths = map[string][]string{
 	},
 }
 
-// fontSet holds the parsed fonts and a cache of faces per family and size.
+// fontSet holds the parsed fonts and a cache of faces per family and size. It is also the
+// textMeasurer of layout, so lines break where the rendered glyphs really end.
 type fontSet struct {
 	fonts map[string]*opentype.Font
+	mutex sync.Mutex // the preview server lays out screens from several requests
 	faces map[string]xfont.Face
 }
 
@@ -110,6 +113,8 @@ func parseFontFile(path string) (*opentype.Font, error) {
 func (f *fontSet) hasText() bool { return f != nil && f.fonts[familySans] != nil }
 
 func (f *fontSet) face(family string, size int) (xfont.Face, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 	key := fmt.Sprintf("%s/%d", family, size)
 	if face, cached := f.faces[key]; cached {
 		return face, nil

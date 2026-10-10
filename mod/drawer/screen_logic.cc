@@ -4,31 +4,8 @@
 
 namespace ScreenLogic {
 
-// Average glyph advance as a fraction of the font size (metrics.go advanceByFamily).
-static const double SANS_ADVANCE = 0.56;
-static const double SERIF_ADVANCE = 0.52;
-static const double MONO_ADVANCE = 0.6;
-
 static const char ELLIPSIS[] = "\xE2\x80\xA6"; // U+2026
-
-static double advanceOf(Family family)
-{
-    switch (family) {
-    case FAMILY_SERIF:
-        return SERIF_ADVANCE;
-    case FAMILY_MONO:
-        return MONO_ADVANCE;
-    case FAMILY_SANS:
-        break;
-    }
-    return SANS_ADVANCE;
-}
-
-int charsPerLine(int width, int size, Family family)
-{
-    int perLine = (int)((double)width / ((double)size * advanceOf(family)));
-    return perLine < 1 ? 1 : perLine;
-}
+static const int ELLIPSIS_BYTES = 3;
 
 // ---- UTF-8 ----
 
@@ -113,13 +90,6 @@ static void append(Writer *writer, const char *bytes, int length)
     writer->out[writer->used] = '\0';
 }
 
-// The line being built: [start, start + length) of one paragraph after word joining.
-struct LineBuilder {
-    char buffer[2048];
-    int length;
-    int codePoints;
-};
-
 static void emitLine(Writer *writer, const char *bytes, int length)
 {
     if (writer->lines > 0) {
@@ -129,62 +99,122 @@ static void emitLine(Writer *writer, const char *bytes, int length)
     writer->lines++;
 }
 
-// layout.go appendLine: an empty line is never emitted.
+// ---- Measured text (the algorithm of cmd/ndpreview/textfit.go; vectors in lib/copperui/tests) ----
+
+// What decides whether a run fits: the width limit, the face and the font's measuring function.
+struct Fit {
+    int width;
+    TextRun run;
+    TextMeter meter;
+};
+
+static bool fits(const Fit &fit, const char *text, int bytes)
+{
+    return fit.meter.measure(fit.meter.context, text, bytes, fit.run) <= fit.width;
+}
+
+// Largest count in [low, high] for which isFitting(count) holds, or low when none does: the
+// same binary search as textfit.go largestFitting, so both give the same cut on any font.
+template <typename Test> static int largestFitting(int low, int high, Test isFitting)
+{
+    while (low < high) {
+        int middle = (low + high + 1) / 2;
+        if (isFitting(middle)) {
+            low = middle;
+        } else {
+            high = middle - 1;
+        }
+    }
+    return low;
+}
+
+// The longest prefix, in code points, of a word that does not fit; at least 1, at most count - 1.
+struct PrefixFits {
+    const Fit *fit;
+    const char *word;
+    int length;
+    bool operator()(int count) const
+    {
+        return fits(*fit, word, advanceCodePoints(word, 0, length, count));
+    }
+};
+
+// The line being built: one paragraph's words joined by single spaces.
+struct LineBuilder {
+    char buffer[2048];
+    int length;
+};
+
+// textfit.go appendLine: an empty line is never emitted.
 static void flushLine(Writer *writer, LineBuilder *line)
 {
     if (line->length > 0) {
         emitLine(writer, line->buffer, line->length);
     }
     line->length = 0;
-    line->codePoints = 0;
 }
 
-static void setLine(LineBuilder *line, const char *bytes, int length, int codePoints)
+static void setLine(LineBuilder *line, const char *bytes, int length)
 {
     int kept = length < (int)sizeof(line->buffer) ? length : (int)sizeof(line->buffer) - 1;
     memcpy(line->buffer, bytes, kept);
     line->length = kept;
-    line->codePoints = codePoints;
 }
 
-static void addWord(LineBuilder *line, const char *bytes, int length, int codePoints)
+// Appends " word"; false (line unchanged) when it cannot fit the buffer at all.
+static bool addWord(LineBuilder *line, const char *bytes, int length)
 {
     if (line->length + 1 + length >= (int)sizeof(line->buffer)) {
-        return; // longer than any line that fits on the screen
+        return false; // longer than any line that fits on the screen
     }
     line->buffer[line->length++] = ' ';
     memcpy(line->buffer + line->length, bytes, length);
     line->length += length;
-    line->codePoints += 1 + codePoints;
+    return true;
 }
 
-// layout.go wrapParagraph for one word.
-static void placeWord(Writer *writer, LineBuilder *line, const char *word, int length, int perLine)
+// textfit.go cutLongWord: emits the full lines of a word wider than the limit and leaves its
+// last piece open as the current line.
+static void cutLongWord(Writer *writer, LineBuilder *line, const Fit &fit, const char *word, int length)
 {
     int codePoints = codePointCount(word, length);
-    while (codePoints > perLine) {
-        flushLine(writer, line);
-        int cut = advanceCodePoints(word, 0, length, perLine);
+    while (codePoints > 1 && !fits(fit, word, length)) {
+        PrefixFits test = {&fit, word, length};
+        int count = largestFitting(1, codePoints - 1, test);
+        int cut = advanceCodePoints(word, 0, length, count);
         emitLine(writer, word, cut);
         word += cut;
         length -= cut;
-        codePoints -= perLine;
+        codePoints -= count;
     }
-    if (line->length == 0) {
-        setLine(line, word, length, codePoints);
-    } else if (line->codePoints + 1 + codePoints <= perLine) {
-        addWord(line, word, length, codePoints);
-    } else {
-        flushLine(writer, line);
-        setLine(line, word, length, codePoints);
-    }
+    setLine(line, word, length);
 }
 
-static void wrapParagraph(Writer *writer, const char *text, int start, int end, int perLine)
+// textfit.go wrapParagraph for one word.
+static void placeWord(Writer *writer, LineBuilder *line, const Fit &fit, const char *word, int length)
+{
+    if (codePointCount(word, length) > 1 && !fits(fit, word, length)) {
+        flushLine(writer, line);
+        cutLongWord(writer, line, fit, word, length);
+        return;
+    }
+    if (line->length == 0) {
+        setLine(line, word, length);
+        return;
+    }
+    int lengthBefore = line->length;
+    if (addWord(line, word, length) && fits(fit, line->buffer, line->length)) {
+        return;
+    }
+    line->length = lengthBefore;
+    flushLine(writer, line);
+    setLine(line, word, length);
+}
+
+static void wrapParagraph(Writer *writer, const Fit &fit, const char *text, int start, int end)
 {
     LineBuilder line;
     line.length = 0;
-    line.codePoints = 0;
     int position = start;
     while (position < end) {
         int step = stepAt(text, position, end);
@@ -200,35 +230,116 @@ static void wrapParagraph(Writer *writer, const char *text, int start, int end, 
             }
             position += step;
         }
-        placeWord(writer, &line, text + wordStart, position - wordStart, perLine);
+        placeWord(writer, &line, fit, text + wordStart, position - wordStart);
     }
     flushLine(writer, &line);
 }
 
-int wrapText(const char *utf8, int width, int size, Family family, char *out, int outSize)
+static int wrapAll(const Fit &fit, const char *utf8, char *out, int outSize)
 {
     Writer writer = {out, outSize, 0, 0};
-    if (outSize > 0) {
-        out[0] = '\0';
-    }
-    if (!utf8 || outSize <= 0) {
-        return 0;
-    }
-    int perLine = charsPerLine(width, size, family);
     int end = (int)strlen(utf8);
     int start = 0;
     for (int position = 0; position <= end; position++) {
         if (position == end || utf8[position] == '\n') {
-            wrapParagraph(&writer, utf8, start, position, perLine);
+            wrapParagraph(&writer, fit, utf8, start, position);
             start = position + 1;
         }
     }
     return writer.lines;
 }
 
-void elideText(const char *utf8, int width, int size, Family family, bool isMiddle, char *out, int outSize)
+// ---- Eliding ----
+
+static const int MAX_ELIDE_BYTES = 1024; // a longer text is cut here first; no UI string comes close
+
+struct ElideSource {
+    const char *text;
+    int end;
+    int count;
+    bool isMiddle;
+};
+
+// Byte offset after the last non-space code point of text[0, end).
+static int trimmedEnd(const char *text, int end)
+{
+    int kept = 0;
+    for (int position = 0; position < end;) {
+        int step = stepAt(text, position, end);
+        position += step;
+        if (!isSpace(decodeAt(text, position - step, step))) {
+            kept = position;
+        }
+    }
+    return kept;
+}
+
+// textfit.go elidedCandidate: kept code points as a prefix + "…", or half from each end around
+// it. buffer holds MAX_ELIDE_BYTES + 8 bytes: the text, "…" and the NUL.
+static int buildCandidate(const ElideSource &source, int kept, char *buffer)
+{
+    int used = 0;
+    if (source.isMiddle) {
+        int head = kept / 2;
+        int tail = kept - head;
+        int headBytes = advanceCodePoints(source.text, 0, source.end, head);
+        int tailStart = advanceCodePoints(source.text, 0, source.end, source.count - tail);
+        memcpy(buffer, source.text, headBytes);
+        used = headBytes;
+        memcpy(buffer + used, ELLIPSIS, ELLIPSIS_BYTES);
+        used += ELLIPSIS_BYTES;
+        memcpy(buffer + used, source.text + tailStart, source.end - tailStart);
+        used += source.end - tailStart;
+    } else {
+        used = trimmedEnd(source.text, advanceCodePoints(source.text, 0, source.end, kept));
+        memcpy(buffer, source.text, used);
+        memcpy(buffer + used, ELLIPSIS, ELLIPSIS_BYTES);
+        used += ELLIPSIS_BYTES;
+    }
+    buffer[used] = '\0';
+    return used;
+}
+
+struct CandidateFits {
+    const Fit *fit;
+    const ElideSource *source;
+    bool operator()(int kept) const
+    {
+        char buffer[MAX_ELIDE_BYTES + 8];
+        int used = buildCandidate(*source, kept, buffer);
+        return fits(*fit, buffer, used);
+    }
+};
+
+static void copyOut(const char *bytes, int length, char *out, int outSize)
 {
     Writer writer = {out, outSize, 0, 0};
+    append(&writer, bytes, length);
+}
+
+static void elide(const Fit &fit, const char *utf8, bool isMiddle, char *out, int outSize)
+{
+    int end = (int)strlen(utf8);
+    if (end > MAX_ELIDE_BYTES) {
+        end = MAX_ELIDE_BYTES;
+        while (end > 0 && ((unsigned char)utf8[end] & 0xC0) == 0x80) {
+            end--; // never cut inside a code point
+        }
+    } else if (fits(fit, utf8, end)) {
+        copyOut(utf8, end, out, outSize);
+        return;
+    }
+    ElideSource source = {utf8, end, codePointCount(utf8, end), isMiddle};
+    CandidateFits test = {&fit, &source};
+    int kept = largestFitting(0, source.count > 0 ? source.count - 1 : 0, test);
+    char buffer[MAX_ELIDE_BYTES + 8];
+    int used = buildCandidate(source, kept, buffer);
+    copyOut(buffer, used, out, outSize);
+}
+
+void elideText(const char *utf8, int width, const TextRun &run, const TextMeter &meter, bool isMiddle, char *out,
+               int outSize)
+{
     if (outSize <= 0) {
         return;
     }
@@ -236,28 +347,56 @@ void elideText(const char *utf8, int width, int size, Family family, bool isMidd
     if (!utf8) {
         return;
     }
-    int end = (int)strlen(utf8);
-    int count = codePointCount(utf8, end);
-    int limit = charsPerLine(width, size, family);
-    if (count <= limit) {
-        append(&writer, utf8, end);
-        return;
+    Fit fit = {width, run, meter};
+    elide(fit, utf8, isMiddle, out, outSize);
+}
+
+// ---- Wrapping ----
+
+// Joins the lines from the one at tailStart (a byte offset into out) with spaces and elides
+// the result at the end: the last line of a limited wrap.
+static void elideTail(const Fit &fit, char *out, int outSize, int tailStart)
+{
+    char tail[MAX_ELIDE_BYTES + 8];
+    int length = (int)strlen(out + tailStart);
+    if (length > MAX_ELIDE_BYTES) {
+        length = MAX_ELIDE_BYTES;
     }
-    if (limit < 3) {
-        append(&writer, utf8, advanceCodePoints(utf8, 0, end, limit));
-        return;
+    memcpy(tail, out + tailStart, length);
+    tail[length] = '\0';
+    for (int i = 0; i < length; i++) {
+        if (tail[i] == '\n') {
+            tail[i] = ' ';
+        }
     }
-    if (!isMiddle) {
-        append(&writer, utf8, advanceCodePoints(utf8, 0, end, limit - 1));
-        append(&writer, ELLIPSIS, 3);
-        return;
+    elide(fit, tail, false, out + tailStart, outSize - tailStart);
+}
+
+int wrapText(const char *utf8, int width, const TextRun &run, const TextMeter &meter, int maxLines, char *out,
+             int outSize)
+{
+    if (outSize > 0) {
+        out[0] = '\0';
     }
-    int head = (limit - 1) / 2;
-    int tail = limit - 1 - head;
-    append(&writer, utf8, advanceCodePoints(utf8, 0, end, head));
-    append(&writer, ELLIPSIS, 3);
-    int tailStart = advanceCodePoints(utf8, 0, end, count - tail);
-    append(&writer, utf8 + tailStart, end - tailStart);
+    if (!utf8 || outSize <= 0) {
+        return 0;
+    }
+    Fit fit = {width, run, meter};
+    int lines = wrapAll(fit, utf8, out, outSize);
+    if (maxLines <= 0 || lines <= maxLines) {
+        return lines;
+    }
+    int tailStart = 0;
+    for (int line = 0; line < maxLines - 1; line++) {
+        while (out[tailStart] != '\n' && out[tailStart] != '\0') {
+            tailStart++;
+        }
+        if (out[tailStart] == '\n') {
+            tailStart++;
+        }
+    }
+    elideTail(fit, out, outSize, tailStart);
+    return maxLines;
 }
 
 // ---- Blocks and pages ----

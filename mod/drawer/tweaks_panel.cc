@@ -13,25 +13,26 @@
 #include "nickel_fonts.h"
 #include "tweaks_logic.h"
 
-// Device pixels (Storm class; Nickel's More rows are 120-130 px).
-static const int CELL_HEIGHT = 128;
-static const int DIVIDER_WIDTH = 1;
-static const int CELL_SIDE_PADDING = 32;
-static const int MESSAGE_HEIGHT = 160;
-static const int PAGE_LABEL_HEIGHT = 64;
+// Device pixels (Storm class; Nickel's More rows are 120-130 px). The modal's own metrics are
+// "legacy" tokens until it moves to the dialog tokens (fix 3.2).
+static const int CELL_HEIGHT = copperui::v1::LEGACY_TWEAKS_CELL_HEIGHT;
+static const int DIVIDER_WIDTH = copperui::v1::STROKE_HAIRLINE;
+static const int CELL_SIDE_PADDING = copperui::v1::LEGACY_TWEAKS_CELL_PADDING;
+static const int MESSAGE_HEIGHT = copperui::v1::LEGACY_TWEAKS_MESSAGE_HEIGHT;
+static const int PAGE_LABEL_HEIGHT = copperui::v1::LEGACY_TWEAKS_PAGE_LABEL_HEIGHT;
 
 // Label: Georgia italic like Settings' rows (MenuTextItem[italics=true] in
-// NickelTouchMenu.qss, N3ButtonLabel at 34 px on Storm). Rule and dividers:
-// #666666, Nickel's TouchMenu::separator and Wishlist's divider.
+// NickelTouchMenu.qss, N3ButtonLabel at 34 px on Storm). Rule and dividers: the row line
+// grey (Nickel's TouchMenu::separator and Wishlist's divider).
 static const char *const PANEL_STYLE =
-    "#tweaksPanel { background: white; }"
-    "QLabel { color: black; background: transparent; }"
-    "#tweaksRule { background: #666666; }"
-    "#tweakLabel { font-family: @TITLE_FAMILY@; font-style: italic; font-size: 34px; }"
-    "#tweakValue { font-family: @BODY_FAMILY@; font-size: 26px; }"
-    "#tweaksMessage { font-family: @BODY_FAMILY@; font-size: 30px; }"
-    "#tweaksPage { font-family: @BODY_FAMILY@; font-size: 26px; }";
-static const QColor DIVIDER_COLOR(0x66, 0x66, 0x66);
+    "#tweaksPanel { background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
+    "#tweaksRule { background: " COPPERUI_GREY_LINE_ROW "; }"
+    "#tweakLabel { font-family: @TITLE_FAMILY@; font-style: italic; font-size: " COPPERUI_PX_LEGACY_TWEAKS_LABEL_SIZE "; }"
+    "#tweakValue { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_VALUE_SIZE "; }"
+    "#tweaksMessage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_MESSAGE_SIZE "; }"
+    "#tweaksPage { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_VALUE_SIZE "; }";
+static const QColor DIVIDER_COLOR(copperui::v1::LINE_ROW, copperui::v1::LINE_ROW, copperui::v1::LINE_ROW);
 
 static QString valueText(const TweakItem &item)
 {

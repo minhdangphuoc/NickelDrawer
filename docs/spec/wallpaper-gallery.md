@@ -43,7 +43,7 @@ value** (the picture id); see §6.
   Components above the grid (summary, notices) repeat on every grid page.
 - Tap a tile: push `viewer` at that picture. Long-press: Nickel's popup menu (title row: the picture's
   label) with **Đặt làm hình nền**, **Xem**, **Thông tin** (name, size, date added; a plain dialog,
-  tap outside closes), **Xoá khỏi Hình nền…** (confirm first, as in §2.2).
+  tap outside closes), **Xóa khỏi Hình nền…** (confirm first, as in §2.2).
 - Live: refreshed every 5 s while visible and idle; changed tiles repaint with a partial update only.
 
 ### 2.2 viewer: Picture viewer (like Kobo's reader)
@@ -53,7 +53,7 @@ value** (the picture id); see §6.
 - Chrome (shown by default):
   - header `← 3 / 12` (the mod builds the title from the position; no localization needed), status at
     the right `Đang dùng ✓` only when the shown picture is the current wallpaper;
-  - bottom bar, one row 120 px high: secondary `Xoá…` (360 px) at the left, primary
+  - bottom bar, one row 120 px high: secondary `Xóa…` (360 px) at the left, primary
     `Đặt làm hình nền` filling the rest (24 px gap). When the picture is already current the primary
     is disabled and reads `Đang dùng`.
 - Tap zones: left third = previous picture, right third = next picture, centre = toggle the chrome.
@@ -72,8 +72,8 @@ value** (the picture id); see §6.
   same viewer; a newly pushed viewer starts with the chrome shown.
 - `Đặt làm hình nền`: event `set-current` with the picture id; toast `Đã đặt làm hình nền`; the
   screen reloads, so the status and the disabled primary update. No dialog.
-- `Xoá…`: confirm dialog, title `Xoá ảnh này?`, text `Ảnh sẽ không còn trong Hình nền. Ảnh gốc trong
-  thư mục Pictures vẫn được giữ.`, buttons [Huỷ] [Xoá] (destructive: only the buttons answer). On OK,
+- `Xóa…`: confirm dialog, title `Xóa ảnh này?`, text `Ảnh sẽ không còn trong Hình nền. Ảnh gốc trong
+  thư mục Pictures vẫn được giữ.`, buttons [Hủy] [Xóa] (destructive: only the buttons answer). On OK,
   event `remove` with the id; afterwards the next picture is shown (the previous one when it was the
   last), or the viewer pops back to the gallery when none is left.
 - Memory: one full-size picture at a time (`data/images/NNNN.png`, decoded scaled to the target rect);
@@ -191,7 +191,7 @@ state overlay. The reply echoes `"value": "<v>"` (omitted without `--value`).
  "tap": {"push": "viewer"},
  "menu": [{"label": "Đặt làm hình nền", "action": "set-current"}, {"label": "Xem", "push": "viewer"},
           {"label": "Thông tin", "info": true},
-          {"label": "Xoá khỏi Hình nền…", "action": "remove", "confirm": {"title": "…", "text": "…", "ok": "Xoá", "cancel": "Huỷ"}}],
+          {"label": "Xóa khỏi Hình nền…", "action": "remove", "confirm": {"title": "…", "text": "…", "ok": "Xóa", "cancel": "Hủy"}}],
  "pending": 0,
  "empty": {"icon": "picture", "title": "Chưa có ảnh", "text": "…", "button": "Nhập ảnh", "action": "import"}}
 ```
@@ -201,7 +201,7 @@ state overlay. The reply echoes `"value": "<v>"` (omitted without `--value`).
  "tiles": [{"id": "0003", "image": "/mnt/…/data/images/0003.png", "label": "nui-trang", "current": true}],
  "value": "0003", "current_status": "Đang dùng ✓",
  "primary": {"label": "Đặt làm hình nền", "label_current": "Đang dùng", "action": "set-current"},
- "secondary": {"label": "Xoá…", "action": "remove", "confirm": {"title": "…", "text": "…", "ok": "Xoá", "cancel": "Huỷ"}}}
+ "secondary": {"label": "Xóa…", "action": "remove", "confirm": {"title": "…", "text": "…", "ok": "Xóa", "cancel": "Hủy"}}}
 ```
 
 - Radio: `options` stays `[[id, label], …]`; new parallel `option_details` `["…", "…"]` when any

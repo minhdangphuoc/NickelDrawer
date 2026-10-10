@@ -30,7 +30,7 @@ static QString outcomeFailure(AppsctlCall::Outcome outcome)
     case AppsctlCall::OUTCOME_EXITED:
         break;
     }
-    return FallbackStrings::text(FallbackStrings::APPSCTL_FAILED).replace(QStringLiteral("{n}"), QStringLiteral("-"));
+    return FallbackStrings::text(FallbackStrings::APPSCTL_FAILED);
 }
 
 static ActionResult failedResult(const QString &failure)
@@ -200,9 +200,8 @@ bool ModelClient::replyOf(AppsctlCall *call, QByteArray *json, QString *failure)
     case DrawerLogic::EXIT_UNEXPECTED:
         break;
     }
-    nh_log("appsctl exited %d", call->exitCode());
-    *failure = FallbackStrings::text(FallbackStrings::APPSCTL_FAILED)
-                   .replace(QStringLiteral("{n}"), QString::number(call->exitCode()));
+    nh_log("appsctl exited %d", call->exitCode()); // the code is for the log, not for the user
+    *failure = FallbackStrings::text(FallbackStrings::APPSCTL_FAILED);
     return false;
 }
 

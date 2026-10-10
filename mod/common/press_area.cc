@@ -23,7 +23,7 @@ static const Qt::WidgetAttribute REPAINT_NOW_ATTRIBUTE = static_cast<Qt::WidgetA
 
 // Icon buttons are 120 px tap targets around a ~44-64 px glyph; the circle
 // leaves this margin inside the target, like Nickel's *_hit icons.
-static const int CIRCLE_MARGIN = 16;
+static const int CIRCLE_MARGIN = copperui::v1::PRESSED_CIRCLE_MARGIN;
 // A finger rolls a few pixels while pressing; only a real drag cancels.
 static const int MOVE_TOLERANCE = 24;
 

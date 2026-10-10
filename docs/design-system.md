@@ -2,7 +2,7 @@
 
 CopperUI is the design system of NickelDrawer and of software built on it: this document (tokens, states, component specs), the token file `copperui.tokens.json` and the Qt 5.2 Widgets library in `lib/copperui/` (see `docs/DECISIONS.md`).
 
-Status: approved on the design canvas, 10 Oct 2026. It replaces the sizes in `docs/spec/ui-kit.md` §2 and becomes the source of the constants in `mod/drawer/screen_logic.h` and `cmd/ndpreview/metrics.go` (both must change together; a test keeps them equal). The `ui.json` contract (`docs/spec/ui-json.md`) does not change except where §6 says "schema".
+Status: approved on the design canvas, 10 Oct 2026. It replaces the sizes in `docs/spec/ui-kit.md` §2. The numbers live in `lib/copperui/tokens/copperui.tokens.json`; `make tokens` generates `lib/copperui/include/copperui/tokens.h` (used by `mod/drawer/screen_logic.h`), `internal/copperui/tokens.go` (used by `cmd/ndpreview/metrics.go`) and the table `docs/copperui-tokens.md`, and `make check` fails when one of them is stale. The `ui.json` contract (`docs/spec/ui-json.md`) does not change except where §6 says "schema".
 
 Every number is a device pixel on the Kobo Libra 2 panel: 1264 × 1680, 300 ppi, 1 mm = 11.8 px, 16 grey levels. Other models with the same panel (Libra H2O, Libra Colour) get the same numbers; the drawer refuses any other panel (`mod/drawer/device_gate.cc`).
 
@@ -20,6 +20,8 @@ Every number is a device pixel on the Kobo Libra 2 panel: 1264 × 1680, 300 ppi,
 10. **Secrets stay off the Kobo.** Long input and tokens go through phone pairing; the Kobo shows a QR, an address and a short code only.
 
 ## 2. Tokens
+
+The token file is the source of the numbers. Where the tables below and the "Resolved" table at the end differ (greys, line heights, drawer type sizes), the token file follows "Resolved"; the generated table `docs/copperui-tokens.md` lists every value with its C++ and Go constant.
 
 ### 2.1 Page metrics
 
@@ -129,7 +131,18 @@ Pressed look of an icon button: Nickel's `_hit` image, or the Tabler icon in whi
 | Debounce | 400 ms per target; an action is disabled while pending unless `async`. |
 | Page keys | Forward / back = next / previous page, following Nickel's swap setting. Ignored while a dialog, menu or the keyboard is open; a key closes an open menu instead. |
 
-### 2.8 Refresh budget
+### 2.8 Text fit
+
+Widths are measured with the real font, never estimated (the mod with `QFontMetrics` of Nickel's family, `ndpreview` with the font it renders with). One algorithm, implemented in `mod/drawer/screen_logic.cc` and `cmd/ndpreview/textfit.go` and pinned by the vectors in `lib/copperui/tests/text-vectors.json`:
+
+| Text | Rule |
+|---|---|
+| Paragraph (text, notice, dialog text) | Wraps to any number of lines. Paragraphs split at line breaks, words at Unicode spaces; a word wider than the line is cut into the longest pieces that fit. |
+| Button label | At most `button.maxLines` (2) centred lines; the rest joins the second line and is elided at the end. The button grows from 120 to 168 px for two lines. |
+| Fixed control (row, key, value, header, viewer button, grid name second line) | One line: the longest prefix that fits together with "…" (file names keep both ends). |
+| Section label | Uppercased first, then elided (capitals are wider). |
+
+### 2.9 Refresh budget
 
 | Event | Refresh |
 |---|---|

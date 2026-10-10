@@ -5,6 +5,8 @@
 #include <QRect>
 #include <QWidget>
 
+#include "copperui/tokens.h"
+
 class PressOverlay;
 class QGesture;
 class QGestureEvent;
@@ -51,8 +53,8 @@ public:
     typedef bool (*TapPositionProvider)(QGesture *gesture, QPoint *screenPosition);
     static void setTapPositionProvider(TapPositionProvider provider);
 
-    static const int LONG_PRESS_MILLISECONDS = 600;
-    static const int DEBOUNCE_MILLISECONDS = 400;
+    static const int LONG_PRESS_MILLISECONDS = copperui::v1::PRESSED_LONG_PRESS;
+    static const int DEBOUNCE_MILLISECONDS = copperui::v1::PRESSED_DEBOUNCE;
 
     enum PressHighlight {
         HIGHLIGHT_INVERT,       // rows, tiles, dialog buttons: the area inverted (Nickel's More rows)

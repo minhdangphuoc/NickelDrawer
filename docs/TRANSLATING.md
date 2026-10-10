@@ -14,6 +14,8 @@ Language codes follow the Kobo setting (`CurrentLocale` in `Kobo eReader.conf`):
 8. Check your work: `appsctl validate --apps-dir apps` (run `make build` first and use `build/appsctl-host`). It reports unknown keys, mismatched placeholders and labels that break the rules.
 9. Try it: `build/appsctl-host drawer tweaks --locale fr --koboapps-dir host --conf /tmp/x.conf` and read the labels.
 
-Not covered by these files: the few fixed strings of the native mod itself (More-tab row, "Cancel", "Remove", the Wi-Fi and error messages, Info dialog labels) are compiled in, English and Vietnamese only (`mod/drawer/fallback_strings.cc`). A new language needs a small code change there plus a rebuilt mod; everything else, including all app, screen and Tweaks text, comes from the JSON files above.
+The fixed strings of the native mod itself (More-tab row, "Cancel", "Remove", the Wi-Fi and error messages, Info dialog labels) are the `mod.*` keys of the same `host/locales/<lang>.json` files, so step 2 covers them. The mod reads `/mnt/onboard/.adds/koboapps/locales/<lang>.json` (exact locale, then language, then English) when the drawer opens; no rebuild is needed. A short English and Vietnamese table compiled into the mod (`mod/drawer/fallback_strings.cc`) is only the last resort when a file or a key is missing; `go test ./internal/i18n` keeps it equal to `en.json` and `vi.json`, so change a `mod.*` text in all three places. Keep these texts in plain words: no tool names, no error codes (the code goes to the log).
+
+Vietnamese uses the new tone-mark style everywhere (Xóa, Hủy, Tùy: the mark on the main vowel), in NFC; a test fails on the old placement (xoá, huỷ, tuỳ).
 
 After installing, change the Kobo's language; the drawer picks it up the next time it opens.

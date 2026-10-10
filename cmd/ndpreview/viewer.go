@@ -124,7 +124,8 @@ type buttonSpec struct {
 }
 
 func barButton(x, y, width int, spec buttonSpec) []Item {
-	lines := wrapText(spec.label, width-2*rhythm, bodySize, familySans)
+	// The bar is one button high: a long label is elided, as in the mod.
+	lines := []string{elide(spec.label, width-2*rhythm, bold(bodySize, familySans), false)}
 	event := ""
 	if spec.action != "" && spec.confirmPath == "" {
 		event = eventLine(map[string]any{"event": "action", "name": spec.action, "value": spec.value})

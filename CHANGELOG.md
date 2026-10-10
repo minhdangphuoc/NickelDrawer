@@ -4,8 +4,18 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- **CopperUI tokens** (`lib/copperui/`): one token file for every size, grey, line height and type setting; `make tokens` generates the C++ header, the Go constants and `docs/copperui-tokens.md`, and `make check` fails when one is stale. `mod/drawer` and `ndpreview` read the same numbers.
+- The drawer's own texts are now `mod.*` keys in `host/locales/<lang>.json`, read when the drawer opens (exact locale, language, English): a new language needs no rebuild. The compiled English and Vietnamese table remains as the last resort.
+
 ### Changed
 
+- Greys sit on the panel's 16-level grid (muted 85, dim 136, notice fill 238); row and menu dividers are Nickel's row grey instead of black, the header divider is Nickel's own, and the drawer's status, section label, hint and pager are muted at the scale sizes (32 / 28 / 32 / 32).
+- Line heights are at least 1.4 times the size (caption 46, heading 74, dialog title 60, grid name 46, section 44) so stacked Vietnamese diacritics do not clip.
+- Text wraps and elides by measured width in the real font (drawer, app screens and `ndpreview`) instead of an average-width guess: bold labels are no longer cut early, buttons keep at most two centred lines.
+- Drawer error messages no longer show tool names or exit codes ("The app drawer hit a problem. Try again."); the code goes to the log.
+- Vietnamese uses the new tone-mark style everywhere (Xóa, Hủy, Tùy).
 - The native drawer now runs only on models with the tested 1264×1680 screen (Libra 2, Libra H2O, Libra Colour). It reads the model from the device id in `.kobo/version`, checks the live screen size, and on any other model stays off with one "does not support this model yet" toast; the firmware check still applies. New test flag `.adds/nickeldrawer/test-unknown-model`.
 
 ## [1.0.0-beta.1] - 2026-10-10

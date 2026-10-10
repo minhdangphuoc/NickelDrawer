@@ -527,7 +527,7 @@ If `ready` does not arrive within 5 s (configurable `app.json: backend.ready_tim
 | `{"append":{"received":["Nhà Giả Kim.epub","1,2 MB"]}}` | Append one item |
 | `{"remove":{"received":0}}`, `{"clear":["received"]}` | Remove/clear |
 | `{"toast":"Đã nhận 1 sách","duration":3000}` | Toast (rate-limited) |
-| `{"confirm":{"id":3,"title":"Xoá 2 sách trùng?","text":"…","ok":"Xoá","cancel":"Huỷ"}}` | Ask; answer comes as `event:confirm` |
+| `{"confirm":{"id":3,"title":"Xóa 2 sách trùng?","text":"…","ok":"Xóa","cancel":"Hủy"}}` | Ask; answer comes as `event:confirm` |
 | `{"request":"wifi_on"}` / `{"request":"rescan_library","paths":["/mnt/onboard/Books"]}` / `{"request":"sleep_inhibit","ms":600000}` / `{"request":"open","screen":"done"}` / `{"request":"back"}` | Host services; each answered by an `event` |
 | `{"status":"Lần cuối: 08/10 20:15"}` | One-line status for the drawer tile (also the only line read by the `status` command mode) |
 | `{"log":"…","level":"info"}` | Goes to the app log, not the screen |

@@ -9,13 +9,19 @@ DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 APPS_DIR = $(DIST_ONBOARD)/.adds/apps
 
-.PHONY: check build dist release sync-embedded schema golden-test shellcheck shellcheck-docker clean
+.PHONY: check build dist release sync-embedded tokens schema golden-test shellcheck shellcheck-docker clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
 sync-embedded:
 	@cmp -s host/locales/en.json cmd/appsctl/embedded/en.json || cp host/locales/en.json cmd/appsctl/embedded/en.json
 	@cmp -s spec/release-ed25519.pub internal/release/release-ed25519.pub || cp spec/release-ed25519.pub internal/release/release-ed25519.pub
+
+# CopperUI: lib/copperui/tokens/copperui.tokens.json (and the shared text vectors) generate the C++
+# header, the Go constants, the token table in docs/ and the mod's test vectors. `make check`
+# fails when any of them is stale.
+tokens:
+	go run ./cmd/copperui-tokens
 
 # Rewrites spec/ui.schema.json from the component registry in internal/uikit.
 schema:
@@ -27,6 +33,7 @@ golden-test:
 	go test ./cmd/appsctl -run Golden
 
 check: sync-embedded
+	go run ./cmd/copperui-tokens -check
 	@unformatted=$$(gofmt -l cmd internal); \
 	if [ -n "$$unformatted" ]; then echo "gofmt needed:"; echo "$$unformatted"; exit 1; fi
 	go vet ./...

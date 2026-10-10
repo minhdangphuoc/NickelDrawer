@@ -24,12 +24,13 @@ static_assert(HEADER_HEIGHT == PageHeader::ROW_HEIGHT + PageHeader::DIVIDER_HEIG
               "screen_logic.h HEADER_HEIGHT must match PageHeader");
 
 // The header row's texts at the right, in Nickel's UI sans (never generic
-// families: no Vietnamese). Sizes and greys are cmd/ndpreview's (layout.go).
+// families: no Vietnamese). Sizes and greys are the CopperUI tokens: the status is muted.
 static const char *const HEADER_SIDE_STYLE =
-    "#screenHeaderStatus { font-family: @BODY_FAMILY@; font-size: 32px; color: #404040; background: white; }"
-    "#screenHeaderAction QLabel { font-family: @BODY_FAMILY@; font-size: 32px; color: black;"
-    " text-decoration: underline; background: white; }"
-    "#screenHeaderAction { background: white; }";
+    "#screenHeaderStatus { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_HEADER_STATUS_SIZE
+    "; color: " COPPERUI_GREY_INK_MUTED "; background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#screenHeaderAction QLabel { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_HEADER_STATUS_SIZE
+    "; color: " COPPERUI_GREY_INK_BLACK "; text-decoration: underline; background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#screenHeaderAction { background: " COPPERUI_GREY_PAPER_WHITE "; }";
 
 // ---- Header action ----
 

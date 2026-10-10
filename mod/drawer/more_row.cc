@@ -6,6 +6,7 @@
 
 #include <NickelHook.h>
 
+#include "copperui/tokens.h"
 #include "debug_log.h"
 #include "nickel_bridge.h"
 
@@ -23,7 +24,7 @@ static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout, const 
     return anchorIndex + 1;
 }
 
-static const int ROW_ICON_SIDE = 50; // Nickel's More icons on the Libra 2 class (beta_features.png)
+static const int ROW_ICON_SIDE = copperui::v1::ICON_MORE_ROW; // Nickel's More icons on the Libra 2 class (beta_features.png)
 
 // QPixmap reads the whole file and closes it before returning: nothing stays
 // open on /mnt/onboard (USB mass storage must be able to take it).

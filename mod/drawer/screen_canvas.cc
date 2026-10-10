@@ -16,6 +16,7 @@
 #include "open_popups.h"
 #include "picture_loader.h"
 #include "system_icon.h"
+#include "text_meter.h"
 
 using namespace ScreenLogic;
 
@@ -561,27 +562,13 @@ static void paintEllipse(QPainter *painter, const PaintItem &item)
     painter->restore();
 }
 
-// Screens name a family kind; the families themselves are Nickel's (never generic ones).
-static NickelFonts::Role fontRoleFor(ScreenLogic::Family family)
-{
-    switch (family) {
-    case ScreenLogic::FAMILY_SERIF:
-        return NickelFonts::ROLE_TITLE;
-    case ScreenLogic::FAMILY_MONO:
-        return NickelFonts::ROLE_MONO;
-    case ScreenLogic::FAMILY_SANS:
-        break;
-    }
-    return NickelFonts::ROLE_BODY;
-}
-
-// Lines are vertically centred in their line height. The layout already
-// elided them with the preview's estimate; a real font that is still wider
-// is elided again rather than clipped mid-glyph.
+// Lines are vertically centred in their line height. The layout already measured
+// them with this font (text_meter.h); a line that is still wider, because the
+// font changed after the layout, is elided rather than clipped mid-glyph.
 static void paintText(QPainter *painter, const PaintItem &item)
 {
     painter->save();
-    QFont font = NickelFonts::font(fontRoleFor(item.family), item.size, item.isBold);
+    QFont font = NickelFonts::font(QtTextMeter::roleFor(item.family), item.size, item.isBold);
     font.setUnderline(item.isUnderlined);
     painter->setFont(font);
     painter->setPen(grey(item.ink));
@@ -638,7 +625,7 @@ static void paintPictureIcon(QPainter *painter, const QRect &box, int ink)
 // layout's disc), or the Tabler check drawn white on that disc.
 static void paintCheck(QPainter *painter, const PaintItem &item)
 {
-    if (item.border <= 0) {
+    if (!item.isOn) {
         return;
     }
     const SystemIcon::Icon &check = SystemIcon::icon(SystemIcon::CHECK_BADGE);

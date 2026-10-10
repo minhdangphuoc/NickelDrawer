@@ -5,19 +5,20 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
-#include <QFontMetrics>
+#include <QVector>
 
 #include "drawer_logic.h"
 #include "nickel_fonts.h"
 #include "painted_marks.h"
+#include "text_meter.h"
 
-// Sizes in device pixels (docs/spec/ui-kit.md §2).
-static const int ROW_HEIGHT = 152;
-static const int ROW_ICON_SIDE = 52;
-static const int SPACING = 24;
-static const int TILE_NAME_SIZE = 32; // one step under the list row's 36
-static const int TILE_NAME_INSET = 8;
-static const int SECTION_LABEL_HEIGHT = 64;
+// Sizes in device pixels: the CopperUI tokens (docs/copperui-tokens.md).
+static const int ROW_HEIGHT = copperui::v1::ROW_DRAWER;
+static const int ROW_ICON_SIDE = copperui::v1::LEGACY_DRAWER_ROW_ICON; // icon.drawerRow (64) in fix 2.9
+static const int SPACING = copperui::v1::RHYTHM;
+static const int TILE_NAME_SIZE = copperui::v1::TYPE_GRID_NAME_SIZE;
+static const int TILE_NAME_INSET = copperui::v1::DRAWER_GRID_NAME_INSET;
+static const int SECTION_LABEL_HEIGHT = copperui::v1::SECTION_HEIGHT;
 
 static QLabel *createLabel(const QString &text, const char *objectName, QWidget *parent)
 {
@@ -88,33 +89,14 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
     applyLiveState(item);
 }
 
-// Greedy word wrap into at most maxLines lines; the last line is elided. A
-// single word wider than the cell is elided too.
-static QStringList wrapName(const QString &name, const QFontMetrics &metrics, int width, int maxLines)
+// The shared wrap rule (screen_logic.h): at most maxLines lines, the last one elided.
+static QStringList wrapName(const QString &name, int width, int maxLines)
 {
-    QStringList lines;
-    QStringList words = name.simplified().split(QLatin1Char(' '), QString::SkipEmptyParts);
-    QString current;
-    for (int i = 0; i < words.size(); i++) {
-        QString candidate = current.isEmpty() ? words[i] : current + QLatin1Char(' ') + words[i];
-        if (current.isEmpty() || metrics.width(candidate) <= width) {
-            current = candidate;
-            continue;
-        }
-        lines.append(current);
-        current = words[i];
-        if (lines.size() == maxLines - 1) {
-            current = QStringList(words.mid(i)).join(QStringLiteral(" "));
-            break;
-        }
-    }
-    if (!current.isEmpty()) {
-        lines.append(current);
-    }
-    for (int i = 0; i < lines.size(); i++) {
-        lines[i] = metrics.elidedText(lines[i], Qt::ElideRight, width);
-    }
-    return lines;
+    QByteArray utf8 = name.toUtf8();
+    QVector<char> out(utf8.size() * 2 + 16);
+    ScreenLogic::TextRun run = {TILE_NAME_SIZE, ScreenLogic::FAMILY_SANS, false};
+    int count = ScreenLogic::wrapText(utf8.constData(), width, run, QtTextMeter::meter(), maxLines, out.data(), out.size());
+    return count == 0 ? QStringList() : QString::fromUtf8(out.constData()).split(QLatin1Char('\n'));
 }
 
 AppTile::AppTile(const DrawerItem &item, int width, int height, QWidget *parent)
@@ -124,8 +106,7 @@ AppTile::AppTile(const DrawerItem &item, int width, int height, QWidget *parent)
     setFixedSize(width, height);
     createDot();
 
-    QFont font = NickelFonts::font(NickelFonts::ROLE_BODY, TILE_NAME_SIZE, false);
-    nameLines = wrapName(item.name, QFontMetrics(font), width - 2 * TILE_NAME_INSET, DrawerLogic::GRID_NAME_LINES);
+    nameLines = wrapName(item.name, width - 2 * TILE_NAME_INSET, DrawerLogic::GRID_NAME_LINES);
 
     int iconLeft = (width - DrawerLogic::GRID_ICON_SIDE) / 2;
     int iconTop = DrawerLogic::gridIconTop(height);

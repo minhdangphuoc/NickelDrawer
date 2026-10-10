@@ -353,7 +353,7 @@ func TestRenderRejectsUnknownScreen(t *testing.T) {
 func TestOverlaysRender(t *testing.T) {
 	instance := newTestServer(t, serverConfig{AppDir: "../../apps/todo", Locale: "vi"})
 	body := get(t, instance, "/?confirm=screens.main.footer[0]").Body.String()
-	if !strings.Contains(body, "Xoá mọi việc đã đánh dấu xong?") || !strings.Contains(body, "Huỷ") {
+	if !strings.Contains(body, "Xóa mọi việc đã đánh dấu xong?") || !strings.Contains(body, "Hủy") {
 		t.Error("confirm dialog not rendered in vi")
 	}
 }

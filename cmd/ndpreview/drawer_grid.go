@@ -8,25 +8,26 @@ import (
 	"image/draw"
 	"io"
 	"path/filepath"
-	"strings"
 
 	xdraw "golang.org/x/image/draw"
+
+	"koboapps/internal/copperui"
 )
 
-// The drawer's grid view (docs/spec/ui-kit.md section 5.2). The numbers mirror
-// mod/drawer/drawer_logic.h (GRID_*); change both together.
+// The drawer's grid view (docs/spec/ui-kit.md section 5.2). The numbers are CopperUI tokens, the
+// same as mod/drawer/drawer_logic.h (GRID_*).
 const (
-	gridColumns      = 4
-	gridRowHeight    = 240
-	gridIconSide     = 96
-	gridIconNameGap  = 12
-	gridNameLines    = 2
-	gridNameLineH    = 42
-	gridNameSize     = 32 // one step under the list row's 36
-	gridNameInset    = 8
+	gridColumns      = copperui.DrawerGridColumns
+	gridRowHeight    = copperui.DrawerGridRow
+	gridIconSide     = copperui.IconGrid
+	gridIconNameGap  = copperui.DrawerGridIconGap
+	gridNameLines    = copperui.DrawerGridNameLines
+	gridNameLineH    = copperui.TypeGridNameLine
+	gridNameSize     = copperui.TypeGridNameSize
+	gridNameInset    = copperui.DrawerGridNameInset
 	gridHintHeight   = 48
-	gridFooterHeight = 120
-	gridToggleSide   = 120
+	gridFooterHeight = copperui.DrawerFooterButton
+	gridToggleSide   = copperui.HeaderIconTarget
 )
 
 // gridCell is the rectangle of cell i inside the content area, as drawer_logic.cc gridCellRect.
@@ -51,12 +52,7 @@ type gridApp struct {
 // gridNameLines wraps a name into at most gridNameLines lines; the last one is elided.
 func gridNameText(name string) []string {
 	width := contentWidth/gridColumns - 2*gridNameInset
-	lines := wrapText(name, width, gridNameSize, familySans)
-	if len(lines) <= gridNameLines {
-		return lines
-	}
-	rest := strings.Join(lines[gridNameLines-1:], " ")
-	return append(lines[:gridNameLines-1], elide(rest, width, gridNameSize, familySans, false))
+	return wrapLimited(name, width, regular(gridNameSize, familySans), gridNameLines)
 }
 
 func gridCellItems(index int, app gridApp) []Item {
@@ -129,6 +125,12 @@ func drawerGridHeader(title string) []Item {
 	return append(items, Item{Shape: "rect", X: gutter, Y: headerRowHeight, W: contentWidth, H: headerDivider, Fill: headerDividerInk})
 }
 
+// mutedCaption is the drawer's hint and pager look: caption size, muted grey.
+func mutedCaption(item Item) Item {
+	item.Ink = inkMuted
+	return item
+}
+
 // drawerGridPage lays out the first page of the grid for apps.
 func drawerGridPage(apps []gridApp, title, hint string) Page {
 	items := drawerGridHeader(title)
@@ -137,10 +139,10 @@ func drawerGridPage(apps []gridApp, title, hint string) Page {
 		items = append(items, gridCellItems(index, apps[index])...)
 	}
 	hintTop := screenHeight - gridFooterHeight - gridHintHeight
-	items = append(items, textItem(gutter, hintTop, contentWidth, gridHintHeight, hint, 28, familySans, "center"))
+	items = append(items, mutedCaption(textItem(gutter, hintTop, contentWidth, gridHintHeight, hint, captionSize, familySans, "center")))
 	pages := max(1, (len(apps)+perPage-1)/perPage)
 	pager := fmt.Sprintf("‹   1 / %d   ›", pages)
-	items = append(items, textItem(gutter, screenHeight-gridFooterHeight, contentWidth, gridFooterHeight, pager, 32, familySans, "center"))
+	items = append(items, mutedCaption(textItem(gutter, screenHeight-gridFooterHeight, contentWidth, gridFooterHeight, pager, captionSize, familySans, "center")))
 	return Page{ScreenID: "drawer-grid", Items: items, Index: 0, Count: pages}
 }
 
@@ -196,6 +198,7 @@ func runDrawerGrid(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "ndpreview:", err)
 		return exitFailure
 	}
+	useFonts(fonts, stderr)
 	page := drawerGridPage(sampleGridApps(*appsDir, *locale, *count), chrome[0], chrome[1])
 	canvas, err := renderPNG(page, fonts, greyLevelsOff)
 	if err == nil {

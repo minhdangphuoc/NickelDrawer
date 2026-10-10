@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"strings"
-	"unicode/utf8"
 
 	"koboapps/internal/uikit"
 )
@@ -49,73 +48,14 @@ type Page struct {
 	Count    int
 }
 
-func wrapText(text string, width, size int, family string) []string {
-	var lines []string
-	for _, paragraph := range strings.Split(text, "\n") {
-		lines = append(lines, wrapParagraph(paragraph, width, size, family)...)
-	}
-	return lines
-}
-
-func wrapParagraph(paragraph string, width, size int, family string) []string {
-	perLine := charsPerLine(width, size, family)
-	var lines []string
-	current := ""
-	for _, word := range strings.Fields(paragraph) {
-		for utf8.RuneCountInString(word) > perLine {
-			runes := []rune(word)
-			lines, current = appendLine(lines, current), ""
-			lines = append(lines, string(runes[:perLine]))
-			word = string(runes[perLine:])
-		}
-		switch {
-		case current == "":
-			current = word
-		case utf8.RuneCountInString(current)+1+utf8.RuneCountInString(word) <= perLine:
-			current += " " + word
-		default:
-			lines = append(lines, current)
-			current = word
-		}
-	}
-	return appendLine(lines, current)
-}
-
-func appendLine(lines []string, line string) []string {
-	if line == "" {
-		return lines
-	}
-	return append(lines, line)
-}
-
-func charsPerLine(width, size int, family string) int {
-	perLine := int(float64(width) / (float64(size) * advanceByFamily[family]))
-	if perLine < 1 {
-		return 1
-	}
-	return perLine
-}
-
-// elide shortens text to one line: in the middle for file names, at the end otherwise.
-func elide(text string, width, size int, family string, isMiddle bool) string {
-	runes := []rune(text)
-	limit := charsPerLine(width, size, family)
-	if len(runes) <= limit {
-		return text
-	}
-	if limit < 3 {
-		return string(runes[:limit])
-	}
-	if !isMiddle {
-		return string(runes[:limit-1]) + "…"
-	}
-	head := (limit - 1) / 2
-	tail := limit - 1 - head
-	return string(runes[:head]) + "…" + string(runes[len(runes)-tail:])
-}
-
+// separator is a row divider: 2 px in the row line grey.
 func separator(y int) Item {
-	return Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: separatorPx, Fill: inkBlack}
+	return Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: separatorPx, Fill: lineRow}
+}
+
+// sectionRule is the black 2 px rule under a section label.
+func sectionRule(y int) Item {
+	return Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: separatorPx, Fill: lineSection}
 }
 
 func textItem(x, y, w, h int, text string, size int, family, align string) Item {
@@ -239,7 +179,7 @@ func (rc renderContext) headerItems(screen *uikit.Screen) []Item {
 	right := rc.headerRight(screen, rightEdge)
 	titleX := gutter + headerIconWidth + rhythm
 	titleWidth := rightEdge - titleX - len(right)*(headerSideWidth+rhythm)
-	title := textItem(titleX, 0, titleWidth, headerRowHeight, elide(rc.text(screen.Title), titleWidth, headerTitleSz, familySans, false), headerTitleSz, familySans, "start")
+	title := textItem(titleX, 0, titleWidth, headerRowHeight, elide(rc.text(screen.Title), titleWidth, regular(headerTitleSz, familySans), false), headerTitleSz, familySans, "start")
 	divider := Item{Shape: "rect", X: gutter, Y: headerRowHeight, W: contentWidth, H: headerDivider, Fill: headerDividerInk}
 	items := []Item{back, title}
 	items = append(items, right...)
@@ -253,14 +193,14 @@ func (rc renderContext) headerRight(screen *uikit.Screen, rightEdge int) []Item 
 	var items []Item
 	if screen.Status != nil {
 		if status := rc.text(screen.Status); status != "" {
-			item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(status, headerSideWidth, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
+			item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(status, headerSideWidth, regular(headerStatusSz, familySans), false), headerStatusSz, familySans, "end")
 			item.Ink = inkMuted
 			items = append(items, item)
 		}
 	}
 	if screen.Action != nil {
 		label := rc.text(screen.Action["label"])
-		item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(label, headerSideWidth, headerStatusSz, familySans, false), headerStatusSz, familySans, "end")
+		item := textItem(0, 0, headerSideWidth, headerRowHeight, elide(label, headerSideWidth, regular(headerStatusSz, familySans), false), headerStatusSz, familySans, "end")
 		item.Underline = true
 		item.Event = actionEventFor(screen.Action)
 		item.Label = label

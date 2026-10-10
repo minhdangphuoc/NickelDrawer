@@ -4,6 +4,7 @@
 #include <QPixmap>
 #include <QWidget>
 
+#include "copperui/tokens.h"
 #include "press_area.h"
 
 class QHBoxLayout;
@@ -56,8 +57,8 @@ protected:
 class PageHeader : public QWidget {
     Q_OBJECT
 public:
-    static const int ROW_HEIGHT = 120; // the toggles' tap targets (ui-kit §1.5)
-    static const int DIVIDER_HEIGHT = 1; // WishlistView.qss: border-bottom 1px solid #666666
+    static const int ROW_HEIGHT = copperui::v1::HEADER_ROW; // the toggles' tap targets
+    static const int DIVIDER_HEIGHT = copperui::v1::HEADER_DIVIDER; // WishlistView.qss: border-bottom 1px
 
     PageHeader(const QString &title, const NickelTextHeaderApi &nickelApi, QWidget *parent);
 

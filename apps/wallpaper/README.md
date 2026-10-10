@@ -6,11 +6,11 @@ Dùng ảnh của bạn làm màn hình chờ (ảnh hiện khi máy ngủ, bấ
 
 1. Cắm USB, chép ảnh PNG hoặc JPEG (tối đa 20 MB mỗi ảnh) thẳng vào thư mục `Pictures`. Thư mục này được tạo khi bạn bấm **Hình nền · Nhập ảnh** lần đầu nếu chưa có.
 2. Lần đầu mở ứng dụng với thư viện trống, ảnh đã có trong `Pictures` được nhập tự động (chỉ một lần); sau đó bấm **Hình nền · Nhập ảnh** để nhập ảnh mới. Ảnh được đổi sang kích thước màn hình, 16 mức xám, rồi đặt vào `.kobo/screensaver`. Việc này chạy nền; màn hình hiển thị tiến độ.
-3. Màn hình chính là thư viện ảnh: chạm một ảnh để xem, nhấn giữ để đặt làm hình nền, xem thông tin hoặc xoá khỏi Hình nền (ảnh gốc trong `Pictures` vẫn được giữ; **Xoá cả ảnh gốc…** xoá cả ảnh gốc). Biểu tượng bánh răng mở **Tùy chọn**: **Lấp đầy / Vừa khung** (phủ kín màn hình hoặc giữ cả ảnh trên nền trắng) và **Cố định / Ngẫu nhiên**. Ở chế độ Ngẫu nhiên, mỗi lần máy thức dậy ứng dụng chọn một ảnh khác (không lặp ảnh vừa hiện và ảnh trước đó) cho lần ngủ sau; việc này cần NickelDrawer.
+3. Màn hình chính là thư viện ảnh: chạm một ảnh để xem, nhấn giữ để đặt làm hình nền, xem thông tin hoặc xóa khỏi Hình nền (ảnh gốc trong `Pictures` vẫn được giữ; **Xóa cả ảnh gốc…** xóa cả ảnh gốc). Biểu tượng bánh răng mở **Tùy chọn**: **Lấp đầy / Vừa khung** (phủ kín màn hình hoặc giữ cả ảnh trên nền trắng) và **Cố định / Ngẫu nhiên**. Ở chế độ Ngẫu nhiên, mỗi lần máy thức dậy ứng dụng chọn một ảnh khác (không lặp ảnh vừa hiện và ảnh trước đó) cho lần ngủ sau; việc này cần NickelDrawer.
 
 Điều kiện để ảnh hiện: bật trong Cài đặt → Tiết kiệm pin và riêng tư cả «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình», và máy có một cuốn sách đã mở gần đây. Ứng dụng sẽ nhắc nếu hai mục này đang tắt.
 
-Ứng dụng chỉ đọc ảnh trực tiếp trong `Pictures`, không bao giờ sửa ảnh gốc, chỉ xóa ảnh gốc khi bạn chọn **Xoá cả ảnh gốc…** (phải giống hệt ảnh đã nhập, và ngăn sẽ hỏi trước), và chỉ ghi các file `nd-wallpaper-*.png` trong `.kobo/screensaver`; file khác ở đó giữ nguyên. Nếu bạn dùng mục NickelMenu "Screensaver" (đổi tên `.kobo/screensaver`), hãy để nó ở trạng thái BẬT thì ảnh mới hiện. Chi tiết: `docs/spec/wallpaper.md`.
+Ứng dụng chỉ đọc ảnh trực tiếp trong `Pictures`, không bao giờ sửa ảnh gốc, chỉ xóa ảnh gốc khi bạn chọn **Xóa cả ảnh gốc…** (phải giống hệt ảnh đã nhập, và ngăn sẽ hỏi trước), và chỉ ghi các file `nd-wallpaper-*.png` trong `.kobo/screensaver`; file khác ở đó giữ nguyên. Nếu bạn dùng mục NickelMenu "Screensaver" (đổi tên `.kobo/screensaver`), hãy để nó ở trạng thái BẬT thì ảnh mới hiện. Chi tiết: `docs/spec/wallpaper.md`.
 
 ## English
 

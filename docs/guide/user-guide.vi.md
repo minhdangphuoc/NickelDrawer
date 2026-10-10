@@ -16,9 +16,9 @@ Các ứng dụng đi kèm:
 | Ứng dụng | Làm gì |
 |---|---|
 | LocalSend | Nhận sách, tài liệu, truyện tranh và ảnh từ điện thoại qua Wi-Fi. |
-| GitHub | Tải sách mới từ repo GitHub riêng của bạn. Chỉ thêm, không xoá. |
+| GitHub | Tải sách mới từ repo GitHub riêng của bạn. Chỉ thêm, không xóa. |
 | Hình nền | Dùng ảnh của bạn làm màn hình ngủ. |
-| Thư viện | Sửa nhãn ngôn ngữ của sách tiếng Việt, chuẩn hoá tên Unicode, tìm sách trùng. |
+| Thư viện | Sửa nhãn ngôn ngữ của sách tiếng Việt, chuẩn hóa tên Unicode, tìm sách trùng. |
 | Việc cần làm | Danh sách việc cần làm nằm gọn trong máy. |
 
 NickelDrawer **không** phải là:
@@ -125,7 +125,7 @@ Các bước:
 4. Trên ổ Kobo, mở thư mục `.adds`. Nếu chưa có, tạo thư mục tên `.adds` (có dấu chấm) ở ngay gốc ổ.
 5. Chép hai thư mục `koboapps` và `apps` vào thư mục `.adds` của Kobo.
 
-    > **Cảnh báo với macOS Finder.** Nếu Kobo đã có thư mục cùng tên, Finder hỏi có **Thay thế** (Replace) không. **Thay thế sẽ xoá mọi thứ trong thư mục cũ**, kể cả cài đặt ứng dụng và tệp của mod khác. Giữ phím Option khi kéo thả và chọn **Gộp** (Merge), hoặc chỉ chép theo cách này ở lần cài đầu. Windows tự gộp thư mục.
+    > **Cảnh báo với macOS Finder.** Nếu Kobo đã có thư mục cùng tên, Finder hỏi có **Thay thế** (Replace) không. **Thay thế sẽ xóa mọi thứ trong thư mục cũ**, kể cả cài đặt ứng dụng và tệp của mod khác. Giữ phím Option khi kéo thả và chọn **Gộp** (Merge), hoặc chỉ chép theo cách này ở lần cài đầu. Windows tự gộp thư mục.
 
 6. Chép `KoboRoot-nickeldrawer.tgz` vào thư mục `.kobo` của Kobo và đổi tên bản chép thành đúng `KoboRoot.tgz`.
 7. Ngắt kết nối Kobo an toàn (macOS: nút eject trong Finder; Windows: "Tháo phần cứng an toàn"). Rồi rút cáp.
@@ -145,20 +145,20 @@ tools/install-to-kobo.sh --dry-run    # chỉ in ra sẽ làm gì; không đổi
 tools/install-to-kobo.sh              # cài
 ```
 
-| Tuỳ chọn | Làm gì |
+| Tùy chọn | Làm gì |
 |---|---|
 | `--dry-run` | In từng bước, không đổi gì. |
 | `--with-mod` | Luôn đặt mod Kobo vào chỗ chờ cài, kể cả khi mod không đổi. |
 | `--no-mod` | Chỉ cài ứng dụng và công cụ chủ, không cài mod. |
 | `--remove-legacy` | Gỡ thêm bản LocalSend tự làm kiểu cũ (`.adds/localsend` và các mục NickelMenu của nó). |
 | `--uninstall` | Gỡ NickelDrawer (xem [Gỡ cài đặt](#s-go-cai-at)). |
-| `--purge` | Dùng cùng `--uninstall`: xoá luôn thư mục `data/` của các ứng dụng. |
+| `--purge` | Dùng cùng `--uninstall`: xóa luôn thư mục `data/` của các ứng dụng. |
 
 Nên biết:
 
 - Bản sao lưu nằm trong `backups/<ngày-giờ>/` ở thư mục mã nguồn trên máy tính.
 - Tập lệnh tìm Kobo ở `/Volumes/KOBOeReader` (macOS). Trên Linux, hoặc nếu ổ Kobo có tên khác, đặt trước: `KOBO_ROOT=/đường/dẫn/tới/kobo tools/install-to-kobo.sh`.
-- Nó tắt tab của NickelMenu ở thanh dưới (Ngăn Ứng Dụng thay cho tab đó) và xoá các mục menu do bản cũ tạo ra. `--uninstall` bật lại tab.
+- Nó tắt tab của NickelMenu ở thanh dưới (Ngăn Ứng Dụng thay cho tab đó) và xóa các mục menu do bản cũ tạo ra. `--uninstall` bật lại tab.
 - Xong thì ngắt kết nối, rút cáp và để Kobo khởi động lại nếu mod đã được đặt chờ cài.
 
 ## Làm quen
@@ -187,7 +187,7 @@ Dùng nút lật trang của Kobo hoặc bấm mũi tên **‹ ›**. Nút lật
 
 ### Làm mới
 
-Bạn vừa chép thêm hay xoá một ứng dụng qua USB? Bấm nút làm mới trên thanh tiêu đề. Ngăn cũng tự tải lại mỗi lần bạn mở.
+Bạn vừa chép thêm hay xóa một ứng dụng qua USB? Bấm nút làm mới trên thanh tiêu đề. Ngăn cũng tự tải lại mỗi lần bạn mở.
 
 ### Thông tin và gỡ
 
@@ -195,9 +195,9 @@ Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện
 
 - **Thông tin**: phiên bản, ứng dụng đọc và ghi những thư mục nào, có dùng mạng không, và thư mục của nó.
 - Vài thao tác nhanh mà ứng dụng đưa vào menu này (ví dụ **Dừng nhận** trong LocalSend). Thao tác có thể làm mất dữ liệu sẽ hỏi trước. Mọi thứ khác nằm trên màn hình của ứng dụng.
-- **Gỡ…**: xoá ứng dụng. Máy hỏi lại trước.
+- **Gỡ…**: xóa ứng dụng. Máy hỏi lại trước.
 
-> **Gỡ sẽ xoá cả thư mục của ứng dụng, kể cả `data/`.** Với GitHub, đó là token và cài đặt. Với Thư viện, đó là bản sao lưu và thùng rác, nên bạn không thể hoàn tác lần sửa hay khôi phục sách đã bỏ nữa. Sách và ảnh ở các thư mục thường vẫn còn. Hãy hoàn tác hoặc khôi phục những gì cần trước.
+> **Gỡ sẽ xóa cả thư mục của ứng dụng, kể cả `data/`.** Với GitHub, đó là token và cài đặt. Với Thư viện, đó là bản sao lưu và thùng rác, nên bạn không thể hoàn tác lần sửa hay khôi phục sách đã bỏ nữa. Sách và ảnh ở các thư mục thường vẫn còn. Hãy hoàn tác hoặc khôi phục những gì cần trước.
 
 ### Đi lại giữa các màn hình
 
@@ -244,8 +244,8 @@ Giữ ngón tay trên một ứng dụng khoảng nửa giây. Một menu hiện
 Nên biết:
 
 - Tệp trùng tên với tệp đã có không bao giờ bị ghi đè. Tệp mới được thêm số, ví dụ `sach (2).epub`.
-- Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp `.epub` phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 20 MB, tệp văn bản 20 MB). Tệp không đạt vào `.adds/koboapps/inbox/rejected/` và bị xoá sau 7 ngày.
-- Mã PIN được tạo một lần và giữ nguyên. Muốn mã mới, xoá tệp `.adds/apps/localsend/data/pin.txt` qua USB.
+- Mỗi tệp đều được kiểm: nội dung phải đúng với đuôi tệp (tệp `.epub` phải thật là EPUB) và không quá lớn (sách 200 MB, PDF 300 MB, truyện tranh 500 MB, ảnh 20 MB, tệp văn bản 20 MB). Tệp không đạt vào `.adds/koboapps/inbox/rejected/` và bị xóa sau 7 ngày.
+- Mã PIN được tạo một lần và giữ nguyên. Muốn mã mới, xóa tệp `.adds/apps/localsend/data/pin.txt` qua USB.
 - Bạn có thể bấm **←** và làm việc khác. Kobo vẫn nhận, và hàng **Ứng dụng** cho biết LocalSend đang nhận.
 - **Việc nhận tự dừng sau 15 phút không có tệp mới.** Khi đó màn hình báo, và thư viện được quét lại.
 - Kobo vẫn có thể tự ngủ theo hẹn giờ của nó khi bạn đang gửi. Không ứng dụng nào giữ máy thức được. Khi gửi lâu, thỉnh thoảng chạm màn hình.
@@ -258,7 +258,7 @@ Nên biết:
 
 *Ảnh dựng trên máy tính, không phải ảnh chụp máy thật.*
 
-Ứng dụng GitHub tải sách mới từ một **repo GitHub riêng tư** của bạn. Nó chỉ thêm: không bao giờ xoá hay ghi đè sách trên Kobo, và sách bạn đã xoá trên Kobo sẽ không bị tải lại.
+Ứng dụng GitHub tải sách mới từ một **repo GitHub riêng tư** của bạn. Nó chỉ thêm: không bao giờ xóa hay ghi đè sách trên Kobo, và sách bạn đã xóa trên Kobo sẽ không bị tải lại.
 
 ### Chuẩn bị (một lần, trên điện thoại hoặc máy tính)
 
@@ -290,7 +290,7 @@ Nên biết:
 5. Bấm **Kiểm tra và lưu**. Kobo kiểm mọi thứ với GitHub rồi mới lưu.
 6. Khi trang báo **Đã ghép nối**, đóng trang. Trên Kobo, trạng thái đổi thành **Sẵn sàng**. Bấm **←** để xem Repo, Nhánh và Thư mục.
 
-Chỉ ghép nối trên Wi-Fi nhà bạn: trang ghép nối không mã hoá (HTTP thường). Trang tự đóng khi thành công, sau 5 lần sai mã, hoặc sau 10 phút. **Dừng ghép nối** đóng ngay.
+Chỉ ghép nối trên Wi-Fi nhà bạn: trang ghép nối không mã hóa (HTTP thường). Trang tự đóng khi thành công, sau 5 lần sai mã, hoặc sau 10 phút. **Dừng ghép nối** đóng ngay.
 
 ### Đồng bộ
 
@@ -300,7 +300,7 @@ Chỉ ghép nối trên Wi-Fi nhà bạn: trang ghép nối không mã hoá (HTT
 
 Sách vào đâu: sách vào `Books/GitHub`, PDF vào `Documents/GitHub`, truyện tranh vào `Comics/GitHub`. Tệp được kiểm như tệp LocalSend (loại, dung lượng, nội dung thật); tệp không đạt bị bỏ qua. Nếu trên GitHub không có gì mới từ lần trước, không có gì được tải.
 
-Sách bạn xoá trên Kobo sẽ không quay lại: lần đồng bộ sau bỏ qua nó. Sách bạn xoá khỏi repo vẫn còn trên Kobo.
+Sách bạn xóa trên Kobo sẽ không quay lại: lần đồng bộ sau bỏ qua nó. Sách bạn xóa khỏi repo vẫn còn trên Kobo.
 
 <a id="s-thong-bao-khi-ghep-noi-va-ong-bo"></a>
 
@@ -320,7 +320,7 @@ Sách bạn xoá trên Kobo sẽ không quay lại: lần đồng bộ sau bỏ 
 | Hết lượt gọi API GitHub. Thử lại sau. | Đợi khoảng một giờ rồi đồng bộ lại. |
 | Đồng bộ lỗi. Xem data/log.txt. | Đọc `.adds/apps/ghsync/data/log.txt` qua USB. Tệp này không bao giờ chứa token. |
 
-Khi kiểm không đạt, không có gì được lưu, cài đặt cũ vẫn giữ, và ô token trên trang được xoá trống để bạn dán lại.
+Khi kiểm không đạt, không có gì được lưu, cài đặt cũ vẫn giữ, và ô token trên trang được xóa trống để bạn dán lại.
 
 Repo còn trống vẫn ghép nối được; lần đồng bộ đầu báo 0 sách.
 
@@ -371,7 +371,7 @@ Trong trình xem:
 
 Trong trình xem, bấm **Đặt làm hình nền**. Thông báo "Đã đặt làm hình nền", tiêu đề hiện **Đang dùng ✓** và nút chuyển thành **Đang dùng**. Cho máy ngủ để xem.
 
-Bạn cũng có thể giữ một ảnh trong lưới. Menu hiện ra có **Đặt làm hình nền**, **Xem**, **Thông tin** (tên, kích thước, ngày nhập), **Xoá khỏi Hình nền…** và **Xoá cả ảnh gốc…**.
+Bạn cũng có thể giữ một ảnh trong lưới. Menu hiện ra có **Đặt làm hình nền**, **Xem**, **Thông tin** (tên, kích thước, ngày nhập), **Xóa khỏi Hình nền…** và **Xóa cả ảnh gốc…**.
 
 ### Tùy chọn
 
@@ -385,10 +385,10 @@ Bấm biểu tượng bánh răng trên thanh tiêu đề của lưới.
 | **Đổi ảnh** | **Cố định** (luôn dùng ảnh đã chọn) hoặc **Ngẫu nhiên** (ảnh khác mỗi lần máy ngủ). |
 | **Màn hình ngủ** | **Sẵn sàng ✓**, hoặc cho biết cần bật cài đặt Kobo nào. |
 
-### Xoá ảnh
+### Xóa ảnh
 
-- **Xoá…** trong trình xem, hoặc **Xoá khỏi Hình nền…** trong menu của lưới, bỏ ảnh khỏi Hình nền. Ảnh gốc vẫn ở `Pictures`. Máy hỏi trước; chạm ra ngoài hộp hỏi thì không xoá gì.
-- **Xoá cả ảnh gốc…** xoá luôn ảnh gốc trong `Pictures`, nhưng chỉ khi đó đúng là tệp giống hệt. Nếu không, ảnh gốc được giữ và thông báo nói rõ.
+- **Xóa…** trong trình xem, hoặc **Xóa khỏi Hình nền…** trong menu của lưới, bỏ ảnh khỏi Hình nền. Ảnh gốc vẫn ở `Pictures`. Máy hỏi trước; chạm ra ngoài hộp hỏi thì không xóa gì.
+- **Xóa cả ảnh gốc…** xóa luôn ảnh gốc trong `Pictures`, nhưng chỉ khi đó đúng là tệp giống hệt. Nếu không, ảnh gốc được giữ và thông báo nói rõ.
 
 *Đã thử trên máy:* nhập ảnh từ `Pictures` và ảnh toàn màn hình khi máy ngủ đã chạy đúng (khi bật hai cài đặt và có sách đang đọc). Một bản trước của lưới ảnh và trình xem đã chạy trên máy; lưới ảnh, trình xem và Tùy chọn hiện tại chưa được thử lại.
 
@@ -434,7 +434,7 @@ Chữ Việt có dấu (như "ệ") có thể được lưu theo hai cách. Nhì
 3. Bản cuối cùng của một cuốn sách không bao giờ bỏ được vào thùng rác.
 4. **Khôi phục từ thùng rác** trả lại các sách trùng đã bỏ vào thùng rác ở ngày gần nhất. Nó không bao giờ ghi đè tệp.
 
-Sách trong thùng rác quá 30 ngày bị xoá khi bắt đầu lần quét kế tiếp.
+Sách trong thùng rác quá 30 ngày bị xóa khi bắt đầu lần quét kế tiếp.
 
 **Dừng** dừng việc quét hoặc sửa đang chạy sau cuốn sách hiện tại.
 
@@ -458,11 +458,11 @@ Một danh sách việc ngắn, chỉ nằm trong Kobo của bạn. Không cần
 
 Thanh tiêu đề cho biết số việc còn và đã xong, ví dụ "Còn 3 · xong 2".
 
-### Đánh dấu xong, xoá, dọn
+### Đánh dấu xong, xóa, dọn
 
 - **Chạm một việc** để đánh dấu xong (hiện dấu ✓). Chạm lần nữa để mở lại.
-- **Giữ một việc** rồi chọn **Xoá...** để xoá. Máy hỏi trước.
-- **Xoá việc đã xong** ở cuối màn hình xoá mọi việc có dấu ✓. Máy hỏi trước. Nút này mờ khi chưa có việc nào xong.
+- **Giữ một việc** rồi chọn **Xóa...** để xóa. Máy hỏi trước.
+- **Xóa việc đã xong** ở cuối màn hình xóa mọi việc có dấu ✓. Máy hỏi trước. Nút này mờ khi chưa có việc nào xong.
 
 Giới hạn: tối đa 200 việc, mỗi việc tối đa 200 ký tự. Không thêm được một việc hai lần.
 
@@ -538,14 +538,14 @@ Dự án duy trì tiếng Anh và tiếng Việt. Ở ngôn ngữ khác, vài ch
 
 ### Thêm một ngôn ngữ
 
-Không cần lập trình, chỉ cần trình soạn thảo văn bản. Mỗi bản dịch là một tệp nhỏ gồm các dòng `"khoá": "chữ"`.
+Không cần lập trình, chỉ cần trình soạn thảo văn bản. Mỗi bản dịch là một tệp nhỏ gồm các dòng `"khóa": "chữ"`.
 
 1. Chép `en.json` thành `<mã>.json` (ví dụ `fr.json`) trong từng thư mục sau:
     - `.adds/koboapps/locales/` (Ngăn, Tinh chỉnh, cập nhật, cài đặt),
     - `.adds/koboapps/screens/settings/locales/` (màn hình Cài đặt và Giới thiệu),
     - `.adds/apps/<ứng dụng>/locales/` cho mỗi ứng dụng.
 
-2. Chỉ dịch phần chữ bên phải. Không bao giờ đổi khoá bên trái.
+2. Chỉ dịch phần chữ bên phải. Không bao giờ đổi khóa bên trái.
 3. Giữ nguyên mọi `{chỗ_trống}` như đã viết, và giữ các ngắt dòng `\n`.
 4. Viết ngắn: màn hình nhỏ. Tên tối đa 24 ký tự, nhãn nút tối đa 32, và không có dấu `:` trong nhãn.
 5. Ngắt kết nối rồi mở Ngăn khi Kobo đang đặt ngôn ngữ đó.
@@ -558,7 +558,7 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 
 | Hiện tượng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
-| Không có hàng **Ứng dụng** hay **Tinh chỉnh** trong **Thêm**. | Mod chưa được cài, đang bị tắt, hoặc không hỗ trợ firmware của bạn. | Kiểm `.kobo/KoboRoot.tgz` đã biến mất (Kobo xoá nó sau khi cài). Kiểm `.adds/nickeldrawer/` không có tệp `disable`. Kiểm phiên bản firmware. Chép lại `KoboRoot.tgz` và khởi động lại. |
+| Không có hàng **Ứng dụng** hay **Tinh chỉnh** trong **Thêm**. | Mod chưa được cài, đang bị tắt, hoặc không hỗ trợ firmware của bạn. | Kiểm `.kobo/KoboRoot.tgz` đã biến mất (Kobo xóa nó sau khi cài). Kiểm `.adds/nickeldrawer/` không có tệp `disable`. Kiểm phiên bản firmware. Chép lại `KoboRoot.tgz` và khởi động lại. |
 | Thông báo "NickelDrawer chưa hỗ trợ máy này". | Máy Kobo của bạn không có màn 1264×1680 mà Ngăn được dàn trang theo (chỉ Libra 2, Libra H2O và Libra Colour có). | Không có gì hỏng; Kobo vẫn chạy bình thường. Ngăn tự tắt trên mẫu máy này. Xem docs/COMPATIBILITY.md. |
 | Thông báo "NickelDrawer chưa hỗ trợ firmware này". | Firmware không thuộc năm bản được hỗ trợ, thường do Kobo tự cập nhật. | Không có gì hỏng; Kobo vẫn chạy bình thường. Đợi bản NickelDrawer hỗ trợ bản firmware của bạn. |
 | Một dòng dưới tiêu đề Ngăn: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động". | Kobo đang mời lên firmware 5.x. | Từ chối lời mời trên Kobo nếu bạn muốn giữ NickelDrawer. |
@@ -572,7 +572,7 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 | Ghép nối GitHub báo lỗi. | Xem thông báo. | Xem [Thông báo khi ghép nối và đồng bộ](#s-thong-bao-khi-ghep-noi-va-ong-bo). |
 | Trang ghép nối không mở được trên điện thoại. | Khác Wi-Fi, hoặc phiên ghép nối đã đóng. | Dùng cùng Wi-Fi. Kiểm Kobo vẫn hiện mã. Bắt đầu ghép nối lại. |
 | "Chưa có Wi-Fi. Kết nối rồi thử lại." | Wi-Fi tắt hoặc chưa kết nối. | Bật Wi-Fi ở thanh trạng thái của Kobo rồi thử lại. |
-| Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính." | Không gõ được trên Kobo ở bản firmware này, hoặc bạn đã tắt bàn phím. | Xoá tệp `.adds/nickeldrawer/no-keyboard` nếu bạn đã tạo. |
+| Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính." | Không gõ được trên Kobo ở bản firmware này, hoặc bạn đã tắt bàn phím. | Xóa tệp `.adds/nickeldrawer/no-keyboard` nếu bạn đã tạo. |
 | Màu màn hình bị đảo và cứ giữ như vậy. | Đã dùng **Đảo màu và khởi động lại**. | Chạy lại **Tinh chỉnh** → **Đảo màu và khởi động lại**. |
 | Kobo bị treo. | Phần mềm Kobo gặp lỗi. | Giữ nút nguồn khoảng 15 giây cho đến khi màn hình đổi, thả ra, rồi bấm lại để bật. |
 | Kobo khởi động đi khởi động lại sau khi cài. | Mod bị lỗi khi khởi động. | Tắt Kobo trong 15 giây đầu sau khi máy lên (xem [Lưới an toàn](#s-luoi-an-toan-failsafe)). Không được thì tạo tệp công tắc `uninstall` qua USB. |
@@ -597,12 +597,12 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 
 ### Tệp công tắc
 
-Tạo các tệp này dưới dạng **tệp rỗng** qua USB trong thư mục `.adds/nickeldrawer/` (tạo thư mục nếu chưa có). Kobo đọc chúng khi khởi động, nên hãy khởi động lại sau khi thêm hay xoá một tệp.
+Tạo các tệp này dưới dạng **tệp rỗng** qua USB trong thư mục `.adds/nickeldrawer/` (tạo thư mục nếu chưa có). Kobo đọc chúng khi khởi động, nên hãy khởi động lại sau khi thêm hay xóa một tệp.
 
 | Tệp | Tác dụng |
 |---|---|
-| `uninstall` | Gỡ mod NickelDrawer ở lần khởi động tới, rồi tự xoá. |
-| `disable` | Giữ mod nhưng cho nó nằm im: **Thêm** trông như máy gốc. Xoá tệp và khởi động lại để bật lại. |
+| `uninstall` | Gỡ mod NickelDrawer ở lần khởi động tới, rồi tự xóa. |
+| `disable` | Giữ mod nhưng cho nó nằm im: **Thêm** trông như máy gốc. Xóa tệp và khởi động lại để bật lại. |
 | `no-screens` | Chạm một ứng dụng thì chạy thao tác chính thay vì mở màn hình của nó. Dùng khi dò lỗi. |
 | `no-keyboard` | Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính." thay vì mở bàn phím Kobo. |
 | `debug` | Ghi nhật ký từng bước vào `debug.log` trong cùng thư mục. |
@@ -626,15 +626,15 @@ tools/install-to-kobo.sh --uninstall --dry-run   # xem sẽ gỡ những gì
 tools/install-to-kobo.sh --uninstall             # hỏi có giữ thư mục data/ của ứng dụng không
 ```
 
-Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại tệp đã nhận còn nằm trong hộp nhận, tạo tệp công tắc `uninstall`, và bật lại tab NickelMenu. Thêm `--purge` để xoá luôn thư mục `data/` của các ứng dụng. Sau đó ngắt kết nối và khởi động lại Kobo.
+Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại tệp đã nhận còn nằm trong hộp nhận, tạo tệp công tắc `uninstall`, và bật lại tab NickelMenu. Thêm `--purge` để xóa luôn thư mục `data/` của các ứng dụng. Sau đó ngắt kết nối và khởi động lại Kobo.
 
 **Bằng tay:**
 
 1. Trước tiên: trong **Tinh chỉnh**, đặt **Màn hình chờ**, **Chụp màn hình**, **Tự kết nối USB** và **Chữ rõ nét** theo ý bạn muốn giữ. Nếu đã dùng Thư viện, khôi phục những sách đã bỏ vào thùng rác mà bạn muốn giữ.
 2. Cắm USB. Tạo tệp rỗng `.adds/nickeldrawer/uninstall`.
 3. Ngắt kết nối và khởi động lại Kobo. Mod bị gỡ, **Ứng dụng** và **Tinh chỉnh** biến khỏi **Thêm**.
-4. Cắm lại và xoá các thư mục `.adds/koboapps` và `.adds/apps` (và `.adds/nickeldrawer` nếu muốn).
-5. Xoá các ảnh tên `nd-wallpaper-*.png` trong `.kobo/screensaver`, nếu không Kobo vẫn hiện chúng khi ngủ.
+4. Cắm lại và xóa các thư mục `.adds/koboapps` và `.adds/apps` (và `.adds/nickeldrawer` nếu muốn).
+5. Xóa các ảnh tên `nd-wallpaper-*.png` trong `.kobo/screensaver`, nếu không Kobo vẫn hiện chúng khi ngủ.
 
 **Cách cuối cùng:** nếu Kobo không khởi động bình thường, dùng [lưới an toàn](#s-luoi-an-toan-failsafe). Nếu vẫn không được, dùng tệp công tắc `disable` qua USB, hoặc khôi phục Kobo theo hướng dẫn của chính Kobo.
 
@@ -644,7 +644,7 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
 |---|---|
 | Sách, tài liệu, truyện tranh và ảnh đã nhận hoặc đồng bộ | `Books`, `Documents`, `Comics`, `Pictures`, và các thư mục `GitHub` bên trong |
 | Tệp đã nhận nhưng chưa được xếp | `.adds/koboapps/inbox/` (chỉ khi có) |
-| Dữ liệu ứng dụng, trừ khi bạn xoá hoặc dùng `--purge` | `.adds/apps/<ứng dụng>/data/` (token GitHub, thư viện Hình nền, bản sao lưu và thùng rác của Thư viện) |
+| Dữ liệu ứng dụng, trừ khi bạn xóa hoặc dùng `--purge` | `.adds/apps/<ứng dụng>/data/` (token GitHub, thư viện Hình nền, bản sao lưu và thùng rác của Thư viện) |
 | Ảnh màn hình ngủ | `.kobo/screensaver/nd-wallpaper-*.png` |
 | Cài đặt Kobo đã đổi trong **Tinh chỉnh** | `.kobo/Kobo/Kobo eReader.conf`, và `.kobo/screensaver.disabled` nếu **Màn hình chờ** đang tắt |
 | Bản sao lưu của tập lệnh cài | `backups/` trên máy tính |
@@ -657,7 +657,7 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
   - Ghép nối GitHub mở một trang nhỏ trên Wi-Fi của bạn tối đa 10 phút. Đồng bộ chỉ nói chuyện với GitHub.
   - Cập nhật chỉ nói chuyện với GitHub khi bạn bấm **Kiểm tra** hoặc **Cập nhật lên <phiên bản>**.
   - Hình nền, Thư viện, Việc cần làm và Tinh chỉnh không bao giờ dùng mạng.
-- **Token GitHub** chỉ được lưu trên Kobo, ở `.adds/apps/ghsync/data/token`. Nó không bao giờ hiện trên màn hình, trong nhật ký hay trong trạng thái ứng dụng. Nhưng bộ nhớ của Kobo không khoá được từng tệp: ai cắm Kobo của bạn vào máy tính cũng đọc được tệp đó. Vì vậy token nên là loại fine-grained, chỉ cho một repo và chỉ đọc. Nếu mất Kobo, hãy thu hồi token trên GitHub.
+- **Token GitHub** chỉ được lưu trên Kobo, ở `.adds/apps/ghsync/data/token`. Nó không bao giờ hiện trên màn hình, trong nhật ký hay trong trạng thái ứng dụng. Nhưng bộ nhớ của Kobo không khóa được từng tệp: ai cắm Kobo của bạn vào máy tính cũng đọc được tệp đó. Vì vậy token nên là loại fine-grained, chỉ cho một repo và chỉ đọc. Nếu mất Kobo, hãy thu hồi token trên GitHub.
 - **Mã PIN LocalSend** được lưu ở `.adds/apps/localsend/data/pin.txt`, cũng đọc được theo cách đó.
 - Nhật ký nằm trên Kobo. Không có gì được tải lên.
 
@@ -665,7 +665,7 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
 
 ## Hỏi đáp
 
-**Cập nhật firmware của Kobo có xoá NickelDrawer không?**
+**Cập nhật firmware của Kobo có xóa NickelDrawer không?**
 Có thể. Bản cập nhật firmware có thể thay tệp mod, và một bản firmware NickelDrawer chưa biết sẽ khiến nó tự tắt kèm một thông báo ngắn. Ứng dụng và dữ liệu vẫn nằm trong `.adds`. Hãy cài bản NickelDrawer hỗ trợ bản firmware mới.
 
 **Kobo mời tôi lên "5.x". Có nên nhận không?**
@@ -716,7 +716,7 @@ Phần này **không thuộc NickelDrawer**. Đây là việc cài thêm, làm r
     4. Ngắt kết nối (eject) an toàn. Kobo tự cập nhật và khởi động lại, khoảng 3 phút. Không tắt máy trong lúc này.
     5. Nếu hiện hộp thoại, giữ nút nguồn cho đến khi máy tắt rồi bật lại.
 - **Chọn ngôn ngữ:** máy nên tự chuyển sang tiếng Việt. Nếu không, vào **Thêm** → **Cài đặt** → **Ngôn ngữ và từ điển** † → chọn ngôn ngữ → **Extra: vi** (theo trang dự án, đường dẫn bằng tiếng Anh: More > Settings > Language and dictionaries > Select your Language > Extra: vi).
-- **Gỡ cài đặt:** tạo tệp rỗng `uninstall.txt` trong `.adds/tiengviet/`, eject rồi khởi động lại Kobo. Xoá thư mục `.adds/tiengviet/` sau đó là tùy chọn. Theo trang dự án, cách này chỉ gỡ phần tự sửa lỗi và bàn phím tiếng Việt; chữ tiếng Việt vẫn hiện cho tới khi bạn đặt lại về mặc định gốc (Factory Reset) hoặc cài lại firmware.
+- **Gỡ cài đặt:** tạo tệp rỗng `uninstall.txt` trong `.adds/tiengviet/`, eject rồi khởi động lại Kobo. Xóa thư mục `.adds/tiengviet/` sau đó là tùy chọn. Theo trang dự án, cách này chỉ gỡ phần tự sửa lỗi và bàn phím tiếng Việt; chữ tiếng Việt vẫn hiện cho tới khi bạn đặt lại về mặc định gốc (Factory Reset) hoặc cài lại firmware.
 - **Sau khi Kobo cập nhật firmware:** mỗi bản firmware mới có thể làm lỗi hiển thị tiếng Việt quay lại. Từ bản `20260319`, dự án tự sửa lại và không cần cài lại, nhưng có thể phải khởi động lại máy thêm một lần. Dự án cũng cảnh báo các bản vá tiếng Việt khác có thể xung đột; họ khuyên về firmware gốc trước khi cài.
 
 Các thông tin về thao tác của dự án có thể đã đổi: xem hướng dẫn của dự án trước khi làm.
@@ -751,13 +751,13 @@ Sách EPUB nhúng sẵn phông riêng có thể bỏ qua phông bạn chọn. Đ
 
 ### Từ điển Anh–Việt (tùy chọn)
 
-Kobo có cài đặt từ điển riêng ở **Ngôn ngữ và từ điển** † (xem phần trên). Từ điển của bên thứ ba là rủi ro của bạn. Một dự án có sẵn là [redphx/tudien](https://github.com/redphx/tudien) (từ điển Anh–Việt dùng nguồn Lạc Việt, TFlat, DictBox, Babylon, Laban; trang dự án nêu nhiều nghĩa có thể trùng và không nêu giấy phép). Theo trang đó: cần cài kobo-tieng-viet trước; tải `tudien-kobo-en-vi.zip` từ trang phát hành, chép vào `.kobo/custom-dict`, không giải nén, đổi tên thành `dicthtml-en-vi.zip` (xoá tệp từ điển cũ nếu cần), rồi eject. Cách chọn từ điển trên máy, xem hướng dẫn của dự án.
+Kobo có cài đặt từ điển riêng ở **Ngôn ngữ và từ điển** † (xem phần trên). Từ điển của bên thứ ba là rủi ro của bạn. Một dự án có sẵn là [redphx/tudien](https://github.com/redphx/tudien) (từ điển Anh–Việt dùng nguồn Lạc Việt, TFlat, DictBox, Babylon, Laban; trang dự án nêu nhiều nghĩa có thể trùng và không nêu giấy phép). Theo trang đó: cần cài kobo-tieng-viet trước; tải `tudien-kobo-en-vi.zip` từ trang phát hành, chép vào `.kobo/custom-dict`, không giải nén, đổi tên thành `dicthtml-en-vi.zip` (xóa tệp từ điển cũ nếu cần), rồi eject. Cách chọn từ điển trên máy, xem hướng dẫn của dự án.
 
 ### An toàn
 
 - **Sao lưu trước khi cài:** chép `.kobo` và `.adds` vào máy tính (xem [Sao lưu](#s-sao-luu)). Nếu muốn, chép thêm thư mục `fonts`.
 - **Khôi phục:** dùng cách gỡ của chính dự án (tệp `uninstall.txt` ở trên). Nếu Kobo không khởi động được, xem hướng dẫn của dự án.
-- **Đặt lại về mặc định gốc (Factory Reset)** là cách cuối cùng, vì nó xoá cả sách và cài đặt. Chỉ dùng khi mọi cách khác không được.
+- **Đặt lại về mặc định gốc (Factory Reset)** là cách cuối cùng, vì nó xóa cả sách và cài đặt. Chỉ dùng khi mọi cách khác không được.
 
 ## Bảng thuật ngữ
 

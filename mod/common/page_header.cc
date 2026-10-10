@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
+#include "copperui/tokens.h"
 #include "debug_log.h"
 #include "nickel_fonts.h"
 #include "system_icon.h"
@@ -16,8 +17,8 @@
 // allocate generously and zeroed, as for IconLeftButton.
 static const size_t TEXT_HEADER_ALLOCATION = 256;
 
-static const int BACK_BUTTON_SIDE = 120;  // minimum tap target (ui-kit §1.5)
-static const int BACK_ICON_SIDE = 64;     // Nickel's header icon on the Libra 2 class ("headerIconWidth")
+static const int BACK_BUTTON_SIDE = copperui::v1::HEADER_ICON_TARGET; // minimum tap target
+static const int BACK_ICON_SIDE = copperui::v1::HEADER_ICON;          // Nickel's "headerIconWidth" on the Libra 2 class
 
 // Nickel's QSS sizes the TextHeader title (N3ButtonLabel, 34 px on the Libra 2
 // class) but makes it Georgia italic; Wishlist turns it into the sans upright
@@ -25,11 +26,12 @@ static const int BACK_ICON_SIDE = 64;     // Nickel's header icon on the Libra 2
 // which has Vietnamese (nickel_fonts.h). The fallback title copies the size.
 // Borders inside the TextHeader are off: our one divider runs under the row.
 static const char *const HEADER_STYLE =
-    "#nickelDrawerTextHeader #label { font-family: @BODY_FAMILY@; font-style: normal; color: black; border: none; }"
+    "#nickelDrawerTextHeader #label { font-family: @BODY_FAMILY@; font-style: normal; color: " COPPERUI_GREY_INK_BLACK
+    "; border: none; }"
     "#nickelDrawerTextHeader #image { border: none; }"
-    "#drawerHeaderDivider { background: #666666; }"
-    "#drawerHeaderTitle { font-family: @BODY_FAMILY@; font-size: 34px; font-style: normal; color: black;"
-    " background: transparent; }";
+    "#drawerHeaderDivider { background: " COPPERUI_GREY_LINE_HEADER "; }"
+    "#drawerHeaderTitle { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_HEADER_TITLE_SIZE
+    "; font-style: normal; color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }";
 
 // ---- Fallback back button ----
 

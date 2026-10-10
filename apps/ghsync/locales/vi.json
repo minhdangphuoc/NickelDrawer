@@ -15,7 +15,7 @@
   "msg.error": "Lỗi: {message}",
   "msg.sync_done": "Đồng bộ xong: {new} sách mới, {existing} đã có",
   "msg.dry_run_done": "Chạy thử: {new} sách mới, {existing} đã có",
-  "msg.deleted_locally": "{count} đã xoá trên máy (dùng --redownload-deleted để tải lại)",
+  "msg.deleted_locally": "{count} đã xóa trên máy (dùng --redownload-deleted để tải lại)",
   "msg.file_errors": "{count} file lỗi, xem data/log.txt",
   "msg.truncated": "Cảnh báo: repo quá lớn, danh sách bị cắt bớt",
   "msg.skipped": "{count} file bị bỏ qua (loại không cho phép, quá lớn, hoặc không đúng loại file)",

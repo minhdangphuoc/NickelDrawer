@@ -5,11 +5,11 @@
 Danh sách việc cần làm nằm gọn trong máy Kobo, không cần mạng.
 
 1. Mở **Việc cần làm** trong ngăn ứng dụng. Bấm ô **Việc mới**, gõ bằng bàn phím của Nickel (gõ được tiếng Việt có dấu) rồi xác nhận: việc được thêm vào cuối danh sách. Chữ được đưa về chuẩn Unicode NFC, nên việc có dấu luôn khớp nhau.
-2. Chạm một việc để đánh dấu xong (có dấu ✓), chạm lần nữa để mở lại. Nhấn giữ một việc rồi chọn **Xoá...** để xoá nó (có hỏi trước).
-3. **Xoá việc đã xong** xoá mọi việc đã đánh dấu (có hỏi trước); nút mờ khi chưa có việc nào xong. Dòng bên phải tiêu đề cho biết số việc còn lại và số việc đã xong.
+2. Chạm một việc để đánh dấu xong (có dấu ✓), chạm lần nữa để mở lại. Nhấn giữ một việc rồi chọn **Xóa...** để xóa nó (có hỏi trước).
+3. **Xóa việc đã xong** xóa mọi việc đã đánh dấu (có hỏi trước); nút mờ khi chưa có việc nào xong. Dòng bên phải tiêu đề cho biết số việc còn lại và số việc đã xong.
 4. Danh sách có tối đa 200 việc, mỗi việc tối đa 200 ký tự, và không có hai việc trùng chữ.
 
-Danh sách nằm trong `data/todo.json` của ứng dụng, ghi bằng tệp tạm rồi đổi tên, nên mất điện cũng không hỏng và vẫn còn sau khi khởi động lại. Nếu tệp bị hỏng (không đọc được), nó được giữ lại thành `data/todo.json.corrupt`, danh sách bắt đầu lại từ trống và màn hình có ghi chú báo việc đó. Gỡ ứng dụng không xoá `data/`.
+Danh sách nằm trong `data/todo.json` của ứng dụng, ghi bằng tệp tạm rồi đổi tên, nên mất điện cũng không hỏng và vẫn còn sau khi khởi động lại. Nếu tệp bị hỏng (không đọc được), nó được giữ lại thành `data/todo.json.corrupt`, danh sách bắt đầu lại từ trống và màn hình có ghi chú báo việc đó. Gỡ ứng dụng không xóa `data/`.
 
 ## English
 

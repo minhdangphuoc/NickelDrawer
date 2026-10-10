@@ -1,6 +1,8 @@
 #ifndef NICKELDRAWER_DRAWER_LOGIC_H
 #define NICKELDRAWER_DRAWER_LOGIC_H
 
+#include "copperui/tokens.h"
+
 // Pure decision logic of the drawer: no Qt, no libnickel, no C++ standard
 // library, so tests/drawer_logic_test.cc builds it with the host compiler.
 
@@ -10,20 +12,20 @@ namespace DrawerLogic {
 
 enum ViewMode { VIEW_LIST = 0, VIEW_GRID = 1 };
 
-static const int LIST_ROWS_PER_PAGE = 7;
+static const int LIST_ROWS_PER_PAGE = copperui::v1::DRAWER_LIST_ROWS;
 
 // ---- Grid geometry (docs/spec/ui-kit.md §5.2 "Grid view") ----
 // A phone-launcher grid: GRID_COLUMNS identical cells spanning the content
 // width (the header's gutters), icon over name, no borders.
 
-static const int GRID_COLUMNS = 4;
-static const int GRID_ROW_HEIGHT = 240;
-static const int GRID_ICON_SIDE = 96;
-static const int GRID_ICON_NAME_GAP = 12;
-static const int GRID_NAME_LINES = 2;
-static const int GRID_NAME_LINE_HEIGHT = 42;
+static const int GRID_COLUMNS = copperui::v1::DRAWER_GRID_COLUMNS;
+static const int GRID_ROW_HEIGHT = copperui::v1::DRAWER_GRID_ROW;
+static const int GRID_ICON_SIDE = copperui::v1::ICON_GRID;
+static const int GRID_ICON_NAME_GAP = copperui::v1::DRAWER_GRID_ICON_GAP;
+static const int GRID_NAME_LINES = copperui::v1::DRAWER_GRID_NAME_LINES;
+static const int GRID_NAME_LINE_HEIGHT = copperui::v1::TYPE_GRID_NAME_LINE;
 // Rows assumed before the page area is laid out, and the lower bound after.
-static const int GRID_DEFAULT_ROWS = 5;
+static const int GRID_DEFAULT_ROWS = copperui::v1::DRAWER_GRID_DEFAULT_ROWS;
 
 struct CellRect {
     int x; // relative to the page area (which already sits inside the gutters)
@@ -169,6 +171,13 @@ enum Language { LANGUAGE_ENGLISH, LANGUAGE_VIETNAMESE };
 
 // Nickel's CurrentLocale ("vi", "vi_VN", "en_US", empty) to a fallback table.
 Language languageForLocale(const char *locale);
+
+// Locale files to try, best first: the exact locale ("pt_BR"), its language ("pt"), then "en".
+// A locale with characters other than letters, '_' and '-' (a path, say) gives only "en".
+// Each name is written into names[i] (at most LOCALE_NAME_SIZE bytes, NUL included); the number
+// of names is returned (at most maxNames).
+static const int LOCALE_NAME_SIZE = 16;
+int localeFileChain(const char *locale, char names[][LOCALE_NAME_SIZE], int maxNames);
 
 // ---- Kobo 5.x (Qt6) upgrade offer ----
 

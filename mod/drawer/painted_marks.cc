@@ -4,18 +4,19 @@
 #include <QPainter>
 #include <QPixmap>
 
+#include "copperui/tokens.h"
 #include "debug_log.h"
 #include "nickel_fonts.h"
 #include "system_icon.h"
 
-static const int DOT_DIAMETER = 20;
-static const int TOGGLE_SIDE = 120;      // minimum tap target (ui-kit §1.5)
-static const int TOGGLE_ICON_SIDE = 64;  // the header icon size (Nickel's "headerIconWidth" on the Libra 2 class)
-static const int TOGGLE_UNDERLINE_HEIGHT = 4;
-static const int TOGGLE_UNDERLINE_GAP = 6;
-static const int HEADER_ICON_SIDE = 120;
-static const int HEADER_LABEL_PADDING = 16;
-static const int HEADER_LABEL_SIZE = 30;
+static const int DOT_DIAMETER = copperui::v1::DOT_UPDATE;
+static const int TOGGLE_SIDE = copperui::v1::TARGET_MIN;
+static const int TOGGLE_ICON_SIDE = copperui::v1::ICON_TOOLBAR;
+static const int TOGGLE_UNDERLINE_HEIGHT = copperui::v1::UNDERLINE_HEIGHT;
+static const int TOGGLE_UNDERLINE_GAP = copperui::v1::UNDERLINE_GAP;
+static const int HEADER_ICON_SIDE = copperui::v1::HEADER_ICON_TARGET;
+static const int HEADER_LABEL_PADDING = 2 * copperui::v1::SPACE_UNIT;
+static const int HEADER_LABEL_SIZE = copperui::v1::TYPE_HEADER_LABEL_SIZE;
 
 UpdateDot::UpdateDot(QWidget *parent) : QWidget(parent)
 {

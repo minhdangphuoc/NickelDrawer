@@ -174,7 +174,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <li>☐ <strong>GitHub (người dùng chuẩn bị, trên điện thoại hoặc máy tính, trước buổi):</strong>
   1. Một repo <strong>riêng tư</strong> (ví dụ <code>&lt;tên bạn&gt;/kobo-thu</code>) có thư mục <code>epub/</code> chứa <strong>ít nhất một sách thật</strong> (khuyên 2), tên có dấu tiếng Việt càng tốt (ví dụ <code>Việt Nam sử lược.epub</code>). Thêm hai tệp thử bị bỏ qua: <code>epub/gia.epub</code> (tệp văn bản đổi đuôi thành .epub) và <code>epub/ghi-chu.txt</code>. Có thể thêm <code>epub/mau.pdf</code> để thấy PDF vào <code>Documents/GitHub</code>. Giữ sẵn một sách thứ ba để thêm vào repo ở GH-06.
   2. (Tùy chọn, cho GH-07) một repo riêng tư thứ hai <strong>hoàn toàn trống</strong> (không commit nào, không README).
-  3. Một <strong>fine-grained personal access token</strong>: Repository access = <em>Only select repositories</em> và chỉ chọn repo ở bước 1 (thêm repo trống nếu có); Permissions = <strong>Contents: Read-only</strong> (Metadata tự có); hết hạn trong 7 ngày. Giữ token trong trình quản lý mật khẩu của điện thoại để dán vào trang ghép nối. <strong>Chỉ nhập token ở trang ghép nối trên điện thoại.</strong> Không gõ nó vào chat, vào Mac, vào Kobo, không chụp màn hình. Xoá (revoke) token trên GitHub sau buổi.</li>
+  3. Một <strong>fine-grained personal access token</strong>: Repository access = <em>Only select repositories</em> và chỉ chọn repo ở bước 1 (thêm repo trống nếu có); Permissions = <strong>Contents: Read-only</strong> (Metadata tự có); hết hạn trong 7 ngày. Giữ token trong trình quản lý mật khẩu của điện thoại để dán vào trang ghép nối. <strong>Chỉ nhập token ở trang ghép nối trên điện thoại.</strong> Không gõ nó vào chat, vào Mac, vào Kobo, không chụp màn hình. Xóa (revoke) token trên GitHub sau buổi.</li>
 <li>☐ <strong>Bộ giao diện (UI Kit) ẩn mặc định.</strong> Ứng dụng này là mục tiêu thử KIT-<em>, nên chỉ hiện khi bạn bật cho buổi này, và bật bằng chính máy (không sửa <code>app.json</code>, không cần USB): trong Ngăn bấm bánh răng ⚙ ở tiêu đề, bật </em><em>Bộ giao diện</em><em> trong mục </em><em>Ứng dụng ẩn</em><em>, bấm ←: hàng/ô </em><em>Bộ giao diện</em>* hiện ra (ca SET-02). Cuối buổi tắt lại công tắc đó. Dữ liệu của nó nằm trong <code>data/</code> của ứng dụng, không đụng sách.</li>
 <li>☐ Chuẩn bị cho TODO-06: một tệp <code>todo-hong.json</code> ngoài repo, trong <code>local/</code>, nội dung <code>{ hỏng</code> (cố ý không phải JSON).</li>
 <li>☐ Hỏi lại: Kobo không đang hiện lời mời nâng cấp Qt6 (<code>tools/device-session.sh status</code> báo "none" hoặc "declined"). Nếu có, bấm Bỏ qua trên máy, không đồng ý.</li>
@@ -185,7 +185,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <li>Cắm USB, bấm Kết nối trên Kobo. <code>tools/device-session.sh status</code>: firmware 4.38.23828, không có <code>KoboRoot.tgz</code> đang chờ, không có cờ <code>uninstall*</code> hay <code>disable</code>. Nếu có tệp <code>._*</code>: <code>tools/device-session.sh clean</code>.</li>
 <li>Sao lưu: <code>cp</code> <code>.kobo/KoboReader.sqlite</code>, <code>.kobo/Kobo/Kobo eReader.conf</code> và <code>.kobo/version</code> vào <code>backups/&lt;ngày&gt;/</code>; sao lưu <code>.adds/apps/wallpaper/data</code> và danh sách <code>Pictures/</code> (thư mục <code>backups/</code> đã bị gitignore).</li>
 <li><code>tools/install-to-kobo.sh --dry-run</code>, đọc từng dòng <code>[dry-run]</code>; rồi <code>tools/install-to-kobo.sh</code> (tự gỡ <code>.adds/nm/koboapps</code> sau khi sao lưu và tắt tab NickelMenu <code>menu_main_15505_enabled:0</code>).</li>
-<li>Xoá dữ liệu Hình nền cũ để thử lần nhập đầu: xoá <code>.adds/apps/wallpaper/data</code>, các tệp <code>.kobo/screensaver/nd-wallpaper-*</code> và ảnh thử cũ trong <code>Pictures/</code> (đã sao lưu ở bước 2). Để <code>Pictures/</code> trống.</li>
+<li>Xóa dữ liệu Hình nền cũ để thử lần nhập đầu: xóa <code>.adds/apps/wallpaper/data</code>, các tệp <code>.kobo/screensaver/nd-wallpaper-*</code> và ảnh thử cũ trong <code>Pictures/</code> (đã sao lưu ở bước 2). Để <code>Pictures/</code> trống.</li>
 <li><code>tools/device-session.sh stage build/mod/KoboRoot-nickeldrawer.tgz</code>, rồi <code>tools/device-session.sh flags debug screens</code> (cờ <code>screens</code> bật màn hình ứng dụng), rồi <code>tools/device-session.sh eject</code>.</li>
 </ol>
 <p>Người dùng: rút USB, chờ Kobo cài và khởi động lại, rồi đợi 20 giây ở Trang chủ.</p>
@@ -285,7 +285,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>DRW-14</td>
 <td>Trong Ngăn, nhấn giữ một ứng dụng (ví dụ Thư viện)</td>
-<td>Menu kiểu Nickel (các hàng, không có nút hộp): Thông tin, các thao tác của ứng dụng, Gỡ…. Bấm ra ngoài thì đóng. Mở lại, chọn Gỡ…, bấm <strong>Huỷ</strong>: không gỡ gì</td>
+<td>Menu kiểu Nickel (các hàng, không có nút hộp): Thông tin, các thao tác của ứng dụng, Gỡ…. Bấm ra ngoài thì đóng. Mở lại, chọn Gỡ…, bấm <strong>Hủy</strong>: không gỡ gì</td>
 <td><code>row menu: Nickel menu ... rows</code>, <code>popup: ... opened</code>, <code>popup: ... closed: ...</code>, <code>row menu: row N (...) tapped</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -388,8 +388,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>TWK-08</td>
-<td>Bấm "Khởi động lại" rồi chọn <strong>Huỷ</strong>. Làm tương tự với "Đảo màu và khởi động lại"</td>
-<td>Có hộp xác nhận ("Khởi động lại ngay?", "Đảo màu màn hình và khởi động lại ngay?"). Huỷ thì không có gì xảy ra</td>
+<td>Bấm "Khởi động lại" rồi chọn <strong>Hủy</strong>. Làm tương tự với "Đảo màu và khởi động lại"</td>
+<td>Có hộp xác nhận ("Khởi động lại ngay?", "Đảo màu màn hình và khởi động lại ngay?"). Hủy thì không có gì xảy ra</td>
 <td><code>tweaks: "reboot" cancelled</code>, <code>tweaks: "invert-reboot" cancelled</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -602,17 +602,17 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>GH-05</td>
-<td>Trong Thư viện <strong>xoá một sách</strong> đã đồng bộ (nhấn giữ &gt; Xoá). Quay lại GitHub, bấm "Đồng bộ ngay"</td>
-<td>Sách bị xoá <strong>không tải lại</strong> (add-only, nhớ trong <code>state.json</code>); "0 mới"; không lỗi. Các sách khác còn nguyên</td>
+<td>Trong Thư viện <strong>xóa một sách</strong> đã đồng bộ (nhấn giữ &gt; Xóa). Quay lại GitHub, bấm "Đồng bộ ngay"</td>
+<td>Sách bị xóa <strong>không tải lại</strong> (add-only, nhớ trong <code>state.json</code>); "0 mới"; không lỗi. Các sách khác còn nguyên</td>
 <td><code>deleted locally, skipped: epub/...</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>GH-06</td>
-<td>Trên điện thoại (GitHub): <strong>xoá</strong> một sách đã đồng bộ khỏi repo và <strong>thêm</strong> sách thứ ba vào <code>epub/</code>. Trên Kobo bấm "Đồng bộ ngay"</td>
-<td>Sách mới về và vào Thư viện sau khi tự quét lại ("1 mới"). Sách đã xoá khỏi repo <strong>vẫn còn</strong> trên máy (không bao giờ xoá)</td>
-<td><code>downloaded: epub/&lt;sách mới&gt;</code>; không có dòng xoá</td>
+<td>Trên điện thoại (GitHub): <strong>xóa</strong> một sách đã đồng bộ khỏi repo và <strong>thêm</strong> sách thứ ba vào <code>epub/</code>. Trên Kobo bấm "Đồng bộ ngay"</td>
+<td>Sách mới về và vào Thư viện sau khi tự quét lại ("1 mới"). Sách đã xóa khỏi repo <strong>vẫn còn</strong> trên máy (không bao giờ xóa)</td>
+<td><code>downloaded: epub/&lt;sách mới&gt;</code>; không có dòng xóa</td>
 <td>☐</td>
 <td>☐</td>
 </tr>
@@ -639,7 +639,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <li><code>Books/GitHub/</code> có sách đã đồng bộ với tên <strong>chuẩn NFC</strong> (lệnh <code>python3 -c "import os,sys,unicodedata as u;print([n for n in os.listdir(sys.argv[1]) if u.normalize('NFC',n)!=n])" &lt;thư mục Books/GitHub&gt;</code> in <code>[]</code>); có <code>Documents/GitHub/mau.pdf</code> nếu đã thêm PDF; <strong>không</strong> có <code>gia.epub</code>, <code>ghi-chu.txt</code>, và không có tệp <code>.ghsync-*.part</code> nào.</li>
 <li><code>.adds/apps/ghsync/data/</code> chỉ có <code>token</code>, <code>config.json</code>, <code>state.json</code>, <code>log.txt</code>. <code>grep -c "github_pat_\|ghp_"</code> trên <code>log.txt</code>, <code>state.json</code>, <code>config.json</code> và <code>.adds/nickeldrawer/debug.log</code> phải ra <strong>0</strong>. Chỉ kiểm sự có mặt của <code>data/token</code>, không in nội dung.</li>
 <li><code>state.json</code> có mục <code>files</code> cho từng sách và <code>last_error</code> rỗng sau lần đồng bộ thành công; <code>config.json</code> không có khóa <code>dest</code> (xếp theo loại).</li>
-<li>Sau buổi: <strong>xoá token trên GitHub</strong> (Settings &gt; Developer settings), và xoá <code>data/token</code> trên máy nếu không dùng nữa.</li>
+<li>Sau buổi: <strong>xóa token trên GitHub</strong> (Settings &gt; Developer settings), và xóa <code>data/token</code> trên máy nếu không dùng nữa.</li>
 </ol>
 <h2 id="5-hinh-nen-thu-vien-giao-dien-khoang-20-phut">5. Hình nền, Thư viện, giao diện (khoảng 20 phút)</h2>
 <p>Mở Ngăn, bấm <strong>Hình nền</strong> lần đầu sau khi chép ảnh.</p>
@@ -674,7 +674,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>WP-03</td>
 <td>Bấm một ô. Trong trình xem: bấm 1/3 bên phải, 1/3 bên trái, phím lật trang; đến ảnh đầu bấm trái; đến ảnh cuối bấm phải</td>
-<td>Tiêu đề "← n / 13". Dưới có "Xoá…" (trái) và "Đặt làm hình nền". Mỗi lần đổi ảnh là một lần làm mới đầy màn (không để lại bóng). Ở đầu/cuối: không có gì xảy ra, không vòng lại</td>
+<td>Tiêu đề "← n / 13". Dưới có "Xóa…" (trái) và "Đặt làm hình nền". Mỗi lần đổi ảnh là một lần làm mới đầy màn (không để lại bóng). Ở đầu/cuối: không có gì xảy ra, không vòng lại</td>
 <td><code>viewer: picture 3 -&gt; 4 of 13</code>, <code>viewer: no previous picture ...</code>/<code>viewer: no next picture ...</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -705,8 +705,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>WP-06</td>
-<td>Trong trình xem bấm "Xoá…". Bấm ra ngoài hộp. Bấm <strong>Huỷ</strong>. Lại "Xoá…", bấm <strong>Xoá</strong></td>
-<td>Hộp "Xoá ảnh này?" kèm câu giữ ảnh gốc, hai nút Huỷ/Xoá; bấm ra ngoài <strong>không</strong> đóng; Huỷ không xoá; Xoá thì hiện ảnh kế (hoặc trước đó nếu là cuối), toast, tổng còn 12. Ảnh gốc vẫn ở <code>Pictures/</code> (Mac kiểm)</td>
+<td>Trong trình xem bấm "Xóa…". Bấm ra ngoài hộp. Bấm <strong>Hủy</strong>. Lại "Xóa…", bấm <strong>Xóa</strong></td>
+<td>Hộp "Xóa ảnh này?" kèm câu giữ ảnh gốc, hai nút Hủy/Xóa; bấm ra ngoài <strong>không</strong> đóng; Hủy không xóa; Xóa thì hiện ảnh kế (hoặc trước đó nếu là cuối), toast, tổng còn 12. Ảnh gốc vẫn ở <code>Pictures/</code> (Mac kiểm)</td>
 <td><code>plain dialog ...: outside tap ignored (destructive question)</code>, <code>queue: remove for ...</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -714,8 +714,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>WP-07</td>
 <td>Ở lưới, nhấn giữ một ô</td>
-<td>Menu Nickel có tiêu đề là tên ảnh: Đặt làm hình nền, Xem, Thông tin, Xoá khỏi Hình nền…. Thông tin mở hộp tên/kích thước/ngày, bấm ra ngoài thì đóng. "Xem" mở trình xem. "Xoá khỏi Hình nền…" hỏi xác nhận như WP-06; Huỷ thì giữ. "Xoá cả ảnh gốc…" hỏi "Xoá cả ảnh gốc?" (nút Xoá cả hai / Huỷ): Huỷ thì giữ cả hai; Xoá cả hai thì ảnh biến khỏi lưới <strong>và</strong> tệp gốc trong <code>Pictures/</code> bị xoá (Mac kiểm; chỉ khi tệp giống hệt, nếu đã sửa thì gốc còn)</td>
-<td><code>tile menu: "Thông tin" chosen</code>, <code>tile menu: "Xoá khỏi Hình nền…" chosen, asking first</code>, <code>tile menu: "Xoá cả ảnh gốc…" chosen, asking first</code>, <code>tile menu: dismissed</code></td>
+<td>Menu Nickel có tiêu đề là tên ảnh: Đặt làm hình nền, Xem, Thông tin, Xóa khỏi Hình nền…. Thông tin mở hộp tên/kích thước/ngày, bấm ra ngoài thì đóng. "Xem" mở trình xem. "Xóa khỏi Hình nền…" hỏi xác nhận như WP-06; Hủy thì giữ. "Xóa cả ảnh gốc…" hỏi "Xóa cả ảnh gốc?" (nút Xóa cả hai / Hủy): Hủy thì giữ cả hai; Xóa cả hai thì ảnh biến khỏi lưới <strong>và</strong> tệp gốc trong <code>Pictures/</code> bị xóa (Mac kiểm; chỉ khi tệp giống hệt, nếu đã sửa thì gốc còn)</td>
+<td><code>tile menu: "Thông tin" chosen</code>, <code>tile menu: "Xóa khỏi Hình nền…" chosen, asking first</code>, <code>tile menu: "Xóa cả ảnh gốc…" chosen, asking first</code>, <code>tile menu: dismissed</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
@@ -738,7 +738,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>NAV-02</td>
 <td>Mở Hình nền → trang 2 → một ảnh → bấm tab <strong>Trang chủ</strong>. Rồi Thêm → Ứng dụng → Hình nền</td>
-<td>Bấm tab xoá hết ngăn xếp: Trang chủ sạch; Thêm hiện danh sách gốc, không còn Ngăn bỏ lại; Hình nền mở lại từ trang 1 của lưới, không phải trình xem</td>
+<td>Bấm tab xóa hết ngăn xếp: Trang chủ sạch; Thêm hiện danh sách gốc, không còn Ngăn bỏ lại; Hình nền mở lại từ trang 1 của lưới, không phải trình xem</td>
 <td><code>navigation: cleared N level(s), M of them screens or modals, ...</code>; không có <code>drawer controller</code> bị rò</td>
 <td>☐</td>
 <td>☐</td>
@@ -761,8 +761,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>KIT-09</td>
-<td>Trong Thư viện (xem LIB-02) bấm nút có hộp xác nhận, rồi Huỷ</td>
-<td>Hộp Có/Không kiểu Nickel; Huỷ không gửi gì; OK mới gửi</td>
+<td>Trong Thư viện (xem LIB-02) bấm nút có hộp xác nhận, rồi Hủy</td>
+<td>Hộp Có/Không kiểu Nickel; Hủy không gửi gì; OK mới gửi</td>
 <td><code>tile menu: ... asking first</code> hoặc <code>queue:</code> chỉ xuất hiện sau OK</td>
 <td>☐</td>
 <td>☐</td>
@@ -777,8 +777,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>LIB-02</td>
-<td>Chạm vào một sách trong "Sách trùng" rồi "Bỏ vào thùng rác", Huỷ rồi lại làm và bấm Chuyển</td>
-<td>Dòng "Đã chọn: …"; hộp xác nhận; Huỷ không làm gì; Chuyển thì toast "Đã chuyển vào thùng rác 30 ngày.", tệp vào <code>data/trash/</code> (Mac kiểm), quét lại thì chỉ còn một bản. Không bao giờ xoá bản cuối</td>
+<td>Chạm vào một sách trong "Sách trùng" rồi "Bỏ vào thùng rác", Hủy rồi lại làm và bấm Chuyển</td>
+<td>Dòng "Đã chọn: …"; hộp xác nhận; Hủy không làm gì; Chuyển thì toast "Đã chuyển vào thùng rác 30 ngày.", tệp vào <code>data/trash/</code> (Mac kiểm), quét lại thì chỉ còn một bản. Không bao giờ xóa bản cuối</td>
 <td><code>tile menu:</code>/<code>queue: trash ...</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -904,16 +904,16 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>TODO-04</td>
-<td>Nhấn giữ một việc, chọn "Xoá...". Bấm Huỷ. Lại làm và bấm Xoá</td>
-<td>Menu Nickel có "Xoá..."; hộp xác nhận kiểu Nickel; Huỷ không xoá; Xoá thì dòng biến mất, toast "Đã xoá việc", số đếm giảm</td>
+<td>Nhấn giữ một việc, chọn "Xóa...". Bấm Hủy. Lại làm và bấm Xóa</td>
+<td>Menu Nickel có "Xóa..."; hộp xác nhận kiểu Nickel; Hủy không xóa; Xóa thì dòng biến mất, toast "Đã xóa việc", số đếm giảm</td>
 <td><code>tile menu: ... asking first</code> hoặc <code>list menu:</code> rồi <code>queue: remove ...</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>TODO-05</td>
-<td>Khi chưa có việc xong, xem nút "Xoá việc đã xong". Đánh dấu hai việc xong, bấm nút, bấm Huỷ, rồi bấm lại và Xoá. Thêm lại đúng một việc đã có; bấm xác nhận khi ô trống</td>
-<td>Chưa có việc xong: nút mờ, chạm không gửi gì. Có việc xong: hộp xác nhận; Huỷ không làm gì; Xoá xoá hết việc xong, toast "Đã xoá việc đã xong". Thêm trùng: toast "Việc này đã có", danh sách không đổi. Ô trống: toast "Hãy gõ việc trước"</td>
+<td>Khi chưa có việc xong, xem nút "Xóa việc đã xong". Đánh dấu hai việc xong, bấm nút, bấm Hủy, rồi bấm lại và Xóa. Thêm lại đúng một việc đã có; bấm xác nhận khi ô trống</td>
+<td>Chưa có việc xong: nút mờ, chạm không gửi gì. Có việc xong: hộp xác nhận; Hủy không làm gì; Xóa xóa hết việc xong, toast "Đã xóa việc đã xong". Thêm trùng: toast "Việc này đã có", danh sách không đổi. Ô trống: toast "Hãy gõ việc trước"</td>
 <td><code>queue: clear-done ...</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -929,7 +929,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>UIK-01 (KIT-01, KIT-06, KIT-07, KIT-08)</td>
 <td>Mở <strong>Bộ giao diện</strong>. Lật hết các trang của màn chính</td>
-<td>Có đủ: văn bản (tiêu đề, thường, chú thích), khoá-giá trị (phần mềm và ngôn ngữ đọc từ máy), mã lớn 4821, ghi chú có tiêu đề, các bước 2/5, dòng chạm được, dòng sang màn khác, danh sách 4 sách, nút chính ở dưới. Không có ô ghi chú thứ hai khi công tắc ở UIK-02 đang tắt. Tiếng Việt đủ dấu, không cắt chữ</td>
+<td>Có đủ: văn bản (tiêu đề, thường, chú thích), khóa-giá trị (phần mềm và ngôn ngữ đọc từ máy), mã lớn 4821, ghi chú có tiêu đề, các bước 2/5, dòng chạm được, dòng sang màn khác, danh sách 4 sách, nút chính ở dưới. Không có ô ghi chú thứ hai khi công tắc ở UIK-02 đang tắt. Tiếng Việt đủ dấu, không cắt chữ</td>
 <td><code>screen: "main" page n/N, ... tap target(s)</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -944,8 +944,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>UIK-03 (KIT-09)</td>
-<td>Cũng ở "Thêm thành phần": bấm nút "Luôn tắt"; tắt công tắc rồi bấm "Bật nhờ công tắc"; bấm "Nút có xác nhận", Huỷ, rồi lại và bấm Chạy; bấm "Nút phụ" và "Liên kết tiêu đề"</td>
-<td>Nút tắt (mờ) không gửi gì, kể cả "Bật nhờ công tắc" khi công tắc tắt; hộp xác nhận kiểu Nickel, Huỷ không gửi gì, Chạy gửi và có toast "Đã xác nhận"; nút phụ và liên kết cho toast "Đã chạm". Mã QR và khối ghép nối hiện đủ (QR quét được, mã 4821)</td>
+<td>Cũng ở "Thêm thành phần": bấm nút "Luôn tắt"; tắt công tắc rồi bấm "Bật nhờ công tắc"; bấm "Nút có xác nhận", Hủy, rồi lại và bấm Chạy; bấm "Nút phụ" và "Liên kết tiêu đề"</td>
+<td>Nút tắt (mờ) không gửi gì, kể cả "Bật nhờ công tắc" khi công tắc tắt; hộp xác nhận kiểu Nickel, Hủy không gửi gì, Chạy gửi và có toast "Đã xác nhận"; nút phụ và liên kết cho toast "Đã chạm". Mã QR và khối ghép nối hiện đủ (QR quét được, mã 4821)</td>
 <td><code>queue: confirmed ...</code> chỉ sau Chạy</td>
 <td>☐</td>
 <td>☐</td>
@@ -1073,7 +1073,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>FI-04 (tùy chọn)</td>
-<td>Người bảo trì (U5): xoá cờ <code>disable</code> (<code>flags debug screens</code>), <strong>sao lưu</strong> <code>.kobo/version</code>, sửa trường firmware (trường thứ 3) thành <code>4.99.99999</code> trên bản chép rồi ghi lại, <code>eject</code>. Người dùng: khởi động lại, mở Thêm</td>
+<td>Người bảo trì (U5): xóa cờ <code>disable</code> (<code>flags debug screens</code>), <strong>sao lưu</strong> <code>.kobo/version</code>, sửa trường firmware (trường thứ 3) thành <code>4.99.99999</code> trên bản chép rồi ghi lại, <code>eject</code>. Người dùng: khởi động lại, mở Thêm</td>
 <td>Bản firmware lạ: mod tắt ngăn, hàng Ứng dụng/Tinh chỉnh không có, Nickel bình thường</td>
 <td>(syslog) <code>bridge: firmware 4.99.99999 not in the tested list, drawer disabled</code></td>
 <td>☐</td>

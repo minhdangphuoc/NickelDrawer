@@ -12,7 +12,9 @@
 #include "nickel_fonts.h"
 #include "screen_logic.h"
 
-static const char *const CONTENT_STYLE = "QLineEdit { font-family: @BODY_FAMILY@; font-size: 40px; border: 2px solid black; padding: 16px; }";
+static const char *const CONTENT_STYLE =
+    "QLineEdit { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_TYPE_BODY_SIZE "; border: " COPPERUI_PX_STROKE_RULE
+    " solid " COPPERUI_GREY_INK_BLACK "; padding: " COPPERUI_PX_SPACE_EDIT_PADDING "; }";
 static const char *const NUMBER_KEYBOARD = "number";
 static const char *const URL_KEYBOARD = "url";
 

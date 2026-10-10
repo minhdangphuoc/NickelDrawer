@@ -11,12 +11,14 @@
 // A page that does not is drawn under the bar (re/notes/G2-findings.md,
 // "Header on device"). Plain Qt only: the bar is found by its object name.
 
+#include "copperui/tokens.h"
+
 class QWidget;
 
 namespace StatusBarInset {
 
 // Nickel's own topMargin on the Libra 2 class (used when the bar is not found).
-static const int FALLBACK_TOP_INSET = 128;
+static const int FALLBACK_TOP_INSET = copperui::v1::INSET_STATUS_BAR;
 
 // Pixels at the top of view covered by the status bar, plus Nickel's 2 px gap.
 // 0 when the bar is hidden or already above the view. Call it once the view is

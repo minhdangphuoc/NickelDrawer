@@ -8,7 +8,7 @@ Why: less code inside Nickel means fewer ways to crash it (P6 fail soft); logic 
 
 - Binary: `/mnt/onboard/.adds/koboapps/bin/appsctl`. Every call has a hard timeout in the mod: `model` 3 s, `info` 3 s, `screen` 5 s, `run` and `event` 35 s for `show` actions (appsctl stops a `show` script at its `timeout_ms`, at most 30 s) and 3 s for `background`, `remove` 10 s. On timeout or bad JSON the mod shows a localized error row and logs; it never blocks the UI thread (QProcess async signals only).
 - Output is UTF-8 JSON on stdout, exit code 0. Errors: exit 2 and `{"error":{"code":"…","message":"…"}}` (message already localized).
-- All user-facing text in the JSON is already localized by `appsctl` (device `CurrentLocale`). The mod never translates app strings; it only has a handful of built-in fallback strings (e.g. "Apps", "Error") for when `appsctl` itself fails.
+- All user-facing text in the JSON is already localized by `appsctl` (device `CurrentLocale`). The mod never translates app strings; its own few strings (e.g. "Apps", "Error") are the `mod.*` keys of `host/locales`, with a compiled fallback table for when the files or `appsctl` itself fail.
 - `"v": 1` in every response. The mod refuses a higher major version with an "update NickelDrawer" row.
 
 ## `appsctl drawer model`

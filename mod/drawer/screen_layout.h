@@ -18,7 +18,7 @@
 struct PaintItem {
     // SHAPE_IMAGE: the picture at imagePath fitted inside rect; the picture glyph
     // when the path is empty or unreadable (unless showsMissingGlyph is off).
-    // SHAPE_CHECK: a check mark in ink inside rect, border = stroke width (0: not drawn).
+    // SHAPE_CHECK: a check mark in ink inside rect, drawn only when isOn.
     // SHAPE_PICTURE_GLYPH: an outline picture icon in ink, border = stroke width.
     // SHAPE_BACK_ARROW: the header's drawn "←" in ink inside rect, border = stroke width.
     // SHAPE_SWITCH: Nickel's on or off switch image (isOn) centred in rect, never drawn by us.

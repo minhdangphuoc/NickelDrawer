@@ -17,19 +17,7 @@ All sizes are device pixels on the Kobo Libra 2: 300 dpi, 1264 x 1680, 1 mm = 11
 
 ## 2. Grid and sizes
 
-| Item | Size |
-|---|---|
-| Screen | 1264 x 1680 |
-| Side gutter | 72 px (content width 1120 px) |
-| Vertical rhythm | 24 px |
-| Drawer row | 152 px |
-| Key-value row | 104 px |
-| Primary button | 120 px high, full content width, at the bottom |
-| Secondary button | 120 px high, 2 px outline |
-| Row icon | 52 px, outline style |
-| BigCode | monospace, 144 px |
-| Separator | 2 px, Nickel's row colour |
-| Grid cell (drawer grid view) | 280 x 240 px, 4 columns, no border |
+Every size, grey and type setting is a CopperUI token: see the generated table [`docs/copperui-tokens.md`](../copperui-tokens.md) (source: `lib/copperui/tokens/copperui.tokens.json`) and the rules in [`docs/design-system.md`](../design-system.md). The numbers that used to be listed here are there, with the greys on the 16-level grid and the row dividers in Nickel's row grey.
 
 Rules: no shadows, no gradients, no animation. Title font about 1.25 x body. Text follows Nickel's font and size settings; layouts must hold at the largest size (KIT-12).
 

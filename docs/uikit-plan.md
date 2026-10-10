@@ -25,7 +25,7 @@ Header: title "UI Kit" / "Bộ giao diện"; status "Kit 1 · 18" ("18 thành ph
 | 1 | Actions / Thao tác | Button / Nút | Primary, secondary, confirm / Chính, phụ, xác nhận | `button` |
 | 1 | | Row and header actions / Dòng và nút tiêu đề | Tap, push, link, icons / Chạm, mở, liên kết, biểu tượng | `row` |
 | 1 | | Long-press menu / Menu nhấn giữ | Popup on a list row / Menu trên dòng danh sách | `menu` |
-| 1 | Selection / Lựa chọn | Toggle / Công tắc | On, off, disabled / Bật, tắt, khoá | `toggle` |
+| 1 | Selection / Lựa chọn | Toggle / Công tắc | On, off, disabled / Bật, tắt, khóa | `toggle` |
 | 1 | | Radio group / Chọn một | Up to 8 options / Tối đa 8 lựa chọn | `radio` |
 | 1 | Text input / Nhập liệu | Field / Ô nhập | Nickel keyboard / Bàn phím Nickel | `field` |
 | 1 | | Phone pairing / Ghép nối điện thoại | QR, address, code / QR, địa chỉ, mã | `pair` |
@@ -36,7 +36,7 @@ Header: title "UI Kit" / "Bộ giao diện"; status "Kit 1 · 18" ("18 thành ph
 | 2 | | Empty state / Màn trống | Heading, hint, one button / Tiêu đề, gợi ý, một nút | `empty` |
 | 2 | Navigation / Điều hướng | Header and pages / Tiêu đề và trang | Back, status, pager, keys / Quay lại, trạng thái, lật trang | `navigation` |
 | 3 | Containment / Bố cục | Text / Văn bản | Heading, body, caption / Tiêu đề, chữ thường, chú thích | `text` |
-| 3 | | Section and key–value / Mục và khoá–giá trị | Facts in rows / Thông tin theo dòng | `kv` |
+| 3 | | Section and key–value / Mục và khóa–giá trị | Facts in rows / Thông tin theo dòng | `kv` |
 | 3 | | Big code and QR / Mã lớn và QR | Codes you read or scan / Mã để đọc hoặc quét | `code` |
 | 3 | | List / Danh sách | Rows from state, tap, menu / Dòng từ trạng thái, chạm, menu | `list` |
 | 3 | | Gallery and viewer / Thư viện và xem ảnh | Tiles, badge, full view / Ô ảnh, dấu chọn, toàn màn | `gallery` |
@@ -125,9 +125,9 @@ If the boards are approved before `samples` ships, every page is built with exis
 Status strings are "Group · n / N"; copy is given as en / vi. Readout and the Use/Not-for lines are on every page and omitted below.
 
 ### 7.1 Button (`button`) — Actions · 1 / 3
-- Description: "One primary per screen, full width at the bottom. Secondary for the rest; a confirm for anything destructive." / "Mỗi màn một nút chính, rộng hết cỡ ở dưới. Nút phụ cho việc còn lại; xác nhận cho việc xoá."
+- Description: "One primary per screen, full width at the bottom. Secondary for the rest; a confirm for anything destructive." / "Mỗi màn một nút chính, rộng hết cỡ ở dưới. Nút phụ cho việc còn lại; xác nhận cho việc xóa."
 - States: `samples`, 3 columns, 2 rows: primary normal / pressed / disabled; secondary normal / pressed / disabled. Labels "Sync now" / "Đồng bộ" and "Stop" / "Dừng".
-- Try it: secondary "Secondary" / "Nút phụ" → `echo`; secondary "Remove…" / "Xoá…" with confirm (title "Remove 3 books?" / "Xoá 3 sách?", text "They stay on the phone." / "Sách vẫn còn trên điện thoại.", ok "Remove" / "Xoá", cancel "Cancel" / "Huỷ") → `confirm`; toggle "Enable the primary" / "Bật nút chính" bound to `primaryEnabled`.
+- Try it: secondary "Secondary" / "Nút phụ" → `echo`; secondary "Remove…" / "Xóa…" with confirm (title "Remove 3 books?" / "Xóa 3 sách?", text "They stay on the phone." / "Sách vẫn còn trên điện thoại.", ok "Remove" / "Xóa", cancel "Cancel" / "Hủy") → `confirm`; toggle "Enable the primary" / "Bật nút chính" bound to `primaryEnabled`.
 - Footer: primary "Primary" / "Nút chính", `enabled: "$primaryEnabled"` → `primary`.
 - Use for: "A verb the user does now." Not for: "Settings (use a toggle), navigation (use a row)."
 
@@ -139,9 +139,9 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 - Use for: "Lists of actions and settings." Not for: "Facts (use key–value)."
 
 ### 7.3 Long-press menu (`menu`) — Actions · 3 / 3
-- Description: "Hold a list row 600 ms for Nickel's popup. Items that do not apply are hidden. Remove… goes last and asks first." / "Giữ một dòng 600 ms để mở menu của Nickel. Mục không áp dụng thì ẩn. Xoá… ở cuối và hỏi trước."
+- Description: "Hold a list row 600 ms for Nickel's popup. Items that do not apply are hidden. Remove… goes last and asks first." / "Giữ một dòng 600 ms để mở menu của Nickel. Mục không áp dụng thì ẩn. Xóa… ở cuối và hỏi trước."
 - States: `samples` 1 column: text block that reproduces the menu as static rows is not possible (menu is Nickel's); instead the matrix shows a list row normal and pressed. The board K2–K5 show the menu itself.
-- Try it: `list` of 3 books ("Truyện Kiều", "Số đỏ", "Dế Mèn phiêu lưu ký") with `tap: echo` and `menu`: Info / Thông tin (`echo`), Open / Mở (`echo`), Remove… / Xoá… (`echo`, confirm).
+- Try it: `list` of 3 books ("Truyện Kiều", "Số đỏ", "Dế Mèn phiêu lưu ký") with `tap: echo` and `menu`: Info / Thông tin (`echo`), Open / Mở (`echo`), Remove… / Xóa… (`echo`, confirm).
 - Use for: "Per-item actions." Not for: "The main action of a screen."
 
 ### 7.4 Toggle (`toggle`) — Selection · 1 / 2
@@ -172,8 +172,8 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 - Use for: "Done, saved, rescanned." Not for: "Errors the user must read, questions."
 
 ### 7.9 Dialog (`dialog`) — Feedback · 2 / 5
-- Description: "Nickel's dialog: serif title, text, Cancel left, the verb right. 120 s without an answer means Cancel." / "Hộp thoại của Nickel: tiêu đề serif, nội dung, Huỷ bên trái, động từ bên phải. 120 giây không trả lời là Huỷ."
-- States: none static (board K5 shows the dialog). Try it: secondary "Ask a question" / "Hỏi một câu" → `dialog` (title "Remove 3 books?" / "Xoá 3 sách?", text "They stay on the phone." / "Sách vẫn còn trên điện thoại.", ok "Remove" / "Xoá", cancel "Cancel" / "Huỷ", action `echo`); secondary "Show info" / "Hiện thông tin" → `dialog` with an info dialog (ok only, outside tap closes).
+- Description: "Nickel's dialog: serif title, text, Cancel left, the verb right. 120 s without an answer means Cancel." / "Hộp thoại của Nickel: tiêu đề serif, nội dung, Hủy bên trái, động từ bên phải. 120 giây không trả lời là Hủy."
+- States: none static (board K5 shows the dialog). Try it: secondary "Ask a question" / "Hỏi một câu" → `dialog` (title "Remove 3 books?" / "Xóa 3 sách?", text "They stay on the phone." / "Sách vẫn còn trên điện thoại.", ok "Remove" / "Xóa", cancel "Cancel" / "Hủy", action `echo`); secondary "Show info" / "Hiện thông tin" → `dialog` with an info dialog (ok only, outside tap closes).
 - Use for: "Destructive or irreversible choices." Not for: "Confirming every tap."
 
 ### 7.10 Notice (`notice`) — Feedback · 3 / 5
@@ -191,7 +191,7 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 - Try it: the page itself is an `empty` ("No books yet" / "Chưa có sách", "Add books on the phone, then sync." / "Thêm sách trên điện thoại rồi đồng bộ.", button "Sync now" / "Đồng bộ" → `echo`). The `empty` button is the page's primary. The readout is on page 2.
 
 ### 7.13 Header and pages (`navigation`) — Navigation · 1 / 1
-- Description: "Back returns one level; a tab tap clears the stack. Pages turn with the pager or the page keys; dialogs ignore keys." / "Quay lại lùi một cấp; chạm tab xoá cả ngăn xếp. Lật trang bằng thanh trang hoặc phím; hộp thoại bỏ qua phím."
+- Description: "Back returns one level; a tab tap clears the stack. Pages turn with the pager or the page keys; dialogs ignore keys." / "Quay lại lùi một cấp; chạm tab xóa cả ngăn xếp. Lật trang bằng thanh trang hoặc phím; hộp thoại bỏ qua phím."
 - Header: status "Navigation · 1 / 1"; text link "Link" / "Liên kết" → `echo`.
 - Try it: three `text` body paragraphs and a `kv` of 12 rows so the page runs to 3 pages; the readout on page 1 shows "page" events are not events (nothing is sent on a page turn, by design: caption says so).
 
@@ -201,7 +201,7 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 - Try it: none (static). Readout omitted.
 
 ### 7.15 Section and key–value (`kv`) — Containment · 2 / 5
-- Description: "Sections group rows; key–value rows show facts, value bold at the right." / "Mục gom các dòng; dòng khoá–giá trị hiện thông tin, giá trị in đậm bên phải."
+- Description: "Sections group rows; key–value rows show facts, value bold at the right." / "Mục gom các dòng; dòng khóa–giá trị hiện thông tin, giá trị in đậm bên phải."
 - Try it: section "Device" / "Thiết bị" + kv Firmware "$firmware", Language "$locale", Kit "1", File "pride-and-prejudice-annotated-edition.epub" (middle elision).
 
 ### 7.16 Big code and QR (`code`) — Containment · 3 / 5
@@ -210,12 +210,12 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 
 ### 7.17 List (`list`) — Containment · 4 / 5
 - Description: "Rows from the app's state: primary left, secondary right. Tap runs an action; hold opens the menu. Keeps the last N." / "Dòng từ trạng thái của ứng dụng: chính bên trái, phụ bên phải. Chạm chạy thao tác; giữ mở menu. Giữ N dòng cuối."
-- Try it: `list` "$books" (4 books, author right) title "Received" / "Đã nhận", empty text "Nothing yet" / "Chưa có gì", tap `echo`, menu Open / Remove…; secondary "Clear the list" / "Xoá danh sách" → `echo` (the script empties `books` so the empty text shows; the next `state` restores it after 30 s).
+- Try it: `list` "$books" (4 books, author right) title "Received" / "Đã nhận", empty text "Nothing yet" / "Chưa có gì", tap `echo`, menu Open / Remove…; secondary "Clear the list" / "Xóa danh sách" → `echo` (the script empties `books` so the empty text shows; the next `state` restores it after 30 s).
 
 ### 7.18 Gallery and viewer (`gallery`) — Containment · 5 / 5
 - Description: "Tiles 3:4 with a 1 px border; the current one gets a 4 px border and Nickel's check. Tap opens the viewer; hold opens the menu." / "Ô ảnh 3:4 viền 1 px; ảnh đang dùng viền 4 px và dấu kiểm của Nickel. Chạm mở trình xem; giữ mở menu."
 - Header: icon action refresh → `refresh`.
-- Try it: `gallery` "$pictures" 4 × 2, `on_tap: { push: "viewer" }`, long press Info / Echo; `empty` "No PNG pictures" / "Chưa có ảnh PNG" with the existing hint. The **viewer** screen (`viewer`) is the only level-2 screen: `selected` "selectedPicture", `current_status` "In use" / "Đang dùng", primary "Use this" / "Dùng ảnh này" (`label_current` "In use" / "Đang dùng") → `echo`, secondary "Remove…" / "Xoá…" confirm → `echo`.
+- Try it: `gallery` "$pictures" 4 × 2, `on_tap: { push: "viewer" }`, long press Info / Echo; `empty` "No PNG pictures" / "Chưa có ảnh PNG" with the existing hint. The **viewer** screen (`viewer`) is the only level-2 screen: `selected` "selectedPicture", `current_status` "In use" / "Đang dùng", primary "Use this" / "Dùng ảnh này" (`label_current` "In use" / "Đang dùng") → `echo`, secondary "Remove…" / "Xóa…" confirm → `echo`.
 
 ## 8. Navigation flow (validated by `appsctl validate`)
 

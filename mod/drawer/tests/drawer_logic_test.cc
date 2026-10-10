@@ -77,7 +77,8 @@ static void testGridCellMath()
     EXPECT_EQ(4, gridRowsThatFit(1199, GRID_ROW_HEIGHT));
     // The icon and the two name lines sit inside the cell.
     EXPECT_TRUE(gridNameTop(GRID_ROW_HEIGHT) + GRID_NAME_LINES * GRID_NAME_LINE_HEIGHT <= GRID_ROW_HEIGHT);
-    EXPECT_EQ(24, gridIconTop(GRID_ROW_HEIGHT));
+    // 96 icon + 12 gap + 2 name lines of 46 = 200 px, centred in 240.
+    EXPECT_EQ(20, gridIconTop(GRID_ROW_HEIGHT));
 }
 
 // Cells for 1..12 items: identical size, on the grid lines, inside the content
@@ -208,6 +209,32 @@ static void testLocale()
     EXPECT_EQ(LANGUAGE_ENGLISH, languageForLocale(0));
 }
 
+static void expectChain(const char *locale, int expectedCount, const char *first, const char *second, const char *third)
+{
+    char names[4][LOCALE_NAME_SIZE];
+    EXPECT_EQ(expectedCount, localeFileChain(locale, names, 4));
+    const char *expected[] = {first, second, third};
+    for (int i = 0; i < expectedCount && i < 3; i++) {
+        EXPECT_STREQ(expected[i], names[i]);
+    }
+}
+
+static void testLocaleFileChain()
+{
+    expectChain("pt_BR", 3, "pt_BR", "pt", "en");
+    expectChain("vi", 2, "vi", "en", "");
+    expectChain("vi_VN", 3, "vi_VN", "vi", "en");
+    expectChain("en", 1, "en", "", "");
+    expectChain("en_US", 2, "en_US", "en", ""); // "en" is listed once
+    expectChain("", 1, "en", "", "");
+    expectChain(0, 1, "en", "", "");
+    expectChain("../../etc/passwd", 1, "en", "", "");
+    expectChain("a_very_long_locale_name_x", 1, "en", "", "");
+    char names[1][LOCALE_NAME_SIZE];
+    EXPECT_EQ(1, localeFileChain("pt_BR", names, 1)); // never writes past maxNames
+    EXPECT_STREQ("pt_BR", names[0]);
+}
+
 static void testQt6UpgradePending()
 {
     EXPECT_EQ(false, isQt6UpgradePending("", ""));
@@ -251,6 +278,7 @@ int main()
     testProtocol();
     testWifiRetry();
     testLocale();
+    testLocaleFileChain();
     testQt6UpgradePending();
     testMenuCap();
     return finishTests("drawer_logic");

@@ -23,33 +23,37 @@
 #include "status_bar_inset.h"
 #include "view_settings.h"
 
-// Sizes in device pixels (docs/spec/ui-kit.md §2).
+// Sizes in device pixels: the CopperUI tokens (docs/copperui-tokens.md).
 static const int SIDE_GUTTER = ScreenLogic::GUTTER;
 static const int CONTENT_WIDTH = ScreenLogic::CONTENT_WIDTH;
-static const int FOOTER_BUTTON_SIDE = 120;
+static const int FOOTER_BUTTON_SIDE = copperui::v1::DRAWER_FOOTER_BUTTON;
 
-// Black on white, no grey fills; separators 2 px (ui-kit §1, §2). Families are
-// Nickel's own, filled in at run time (nickel_fonts.h): never generic ones.
+// Black on white; row dividers 2 px in the row grey; secondary text (status, section, hint,
+// pager) muted. Families are Nickel's own, filled in at run time (nickel_fonts.h): never
+// generic ones.
 static const char *const VIEW_STYLE =
-    "DrawerView { background: white; }"
-    "#drawerHeader { background: white; }"
+    "DrawerView { background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#drawerHeader { background: " COPPERUI_GREY_PAPER_WHITE "; }"
     "QWidget { font-family: @BODY_FAMILY@; }"
-    "QLabel { color: black; background: transparent; }"
-    "#drawerGlyph { font-size: 64px; }"
-    "#drawerRow { border-bottom: 2px solid black; background: white; }"
-    "#drawerTile { background: white; }"
-    "#drawerItemName { font-size: 36px; }"
-    "#drawerProblemName { font-size: 36px; font-weight: bold; }"
-    "#drawerItemStatus { font-size: 28px; }"
-    "#drawerChevron { font-size: 56px; }"
-    "#drawerSectionLabel { font-size: 26px; font-weight: bold; }"
-    "#drawerHint { font-size: 28px; }"
-    "#drawerQt6Notice { font-size: 28px; font-weight: bold; border-bottom: 2px solid black; padding: 8px 0px; }"
-    "#drawerPageIndicator { font-size: 32px; }"
-    "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: 40px; font-weight: bold; }"
-    "#drawerEmptyText { font-size: 30px; }";
+    "QLabel { color: " COPPERUI_GREY_INK_BLACK "; background: transparent; }"
+    "#drawerGlyph { font-size: " COPPERUI_PX_ICON_TOOLBAR "; }"
+    "#drawerRow { border-bottom: " COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_LINE_ROW "; background: "
+    COPPERUI_GREY_PAPER_WHITE "; }"
+    "#drawerTile { background: " COPPERUI_GREY_PAPER_WHITE "; }"
+    "#drawerItemName { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; }"
+    "#drawerProblemName { font-size: " COPPERUI_PX_TYPE_ROW_SIZE "; font-weight: bold; }"
+    "#drawerItemStatus { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
+    "#drawerChevron { font-size: " COPPERUI_PX_LEGACY_DRAWER_CHEVRON_SIZE "; }"
+    "#drawerSectionLabel { font-size: " COPPERUI_PX_TYPE_SECTION_SIZE "; font-weight: bold; color: "
+    COPPERUI_GREY_INK_MUTED "; }"
+    "#drawerHint { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
+    "#drawerQt6Notice { font-size: " COPPERUI_PX_LEGACY_DRAWER_QT6_NOTICE_SIZE "; font-weight: bold; border-bottom: "
+    COPPERUI_PX_STROKE_RULE " solid " COPPERUI_GREY_INK_BLACK "; padding: " COPPERUI_PX_SPACE_UNIT " 0px; }"
+    "#drawerPageIndicator { font-size: " COPPERUI_PX_TYPE_CAPTION_SIZE "; color: " COPPERUI_GREY_INK_MUTED "; }"
+    "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: " COPPERUI_PX_TYPE_BODY_SIZE "; font-weight: bold; }"
+    "#drawerEmptyText { font-size: " COPPERUI_PX_LEGACY_DRAWER_EMPTY_TEXT_SIZE "; }";
 
-static const int HOST_DOT_INSET = 28;
+static const int HOST_DOT_INSET = copperui::v1::DRAWER_HOST_DOT_INSET;
 
 static QLabel *createTextLabel(const QString &text, const char *objectName, QWidget *parent)
 {

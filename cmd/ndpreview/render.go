@@ -38,18 +38,16 @@ func renderToFile(options renderOptions, stdout, stderr io.Writer) int {
 	screenID := firstNonEmpty(options.Screen, loaded.doc.Start)
 	rc := renderContext{doc: loaded.doc, locale: options.Locale, vars: vars, value: options.Value,
 		baseDir: stateDir(options.StatePath), chrome: options.Chrome}
-	page, err := layoutScreen(rc, screenID, options.Page-1, Overlay{})
-	if err != nil {
-		fmt.Fprintln(stderr, "ndpreview:", err)
-		return exitInvalid
-	}
 	fonts, err := loadFonts(options.FontSans, options.FontSerif, options.FontMono)
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)
 		return exitFailure
 	}
-	if !fonts.hasText() {
-		fmt.Fprintln(stderr, "ndpreview: warning: no font found, text is skipped; pass --font /path/to/font.ttf")
+	useFonts(fonts, stderr)
+	page, err := layoutScreen(rc, screenID, options.Page-1, Overlay{})
+	if err != nil {
+		fmt.Fprintln(stderr, "ndpreview:", err)
+		return exitInvalid
 	}
 	canvas, err := renderPNG(page, fonts, options.Grey)
 	if err != nil {

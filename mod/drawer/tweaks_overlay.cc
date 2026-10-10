@@ -7,18 +7,22 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
+#include "copperui/tokens.h"
 #include "debug_log.h"
 #include "nickel_fonts.h"
 #include "plain_dialog.h"
 #include "system_icon.h"
 
-static const int BOX_WIDTH = 1140;
-static const int BORDER_WIDTH = 1;
-static const int CLOSE_SIDE = 110; // N3Dialog.qss #closeContainer on Storm
+// The modal's own metrics are "legacy" tokens until it moves to the dialog tokens (fix 3.2).
+static const int BOX_WIDTH = copperui::v1::LEGACY_TWEAKS_BOX_WIDTH;
+static const int BORDER_WIDTH = copperui::v1::LEGACY_TWEAKS_BOX_BORDER;
+static const int CLOSE_SIDE = copperui::v1::LEGACY_TWEAKS_CLOSE_SIDE; // N3Dialog.qss #closeContainer on Storm
 
-static const char *const OVERLAY_STYLE = "#tweaksOverlayBox { background: white; border: 1px solid black; }"
-                                         "#tweaksOverlayTitle { font-family: @BODY_FAMILY@; font-size: 30px; "
-                                         "color: black; background: transparent; }";
+static const char *const OVERLAY_STYLE =
+    "#tweaksOverlayBox { background: " COPPERUI_GREY_PAPER_WHITE "; border: " COPPERUI_PX_LEGACY_TWEAKS_BOX_BORDER
+    " solid " COPPERUI_GREY_INK_BLACK "; }"
+    "#tweaksOverlayTitle { font-family: @BODY_FAMILY@; font-size: " COPPERUI_PX_LEGACY_TWEAKS_TITLE_SIZE "; color: "
+    COPPERUI_GREY_INK_BLACK "; background: transparent; }";
 
 CloseCrossButton::CloseCrossButton(QWidget *parent) : PressArea(parent)
 {

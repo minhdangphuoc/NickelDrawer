@@ -4,38 +4,43 @@
 
 #include "qr_encoder.h"
 #include "row_menu_logic.h"
+#include "text_meter.h"
 
 using namespace ScreenLogic;
 
 static const char *const CHEVRON_GLYPH = "\xE2\x80\xBA"; // ›
-static const int FIELD_CAPTION_GAP = 8;
-static const int RADIO_RING_BORDER = 4;
-static const int RADIO_DOT = 24;
-static const int BUTTON_BORDER = 3;
-static const int ROW_DETAIL_WIDTH = 280;
-static const int ROW_DETAIL_RIGHT = 320;
-static const int TAP_ROW_TEXT_INSET = 360;
-static const int FIELD_BORDER = 2;
-static const int QR_FRAME_BORDER = 2;
-static const int GALLERY_EMPTY_SPACER_HEIGHT = 120;
-static const int GALLERY_PICTURE_STROKE = 4;
-static const int GALLERY_CHECK_STROKE = 6;
+static const int FIELD_CAPTION_GAP = tokens::SPACE_FIELD_CAPTION;
+static const int RADIO_RING_BORDER = tokens::STROKE_SELECT;
+static const int RADIO_DOT = tokens::RADIO_DOT;
+static const int BUTTON_BORDER = tokens::STROKE_BUTTON;
+static const int ROW_DETAIL_WIDTH = tokens::ROW_DETAIL_WIDTH;
+static const int ROW_DETAIL_RIGHT = tokens::ROW_DETAIL_RIGHT;
+static const int TAP_ROW_TEXT_INSET = tokens::ROW_TAP_TEXT_INSET;
+static const int FIELD_BORDER = tokens::STROKE_RULE;
+static const int QR_FRAME_BORDER = tokens::STROKE_RULE;
+static const int GALLERY_EMPTY_SPACER_HEIGHT = tokens::GALLERY_EMPTY_SPACER;
+static const int GALLERY_PICTURE_STROKE = tokens::STROKE_SELECT;
+static const int CHEVRON_WIDTH = 32;
 
 // ---- Text helpers (Qt strings over the UTF-8 rules of screen_logic) ----
 
-static QStringList wrap(const QString &text, int width, int size, Family family)
+// Paragraphs wrap freely (maxLines 0); a button label keeps BUTTON_MAX_LINES lines and elides the rest.
+static QStringList wrap(const QString &text, int width, int size, Family family, bool isBold = false, int maxLines = 0)
 {
     QByteArray utf8 = text.toUtf8();
     QVector<char> out(utf8.size() * 2 + 16);
-    int count = wrapText(utf8.constData(), width, size, family, out.data(), out.size());
+    TextRun run = {size, family, isBold};
+    int count = wrapText(utf8.constData(), width, run, QtTextMeter::meter(), maxLines, out.data(), out.size());
     return count == 0 ? QStringList() : QString::fromUtf8(out.constData()).split(QLatin1Char('\n'));
 }
 
-static QString elided(const QString &text, int width, int size, Family family, bool isMiddle)
+// One line for a fixed-size control: the text, or its measured prefix and "…".
+static QString elided(const QString &text, int width, int size, Family family, bool isMiddle, bool isBold = false)
 {
     QByteArray utf8 = text.toUtf8();
     QVector<char> out(utf8.size() + 16);
-    elideText(utf8.constData(), width, size, family, isMiddle, out.data(), out.size());
+    TextRun run = {size, family, isBold};
+    elideText(utf8.constData(), width, run, QtTextMeter::meter(), isMiddle, out.data(), out.size());
     return QString::fromUtf8(out.constData());
 }
 
@@ -102,9 +107,16 @@ static PaintItem textItem(int x, int y, int width, int height, const QString &te
     return item;
 }
 
+// A row divider: 2 px in the row line grey.
 static PaintItem separatorItem(int y)
 {
-    return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, INK_BLACK, 0);
+    return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, LINE_ROW, 0);
+}
+
+// The 2 px rule under a section label stays black.
+static PaintItem sectionRuleItem(int y)
+{
+    return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, LINE_SECTION, 0);
 }
 
 static PaintItem pictureGlyph(const QRect &rect, int ink)
@@ -144,7 +156,7 @@ static LayoutBlock paragraph(int component, const QString &text, TextStyle style
     LayoutBlock result = block(LayoutBlock::KIND_PARAGRAPH, component, 0, RHYTHM);
     result.textSize = textSize(style);
     result.lineHeight = lineHeight(style);
-    result.lines = wrap(text, CONTENT_WIDTH, result.textSize, family);
+    result.lines = wrap(text, CONTENT_WIDTH, result.textSize, family, isBold);
     result.size.height = textBlockHeight(result.lines.size(), result.lineHeight);
     result.family = family;
     result.isBold = isBold;
@@ -223,7 +235,7 @@ static void addQrBlocks(int component, const QString &address, const QString &ca
 static LayoutBlock buttonBlock(int component, const QString &label, bool isPrimary, bool isEnabled)
 {
     LayoutBlock result = block(LayoutBlock::KIND_BUTTON, component, 0, RHYTHM);
-    result.lines = wrap(label, CONTENT_WIDTH - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS);
+    result.lines = wrap(label, CONTENT_WIDTH - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, true, BUTTON_MAX_LINES);
     result.size.height = buttonHeight(result.lines.size());
     result.isOn = isPrimary;
     result.isTappable = isEnabled;
@@ -590,11 +602,11 @@ void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
 static void drawValueRow(const LayoutBlock &b, int y, ScreenPage *page)
 {
     int valueWidth = CONTENT_WIDTH - KEY_COLUMN_WIDTH - RHYTHM;
-    page->items.append(textItem(GUTTER, y + 24, KEY_COLUMN_WIDTH, 56,
+    page->items.append(textItem(GUTTER, y + ROW_LABEL_TOP, KEY_COLUMN_WIDTH, ROW_LABEL_HEIGHT,
                                 elided(b.primary, KEY_COLUMN_WIDTH, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                                 FAMILY_SANS, PaintItem::ALIGN_START));
-    PaintItem value = textItem(GUTTER + KEY_COLUMN_WIDTH + RHYTHM, y + 24, valueWidth, 56,
-                               elided(b.secondary, valueWidth, ROW_TEXT_SIZE, FAMILY_SANS, b.isMiddleElided),
+    PaintItem value = textItem(GUTTER + KEY_COLUMN_WIDTH + RHYTHM, y + ROW_LABEL_TOP, valueWidth, ROW_LABEL_HEIGHT,
+                               elided(b.secondary, valueWidth, ROW_TEXT_SIZE, FAMILY_SANS, b.isMiddleElided, true),
                                ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
     value.isBold = true;
     page->items.append(value);
@@ -606,30 +618,34 @@ static void drawValueRow(const LayoutBlock &b, int y, ScreenPage *page)
 
 static void drawSection(const LayoutBlock &b, int y, ScreenPage *page)
 {
-    PaintItem label = textItem(GUTTER, y + 16, CONTENT_WIDTH, 40,
-                               elided(b.primary, CONTENT_WIDTH, SECTION_TEXT_SIZE, FAMILY_SANS, false).toUpper(),
+    // Uppercase first: capitals are wider than the lower case they replace.
+    PaintItem label = textItem(GUTTER, y + SECTION_LABEL_TOP, CONTENT_WIDTH, SECTION_LINE_HEIGHT,
+                               elided(b.primary.toUpper(), CONTENT_WIDTH, SECTION_TEXT_SIZE, FAMILY_SANS, false, true),
                                SECTION_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START);
     label.ink = INK_MUTED;
     label.isBold = true;
-    page->items << label << separatorItem(y + SECTION_HEIGHT - SEPARATOR);
+    page->items << label << sectionRuleItem(y + SECTION_HEIGHT - SEPARATOR);
 }
 
 static void drawTapRow(const LayoutBlock &b, int y, ScreenPage *page)
 {
     int textWidth = CONTENT_WIDTH - TAP_ROW_TEXT_INSET;
-    page->items << textItem(GUTTER, y + 36, textWidth, 56, elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false),
-                            ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START)
+    page->items << textItem(GUTTER, y + TAP_ROW_TEXT_TOP, textWidth, ROW_LABEL_HEIGHT,
+                            elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE, FAMILY_SANS,
+                            PaintItem::ALIGN_START)
                 << separatorItem(y + TAP_ROW_HEIGHT - SEPARATOR);
     if (!b.secondary.isEmpty()) {
-        PaintItem detail = textItem(SCREEN_WIDTH - GUTTER - ROW_DETAIL_RIGHT, y + 36, ROW_DETAIL_WIDTH, 56,
+        PaintItem detail = textItem(SCREEN_WIDTH - GUTTER - ROW_DETAIL_RIGHT, y + TAP_ROW_TEXT_TOP, ROW_DETAIL_WIDTH,
+                                    ROW_LABEL_HEIGHT,
                                     elided(b.secondary, ROW_DETAIL_WIDTH, ROW_TEXT_SIZE, FAMILY_SANS, false),
                                     ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_END);
         detail.ink = INK_MUTED;
         page->items.append(detail);
     }
     if (b.isTappable) {
-        page->items.append(textItem(SCREEN_WIDTH - GUTTER - 32, y + 36, 32, 56, QString::fromUtf8(CHEVRON_GLYPH),
-                                    ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_END));
+        page->items.append(textItem(SCREEN_WIDTH - GUTTER - CHEVRON_WIDTH, y + TAP_ROW_TEXT_TOP, CHEVRON_WIDTH,
+                                    ROW_LABEL_HEIGHT, QString::fromUtf8(CHEVRON_GLYPH), ROW_TEXT_SIZE, FAMILY_SANS,
+                                    PaintItem::ALIGN_END));
         addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, TAP_ROW_HEIGHT), b.component, QString());
     }
 }
@@ -674,13 +690,13 @@ static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
     int ringTop = y + (b.size.height - RADIO_RING_SIDE) / 2;
     page->items.append(ellipseItem(GUTTER, ringTop, RADIO_RING_SIDE, NO_FILL, RADIO_RING_BORDER));
     if (b.isOn) {
-        page->items.append(ellipseItem(GUTTER + 14, ringTop + 14, RADIO_DOT, INK_BLACK, 0));
+        page->items.append(ellipseItem(GUTTER + RADIO_DOT_INSET, ringTop + RADIO_DOT_INSET, RADIO_DOT, INK_BLACK, 0));
     }
     int textWidth = CONTENT_WIDTH - RADIO_RING_SIDE - RHYTHM;
     int textLeft = GUTTER + RADIO_RING_SIDE + RHYTHM;
-    PaintItem label = textItem(textLeft, y + (hasDetail ? ROW_LABEL_TOP_WITH_DETAIL : ROW_LABEL_TOP), textWidth, 56,
-                               elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
-                               FAMILY_SANS, PaintItem::ALIGN_START);
+    PaintItem label = textItem(textLeft, y + (hasDetail ? ROW_LABEL_TOP_WITH_DETAIL : ROW_LABEL_TOP), textWidth,
+                               ROW_LABEL_HEIGHT, elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false, b.isOn),
+                               ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START);
     label.isBold = b.isOn;
     page->items.append(label);
     if (hasDetail) {
@@ -699,7 +715,7 @@ static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
 static void drawFieldBox(const LayoutBlock &b, int y, ScreenPage *page)
 {
     int textWidth = CONTENT_WIDTH - 2 * RHYTHM;
-    PaintItem text = textItem(GUTTER + RHYTHM, y + 30, textWidth, 60,
+    PaintItem text = textItem(GUTTER + RHYTHM, y + (FIELD_HEIGHT - FIELD_TEXT_HEIGHT) / 2, textWidth, FIELD_TEXT_HEIGHT,
                               elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                               FAMILY_SANS, PaintItem::ALIGN_START);
     text.ink = b.ink;
@@ -731,7 +747,7 @@ static void drawNotice(const LayoutBlock &b, int y, ScreenPage *page)
     int top = y + NOTICE_PADDING;
     if (!b.title.isEmpty()) {
         PaintItem heading = textItem(GUTTER + NOTICE_PADDING, top, inner, BODY_LINE_HEIGHT,
-                                     elided(b.title, inner, BODY_SIZE, FAMILY_SANS, false), BODY_SIZE, FAMILY_SANS,
+                                     elided(b.title, inner, BODY_SIZE, FAMILY_SANS, false, true), BODY_SIZE, FAMILY_SANS,
                                      PaintItem::ALIGN_START);
         heading.isBold = true;
         page->items.append(heading);
@@ -838,7 +854,7 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
         drawLine(b, y, true, page);
         break;
     case LayoutBlock::KIND_CENTERED_LINE: {
-        PaintItem line = textItem(GUTTER, y + 24, CONTENT_WIDTH, 56,
+        PaintItem line = textItem(GUTTER, y + ROW_LABEL_TOP, CONTENT_WIDTH, ROW_LABEL_HEIGHT,
                                   elided(b.primary, CONTENT_WIDTH, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                                   FAMILY_SANS, PaintItem::ALIGN_CENTER);
         line.ink = INK_MUTED;
@@ -891,8 +907,9 @@ void ScreenLayout::drawGallerySlot(int slotIndex, int slotOnPage, ScreenPage *pa
     QRect badge(box.right() + 1 - GALLERY_BADGE_INSET - GALLERY_BADGE_SIDE, box.y() + GALLERY_BADGE_INSET,
                 GALLERY_BADGE_SIDE, GALLERY_BADGE_SIDE);
     page->items.append(ellipseItem(badge.x(), badge.y(), GALLERY_BADGE_SIDE, isCurrent ? INK_BLACK : NO_FILL, 0));
-    PaintItem check = rectItem(badge.x(), badge.y(), badge.width(), badge.height(), NO_FILL, isCurrent ? GALLERY_CHECK_STROKE : 0);
+    PaintItem check = rectItem(badge.x(), badge.y(), badge.width(), badge.height(), NO_FILL, 0);
     check.shape = PaintItem::SHAPE_CHECK;
+    check.isOn = isCurrent; // only the current picture shows its check
     check.ink = PAPER_WHITE;
     page->items.append(check);
 
@@ -967,7 +984,7 @@ void ScreenLayout::drawViewerPage(ScreenPage *page) const
     QRect primaryBox = toQRect(viewerPrimaryRect(height));
     if (viewer.secondary.isDefined()) {
         QRect secondaryBox = toQRect(viewerSecondaryRect(height));
-        QStringList label(elided(viewer.secondary.label, secondaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false));
+        QStringList label(elided(viewer.secondary.label, secondaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false, true));
         paintButton(secondaryBox, label, false, true, viewerIndex, QStringLiteral("secondary"), page);
     } else {
         primaryBox.setLeft(GUTTER);
@@ -975,7 +992,7 @@ void ScreenLayout::drawViewerPage(ScreenPage *page) const
     if (viewer.primary.isDefined()) {
         bool isCurrent = tile->isCurrent;
         const QString &text = isCurrent && !viewer.primary.labelCurrent.isEmpty() ? viewer.primary.labelCurrent : viewer.primary.label;
-        QStringList label(elided(text, primaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false));
+        QStringList label(elided(text, primaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false, true));
         paintButton(primaryBox, label, true, !isCurrent, viewerIndex, QStringLiteral("primary"), page);
     }
 }

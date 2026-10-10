@@ -3,9 +3,11 @@
 
 #include <QString>
 
-// Host strings of the drawer itself (en + vi). App text always comes from
-// appsctl already localized; these are only for the drawer's own chrome and
-// for when appsctl fails.
+// Strings of the drawer itself ("mod.*" keys of host/locales/<lang>.json). They are read from
+// /mnt/onboard/.adds/koboapps/locales/<locale>.json (exact locale, language, en) when the drawer
+// opens, so a new language needs no rebuild. A compiled-in English and Vietnamese table is the
+// last resort for a key or a file that is missing. App text always comes from appsctl already
+// localized.
 namespace FallbackStrings {
 
 enum Key {
@@ -60,8 +62,8 @@ enum Key {
 };
 
 // Reads [ApplicationPreferences] CurrentLocale from Nickel's eReader.conf
-// (opened, read, closed by QSettings; never written). Call when the drawer or
-// the More row is built, not in init().
+// (opened, read, closed by QSettings; never written) and the locale files. Call when the
+// drawer or the More row is built, not in init().
 void reloadLocale();
 
 QString text(Key key);

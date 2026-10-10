@@ -44,7 +44,8 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `device_gate.{h,cc}` | pure rules: supported model ids (mirror of `supported_models` in `host/config/project.json`), screen size check, `.kobo/version` field parsing |
 | `mod_switches.{h,cc}` | flag-file paths and the boot-time switch values |
 | `drawer_logic.{h,cc}` | pure rules: paging math, key mapping, refresh policy, protocol version, exit codes, timeouts, Wi-Fi retry, locale |
-| `fallback_strings.{h,cc}` | the drawer's own en/vi strings; reads `CurrentLocale` from `Kobo eReader.conf` (read-only) |
+| `fallback_strings.{h,cc}` | the drawer's own strings: the `mod.*` keys of `.adds/koboapps/locales/<locale>.json` (exact locale, language, en), with a compiled en/vi table as the last resort; reads `CurrentLocale` from `Kobo eReader.conf` (read-only) |
+| `text_meter.{h,cc}` | `QFontMetrics` of Nickel's families behind the `TextMeter` that `screen_logic` measures with |
 | `drawer_model.h` | plain structs of the protocol replies |
 | `model_parser.{h,cc}` | JSON → structs, version check, problem rows |
 | `appsctl_call.{h,cc}` | one `appsctl` QProcess run with a hard timeout, working dir `/` |
@@ -170,9 +171,9 @@ Failsafe: a crash in the first 15 s after boot removes the mod (NickelHook).
 ### App screens (Phase 4)
 
 `appsctl drawer screen` returns the screen with texts and bindings resolved; the mod never evaluates
-bindings. Layout is a line-by-line port of `cmd/ndpreview` (same metrics, the same average-advance text
+bindings. Layout is a line-by-line port of `cmd/ndpreview` (the same CopperUI tokens, the same measured text
 wrap and elide, the same paging), so `ndpreview render` shows what the device draws; only the glyphs
-differ (a real font wider than the estimate is elided again instead of clipped). The view height is the
+differ (the Mac font is not Nickel's, so lines can break at other words). The view height is the
 real one (Nickel's status and tab bars take part of 1680 px), so long screens page earlier than the
 preview. Taps: buttons, rows, `empty` and the header action run `drawer event`; toggles and radios show the
 new value at once and run the action named like their variable with `--value`; list rows with `tap` pass
