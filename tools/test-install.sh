@@ -93,16 +93,18 @@ check "routing.json installed" test -f "$ADDS/koboapps/config/routing.json"
 check "routing.json lists the epub rule" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'
 check "inbox folder created" test -d "$ADDS/koboapps/inbox"
 check "inbox/rejected folder created" test -d "$ADDS/koboapps/inbox/rejected"
-check "update.json template shipped" contains "$ADDS/koboapps/config/update.json" '"repo": ""'
-check "data/update.json created disabled (empty repo)" contains "$ADDS/koboapps/data/update.json" '"repo": ""'
+check "project.json shipped" contains "$ADDS/koboapps/config/project.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "update.json template names the project repo" contains "$ADDS/koboapps/config/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "data/update.json created with the default repo" contains "$ADDS/koboapps/data/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
 check "no user routing.json created by the installer" test ! -e "$ADDS/koboapps/data/routing.json"
 check "localsend routes through the inbox hook" contains "$ADDS/apps/localsend/bin/env.sh" "inbox route --from-env --source localsend"
 check "locales installed (app)" test -f "$ADDS/apps/localsend/locales/vi.json"
 check "update-apply.sh installed and executable" test -x "$ADDS/koboapps/bin/update-apply.sh"
 check "update-check.sh installed and executable" test -x "$ADDS/koboapps/bin/update-check.sh"
 check "retired update-status.sh not shipped" test ! -e "$ADDS/koboapps/bin/update-status.sh"
-check "updates screen installed" test -f "$ADDS/koboapps/screens/updates/ui.json"
-check "updates screen locale installed" test -f "$ADDS/koboapps/screens/updates/locales/vi.json"
+check "settings screen installed" test -f "$ADDS/koboapps/screens/settings/ui.json"
+check "settings screen locale installed" test -f "$ADDS/koboapps/screens/settings/locales/vi.json"
+check "retired updates screen not shipped" test ! -e "$ADDS/koboapps/screens/updates"
 check "flag folder created" test -d "$ADDS/nickeldrawer"
 check "the screens flag is not created (screens are on by default)" test ! -e "$ADDS/nickeldrawer/screens"
 check "no debug flag by default" test ! -e "$ADDS/nickeldrawer/debug"
@@ -140,6 +142,15 @@ check "config preserved" contains "$ADDS/apps/ghsync/data/config.json" '"o/r"'
 check "todo list preserved" contains "$ADDS/apps/todo/data/todo.json" "Mua sữa"
 check "pin preserved" contains "$ADDS/apps/localsend/data/pin.txt" "1234"
 check "user update.json never overwritten" contains "$ADDS/koboapps/data/update.json" '"me/mine"'
+echo '{"repo": "", "channel": "beta"}' >"$ADDS/koboapps/data/update.json"
+sleep 1
+"$INSTALLER" >"$WORK/third.out"
+check "empty repo in an existing update.json is filled" contains "$ADDS/koboapps/data/update.json" '"repo": "minhdangphuoc/NickelDrawer"'
+check "the user's channel survives the fill" contains "$ADDS/koboapps/data/update.json" '"channel": "beta"'
+echo '{"repo":"me/mine","channel":"beta"}' >"$ADDS/koboapps/data/update.json"
+sleep 1
+"$INSTALLER" >"$WORK/third.out"
+check "a repo the user set is kept" contains "$ADDS/koboapps/data/update.json" '"me/mine"'
 check "user routing.json never overwritten" contains "$ADDS/koboapps/data/routing.json" '"remove":["gif"]'
 check "files waiting in the inbox kept" contains "$ADDS/koboapps/inbox/pending.pdf" "waiting"
 check "shipped routing.json refreshed" contains "$ADDS/koboapps/config/routing.json" '"type": "epub"'

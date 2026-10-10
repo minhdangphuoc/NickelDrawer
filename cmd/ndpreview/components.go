@@ -129,9 +129,14 @@ func (rc renderContext) kvBlocks(c uikit.Component) []block {
 	var blocks []block
 	for _, raw := range rows {
 		pair, _ := raw.([]any)
-		if len(pair) == 2 {
-			blocks = append(blocks, valueRow(rc.text(pair[0]), rc.text(pair[1]), "", "", looksLikeFileName(rc.text(pair[1]))))
+		if len(pair) != 2 {
+			continue
 		}
+		key, value := rc.text(pair[0]), rc.text(pair[1])
+		if key == "" && value == "" {
+			continue // the drawer hides a row whose key and value are both empty
+		}
+		blocks = append(blocks, valueRow(key, value, "", "", looksLikeFileName(value)))
 	}
 	return withTrailingGap(blocks)
 }

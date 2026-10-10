@@ -164,27 +164,26 @@ Nên biết:
 1. Bấm **Thêm** ở thanh dưới.
 2. Bấm **Ứng dụng**.
 
-Hàng **Ứng dụng** có thể có dòng thứ hai: một ứng dụng đang chạy (ví dụ "LocalSend Đang nhận") hoặc **1 bản cập nhật**. Dấu chấm nghĩa là có bản cập nhật đang chờ.
+Hàng **Ứng dụng** có thể có dòng thứ hai: một ứng dụng đang chạy (ví dụ "LocalSend Đang nhận") hoặc **1 bản cập nhật**. Dấu chấm nghĩa là có bản cập nhật đang chờ; cùng dấu chấm đó hiện trên bánh răng ở thanh tiêu đề của Ngăn.
 
 Ngăn có:
 
-- thanh tiêu đề với **←** (về Thêm), tiêu đề **Ứng dụng**, và hai nút chuyển giữa **danh sách** và **lưới**;
+- thanh tiêu đề với **←** (về Thêm), tiêu đề **Ứng dụng**, và bốn nút nhỏ: **làm mới**, **danh sách**, **lưới** và cuối cùng là bánh răng **⚙** (cài đặt);
 - mục **ĐÃ CÀI** với các ứng dụng của bạn;
-- mục **HỆ THỐNG** với **Làm mới danh sách** và, nếu bạn đã thiết lập cập nhật, **Cập nhật**;
 - dòng gợi ý "Giữ một ứng dụng để xem thông tin hoặc gỡ.";
 - số trang (ví dụ `1 / 2`) với mũi tên **‹ ›**.
 
 ### Danh sách hay lưới
 
-Bấm nút danh sách hoặc lưới ở thanh tiêu đề. Danh sách hiện mỗi ứng dụng với biểu tượng, tên và một dòng trạng thái. Lưới hiện bốn biểu tượng mỗi hàng kèm tên; ở chế độ lưới, **Làm mới danh sách** và **Cập nhật** thành nút nhỏ trên thanh tiêu đề. Ngăn nhớ lựa chọn của bạn.
+Bấm nút danh sách hoặc lưới ở thanh tiêu đề. Danh sách hiện mỗi ứng dụng với biểu tượng, tên và một dòng trạng thái. Lưới hiện bốn biểu tượng mỗi hàng kèm tên; nút **Làm mới** và bánh răng **⚙** nằm trên thanh tiêu đề ở cả hai chế độ. Ngăn nhớ lựa chọn của bạn.
 
 ### Lật trang
 
 Dùng nút lật trang của Kobo hoặc bấm mũi tên **‹ ›**. Nút lật trang cũng lật trang trong màn hình ứng dụng dài.
 
-### Làm mới danh sách
+### Làm mới
 
-Bạn vừa chép thêm hay xoá một ứng dụng qua USB? Bấm **Làm mới danh sách** (ở chế độ lưới: nút làm mới trên thanh tiêu đề). Ngăn cũng tự tải lại mỗi lần bạn mở.
+Bạn vừa chép thêm hay xoá một ứng dụng qua USB? Bấm nút làm mới trên thanh tiêu đề. Ngăn cũng tự tải lại mỗi lần bạn mở.
 
 ### Thông tin và gỡ
 
@@ -493,22 +492,22 @@ Các công tắc ghi vào tệp cài đặt của chính Kobo (`.kobo/Kobo/Kobo 
 
 NickelDrawer có thể cập nhật các ứng dụng, công cụ chủ và mod Kobo qua Wi-Fi. Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
 
-### Thiết lập cập nhật (một lần)
+### Cài đặt: bánh răng
 
-1. Cắm Kobo qua USB.
-2. Mở tệp `.adds/koboapps/data/update.json` (trình cài đặt tạo sẵn với `"repo"` rỗng; nếu chưa có thì tự tạo) và điền `owner/name` là repo GitHub nơi phát hành NickelDrawer:
+Bấm **⚙** ở thanh tiêu đề của Ngăn để mở **Cài đặt NickelDrawer**. Màn hình có bốn phần:
 
-        {"repo": "owner/name", "channel": "stable"}
+- **Ứng dụng ẩn**: một công tắc cho mỗi ứng dụng bị ẩn mặc định (hiện nay: **Bộ giao diện**). Bật thì ứng dụng hiện trong Ngăn khi bạn quay lại; tắt để ẩn lại. Không phải sửa tệp nào qua USB, và lựa chọn được giữ khi cập nhật.
+- **Cập nhật**: **Phiên bản** đang dùng, **Bản mới** (chỉ hiện sau khi kiểm tra thấy bản mới) và **Nguồn** (repo GitHub). Hai nút **Kiểm tra** và **Cập nhật lên <phiên bản>**.
+- **Gỡ lỗi**: **Ghi nhật ký gỡ lỗi** (xem "Gửi báo lỗi có ích" bên dưới). Có hiệu lực sau khi khởi động lại.
+- **Thông tin**: firmware của bạn, kèm ✓ nếu NickelDrawer hỗ trợ hoặc **!** nếu chưa, và **Giới thiệu dự án** (phiên bản, mã QR để mở trang dự án trên điện thoại, người bảo trì, giấy phép, ghi nhận).
 
-    Dùng `"channel": "beta"` để nhận cả bản thử nghiệm.
+### Cập nhật: kiểm tra và cài
 
-3. Ngắt kết nối. Khi `"repo"` còn rỗng, hàng **Cập nhật** bị ẩn; sau khi điền, mục **HỆ THỐNG** trong Ngăn sẽ có hàng này.
+Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình cài đặt đã thiết lập sẵn. Muốn dùng repo khác, mở `.adds/koboapps/data/update.json` qua USB và đổi `"repo"` thành `owner/name` (`"repo"` rỗng nghĩa là tắt cập nhật, và mục Nguồn ghi **Tắt**). Trình cài đặt không bao giờ ghi đè tệp này, nhưng sẽ điền repo mặc định nếu `"repo"` đang rỗng.
 
-### Kiểm tra và cài
-
-1. Mở **Thêm** → **Ứng dụng** → **Cập nhật**.
-2. Bấm **Kiểm tra cập nhật**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Nếu có bản mới hơn, màn hình hiện **Đang dùng**, **Mới nhất** và **Có gì mới**, và hàng **Ứng dụng** hiện **1 bản cập nhật**.
-3. Bấm **Cập nhật**, rồi **Cập nhật** lần nữa để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình hiện "Đang cập nhật..." rồi kết quả.
+1. Mở **Thêm** → **Ứng dụng** → **⚙**.
+2. Ở phần **Cập nhật**, bấm **Kiểm tra**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Nếu có bản mới hơn, bánh răng có chấm đen, hàng **Bản mới** hiện kèm chấm, và nút lớn ghi **Cập nhật lên <phiên bản>**.
+3. Bấm **Cập nhật lên <phiên bản>**, rồi **Cập nhật** để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình hiện "Đang cập nhật..." rồi kết quả.
 4. Nếu kết quả có câu "Hãy khởi động lại Kobo để hoàn tất.", hãy khởi động lại (**Tinh chỉnh** → **Khởi động lại**).
 
 ### Khởi động lại sau cập nhật làm gì
@@ -538,8 +537,8 @@ Dự án duy trì tiếng Anh và tiếng Việt. Ở ngôn ngữ khác, vài ch
 Không cần lập trình, chỉ cần trình soạn thảo văn bản. Mỗi bản dịch là một tệp nhỏ gồm các dòng `"khoá": "chữ"`.
 
 1. Chép `en.json` thành `<mã>.json` (ví dụ `fr.json`) trong từng thư mục sau:
-    - `.adds/koboapps/locales/` (Ngăn, Tinh chỉnh, cập nhật),
-    - `.adds/koboapps/screens/updates/locales/` (màn hình Cập nhật),
+    - `.adds/koboapps/locales/` (Ngăn, Tinh chỉnh, cập nhật, cài đặt),
+    - `.adds/koboapps/screens/settings/locales/` (màn hình Cài đặt và Giới thiệu),
     - `.adds/apps/<ứng dụng>/locales/` cho mỗi ứng dụng.
 
 2. Chỉ dịch phần chữ bên phải. Không bao giờ đổi khoá bên trái.
@@ -562,7 +561,7 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 | Kobo không hiện trên máy tính, hoặc không hỏi **Kết nối**. | Lúc cắm cáp, Ngăn hay một màn hình ứng dụng đang mở, hoặc một ứng dụng đang bận. | Rút cáp. Bấm **Trang chủ**. Dừng LocalSend nếu đang nhận. Cắm lại và bấm **Kết nối**. Vẫn không được thì khởi động lại Kobo. |
 | Ứng dụng báo "Không thành công. Xem data/log.txt." | Ứng dụng gặp lỗi. | Đọc `.adds/apps/<ứng dụng>/data/log.txt` qua USB. Mấy dòng cuối cho biết cái gì hỏng. |
 | Ứng dụng mở ra màn hình "Không mở được ứng dụng" với **Quay lại** và **Thử lại**. | Tệp của ứng dụng thiếu hoặc hỏng. | Chép lại thư mục của ứng dụng đó từ tệp zip phát hành, rồi **Làm mới danh sách**. |
-| Ứng dụng mới không hiện. | Ngăn chưa tải lại, hoặc tệp của ứng dụng sai. | Bấm **Làm mới danh sách**. Ứng dụng hỏng được liệt kê ở mục **SỰ CỐ** kèm lý do. |
+| Ứng dụng mới không hiện. | Ngăn chưa tải lại, hoặc tệp của ứng dụng sai. | Bấm nút làm mới trên thanh tiêu đề. Ứng dụng hỏng được liệt kê ở mục **SỰ CỐ** kèm lý do. |
 | Ảnh Hình nền không hiện khi máy ngủ. | Một cài đặt Kobo đang tắt, chưa có sách đang đọc, hoặc **Màn hình chờ** đang tắt. | Bật **Hiển thị sách đang đọc** và **Hiển thị bìa sách toàn màn hình** (**Cài đặt** → **Tiết kiệm pin và riêng tư**). Mở một cuốn sách bất kỳ. Bật **Tinh chỉnh** → **Màn hình chờ**. Đặt một ảnh làm hình nền. |
 | LocalSend trên điện thoại không thấy Kobo. | Khác Wi-Fi, mạng khách chặn các máy thấy nhau, việc nhận đã dừng, hoặc Kobo đã ngủ. | Cho cả hai dùng cùng Wi-Fi nhà (không dùng mạng khách). Mở LocalSend trên Kobo, kiểm nó báo **Đang nhận**. Đánh thức Kobo. Nếu LocalSend trên điện thoại cho gửi theo địa chỉ, dùng IP hiện trên Kobo. |
 | Ghép nối GitHub báo lỗi. | Xem thông báo. | Xem [Thông báo khi ghép nối và đồng bộ](#s-thong-bao-khi-ghep-noi-va-ong-bo). |
@@ -575,7 +574,7 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 
 ### Gửi báo lỗi có ích
 
-1. Tạo tệp rỗng `.adds/nickeldrawer/debug` qua USB rồi khởi động lại Kobo. Ngăn sẽ ghi nhật ký từng bước vào `.adds/nickeldrawer/debug.log`.
+1. Bật **⚙** → **Gỡ lỗi** → **Ghi nhật ký gỡ lỗi** rồi khởi động lại Kobo (hoặc tạo tệp rỗng `.adds/nickeldrawer/debug` qua USB; đó là cùng một công tắc). Ngăn sẽ ghi nhật ký từng bước vào `.adds/nickeldrawer/debug.log`.
 2. Làm lại việc bị lỗi.
 3. Cắm USB, chép `debug.log` và `data/log.txt` của ứng dụng.
 4. Đọc qua trước khi gửi. Bỏ mọi thứ riêng tư (tên sách, tên người, địa chỉ Wi-Fi của bạn). Không bao giờ gửi `data/token`.
@@ -651,7 +650,7 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
 - **Chỉ dùng mạng khi bạn bắt đầu:**
   - LocalSend nghe trên Wi-Fi của bạn khi đang nhận, và dừng khi bạn bấm dừng hoặc sau 15 phút không có tệp.
   - Ghép nối GitHub mở một trang nhỏ trên Wi-Fi của bạn tối đa 10 phút. Đồng bộ chỉ nói chuyện với GitHub.
-  - Cập nhật chỉ nói chuyện với GitHub khi bạn bấm **Kiểm tra cập nhật** hoặc **Cập nhật**.
+  - Cập nhật chỉ nói chuyện với GitHub khi bạn bấm **Kiểm tra** hoặc **Cập nhật lên <phiên bản>**.
   - Hình nền, Thư viện, Việc cần làm và Tinh chỉnh không bao giờ dùng mạng.
 - **Token GitHub** chỉ được lưu trên Kobo, ở `.adds/apps/ghsync/data/token`. Nó không bao giờ hiện trên màn hình, trong nhật ký hay trong trạng thái ứng dụng. Nhưng bộ nhớ của Kobo không khoá được từng tệp: ai cắm Kobo của bạn vào máy tính cũng đọc được tệp đó. Vì vậy token nên là loại fine-grained, chỉ cho một repo và chỉ đọc. Nếu mất Kobo, hãy thu hồi token trên GitHub.
 - **Mã PIN LocalSend** được lưu ở `.adds/apps/localsend/data/pin.txt`, cũng đọc được theo cách đó.
@@ -683,7 +682,7 @@ Chưa. Chỉ hỗ trợ Libra 2.
 Không. Giấy phép chỉ cho phép dùng cá nhân, học tập, sở thích và phi lợi nhuận.
 
 **"Bộ giao diện" (UI Kit) là gì?**
-Một ứng dụng ẩn dành cho người làm ứng dụng và người thử, hiện mọi thành phần giao diện với nội dung mẫu. Mặc định nó không hiện trong Ngăn.
+Một ứng dụng ẩn dành cho người làm ứng dụng và người thử, hiện mọi thành phần giao diện với nội dung mẫu. Mặc định nó không hiện trong Ngăn; bật bằng **⚙** → **Ứng dụng ẩn** → **Bộ giao diện**.
 
 **Tệp của tôi nằm đâu?**
 Sách nhận được trong `Books`, `Documents`, `Comics`, `Pictures`. Sách GitHub trong các thư mục `GitHub` bên trong đó. Cài đặt ứng dụng trong `.adds/apps/<ứng dụng>/data/`.
@@ -775,8 +774,8 @@ Tên của Kobo (các màn hình NickelDrawer làm việc cùng) và tên của 
 | Ngăn Ứng Dụng | App drawer | Trang danh sách ứng dụng. |
 | Tinh chỉnh | Tweaks | Cửa sổ cài đặt của NickelDrawer trong Thêm. |
 | ĐÃ CÀI / HỆ THỐNG | INSTALLED / SYSTEM | Các mục trong Ngăn. |
-| Làm mới danh sách | Refresh list | Tải lại Ngăn. |
-| Cập nhật | Updates | Màn hình cập nhật trong Ngăn. |
+| Làm mới | Refresh | Nút trên thanh tiêu đề để tải lại Ngăn. |
+| Cài đặt (⚙) | Settings | Bánh răng ở thanh tiêu đề Ngăn: ứng dụng ẩn, cập nhật, gỡ lỗi, giới thiệu. |
 | Thông tin / Gỡ… | Info / Remove… | Menu khi giữ một ứng dụng. |
 | Hình nền | Wallpaper | Ứng dụng ảnh màn hình ngủ. |
 | Thư viện (ứng dụng) | Library | Ứng dụng dọn sách của NickelDrawer. |

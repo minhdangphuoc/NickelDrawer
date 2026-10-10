@@ -1,7 +1,6 @@
 package drawer
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,15 +16,13 @@ const (
 	KindShow       = "show"
 	KindBackground = "background"
 
-	HostRefreshID  = "_refresh"
-	HostUpdatesID  = "_updates"
-	HostRefreshAct = "refresh"
-	HostUpdatesAct = "check"
+	HostRefreshID   = "_refresh"
+	HostSettingsID  = "_settings"
+	HostRefreshAct  = "refresh"
+	HostSettingsAct = "open"
 
-	iconFileName     = "icon.png"
-	hostIconsDir     = "icons"
-	updateConfigName = "update.json"
-	updateScript     = "update-apply.sh"
+	iconFileName = "icon.png"
+	hostIconsDir = "icons"
 )
 
 // Model is the whole drawer screen.
@@ -81,7 +78,7 @@ func (c Config) BuildModel() (Model, error) {
 	if err != nil {
 		return Model{}, newError(CodeIO, "detail", err.Error())
 	}
-	shownApps := shownInDrawer(scan.Apps)
+	shownApps := shownInDrawer(scan.Apps, c.loadHostSettings())
 	statuses := c.collectStatuses(shownApps)
 	items := make([]Item, 0, len(shownApps))
 	for _, app := range shownApps {
@@ -103,21 +100,6 @@ func (c Config) BuildModel() (Model, error) {
 		Errors:          problems,
 		UpdateAvailable: c.hasPendingUpdate(),
 	}, nil
-}
-
-func (c Config) hasPendingUpdate() bool {
-	_, hasPending := c.pendingUpdate()
-	return hasPending
-}
-
-func shownInDrawer(apps []manifest.App) []manifest.App {
-	shown := make([]manifest.App, 0, len(apps))
-	for _, app := range apps {
-		if !app.IsHidden() {
-			shown = append(shown, app)
-		}
-	}
-	return shown
 }
 
 func sortItems(items []Item) {
@@ -181,25 +163,10 @@ func modelActions(actions []manifest.Action) []Action {
 }
 
 func (c Config) hostItems() []Item {
-	items := []Item{c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action", "refresh.png")}
-	if c.isUpdateRepoSet() {
-		items = append(items, c.updatesItem())
+	return []Item{
+		c.hostItem(HostRefreshID, "drawer.refresh_name", HostRefreshAct, "drawer.refresh_action", "refresh.png"),
+		c.settingsItem(),
 	}
-	return items
-}
-
-// isUpdateRepoSet is true once data/update.json names a repo. The installer ships the file with
-// an empty repo, so the Updates row stays hidden until the user chooses where releases come
-// from; a repo that is set but malformed still shows the row so the screen can explain it.
-func (c Config) isUpdateRepoSet() bool {
-	data, err := os.ReadFile(filepath.Join(c.HostDir, "data", updateConfigName))
-	if err != nil {
-		return false
-	}
-	var config struct {
-		Repo string `json:"repo"`
-	}
-	return json.Unmarshal(data, &config) == nil && config.Repo != ""
 }
 
 func (c Config) hostItem(id, nameKey, actionID, labelKey, iconName string) Item {

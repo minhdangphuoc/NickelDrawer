@@ -51,7 +51,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `view_settings.{h,cc}` | list/grid choice in `.adds/koboapps/data/drawer.ini` (open, write, close; only on change) |
 | `painted_marks.{h,cc}` | update dot, list/grid toggles, header icon buttons, app mark; icons from `../common/system_icon` (Nickel's images, else Tabler PNGs, never drawn) |
 | `item_widgets.{h,cc}` | list row (152 px) and grid cell (icon + 2-line name, no status line); status/dot change in place |
-| `drawer_view.{h,cc}` | header, page of rows or grid cells (host items as header buttons in the grid) with section labels, hint, `1 / N` with arrows, page keys |
+| `drawer_view.{h,cc}` | header, page of rows or grid cells (host items as header buttons: refresh, list, grid, settings gear with the update dot) with section labels, hint, `1 / N` with arrows, page keys |
 | `plain_dialog.{h,cc}` | plain Qt dialog (menu, fallback for Nickel dialogs), 120 s timeout |
 | `dialogs.{h,cc}` | result dialog and confirm question: Nickel's own first, plain fallback |
 | `wifi_connector.{h,cc}` | Nickel's Wi-Fi connect, poll 1 s × 30 |
@@ -93,7 +93,7 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
   `error.message`. Anything else, a missing binary, a crash, bad JSON or `v` missing → built-in fallback
   text in a problem row (model) or dialog (actions). `v > 1` → "Update NickelDrawer" row.
 - The primary (tap) action is the **first** entry of `actions`. The long-press menu lists Info, the other
-  actions except `status`, and Remove… (not for host items `_refresh`, `_updates`; broken apps from
+  actions except `status`, and Remove… (not for host items `_refresh`, `_settings`; broken apps from
   `errors[]` get Remove only). `errors[].message` is English and shown as-is.
 - `needs_wifi` → No-Wi-Fi confirm (Cancel / Turn on Wi-Fi) → `WirelessWorkflowManager::connectWireless` →
   poll `isInternetAccessible` → retry once; a second `needs_wifi` shows "Could not connect to Wi-Fi."

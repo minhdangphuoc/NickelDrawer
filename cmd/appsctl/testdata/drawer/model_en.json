@@ -80,15 +80,15 @@
           ]
         },
         {
-          "id": "_updates",
-          "name": "Updates",
+          "id": "_settings",
+          "name": "Settings",
           "status": "",
           "badge": false,
           "screen": true,
           "actions": [
             {
-              "id": "check",
-              "label": "Check for updates",
+              "id": "open",
+              "label": "Open settings",
               "kind": "show",
               "primary": true,
               "menu": false

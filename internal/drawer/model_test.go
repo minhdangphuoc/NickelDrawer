@@ -43,22 +43,22 @@ func TestAppIconIsThePngNextToTheManifest(t *testing.T) {
 	}
 }
 
-func TestHostItemsGetTheirIconsWhenTheFilesExist(t *testing.T) {
+func TestHostItemsAreRefreshAndSettingsWithIconsWhenTheFilesExist(t *testing.T) {
 	config, _ := testConfig(t, nil)
-	writeFileIn(t, config.HostDir, "data/update.json", `{"repo":"o/r"}`)
 	writeFile(t, filepath.Join(config.HostDir, "icons", "refresh.png"))
 	model, err := config.BuildModel()
 	if err != nil {
 		t.Fatal(err)
 	}
 	items := model.Sections[1].Items
-	if len(items) != 2 || items[0].Icon != filepath.Join(config.HostDir, "icons", "refresh.png") || items[1].Icon != "" {
+	if len(items) != 2 || items[0].ID != HostRefreshID || items[1].ID != HostSettingsID {
 		t.Fatalf("host items = %+v", items)
 	}
-	writeFile(t, filepath.Join(config.HostDir, "icons", "updates.png"))
-	model, _ = config.BuildModel()
-	if got := model.Sections[1].Items[1].Icon; got != filepath.Join(config.HostDir, "icons", "updates.png") {
-		t.Fatalf("updates icon = %q", got)
+	if items[0].Icon != filepath.Join(config.HostDir, "icons", "refresh.png") || items[1].Icon != "" {
+		t.Fatalf("host item icons = %q, %q", items[0].Icon, items[1].Icon)
+	}
+	if !items[1].Screen || items[1].Badge {
+		t.Fatalf("the settings item opens a screen and has no dot before a check: %+v", items[1])
 	}
 }
 

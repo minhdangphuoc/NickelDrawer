@@ -122,7 +122,7 @@ unzip -l "$CHECK/koboapps-$VERSION.zip" | grep -Ei '\.so|\.tgz|sqlite' || echo c
 rm -rf "$CHECK"
 ```
 
-Then on the device you control (it must run a build with the embedded release key and an older version): copy `{"repo": "<owner>/NickelDrawer", "channel": "beta"}` to `/mnt/onboard/.adds/koboapps/data/update.json`, tap Apps, Check for updates, then Update status, then confirm `appsctl update rollback` still works. Do the fresh-install path from the release zip on a spare folder or after a backup.
+Then on the device you control (it must run a build with the embedded release key and an older version): copy `{"repo": "<owner>/NickelDrawer", "channel": "beta"}` to `/mnt/onboard/.adds/koboapps/data/update.json`, tap Apps, the gear (⚙), Check, then Update to the new version, then confirm `appsctl update rollback` still works. Do the fresh-install path from the release zip on a spare folder or after a backup.
 
 ## 7. Announce
 

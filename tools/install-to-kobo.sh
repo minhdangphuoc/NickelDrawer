@@ -228,15 +228,40 @@ create_inbox_folders() {
     act mkdir -p "$ADDS/koboapps/inbox/rejected"
 }
 
-# The Updates row needs data/update.json. The shipped template has an empty "repo", which keeps
-# the row hidden until the user sets owner/name (docs/UPDATES.md). An existing file is the
-# user's choice and is never touched.
+# data/update.json says where updates come from. The shipped template names the project repo
+# (generated from host/config/project.json). A missing file is created from it; an existing one
+# is the user's choice and is never overwritten, except that an empty "repo" (what older
+# installers wrote) is filled with the default. A repo the user set stays as it is.
 create_update_config() {
     local userConfig=$ADDS/koboapps/data/update.json
-    [ -e "$userConfig" ] && return 0
-    act mkdir -p "$ADDS/koboapps/data"
-    act cp "$DIST_ADDS/koboapps/config/update.json" "$userConfig"
-    note_change "created data/update.json (set \"repo\" to enable the Updates row)"
+    local defaultConfig=$DIST_ADDS/koboapps/config/update.json
+    if [ ! -e "$userConfig" ]; then
+        act mkdir -p "$ADDS/koboapps/data"
+        act cp "$defaultConfig" "$userConfig"
+        note_change "created data/update.json (updates come from $(read_repo "$defaultConfig"))"
+        return 0
+    fi
+    grep -Eq '"repo"[[:space:]]*:[[:space:]]*""' "$userConfig" || return 0
+    fill_empty_update_repo "$userConfig" "$(read_repo "$defaultConfig")"
+}
+
+# Prints the "repo" value of an update.json.
+read_repo() {
+    sed -n 's/.*"repo"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$1" | head -n 1
+}
+
+fill_empty_update_repo() {
+    local userConfig=$1 defaultRepo=$2
+    if $isDryRun; then
+        echo "[dry-run] fill the empty repo in $userConfig with $defaultRepo"
+        return 0
+    fi
+    local filled
+    filled=$(mktemp)
+    sed "s|\"repo\"[[:space:]]*:[[:space:]]*\"\"|\"repo\": \"$defaultRepo\"|" "$userConfig" >"$filled"
+    cp "$filled" "$userConfig"
+    rm -f "$filled"
+    note_change "filled the empty repo in data/update.json with $defaultRepo"
 }
 
 install_host() {

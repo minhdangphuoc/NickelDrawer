@@ -120,12 +120,25 @@ enum ExitClass { EXIT_REPLY, EXIT_PROTOCOL_ERROR, EXIT_UNEXPECTED };
 
 ExitClass classifyExitCode(int exitCode);
 
-// Host items ("_refresh", "_updates") cannot be removed or inspected.
+// Host items ("_refresh", "_settings") cannot be removed or inspected.
 bool isHostItemId(const char *id);
 
-// Host items the grid shows as header buttons instead of cells ("_refresh",
-// "_updates"); other host rows (the error "_retry") stay cells.
+// Host items both views show as header buttons instead of rows or cells
+// ("_refresh", "_settings"); other host rows (the error "_retry") stay cells.
 bool isHeaderControlId(const char *id);
+
+// The buttons at the right end of the header, left to right. The settings gear
+// is last, after refresh and the list/grid toggles; it replaces the old
+// updates button and carries the update dot.
+enum HeaderButton { HEADER_REFRESH, HEADER_LIST_TOGGLE, HEADER_GRID_TOGGLE, HEADER_SETTINGS };
+
+static const int HEADER_BUTTON_COUNT = 4;
+
+HeaderButton headerButtonAt(int position);
+
+// The host item a header button stands for ("_refresh", "_settings"); NULL for
+// the list/grid toggles, which are view controls and have no item.
+const char *hostItemIdOfHeaderButton(HeaderButton button);
 
 // ---- Long-press menu ----
 

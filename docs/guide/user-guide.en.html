@@ -312,21 +312,20 @@ tools/install-to-kobo.sh              # install
 <li>Tap <strong>More</strong> in the bottom bar.</li>
 <li>Tap <strong>Apps</strong>.</li>
 </ol>
-<p>The <strong>Apps</strong> row may show a second line: an app that is busy (for example "LocalSend Receiving") or <strong>1 update</strong>. A dot means an update is waiting.</p>
+<p>The <strong>Apps</strong> row may show a second line: an app that is busy (for example "LocalSend Receiving") or <strong>1 update</strong>. A dot means an update is waiting; the same dot shows on the gear in the drawer header.</p>
 <p>The drawer has:</p>
 <ul>
-<li>a header with <strong>←</strong> (back to More), the title <strong>Apps</strong>, and two buttons to switch between <strong>list</strong> and <strong>grid</strong>;</li>
+<li>a header with <strong>←</strong> (back to More), the title <strong>Apps</strong>, and four small buttons: <strong>refresh</strong>, <strong>list</strong>, <strong>grid</strong> and, last, the gear <strong>⚙</strong> (settings);</li>
 <li>the section <strong>INSTALLED</strong> with your apps;</li>
-<li>the section <strong>SYSTEM</strong> with <strong>Refresh list</strong> and, if you set up updates, <strong>Updates</strong>;</li>
 <li>the hint "Hold an app for info or to remove it.";</li>
 <li>the page number (for example <code>1 / 2</code>) with <strong>‹ ›</strong> arrows.</li>
 </ul>
 <h3 id="list-or-grid">List or grid</h3>
-<p>Tap the list or grid button in the header. The list shows each app with its icon, name and a status line. The grid shows four icons per row with their names; in the grid, <strong>Refresh list</strong> and <strong>Updates</strong> become small buttons in the header. The drawer remembers your choice.</p>
+<p>Tap the list or grid button in the header. The list shows each app with its icon, name and a status line. The grid shows four icons per row with their names; <strong>Refresh</strong> and the gear <strong>⚙</strong> sit in the header in both views. The drawer remembers your choice.</p>
 <h3 id="turn-pages">Turn pages</h3>
 <p>Use the Kobo's page-turn buttons or tap the <strong>‹ ›</strong> arrows. The page-turn buttons also flip pages inside long app screens.</p>
 <h3 id="refresh-the-list">Refresh the list</h3>
-<p>You copied a new app over USB, or removed one? Tap <strong>Refresh list</strong> (in the grid: the refresh button in the header). The drawer also reloads every time you open it.</p>
+<p>You copied a new app over USB, or removed one? Tap the refresh button in the header. The drawer also reloads every time you open it.</p>
 <h3 id="info-and-remove">Info and remove</h3>
 <p>Hold your finger on an app for about half a second. A menu opens:</p>
 <ul>
@@ -716,24 +715,20 @@ tools/install-to-kobo.sh              # install
 <p><em>Tried on a device:</em> not yet.</p>
 <h2 id="updates">Updates</h2>
 <p>NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.</p>
-<h3 id="set-up-updates-once">Set up updates (once)</h3>
+<h3 id="settings-the-gear">Settings: the gear</h3>
+<p>Tap <strong>⚙</strong> in the header of the drawer to open <strong>NickelDrawer settings</strong>. It has four parts:</p>
+<ul>
+<li><strong>Hidden apps</strong>: a switch for every app that is hidden by default (today: <strong>UI Kit</strong>). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.</li>
+<li><strong>Updates</strong>: the installed <strong>Version</strong>, the <strong>New version</strong> (only after a check found one) and the <strong>Source</strong> (the GitHub repository). Buttons <strong>Check</strong> and <strong>Update to <version></strong>.</li>
+<li><strong>Debug</strong>: <strong>Write debug log</strong> (see "Send a useful bug report" below). It takes effect after a restart.</li>
+<li><strong>About</strong>: your firmware with ✓ when NickelDrawer supports it or <strong>!</strong> when it does not, and <strong>About the project</strong> (version, a QR code to open the project page on your phone, maintainer, license, credits).</li>
+</ul>
+<h3 id="updates-check-and-install">Updates: check and install</h3>
+<p>Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open <code>.adds/koboapps/data/update.json</code> over USB and change <code>"repo"</code> to <code>owner/name</code> (an empty <code>"repo"</code> turns updates off and the Source reads <strong>Off</strong>). The installer never overwrites that file, but it fills in the default when <code>"repo"</code> is empty.</p>
 <ol>
-<li>Connect the Kobo over USB.</li>
-<li>
-<p>Open the file <code>.adds/koboapps/data/update.json</code> (the installer creates it with an empty <code>"repo"</code>; if it is missing, create it) and set <code>owner/name</code> to the GitHub repository the NickelDrawer releases come from:</p>
-<pre><code>{"repo": "owner/name", "channel": "stable"}
-</code></pre>
-<p>Use <code>"channel": "beta"</code> to also get test releases.</p>
-</li>
-<li>
-<p>Eject. While <code>"repo"</code> is empty the <strong>Updates</strong> row stays hidden; now the drawer's <strong>SYSTEM</strong> section has it.</p>
-</li>
-</ol>
-<h3 id="check-and-install">Check and install</h3>
-<ol>
-<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>Updates</strong>.</li>
-<li>Tap <strong>Check for updates</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the screen shows <strong>Installed</strong>, <strong>Latest</strong> and <strong>What's new</strong>, and the <strong>Apps</strong> row shows <strong>1 update</strong>.</li>
-<li>Tap <strong>Update</strong>, then <strong>Update</strong> again to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.</li>
+<li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>⚙</strong>.</li>
+<li>In <strong>Updates</strong>, tap <strong>Check</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the gear gets a black dot, the <strong>New version</strong> row appears with a dot, and the big button reads <strong>Update to <version></strong>.</li>
+<li>Tap <strong>Update to <version></strong>, then <strong>Update</strong> to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.</li>
 <li>If the result says "Restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
 </ol>
 <h3 id="what-a-restart-does-after-an-update">What a restart does after an update</h3>
@@ -757,8 +752,8 @@ tools/install-to-kobo.sh              # install
 <li>
 <p>Copy <code>en.json</code> to <code>&lt;code&gt;.json</code> (for example <code>fr.json</code>) in each of these folders:</p>
 <ul>
-<li><code>.adds/koboapps/locales/</code> (drawer, tweaks, updates),</li>
-<li><code>.adds/koboapps/screens/updates/locales/</code> (the Updates screen),</li>
+<li><code>.adds/koboapps/locales/</code> (drawer, tweaks, updates, settings),</li>
+<li><code>.adds/koboapps/screens/settings/locales/</code> (the settings and About screens),</li>
 <li><code>.adds/apps/&lt;app&gt;/locales/</code> for each app.</li>
 </ul>
 </li>
@@ -813,12 +808,12 @@ tools/install-to-kobo.sh              # install
 <tr>
 <td>An app opens a screen with "Can't open the app", <strong>Back</strong> and <strong>Try again</strong>.</td>
 <td>The app's files are incomplete or damaged.</td>
-<td>Copy that app's folder from the release zip again, then <strong>Refresh list</strong>.</td>
+<td>Copy that app's folder from the release zip again, then tap the refresh button in the header.</td>
 </tr>
 <tr>
 <td>A new app does not appear.</td>
 <td>The drawer has not reloaded, or the app's files are wrong.</td>
-<td>Tap <strong>Refresh list</strong>. A broken app is listed under <strong>PROBLEMS</strong> with the reason.</td>
+<td>Tap the refresh button in the header. A broken app is listed under <strong>PROBLEMS</strong> with the reason.</td>
 </tr>
 <tr>
 <td>Wallpaper picture does not appear on the sleep screen.</td>
@@ -869,7 +864,7 @@ tools/install-to-kobo.sh              # install
 </table></div>
 <h3 id="send-a-useful-bug-report">Send a useful bug report</h3>
 <ol>
-<li>Create an empty file <code>.adds/nickeldrawer/debug</code> over USB and restart the Kobo. The drawer then writes a step log to <code>.adds/nickeldrawer/debug.log</code>.</li>
+<li>Turn on <strong>⚙</strong> → <strong>Debug</strong> → <strong>Write debug log</strong> and restart the Kobo (or create an empty file <code>.adds/nickeldrawer/debug</code> over USB; it is the same switch). The drawer then writes a step log to <code>.adds/nickeldrawer/debug.log</code>.</li>
 <li>Repeat what went wrong.</li>
 <li>Connect over USB and copy <code>debug.log</code> and the app's <code>data/log.txt</code>.</li>
 <li>Read them before you share them. Remove anything personal (book titles, names, your Wi-Fi address). Never share <code>data/token</code>.</li>
@@ -973,7 +968,7 @@ tools/install-to-kobo.sh --uninstall             # asks whether to keep the apps
 <li><strong>Network only when you start it:</strong></li>
 <li>LocalSend listens on your Wi-Fi while it is receiving, and stops when you tap stop or after 15 minutes without a file.</li>
 <li>GitHub pairing opens a small page on your Wi-Fi for up to 10 minutes. Sync talks to GitHub only.</li>
-<li>Updates talk to GitHub only when you tap <strong>Check for updates</strong> or <strong>Update</strong>.</li>
+<li>Updates talk to GitHub only when you tap <strong>Check</strong> or <strong>Update to <version></strong>.</li>
 <li>Wallpaper, Library, To-do and Tweaks never use the network.</li>
 <li><strong>Your GitHub token</strong> is stored only on the Kobo, in <code>.adds/apps/ghsync/data/token</code>. It never appears on the screen, in logs or in the app's status. But the Kobo's storage cannot protect single files: anyone who connects your Kobo to a computer can read that file. That is why the token should be fine-grained, limited to one repository and read-only. Revoke it on GitHub if you lose the Kobo.</li>
 <li><strong>The LocalSend PIN</strong> is stored in <code>.adds/apps/localsend/data/pin.txt</code>, readable the same way.</li>
@@ -995,7 +990,7 @@ Not yet. Only the Libra 2 is supported.</p>
 <p><strong>Can I use it in a shop or company?</strong>
 No. The license allows personal, study, hobby and non-profit use only.</p>
 <p><strong>What is "UI Kit"?</strong>
-A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default.</p>
+A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default; turn it on with <strong>⚙</strong> → <strong>Hidden apps</strong> → <strong>UI Kit</strong>.</p>
 <p><strong>Where are my files?</strong>
 Received books in <code>Books</code>, <code>Documents</code>, <code>Comics</code>, <code>Pictures</code>. GitHub books in the <code>GitHub</code> folders inside them. App settings in <code>.adds/apps/&lt;app&gt;/data/</code>.</p>
 <p><a id="vietnamese-system-ui"></a></p>
@@ -1087,14 +1082,14 @@ Received books in <code>Books</code>, <code>Documents</code>, <code>Comics</code
 <td>Sections of the drawer.</td>
 </tr>
 <tr>
-<td>Refresh list</td>
-<td>Làm mới danh sách</td>
-<td>Reload the drawer.</td>
+<td>Refresh</td>
+<td>Làm mới</td>
+<td>Header button that reloads the drawer.</td>
 </tr>
 <tr>
-<td>Updates</td>
-<td>Cập nhật</td>
-<td>The update screen in the drawer.</td>
+<td>Settings (⚙)</td>
+<td>Cài đặt</td>
+<td>The gear in the drawer header: hidden apps, updates, debug, about.</td>
 </tr>
 <tr>
 <td>Info / Remove…</td>

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Action "check" of the Updates screen: fetches and verifies the signed release index and
+# Action "check" of the settings screen: fetches and verifies the signed release index and
 # records whether an update is available. It installs nothing.
 
 . /mnt/onboard/.adds/koboapps/lib/common.sh

@@ -175,7 +175,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
   1. Một repo <strong>riêng tư</strong> (ví dụ <code>&lt;tên bạn&gt;/kobo-thu</code>) có thư mục <code>epub/</code> chứa <strong>ít nhất một sách thật</strong> (khuyên 2), tên có dấu tiếng Việt càng tốt (ví dụ <code>Việt Nam sử lược.epub</code>). Thêm hai tệp thử bị bỏ qua: <code>epub/gia.epub</code> (tệp văn bản đổi đuôi thành .epub) và <code>epub/ghi-chu.txt</code>. Có thể thêm <code>epub/mau.pdf</code> để thấy PDF vào <code>Documents/GitHub</code>. Giữ sẵn một sách thứ ba để thêm vào repo ở GH-06.
   2. (Tùy chọn, cho GH-07) một repo riêng tư thứ hai <strong>hoàn toàn trống</strong> (không commit nào, không README).
   3. Một <strong>fine-grained personal access token</strong>: Repository access = <em>Only select repositories</em> và chỉ chọn repo ở bước 1 (thêm repo trống nếu có); Permissions = <strong>Contents: Read-only</strong> (Metadata tự có); hết hạn trong 7 ngày. Giữ token trong trình quản lý mật khẩu của điện thoại để dán vào trang ghép nối. <strong>Chỉ nhập token ở trang ghép nối trên điện thoại.</strong> Không gõ nó vào chat, vào Mac, vào Kobo, không chụp màn hình. Xoá (revoke) token trên GitHub sau buổi.</li>
-<li>☐ <strong>Bộ giao diện (UI Kit) ẩn mặc định.</strong> Ứng dụng này là mục tiêu thử KIT-<em>, nên chỉ hiện khi bạn bật cho buổi này. Sau bước cài (mục 2), khi máy đang cắm USB: chép <code>/.adds/apps/uikit/app.json</code> vào <code>backups/&lt;ngày&gt;/</code> trước, rồi đổi <code>"hidden": true</code> thành <code>"hidden": false</code> (hoặc xoá dòng đó), lưu, eject. Trong Ngăn bấm </em><em>Làm mới danh sách</em><em> (phần Hệ thống): hàng </em><em>Bộ giao diện</em>* hiện ra. Cuối buổi trả lại <code>"hidden": true</code> (cài lại bằng <code>tools/install-to-kobo.sh</code> cũng trả lại, vì nó chép đè <code>app.json</code>). Dữ liệu của nó nằm trong <code>data/</code> của ứng dụng, không đụng sách.</li>
+<li>☐ <strong>Bộ giao diện (UI Kit) ẩn mặc định.</strong> Ứng dụng này là mục tiêu thử KIT-<em>, nên chỉ hiện khi bạn bật cho buổi này, và bật bằng chính máy (không sửa <code>app.json</code>, không cần USB): trong Ngăn bấm bánh răng ⚙ ở tiêu đề, bật </em><em>Bộ giao diện</em><em> trong mục </em><em>Ứng dụng ẩn</em><em>, bấm ←: hàng/ô </em><em>Bộ giao diện</em>* hiện ra (ca SET-02). Cuối buổi tắt lại công tắc đó. Dữ liệu của nó nằm trong <code>data/</code> của ứng dụng, không đụng sách.</li>
 <li>☐ Chuẩn bị cho TODO-06: một tệp <code>todo-hong.json</code> ngoài repo, trong <code>local/</code>, nội dung <code>{ hỏng</code> (cố ý không phải JSON).</li>
 <li>☐ Hỏi lại: Kobo không đang hiện lời mời nâng cấp Qt6 (<code>tools/device-session.sh status</code> báo "none" hoặc "declined"). Nếu có, bấm Bỏ qua trên máy, không đồng ý.</li>
 </ul>
@@ -252,16 +252,16 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>DRW-13</td>
-<td>Bấm nút chuyển danh sách/lưới ở tiêu đề. Rồi bấm lại. Thoát và mở lại Ngăn</td>
-<td>Đổi giữa danh sách (hàng) và lưới (ô); lựa chọn được nhớ sau khi mở lại</td>
-<td><code>drawer view: header created (... back, title, list/grid toggles)</code>, <code>drawer view: restore ...</code></td>
+<td>Nhìn các nút bên phải tiêu đề. Bấm nút chuyển danh sách/lưới. Rồi bấm lại. Thoát và mở lại Ngăn</td>
+<td>Thứ tự các nút từ trái sang phải: ⟳ làm mới, danh sách, lưới, ⚙ cài đặt (cả ở danh sách lẫn lưới, không còn nút tải xuống riêng cho cập nhật). Đổi giữa danh sách (hàng) và lưới (ô); lựa chọn được nhớ sau khi mở lại</td>
+<td><code>drawer view: header created (... refresh, list/grid toggles, settings)</code>, <code>drawer view: restore ...</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>DRW-04</td>
-<td>Trong danh sách, kiểm các ứng dụng. Trước đó: <code>.adds/koboapps/data/update.json</code> do trình cài đặt tạo với <code>"repo": ""</code> (hàng Cập nhật phải <strong>ẩn</strong>); sửa thành <code>{"repo": "owner/name", "channel": "stable"}</code> rồi mở lại Ngăn. Bấm một ô/hàng LocalSend</td>
-<td>Thấy GitHub, LocalSend, Hình nền, Thư viện, Làm mới danh sách; hàng Cập nhật <strong>chỉ hiện sau khi</strong> <code>repo</code> được điền (GitHub <strong>không</strong> còn ẩn). Bấm LocalSend mở màn hình ứng dụng có thanh tiêu đề với mũi tên quay lại (xem LS-01), không hiện hộp thoại văn bản</td>
+<td>Trong danh sách, kiểm các ứng dụng. Bấm một ô/hàng LocalSend</td>
+<td>Thấy GitHub, LocalSend, Hình nền, Thư viện (không còn hàng "Làm mới danh sách" hay "Cập nhật": chúng là nút ⟳ và ⚙ trên tiêu đề). Bấm LocalSend mở màn hình ứng dụng có thanh tiêu đề với mũi tên quay lại (xem LS-01), không hiện hộp thoại văn bản</td>
 <td><code>screen: "main" page 1/1, ...</code>; (syslog) <code>screen: open localsend</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -287,6 +287,46 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <td>Trong Ngăn, nhấn giữ một ứng dụng (ví dụ Thư viện)</td>
 <td>Menu kiểu Nickel (các hàng, không có nút hộp): Thông tin, các thao tác của ứng dụng, Gỡ…. Bấm ra ngoài thì đóng. Mở lại, chọn Gỡ…, bấm <strong>Huỷ</strong>: không gỡ gì</td>
 <td><code>row menu: Nickel menu ... rows</code>, <code>popup: ... opened</code>, <code>popup: ... closed: ...</code>, <code>row menu: row N (...) tapped</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>SET-01</td>
+<td>Trong Ngăn bấm bánh răng ⚙ ở cuối hàng nút trên tiêu đề (cả ở danh sách lẫn lưới). Nhìn màn hình. Bấm "Giới thiệu dự án". Bấm ← hai lần</td>
+<td>Màn "Cài đặt NickelDrawer" mở với mũi tên ←: các mục Ứng dụng ẩn, Cập nhật (Phiên bản, Nguồn "minhdangphuoc/NickelDrawer"), Gỡ lỗi, Thông tin (Firmware kèm ✓ cho 4.38.23828). Nút Kiểm tra và (mờ khi chưa có bản mới) Cập nhật. "Giới thiệu dự án" mở màn Giới thiệu; ← về Cài đặt, ← nữa về Ngăn đúng chế độ danh sách/lưới. Bánh răng là biểu tượng gốc của Nickel</td>
+<td><code>screen: tap ...</code>, <code>screen: open _settings</code>, <code>navigation: push ... about</code>, <code>navigation: pop</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>SET-02</td>
+<td>Trong ⚙ bật công tắc "Bộ giao diện" (dòng nhỏ đổi từ "Đang ẩn · dành cho nhà phát triển" sang "Đang hiện trong Ngăn"). Bấm ← về Ngăn. Quay lại ⚙, tắt công tắc, về Ngăn</td>
+<td>Khi bật: về Ngăn thấy hàng/ô "Bộ giao diện". Khi tắt: biến mất. Không cần cắm USB hay làm mới. <code>app.json</code> của ứng dụng vẫn <code>"hidden": true</code> (kiểm bằng USB ở lần cắm sau); <code>data/settings.json</code> của máy chủ ghi <code>shown_hidden_apps</code></td>
+<td><code>screen: tap on toggle N, action "show_hidden_uikit"</code>, <code>queue: show_hidden_uikit ...</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>SET-03</td>
+<td>Trong ⚙ bật "Ghi nhật ký gỡ lỗi", cắm USB: xem <code>.adds/nickeldrawer/debug</code>; tắt công tắc, cắm USB xem lại</td>
+<td>Bật: có tệp rỗng <code>debug</code>; dòng ghi chú "Có hiệu lực sau khi khởi động lại". Tắt: tệp biến mất. Công tắc đọc đúng trạng thái khi mở lại màn</td>
+<td><code>queue: debug ...</code></td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>SET-04</td>
+<td>Trong ⚙ bấm "Giới thiệu dự án". Nhìn mã QR; dùng camera điện thoại quét. Đọc phần Dự án và Ghi nhận</td>
+<td>Có tiêu đề NickelDrawer, "Phiên bản …", mã QR cùng dòng địa chỉ https://github.com/minhdangphuoc/NickelDrawer và chú thích "Quét để mở GitHub"; điện thoại mở đúng trang kho mã. Người bảo trì "Minh Dang", Giấy phép PolyForm Noncommercial 1.0.0, Firmware hỗ trợ 4.38.23552 – 4.38.23828; mục Ghi nhận đủ sáu hàng; dòng cuối "Dự án độc lập, không liên kết với Rakuten Kobo…". Không chữ bị cắt đuôi</td>
+<td>(không có dòng riêng cho QR; so sánh mắt với bản xem trước <code>settings-about-vi.png</code>)</td>
+<td>☐</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>SET-05</td>
+<td>Có Wi-Fi. Trong ⚙ bấm "Kiểm tra" (Cập nhật). Chờ vài giây rồi nhìn lại màn (mở lại nếu cần)</td>
+<td>Toast "Đang kiểm tra cập nhật." rồi nút không bị kẹt. Chưa có bản phát hành: không có dòng "Bản mới", nút lớn vẫn "Cập nhật" và mờ; có bản mới hơn: bánh răng có chấm đen, hàng "Bản mới" kèm ●, nút "Cập nhật lên <số>" sáng, bấm hiện hộp xác nhận "Cài bản <số>? …" (chọn Hủy để không cài trên buổi này). Tắt Wi-Fi rồi Kiểm tra: máy hỏi bật Wi-Fi</td>
+<td><code>screen: tap on button N, action "check"</code>, (syslog) <code>update check</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
@@ -928,7 +968,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 </tbody>
 </table></div>
-<p>Các ca KIT-* còn lại làm trên Bộ giao diện khi tiện: KIT-02 (so với Cài đặt), KIT-11 (chế độ tối) và KIT-12 (cỡ chữ) có thể làm với ba màn của nó (Màn chính, Thêm thành phần, Thư viện ảnh) thay cho, hoặc thêm vào, các màn ở mục 5. Cuối buổi trả lại <code>"hidden": true</code> cho Bộ giao diện.</p>
+<p>Các ca KIT-* còn lại làm trên Bộ giao diện khi tiện: KIT-02 (so với Cài đặt), KIT-11 (chế độ tối) và KIT-12 (cỡ chữ) có thể làm với ba màn của nó (Màn chính, Thêm thành phần, Thư viện ảnh) thay cho, hoặc thêm vào, các màn ở mục 5. Cuối buổi tắt lại công tắc Bộ giao diện trong ⚙ (SET-02).</p>
 <h2 id="6-ba-hanh-ong-cuoi-cua-tinh-chinh-khoang-8-phut">6. Ba hành động cuối của Tinh chỉnh (khoảng 8 phút)</h2>
 <p>Làm theo đúng thứ tự này. Trả công tắc về như cũ trước (TWK-02..05 đã xong). Cho Hình nền một ảnh đang dùng và một sách đang đọc.</p>
 <div class="tbl"><table>

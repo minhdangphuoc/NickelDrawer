@@ -27,8 +27,6 @@
 static const int SIDE_GUTTER = ScreenLogic::GUTTER;
 static const int CONTENT_WIDTH = ScreenLogic::CONTENT_WIDTH;
 static const int FOOTER_BUTTON_SIDE = 120;
-static const char *const HOST_REFRESH_ID = "_refresh";
-static const char *const HOST_UPDATES_ID = "_updates";
 
 // Black on white, no grey fills; separators 2 px (ui-kit §1, §2). Families are
 // Nickel's own, filled in at run time (nickel_fonts.h): never generic ones.
@@ -62,9 +60,9 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 
 DrawerView::DrawerView()
     : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
-      hintLabel(NULL), pageIndicator(NULL), refreshButton(NULL), updatesButton(NULL), updatesDot(NULL),
+      hintLabel(NULL), pageIndicator(NULL), refreshButton(NULL), settingsButton(NULL), settingsDot(NULL),
       viewMode(ViewSettings::load()), gridRows(DrawerLogic::GRID_DEFAULT_ROWS), currentPage(0), isInputBlocked(false),
-      hasModel(false), hasLoggedLayout(false), hasQt6Notice(false)
+      hasModel(false), isUpdateAvailable(false), hasLoggedLayout(false), hasQt6Notice(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerView"));
@@ -142,23 +140,22 @@ PageHeader *DrawerView::createHeader()
     connect(listToggle, SIGNAL(tapped()), this, SLOT(onListToggleTapped()));
     connect(gridToggle, SIGNAL(tapped()), this, SLOT(onGridToggleTapped()));
     refreshButton = createHostButton(HeaderIconButton::ICON_REFRESH, SLOT(onRefreshTapped()), pageHeader);
-    updatesButton = createHostButton(HeaderIconButton::ICON_IMPORT, SLOT(onUpdatesTapped()), pageHeader);
-    updatesDot = new UpdateDot(updatesButton);
-    updatesDot->move(updatesButton->width() - updatesDot->width() - HOST_DOT_INSET, HOST_DOT_INSET);
-    updatesDot->hide();
+    settingsButton = createHostButton(HeaderIconButton::ICON_SETTINGS, SLOT(onSettingsTapped()), pageHeader);
+    settingsDot = new UpdateDot(settingsButton);
+    settingsDot->move(settingsButton->width() - settingsDot->width() - HOST_DOT_INSET, HOST_DOT_INSET);
+    settingsDot->hide();
     pressables << listToggle << gridToggle;
-    pageHeader->addTrailingWidget(refreshButton);
-    pageHeader->addTrailingWidget(updatesButton);
-    pageHeader->addTrailingWidget(listToggle);
-    pageHeader->addTrailingWidget(gridToggle);
+    for (int position = 0; position < DrawerLogic::HEADER_BUTTON_COUNT; position++) {
+        pageHeader->addTrailingWidget(headerWidget(DrawerLogic::headerButtonAt(position)));
+    }
     hideToggleWithoutIcon(listToggle, "list");
     hideToggleWithoutIcon(gridToggle, "grid");
-    DebugLog::write("drawer view: header created (%s back, title, list/grid toggles)",
+    DebugLog::write("drawer view: header created (%s back, title, refresh, list/grid toggles, settings)",
                     pageHeader->usesNickelHeader() ? "Nickel's" : "own");
     return pageHeader;
 }
 
-// The grid's stand-ins for the "_refresh" and "_updates" host items. Without
+// The header stand-ins for the "_refresh" and "_settings" host items. Without
 // an icon the button stays hidden (we never draw one) and the log says so.
 HeaderIconButton *DrawerView::createHostButton(HeaderIconButton::Icon icon, const char *slot, QWidget *parent)
 {
@@ -201,6 +198,7 @@ void DrawerView::setModel(const DrawerModel &model)
 {
     bool isStatusOnlyChange = hasModel && !items.isEmpty() && hasSameItems(model);
     hasModel = true;
+    isUpdateAvailable = model.updateAvailable;
     header->setTitle(model.title.isEmpty() ? FallbackStrings::text(FallbackStrings::APPS_TITLE) : model.title);
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
     hintLabel->setText(hint);
@@ -263,7 +261,7 @@ int DrawerView::perPage() const
 }
 
 // Both views hide the host items the header buttons stand for, so refresh and
-// updates sit next to the list/grid toggles in either view.
+// settings sit next to the list/grid toggles in either view.
 void DrawerView::rebuildShownIndices()
 {
     shownIndices.clear();
@@ -285,27 +283,43 @@ const DrawerItem *DrawerView::hostItem(const char *id) const
     return NULL;
 }
 
-// The refresh button, and the updates button (with the dot when an update is
-// waiting), when the host offers the item and an icon is installed.
+// The refresh and settings buttons, when the host offers the item and an icon
+// is installed. The settings gear carries the dot while an update is waiting
+// (the item's badge, or the model's update_available).
 void DrawerView::updateHostButtons()
 {
-    const DrawerItem *updates = hostItem(HOST_UPDATES_ID);
-    refreshButton->setVisible(hostItem(HOST_REFRESH_ID) && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
-    updatesButton->setVisible(updates && !SystemIcon::icon(SystemIcon::IMPORT).isNull());
-    updatesDot->setVisible(updates && updates->hasUpdate);
+    const DrawerItem *settings = hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_SETTINGS));
+    bool hasRefreshItem = hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_REFRESH)) != NULL;
+    refreshButton->setVisible(hasRefreshItem && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
+    settingsButton->setVisible(settings && !SystemIcon::icon(SystemIcon::SETTINGS).isNull());
+    settingsDot->setVisible(settings && (settings->hasUpdate || isUpdateAvailable));
+}
+
+QWidget *DrawerView::headerWidget(DrawerLogic::HeaderButton button) const
+{
+    switch (button) {
+    case DrawerLogic::HEADER_REFRESH:
+        return refreshButton;
+    case DrawerLogic::HEADER_LIST_TOGGLE:
+        return listToggle;
+    case DrawerLogic::HEADER_GRID_TOGGLE:
+        return gridToggle;
+    default:
+        return settingsButton;
+    }
 }
 
 void DrawerView::onRefreshTapped()
 {
-    const DrawerItem *item = isInputBlocked ? NULL : hostItem(HOST_REFRESH_ID);
+    const DrawerItem *item = isInputBlocked ? NULL : hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_REFRESH));
     if (item) {
         emit itemTapped(*item);
     }
 }
 
-void DrawerView::onUpdatesTapped()
+void DrawerView::onSettingsTapped()
 {
-    const DrawerItem *item = isInputBlocked ? NULL : hostItem(HOST_UPDATES_ID);
+    const DrawerItem *item = isInputBlocked ? NULL : hostItem(DrawerLogic::hostItemIdOfHeaderButton(DrawerLogic::HEADER_SETTINGS));
     if (item) {
         emit itemTapped(*item);
     }

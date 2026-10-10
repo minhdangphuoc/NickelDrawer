@@ -177,4 +177,4 @@ localgo builds the hook by replacing `%f` (path), `%n` (file name), `%a` (sender
 2. Done: LocalSend receives into `inbox`, routes per file, shows the summary; "Stop receiving" also migrates the old `/LocalSend` folder.
 3. Done: ghsync routes by type to `Books|Documents|Comics/GitHub` with the inbox rules; an explicit `dest` keeps working.
 4. Done: `app.json` has `storage` / `network`; `appsctl validate` checks them.
-5. Open: signed updates (`internal/release`) do not yet ship `.adds/koboapps/config/`; until `config` is added to the host folders an update leaves `routing.json` as the installer wrote it.
+5. Done: signed updates (`internal/release`) ship `.adds/koboapps/config/` (routing.json, project.json, the update.json template); the user's copies live in `data/` and are never touched.

@@ -1,22 +1,22 @@
 # Signed updates
 
-NickelDrawer can update its own apps, host tool and Nickel mod over Wi-Fi. An update is only applied if it is signed with the maintainer's release key. Nothing touches the network unless you start a check or an update from the **Updates** row of the Apps drawer.
+NickelDrawer can update its own apps, host tool and Nickel mod over Wi-Fi. An update is only applied if it is signed with the maintainer's release key. Nothing touches the network unless you start a check or an update from the settings screen of the Apps drawer (the gear in its header).
 
 ## For users
 
-1. Open `/mnt/onboard/.adds/koboapps/data/update.json` once and set the repo. The installer (`tools/install-to-kobo.sh`) creates the file from `.adds/koboapps/config/update.json` with an empty `repo` and never overwrites it afterwards; with a manual copy, create it yourself. Until `repo` is set the Updates row stays hidden:
+1. Updates come from the project's GitHub repo by default. The installer (`tools/install-to-kobo.sh`) creates `/mnt/onboard/.adds/koboapps/data/update.json` from `.adds/koboapps/config/update.json`, which `make dist` generates from `host/config/project.json` (the one file that names the repo, maintainer and supported firmware, so a fork edits only that). The installer never overwrites an existing `data/update.json`, with one exception: if its `repo` is empty (older installers wrote it that way) the installer fills in the default repo and leaves `channel` alone. A repo you set yourself is kept. To follow a fork, edit the file:
 
    ```json
    {"repo": "owner/name", "channel": "stable"}
    ```
 
-   `channel` is `stable` (default) or `beta`. Only `beta` accepts GitHub pre-releases. Versions follow Semantic Versioning, so `1.0.0-beta.2` is newer than `1.0.0-beta.1` and older than `1.0.0`.
-2. Open More, Apps, and look at the **Updates** row in the System section (it appears once `update.json` names a `repo`). Tap it to open the Updates screen.
-3. Tap **Check for updates**. It connects Wi-Fi if needed, fetches and verifies the signed release index and records the result; nothing is installed. When a newer release exists the row shows **1 update** and the screen shows the installed and the available version and a short "What's new" text.
-4. Tap **Update** and confirm. The update runs in the background; the screen shows its state ("Updating...", then the result). Keep Wi-Fi on until it ends.
+   `channel` is `stable` (default) or `beta`. Only `beta` accepts GitHub pre-releases. Versions follow Semantic Versioning, so `1.0.0-beta.2` is newer than `1.0.0-beta.1` and older than `1.0.0`. An empty `repo` switches updates off: the settings screen shows the source as "Off" and both buttons stay disabled.
+2. Open More, Apps, then the gear (**⚙**) in the header. The **Updates** section shows the installed version, the new version (with a black dot, only when a check found one) and the source.
+3. Tap **Check**. It connects Wi-Fi if needed, fetches and verifies the signed release index and records the result; nothing is installed. When a newer release exists the gear in the header gets a black dot, the **New version** row appears and the primary button reads **Update to <version>**; a short "What's new" text shows when the release carries notes.
+4. Tap **Update to <version>** and confirm. The update runs in the background; the screen shows its state ("Updating...", then the result). Keep Wi-Fi on until it ends.
 5. When the result says to restart the Kobo, restart it: the Nickel mod of the release is installed by the reboot (see "The Nickel mod" below).
 
-From a shell: `appsctl update check | apply | status | rollback`. `check` writes `.adds/koboapps/data/update/available.json` (`available`, `version`, `current`, `notes`, `has_mod`, `checked`), which the drawer reads for the badge and the screen; it is a cache, and `apply` verifies everything again. `apply` takes `--allow-downgrade`; every subcommand takes `--onboard-root`, `--api-base`, `--tmp-dir`, `--locale`.
+From a shell: `appsctl update check | apply | status | rollback`. `check` writes `.adds/koboapps/data/update/available.json` (`available`, `version`, `current`, `notes`, `has_mod`, `checked`), which the drawer reads for the dot on the gear and for the screen; it is a cache, and `apply` verifies everything again. `apply` takes `--allow-downgrade`; every subcommand takes `--onboard-root`, `--api-base`, `--tmp-dir`, `--locale`.
 
 If `update.json` is missing or has an empty `repo`, or this build has no release key, the update stops with a message that says what to fix. Nothing is changed.
 
@@ -24,9 +24,9 @@ If `update.json` is missing or has an empty `repo`, or this build has no release
 
 - The release key pair is ed25519. The **private key** lives only on the maintainer's Mac (`~/.config/nickeldrawer/release-ed25519.key`, mode 600). It is never in the repo, never on the Kobo, never printed.
 - The **public key** is `spec/release-ed25519.pub` (base64 of the raw 32 bytes). `appsctl` embeds it at build time. A placeholder or empty key means updates are refused.
-- A release has three assets on GitHub: `release.json`, `release.json.sig` and `nickeldrawer-<version>.zip`. `release.json` may carry an optional plain-text `notes` summary (up to 600 characters; `ndrelease sign --notes-file`) that the Updates screen shows. The signature is detached, base64 of the raw 64 bytes, over the exact bytes of `release.json`.
+- A release has three assets on GitHub: `release.json`, `release.json.sig` and `nickeldrawer-<version>.zip`. `release.json` may carry an optional plain-text `notes` summary (up to 600 characters; `ndrelease sign --notes-file`) that the settings screen shows. The signature is detached, base64 of the raw 64 bytes, over the exact bytes of `release.json`.
 - `release.json` lists every file with its path, sha256, size and mode. The device checks the signature first, then every file of the zip against that list. A valid signature on a wrong file is still rejected.
-- Updates can only write host `bin/`, `lib/`, `locales/`, `icons/`, `screens/`, the one file `mod/KoboRoot-nickeldrawer.tgz`, and each app's `app.json`, `icon.png`, `bin/`, `locales/`. Any other path, including every `data/` folder, makes the manifest invalid, even when it is signed. App data (tokens, configs, PINs) is never read or written.
+- Updates can only write host `bin/`, `lib/`, `locales/`, `icons/`, `screens/`, `config/`, the one file `mod/KoboRoot-nickeldrawer.tgz`, and each app's `app.json`, `icon.png`, `bin/`, `locales/`. Any other path, including every `data/` folder, makes the manifest invalid, even when it is signed. App data (tokens, configs, PINs) is never read or written.
 - Downgrades are refused unless you pass `--allow-downgrade`. `min_appsctl` in the manifest stops an old `appsctl` from applying a release it does not understand.
 - The GitHub account is not trusted for integrity: only the signature is. TLS uses CA roots embedded in `appsctl`, because the Kobo may lack a system bundle.
 

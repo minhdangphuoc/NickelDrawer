@@ -1,6 +1,8 @@
 // Host unit tests for drawer_logic (no Qt, no C++ standard library).
 // Run: make -C mod/drawer docker-test
 
+#include <string.h>
+
 #include "../drawer_logic.h"
 #include "test_expect.h"
 
@@ -114,10 +116,36 @@ static void testGridCellRects()
 static void testHeaderControls()
 {
     EXPECT_TRUE(isHeaderControlId("_refresh"));
-    EXPECT_TRUE(isHeaderControlId("_updates"));
+    EXPECT_TRUE(isHeaderControlId("_settings"));
+    EXPECT_TRUE(!isHeaderControlId("_updates")); // retired: its screen moved into the settings
     EXPECT_TRUE(!isHeaderControlId("_retry"));
     EXPECT_TRUE(!isHeaderControlId("localsend"));
     EXPECT_TRUE(!isHeaderControlId(0));
+}
+
+// The header: refresh, list, grid, then the settings gear (the old updates
+// button is gone). Each host button names an item that is a header control.
+static void testHeaderButtonSet()
+{
+    EXPECT_EQ(4, HEADER_BUTTON_COUNT);
+    EXPECT_EQ((int)HEADER_REFRESH, (int)headerButtonAt(0));
+    EXPECT_EQ((int)HEADER_LIST_TOGGLE, (int)headerButtonAt(1));
+    EXPECT_EQ((int)HEADER_GRID_TOGGLE, (int)headerButtonAt(2));
+    EXPECT_EQ((int)HEADER_SETTINGS, (int)headerButtonAt(HEADER_BUTTON_COUNT - 1));
+    EXPECT_TRUE(strcmp(hostItemIdOfHeaderButton(HEADER_REFRESH), "_refresh") == 0);
+    EXPECT_TRUE(strcmp(hostItemIdOfHeaderButton(HEADER_SETTINGS), "_settings") == 0);
+    EXPECT_TRUE(hostItemIdOfHeaderButton(HEADER_LIST_TOGGLE) == 0);
+    EXPECT_TRUE(hostItemIdOfHeaderButton(HEADER_GRID_TOGGLE) == 0);
+    int hostButtons = 0;
+    for (int position = 0; position < HEADER_BUTTON_COUNT; position++) {
+        const char *id = hostItemIdOfHeaderButton(headerButtonAt(position));
+        if (id) {
+            hostButtons++;
+            EXPECT_TRUE(isHeaderControlId(id));
+            EXPECT_TRUE(isHostItemId(id));
+        }
+    }
+    EXPECT_EQ(2, hostButtons);
 }
 
 static void testSectionLabels()
@@ -217,6 +245,7 @@ int main()
     testGridCellMath();
     testGridCellRects();
     testHeaderControls();
+    testHeaderButtonSet();
     testSectionLabels();
     testRefreshPolicy();
     testProtocol();

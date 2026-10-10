@@ -1,5 +1,5 @@
 #!/bin/sh
-# Action "apply" of the Updates screen: downloads, verifies and installs the latest signed
+# Action "apply" of the settings screen: downloads, verifies and installs the latest signed
 # release. An update can take minutes, so in the drawer it runs detached and the screen
 # follows it through the state.
 

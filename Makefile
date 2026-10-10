@@ -67,7 +67,8 @@ dist: build
 	cp host/bin/*.sh $(HOST_DIR)/bin/
 	cp host/locales/*.json $(HOST_DIR)/locales/
 	cp host/config/routing.json $(HOST_DIR)/config/routing.json
-	cp host/config/update.json $(HOST_DIR)/config/update.json
+	cp host/config/project.json $(HOST_DIR)/config/project.json
+	build/appsctl-host project update-config --file host/config/project.json > $(HOST_DIR)/config/update.json
 	cp host/icons/*.png $(HOST_DIR)/icons/
 	cp host/icons/ui/*.png $(HOST_DIR)/icons/ui/
 	cp -R host/screens/. $(HOST_DIR)/screens/
@@ -98,7 +99,7 @@ dist: build
 	cp apps/uikit/bin/*.sh $(APPS_DIR)/uikit/bin/
 	cp apps/uikit/locales/*.json $(APPS_DIR)/uikit/locales/
 	chmod 755 $(HOST_DIR)/bin/* $(APPS_DIR)/localsend/bin/* $(APPS_DIR)/ghsync/bin/* $(APPS_DIR)/wallpaper/bin/* $(APPS_DIR)/library/bin/* $(APPS_DIR)/todo/bin/* $(APPS_DIR)/uikit/bin/*
-	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/config/update.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(HOST_DIR)/screens/updates/ui.json $(HOST_DIR)/screens/updates/locales/*.json $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/todo/ui.json $(APPS_DIR)/uikit/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/config.example.json
+	chmod 644 $(HOST_DIR)/lib/common.sh $(HOST_DIR)/locales/*.json $(HOST_DIR)/config/routing.json $(HOST_DIR)/config/update.json $(HOST_DIR)/config/project.json $(HOST_DIR)/icons/*.png $(HOST_DIR)/icons/ui/*.png $(HOST_DIR)/screens/settings/ui.json $(HOST_DIR)/screens/settings/locales/*.json $(APPS_DIR)/*/icon.png $(APPS_DIR)/*/locales/*.json $(APPS_DIR)/*/app.json $(APPS_DIR)/localsend/ui.json $(APPS_DIR)/wallpaper/ui.json $(APPS_DIR)/library/ui.json $(APPS_DIR)/todo/ui.json $(APPS_DIR)/uikit/ui.json $(APPS_DIR)/ghsync/ui.json $(APPS_DIR)/ghsync/config.example.json
 	if [ -d $(HOST_DIR)/mod ]; then chmod 644 $(HOST_DIR)/mod/*; fi
 	cd dist && COPYFILE_DISABLE=1 zip -qr koboapps-$(VERSION).zip onboard
 	touch dist/.stamp

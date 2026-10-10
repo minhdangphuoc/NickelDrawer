@@ -20,13 +20,14 @@ Host files (not an app, not scanned):
 ```
 .adds/koboapps/
 ├─ bin/appsctl            host tool (Go, linux/armv7): validates manifests, serves the drawer protocol, applies signed updates
-├─ bin/update-check.sh    Updates screen action: starts `appsctl update check` in the background
-├─ bin/update-apply.sh    Updates screen action: starts `appsctl update apply` in the background
+├─ bin/update-check.sh    settings screen action: starts `appsctl update check` in the background
+├─ bin/update-apply.sh    settings screen action: starts `appsctl update apply` in the background
 ├─ lib/common.sh          shared shell helpers for app scripts
 ├─ locales/               host strings (en.json, vi.json, ...)
-├─ screens/updates/       ui.json and locales of the built-in Updates screen
+├─ screens/settings/      ui.json and locales of the built-in settings and About screens
+├─ config/project.json    project name, repo, maintainer, license, supported firmware (one source; the default update.json is generated from it)
 ├─ mod/                   the Nickel mod archive last staged (a record, see UPDATES.md)
-└─ data/                  host state: update.json, update/, rollback/ (never overwritten by updates)
+└─ data/                  host state: update.json, settings.json, update/, rollback/ (never overwritten by updates)
 ```
 
 ## icon.png

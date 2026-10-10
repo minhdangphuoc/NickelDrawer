@@ -137,23 +137,15 @@ func TestDrawerModelGolden(t *testing.T) {
 	}
 }
 
-func TestDrawerModelOmitsUpdatesWithoutConfig(t *testing.T) {
-	root := newDrawerRoot(t)
-	_, _, raw := root.call(t, "en", "model")
-	if strings.Contains(raw, "_updates") || !strings.Contains(raw, "_refresh") {
-		t.Errorf("want _refresh only: %s", raw)
-	}
-}
-
-func TestDrawerModelHidesUpdatesWhileRepoIsEmpty(t *testing.T) {
+func TestDrawerModelListsRefreshAndSettingsWhateverUpdateConfigSays(t *testing.T) {
 	root := newDrawerRoot(t)
 	for name, content := range map[string]string{"empty repo": `{"repo":"","channel":"stable"}`, "no repo": `{}`, "broken": `{`} {
 		if err := os.WriteFile(filepath.Join(root.host, "data", "update.json"), []byte(content), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		_, _, raw := root.call(t, "en", "model")
-		if strings.Contains(raw, "_updates") {
-			t.Errorf("%s: the Updates row must stay hidden: %s", name, raw)
+		if strings.Contains(raw, "_updates") || !strings.Contains(raw, "_refresh") || !strings.Contains(raw, "_settings") {
+			t.Errorf("%s: want _refresh and _settings, no _updates: %s", name, raw)
 		}
 	}
 }

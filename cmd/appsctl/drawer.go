@@ -8,6 +8,7 @@ import (
 
 	"koboapps/internal/drawer"
 	"koboapps/internal/i18n"
+	"koboapps/internal/manifest"
 )
 
 // drawerOptions are the flags shared by the drawer subcommands; the defaults are the device
@@ -180,7 +181,9 @@ func runHostItem(session drawerSession, itemID, actionID string) (any, error) {
 	switch {
 	case itemID == drawer.HostRefreshID && actionID == drawer.HostRefreshAct:
 		return refreshHostItem(session)
-	case itemID == drawer.HostUpdatesID:
+	case itemID == drawer.HostSettingsID && actionID == drawer.HostSettingsAct:
+		return drawer.RunResult{V: drawer.ProtocolVersion, OK: true, Rescan: manifest.RescanNone}, nil // the mod opens the screen
+	case itemID == drawer.HostSettingsID:
 		return session.config.Run(itemID, actionID)
 	}
 	return nil, &drawer.Error{Code: drawer.CodeUnknownAction, Params: map[string]string{"app": itemID, "action": actionID}}

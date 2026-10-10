@@ -116,7 +116,7 @@ Details:
 - `list` items are strings or `[primary, secondary]` arrays. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` names an app.json action (checked); a long-press on a row opens the menu and runs that action as `drawer event <app> <id> --list <bind> --index <n> --value <row text>` (`confirm: true` asks first). See drawer-protocol.md.
 - `list.tap` names an app.json action. A tap runs that action with the row's primary text in `NICKELDRAWER_VALUE`.
 - `gallery` and `viewer` items come from the `state` action, not from `ui.json`: `{ id, thumb, image, label, info, badge }` (`id` matches `^[A-Za-z0-9_-]{1,32}$`, `badge` is `current`). `thumb` and `image` are absolute `.png` paths below the app's `data/`; the drawer drops any other path. Looks and behaviour: [ui-kit.md](ui-kit.md) sections 3.19 and 3.20, contract: [wallpaper-gallery.md](wallpaper-gallery.md).
-- A `text` whose text resolves to empty is left out, like a `notice`, so `"$summary"` hides when the variable is empty.
+- A `text` whose text resolves to empty is left out, like a `notice`, so `"$summary"` hides when the variable is empty. A `kv` row whose key and value both resolve to empty is left out, and a `kv` with no rows left is hidden, so `["$label", "$value"]` shows a row only while its variables are set.
 - `row` is 128 px high (above the 120 px tap target); `kv` and `list` rows are 104 px; see ui-kit.md section 2.
 - `qr` shows the QR code of its value (a URL). `pair` is the phone-pairing block of ui-kit.md section 3.11.
 - `section` is the small-caps label of a group of rows.

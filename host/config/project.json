@@ -1,0 +1,8 @@
+{
+  "name": "NickelDrawer",
+  "maintainer": "Minh Dang",
+  "repo": "minhdangphuoc/NickelDrawer",
+  "license": "PolyForm Noncommercial 1.0.0",
+  "channel": "stable",
+  "supported_firmware": ["4.38.23552", "4.38.23648", "4.38.23684", "4.38.23697", "4.38.23828"]
+}

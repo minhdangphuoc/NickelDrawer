@@ -80,15 +80,15 @@
           ]
         },
         {
-          "id": "_updates",
-          "name": "Cập nhật",
+          "id": "_settings",
+          "name": "Cài đặt",
           "status": "",
           "badge": false,
           "screen": true,
           "actions": [
             {
-              "id": "check",
-              "label": "Kiểm tra cập nhật",
+              "id": "open",
+              "label": "Mở cài đặt",
               "kind": "show",
               "primary": true,
               "menu": false

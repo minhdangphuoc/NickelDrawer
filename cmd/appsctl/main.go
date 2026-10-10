@@ -26,6 +26,7 @@ commands:
   inbox route|sort|status|purge            sort received files into Books, Documents, Comics, Pictures (docs/spec/inbox.md)
   new ID [--name N] [--with-ui] [--dir D]  scaffold a new app folder from templates/app
   drawer model|run|screen|event|info|remove|tweaks|tweak  JSON for the native drawer (docs/spec/drawer-protocol.md)
+  project update-config                    print the default update.json from host/config/project.json
   update check|apply|status|rollback       signed updates from GitHub Releases (see docs/UPDATES.md)
   --version                                print the version
 
@@ -53,6 +54,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		"update":   runUpdate,
 		"inbox":    runInbox,
 		"drawer":   runDrawer,
+		"project":  runProject,
 		"new":      runNew,
 
 		"device-name": runDeviceName,

@@ -211,7 +211,26 @@ bool isHostItemId(const char *id)
 
 bool isHeaderControlId(const char *id)
 {
-    return id && (strcmp(id, "_refresh") == 0 || strcmp(id, "_updates") == 0);
+    return id && (strcmp(id, "_refresh") == 0 || strcmp(id, "_settings") == 0);
+}
+
+HeaderButton headerButtonAt(int position)
+{
+    static const HeaderButton ORDER[HEADER_BUTTON_COUNT] = {HEADER_REFRESH, HEADER_LIST_TOGGLE, HEADER_GRID_TOGGLE,
+                                                            HEADER_SETTINGS};
+    return ORDER[position >= 0 && position < HEADER_BUTTON_COUNT ? position : 0];
+}
+
+const char *hostItemIdOfHeaderButton(HeaderButton button)
+{
+    switch (button) {
+    case HEADER_REFRESH:
+        return "_refresh";
+    case HEADER_SETTINGS:
+        return "_settings";
+    default:
+        return 0;
+    }
 }
 
 int menuActionLimit(int fixedEntries)

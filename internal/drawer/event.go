@@ -50,6 +50,11 @@ type signalLine struct {
 // When the script prints {"toast":"id"} or {"dialog":"id"} naming one declared on the screen,
 // the reply carries that resolved toast or dialog; a signal naming nothing declared is dropped.
 func (c Config) RunEvent(event Event) (RunResult, error) {
+	if event.AppID == HostSettingsID {
+		if result, isHandled, err := c.runSettingsEvent(event); isHandled {
+			return result, err
+		}
+	}
 	if event.Value != nil {
 		c.ScriptEnv = append(append([]string{}, c.ScriptEnv...), ValueEnvName+"="+*event.Value)
 	}

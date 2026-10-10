@@ -162,19 +162,18 @@ Good to know:
 1. Tap **More** in the bottom bar.
 2. Tap **Apps**.
 
-The **Apps** row may show a second line: an app that is busy (for example "LocalSend Receiving") or **1 update**. A dot means an update is waiting.
+The **Apps** row may show a second line: an app that is busy (for example "LocalSend Receiving") or **1 update**. A dot means an update is waiting; the same dot shows on the gear in the drawer header.
 
 The drawer has:
 
-- a header with **←** (back to More), the title **Apps**, and two buttons to switch between **list** and **grid**;
+- a header with **←** (back to More), the title **Apps**, and four small buttons: **refresh**, **list**, **grid** and, last, the gear **⚙** (settings);
 - the section **INSTALLED** with your apps;
-- the section **SYSTEM** with **Refresh list** and, if you set up updates, **Updates**;
 - the hint "Hold an app for info or to remove it.";
 - the page number (for example `1 / 2`) with **‹ ›** arrows.
 
 ### List or grid
 
-Tap the list or grid button in the header. The list shows each app with its icon, name and a status line. The grid shows four icons per row with their names; in the grid, **Refresh list** and **Updates** become small buttons in the header. The drawer remembers your choice.
+Tap the list or grid button in the header. The list shows each app with its icon, name and a status line. The grid shows four icons per row with their names; **Refresh** and the gear **⚙** sit in the header in both views. The drawer remembers your choice.
 
 ### Turn pages
 
@@ -182,7 +181,7 @@ Use the Kobo's page-turn buttons or tap the **‹ ›** arrows. The page-turn bu
 
 ### Refresh the list
 
-You copied a new app over USB, or removed one? Tap **Refresh list** (in the grid: the refresh button in the header). The drawer also reloads every time you open it.
+You copied a new app over USB, or removed one? Tap the refresh button in the header. The drawer also reloads every time you open it.
 
 ### Info and remove
 
@@ -489,22 +488,22 @@ The switches write to the Kobo's own settings file (`.kobo/Kobo/Kobo eReader.con
 
 NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
 
-### Set up updates (once)
+### Settings: the gear
 
-1. Connect the Kobo over USB.
-2. Open the file `.adds/koboapps/data/update.json` (the installer creates it with an empty `"repo"`; if it is missing, create it) and set `owner/name` to the GitHub repository the NickelDrawer releases come from:
+Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It has four parts:
 
-        {"repo": "owner/name", "channel": "stable"}
+- **Hidden apps**: a switch for every app that is hidden by default (today: **UI Kit**). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.
+- **Updates**: the installed **Version**, the **New version** (only after a check found one) and the **Source** (the GitHub repository). Buttons **Check** and **Update to <version>**.
+- **Debug**: **Write debug log** (see "Send a useful bug report" below). It takes effect after a restart.
+- **About**: your firmware with ✓ when NickelDrawer supports it or **!** when it does not, and **About the project** (version, a QR code to open the project page on your phone, maintainer, license, credits).
 
-    Use `"channel": "beta"` to also get test releases.
+### Updates: check and install
 
-3. Eject. While `"repo"` is empty the **Updates** row stays hidden; now the drawer's **SYSTEM** section has it.
+Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open `.adds/koboapps/data/update.json` over USB and change `"repo"` to `owner/name` (an empty `"repo"` turns updates off and the Source reads **Off**). The installer never overwrites that file, but it fills in the default when `"repo"` is empty.
 
-### Check and install
-
-1. Open **More** → **Apps** → **Updates**.
-2. Tap **Check for updates**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the screen shows **Installed**, **Latest** and **What's new**, and the **Apps** row shows **1 update**.
-3. Tap **Update**, then **Update** again to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.
+1. Open **More** → **Apps** → **⚙**.
+2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the gear gets a black dot, the **New version** row appears with a dot, and the big button reads **Update to <version>**.
+3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.
 4. If the result says "Restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
 
 ### What a restart does after an update
@@ -534,8 +533,8 @@ English and Vietnamese are maintained by the project. In other languages, a few 
 You need no programming, only a text editor. Each translation is a small file of `"key": "text"` lines.
 
 1. Copy `en.json` to `<code>.json` (for example `fr.json`) in each of these folders:
-    - `.adds/koboapps/locales/` (drawer, tweaks, updates),
-    - `.adds/koboapps/screens/updates/locales/` (the Updates screen),
+    - `.adds/koboapps/locales/` (drawer, tweaks, updates, settings),
+    - `.adds/koboapps/screens/settings/locales/` (the settings and About screens),
     - `.adds/apps/<app>/locales/` for each app.
 
 2. Translate only the texts on the right. Never change the keys on the left.
@@ -555,8 +554,8 @@ To share your translation, see [docs/TRANSLATING.md](../TRANSLATING.md). Right-t
 | The drawer shows **PROBLEMS** or "appsctl is not installed. Reinstall koboapps." | The host tool is missing or damaged. | Copy `.adds/koboapps` from the release zip again. Tap **Try again**. |
 | The Kobo does not appear on the computer, or never asks **Connect**. | The drawer or an app screen was open, or an app was busy, when you plugged in. | Unplug. Tap **Home**. Stop LocalSend if it is receiving. Plug in again and tap **Connect**. If it still fails, restart the Kobo. |
 | An app shows "That did not work. See data/log.txt." | The app hit a problem. | Read `.adds/apps/<app>/data/log.txt` over USB. The last lines say what broke. |
-| An app opens a screen with "Can't open the app", **Back** and **Try again**. | The app's files are incomplete or damaged. | Copy that app's folder from the release zip again, then **Refresh list**. |
-| A new app does not appear. | The drawer has not reloaded, or the app's files are wrong. | Tap **Refresh list**. A broken app is listed under **PROBLEMS** with the reason. |
+| An app opens a screen with "Can't open the app", **Back** and **Try again**. | The app's files are incomplete or damaged. | Copy that app's folder from the release zip again, then tap the refresh button in the header. |
+| A new app does not appear. | The drawer has not reloaded, or the app's files are wrong. | Tap the refresh button in the header. A broken app is listed under **PROBLEMS** with the reason. |
 | Wallpaper picture does not appear on the sleep screen. | A Kobo setting is off, there is no current book, or **Sleep screen** is off. | Turn on **Show current read** and **Show book cover full screen** (**Settings** → **Energy saving and privacy**). Open any book once. Turn **Tweaks** → **Sleep screen** on. Set a picture as wallpaper. |
 | LocalSend on the phone does not find the Kobo. | Different Wi-Fi, a guest network that hides devices from each other, receiving stopped, or the Kobo fell asleep. | Put both on the same home Wi-Fi (not a guest network). Open LocalSend on the Kobo and check it says **Receiving**. Wake the Kobo. If your phone's LocalSend can send to an address, use the IP shown on the Kobo. |
 | GitHub pairing shows an error. | See the message. | See [Pairing and sync messages](#pairing-and-sync-messages). |
@@ -569,7 +568,7 @@ To share your translation, see [docs/TRANSLATING.md](../TRANSLATING.md). Right-t
 
 ### Send a useful bug report
 
-1. Create an empty file `.adds/nickeldrawer/debug` over USB and restart the Kobo. The drawer then writes a step log to `.adds/nickeldrawer/debug.log`.
+1. Turn on **⚙** → **Debug** → **Write debug log** and restart the Kobo (or create an empty file `.adds/nickeldrawer/debug` over USB; it is the same switch). The drawer then writes a step log to `.adds/nickeldrawer/debug.log`.
 2. Repeat what went wrong.
 3. Connect over USB and copy `debug.log` and the app's `data/log.txt`.
 4. Read them before you share them. Remove anything personal (book titles, names, your Wi-Fi address). Never share `data/token`.
@@ -639,7 +638,7 @@ It backs up first, removes the apps and the host tool, keeps any received files 
 - **Network only when you start it:**
   - LocalSend listens on your Wi-Fi while it is receiving, and stops when you tap stop or after 15 minutes without a file.
   - GitHub pairing opens a small page on your Wi-Fi for up to 10 minutes. Sync talks to GitHub only.
-  - Updates talk to GitHub only when you tap **Check for updates** or **Update**.
+  - Updates talk to GitHub only when you tap **Check** or **Update to <version>**.
   - Wallpaper, Library, To-do and Tweaks never use the network.
 - **Your GitHub token** is stored only on the Kobo, in `.adds/apps/ghsync/data/token`. It never appears on the screen, in logs or in the app's status. But the Kobo's storage cannot protect single files: anyone who connects your Kobo to a computer can read that file. That is why the token should be fine-grained, limited to one repository and read-only. Revoke it on GitHub if you lose the Kobo.
 - **The LocalSend PIN** is stored in `.adds/apps/localsend/data/pin.txt`, readable the same way.
@@ -669,7 +668,7 @@ Not yet. Only the Libra 2 is supported.
 No. The license allows personal, study, hobby and non-profit use only.
 
 **What is "UI Kit"?**
-A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default.
+A hidden app for app makers and testers that shows every screen component with sample content. It does not appear in the drawer by default; turn it on with **⚙** → **Hidden apps** → **UI Kit**.
 
 **Where are my files?**
 Received books in `Books`, `Documents`, `Comics`, `Pictures`. GitHub books in the `GitHub` folders inside them. App settings in `.adds/apps/<app>/data/`.
@@ -708,8 +707,8 @@ Kobo's own names (the screens NickelDrawer works with) and NickelDrawer's names,
 | Apps | Ứng dụng | NickelDrawer's row in More, and the drawer's title. |
 | Tweaks | Tinh chỉnh | NickelDrawer's settings window in More. |
 | INSTALLED / SYSTEM | ĐÃ CÀI / HỆ THỐNG | Sections of the drawer. |
-| Refresh list | Làm mới danh sách | Reload the drawer. |
-| Updates | Cập nhật | The update screen in the drawer. |
+| Refresh | Làm mới | Header button that reloads the drawer. |
+| Settings (⚙) | Cài đặt | The gear in the drawer header: hidden apps, updates, debug, about. |
 | Info / Remove… | Thông tin / Gỡ… | Long-press menu of an app. |
 | Wallpaper | Hình nền | The sleep-screen pictures app. |
 | Library | Thư viện | NickelDrawer's book-tidying app. |

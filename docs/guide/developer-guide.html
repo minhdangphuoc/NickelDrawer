@@ -287,7 +287,7 @@ NICKELDRAWER_VALUE='' /tmp/apps/mytodo/bin/newitem.sh            # {&quot;toast&
 <pre><code class="language-sh">cp -R /tmp/apps/mytodo /Volumes/KOBOeReader/.adds/apps/mytodo
 rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </code></pre>
-<p>Eject, open <strong>More</strong> → <strong>Apps</strong>, tap <strong>Refresh list</strong>. Tap <strong>My To-do</strong>. If a tap does nothing visible, read <code>.adds/apps/mytodo/data/log.txt</code> and, with the <code>debug</code> switch on, <code>.adds/nickeldrawer/debug.log</code>.</p>
+<p>Eject, open <strong>More</strong> → <strong>Apps</strong>, tap the refresh button in the header. Tap <strong>My To-do</strong>. If a tap does nothing visible, read <code>.adds/apps/mytodo/data/log.txt</code> and, with the <code>debug</code> switch on, <code>.adds/nickeldrawer/debug.log</code>.</p>
 <p>That is a complete app. The shipped To-do does the same job with a small Go helper (<code>cmd/todo</code>) that stores tasks as JSON, cleans the text to Unicode NFC, refuses duplicates, caps the list at 200 tasks and recovers from a damaged file.</p>
 <h2 id="the-mental-model">The mental model</h2>
 <pre><code>tap on the Kobo ──► libnickeldrawer.so (inside Nickel, draws only)
@@ -363,7 +363,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tr>
 <tr>
 <td><code>hidden</code></td>
-<td>Optional. <code>true</code> keeps the app out of the drawer list (it still validates and runs by id).</td>
+<td>Optional. <code>true</code> keeps the app out of the drawer list (it still validates and runs by id). Users can show it from ⚙ → Hidden apps.</td>
 </tr>
 <tr>
 <td><code>actions</code></td>
@@ -454,7 +454,7 @@ rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 </tbody>
 </table></div>
 <h2 id="uijson-components">ui.json components</h2>
-<p>Full rules: <a href="../spec/ui-json.md">ui-json.md</a>. Looks and sizes: <a href="../spec/ui-kit.md">ui-kit.md</a>. To see every component on a device, the hidden <strong>UI Kit</strong> app (<a href="../../apps/uikit/">apps/uikit</a>) shows them all with sample content; set <code>"hidden": false</code> in its <code>app.json</code> on the Kobo (back the file up first) and tap <strong>Refresh list</strong>.</p>
+<p>Full rules: <a href="../spec/ui-json.md">ui-json.md</a>. Looks and sizes: <a href="../spec/ui-kit.md">ui-kit.md</a>. To see every component on a device, the hidden <strong>UI Kit</strong> app (<a href="../../apps/uikit/">apps/uikit</a>) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on <strong>UI Kit</strong> under <strong>Hidden apps</strong> (the choice is kept in the host's <code>data/settings.json</code>; the app's <code>app.json</code> stays <code>hidden: true</code>).</p>
 <p>A screen has a header (back arrow, <code>title</code>, <code>status</code>, and one <code>action</code> text link or up to two icon <code>actions</code>), a <code>body</code> that pages, a <code>footer</code> that stays at the bottom, and declared <code>dialogs</code> and <code>toasts</code>. Texts are plain strings, <code>"@ui.key"</code> references, or <code>{"en": …, "vi": …}</code> maps.</p>
 <div class="tbl"><table>
 <thead>
@@ -769,7 +769,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 </table></div>
 <p>Device checklist (with the device owner present and backups made):</p>
 <ol>
-<li><strong>Refresh list</strong> shows the app; its icon and name fit.</li>
+<li>The refresh button in the header makes the app show; its icon and name fit.</li>
 <li>Each tap answers within a second or two with a toast or a visible change.</li>
 <li>Texts fit in English and Vietnamese (switch the Kobo's language).</li>
 <li>Failure paths (no Wi-Fi, empty input, missing file) end in the <code>failed</code> toast, never a freeze.</li>
@@ -797,7 +797,7 @@ emit_request wifi             # {&quot;request&quot;:&quot;wifi&quot;}
 <li>
 <p>Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.</p>
 </li>
-<li>Users install by copying the folder to <code>.adds/apps/</code> and tapping <strong>Refresh list</strong>.</li>
+<li>Users install by copying the folder to <code>.adds/apps/</code> and tapping the refresh button in the header.</li>
 </ol>
 <p>Signed over-the-air updates cover only the apps inside an official NickelDrawer release; a separate app is updated by copying the new folder over the old one (its <code>data/</code> stays). Never include Kobo binaries or firmware files.</p>
 <p>To propose an app for the main repository, follow <a href="../../CONTRIBUTING.md">CONTRIBUTING.md</a>. Code in this repository is under PolyForm Noncommercial 1.0.0.</p>

@@ -4,7 +4,7 @@
 
 Màn hình mẫu cho mọi thành phần của NickelDrawer (`ui.json`, kit 1), dành cho nhà phát triển và người thử. Ứng dụng này **ẩn mặc định** (`"hidden": true` trong `app.json`) nên không hiện trong Ngăn.
 
-**Cách hiện nó:** cắm USB, sao lưu `/.adds/apps/uikit/app.json` vào `backups/<ngày>/`, rồi đổi `"hidden": true` thành `"hidden": false`. Eject, mở Ngăn, bấm **Làm mới danh sách** (phần Hệ thống). Muốn ẩn lại, đổi về `true` (cài lại bằng `tools/install-to-kobo.sh` cũng trả về `true`). Ứng dụng ẩn vẫn chạy được theo mã: `appsctl drawer screen uikit`.
+**Cách hiện nó:** trong Ngăn, bấm biểu tượng bánh răng ⚙ ở đầu trang, rồi bật công tắc **Bộ giao diện** trong mục **Ứng dụng ẩn**; quay lại Ngăn là thấy. Muốn ẩn lại, tắt công tắc đó. Không cần sửa `app.json` (lựa chọn lưu trong `data/settings.json` của máy chủ nên cài lại vẫn giữ). Ứng dụng ẩn vẫn chạy được theo mã: `appsctl drawer screen uikit`.
 
 Ba màn hình:
 
@@ -18,7 +18,7 @@ Mọi thao tác chỉ phản hồi bằng toast đã khai báo để bạn kiể
 
 Sample screens for every NickelDrawer component (`ui.json`, kit 1), for developers and testers. The app is **hidden by default** (`"hidden": true` in `app.json`), so it does not show in the drawer.
 
-**To show it:** plug in over USB, copy `/.adds/apps/uikit/app.json` to `backups/<date>/` first, then change `"hidden": true` to `"hidden": false`. Eject, open the drawer and tap **Refresh list** (System section). To hide it again set it back to `true` (reinstalling with `tools/install-to-kobo.sh` also resets it). A hidden app still runs by id: `appsctl drawer screen uikit`.
+**To show it:** in the drawer tap the gear ⚙ in the header, then turn on **UI Kit** under **Hidden apps**; go back to the drawer and it is listed. Turn the switch off to hide it again. No `app.json` edit is needed (the choice is stored in the host's `data/settings.json`, so reinstalling keeps it). A hidden app still runs by id: `appsctl drawer screen uikit`.
 
 Three screens:
 

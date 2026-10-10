@@ -61,7 +61,7 @@ private slots:
     void onPreviousTapped();
     void onNextTapped();
     void onRefreshTapped();
-    void onUpdatesTapped();
+    void onSettingsTapped();
     void fitGridRows();
     void onItemTapped();
     void onItemLongPressed();
@@ -83,6 +83,7 @@ private:
     void rebuildShownIndices();
     void updateHostButtons();
     const DrawerItem *hostItem(const char *id) const;
+    QWidget *headerWidget(DrawerLogic::HeaderButton button) const;
 
     void setViewMode(DrawerLogic::ViewMode mode);
     void goToPage(int page);
@@ -111,9 +112,9 @@ private:
     QLabel *hintLabel;
     QLabel *pageIndicator;
     QList<PressArea *> pressables;
-    HeaderIconButton *refreshButton; // grid mode: stands for the "_refresh" host item
-    HeaderIconButton *updatesButton; // grid mode: stands for "_updates"
-    UpdateDot *updatesDot;
+    HeaderIconButton *refreshButton;  // stands for the "_refresh" host item
+    HeaderIconButton *settingsButton; // stands for "_settings"
+    UpdateDot *settingsDot;           // an update is waiting
 
     DrawerLogic::ViewMode viewMode;
     DrawerLogic::RefreshPolicy refreshPolicy;
@@ -121,6 +122,7 @@ private:
     int currentPage;
     bool isInputBlocked;
     bool hasModel;
+    bool isUpdateAvailable; // the model's update_available
     bool hasLoggedLayout;
     bool hasQt6Notice;
 };

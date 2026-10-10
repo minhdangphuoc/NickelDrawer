@@ -266,7 +266,7 @@ cp -R /tmp/apps/mytodo /Volumes/KOBOeReader/.adds/apps/mytodo
 rm -rf /Volumes/KOBOeReader/.adds/apps/mytodo/data
 ```
 
-Eject, open **More** → **Apps**, tap **Refresh list**. Tap **My To-do**. If a tap does nothing visible, read `.adds/apps/mytodo/data/log.txt` and, with the `debug` switch on, `.adds/nickeldrawer/debug.log`.
+Eject, open **More** → **Apps**, tap the refresh button in the header. Tap **My To-do**. If a tap does nothing visible, read `.adds/apps/mytodo/data/log.txt` and, with the `debug` switch on, `.adds/nickeldrawer/debug.log`.
 
 That is a complete app. The shipped To-do does the same job with a small Go helper (`cmd/todo`) that stores tasks as JSON, cleans the text to Unicode NFC, refuses duplicates, caps the list at 200 tasks and recovers from a damaged file.
 
@@ -317,7 +317,7 @@ Full rules: [app-format.md](../spec/app-format.md).
 | `network` | `true` if the app uses the network. Shown in **Info**. |
 | `requests` | Host services scripts may ask for: `rescan`, `wifi`. |
 | `min_host` | Optional oldest NickelDrawer version the app needs. |
-| `hidden` | Optional. `true` keeps the app out of the drawer list (it still validates and runs by id). |
+| `hidden` | Optional. `true` keeps the app out of the drawer list (it still validates and runs by id). Users can show it from ⚙ → Hidden apps. |
 | `actions` | 1 to 12 actions. |
 | `actions[].id` | Lowercase letters, digits and `-`. `state` and `status` are special (below). |
 | `actions[].label` | 1 to 32 characters, no `:`. |
@@ -347,7 +347,7 @@ Scripts get these environment variables:
 
 ## ui.json components
 
-Full rules: [ui-json.md](../spec/ui-json.md). Looks and sizes: [ui-kit.md](../spec/ui-kit.md). To see every component on a device, the hidden **UI Kit** app ([apps/uikit](../../apps/uikit/)) shows them all with sample content; set `"hidden": false` in its `app.json` on the Kobo (back the file up first) and tap **Refresh list**.
+Full rules: [ui-json.md](../spec/ui-json.md). Looks and sizes: [ui-kit.md](../spec/ui-kit.md). To see every component on a device, the hidden **UI Kit** app ([apps/uikit](../../apps/uikit/)) shows them all with sample content; tap the gear (⚙) in the drawer header and turn on **UI Kit** under **Hidden apps** (the choice is kept in the host's `data/settings.json`; the app's `app.json` stays `hidden: true`).
 
 A screen has a header (back arrow, `title`, `status`, and one `action` text link or up to two icon `actions`), a `body` that pages, a `footer` that stays at the bottom, and declared `dialogs` and `toasts`. Texts are plain strings, `"@ui.key"` references, or `{"en": …, "vi": …}` maps.
 
@@ -500,7 +500,7 @@ Rules for jobs:
 
 Device checklist (with the device owner present and backups made):
 
-1. **Refresh list** shows the app; its icon and name fit.
+1. The refresh button in the header makes the app show; its icon and name fit.
 2. Each tap answers within a second or two with a toast or a visible change.
 3. Texts fit in English and Vietnamese (switch the Kobo's language).
 4. Failure paths (no Wi-Fi, empty input, missing file) end in the `failed` toast, never a freeze.
@@ -527,7 +527,7 @@ Icons come from **Nickel's own resources first, then Tabler Icons (MIT)**. Never
     If you need a default config, ship `config.example.json` next to `app.json` (not in `data/`) and let the user copy it, as GitHub sync does.
 
 3. Write a README: what the app does, which folders it reads and writes, whether it uses the network, and how to remove it.
-4. Users install by copying the folder to `.adds/apps/` and tapping **Refresh list**.
+4. Users install by copying the folder to `.adds/apps/` and tapping the refresh button in the header.
 
 Signed over-the-air updates cover only the apps inside an official NickelDrawer release; a separate app is updated by copying the new folder over the old one (its `data/` stays). Never include Kobo binaries or firmware files.
 

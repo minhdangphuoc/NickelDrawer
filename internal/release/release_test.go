@@ -77,7 +77,8 @@ func TestCheckPathRefusesUserDataAndEscapes(t *testing.T) {
 		".adds/koboapps/bin/appsctl", ".adds/koboapps/lib/common.sh", ".adds/apps/ghsync/app.json",
 		".adds/apps/ghsync/bin/ghsync", ".adds/apps/ghsync/locales/vi.json",
 		".adds/apps/ghsync/icon.png", ".adds/koboapps/icons/updates.png", ModPath,
-		".adds/koboapps/screens/updates/ui.json", ".adds/koboapps/screens/updates/locales/vi.json",
+		".adds/koboapps/screens/settings/ui.json", ".adds/koboapps/screens/settings/locales/vi.json",
+		".adds/koboapps/config/project.json",
 	}
 	bad := []string{
 		"", "/etc/passwd", "../x", ".adds/apps/ghsync/data/token", ".adds/koboapps/data/update.json",

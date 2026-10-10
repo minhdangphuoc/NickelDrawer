@@ -114,6 +114,8 @@ type screenContext struct {
 	actionIDs map[string]bool
 	appDir    string  // pictures must lie inside <appDir>/data/
 	value     *string // the screen value (--value), e.g. the picture id a viewer opens on
+	// hiddenApps feeds the settings screen's "one toggle per hidden app" template.
+	hiddenApps []hiddenAppRow
 }
 
 func (s screenContext) text(raw any) string {
@@ -153,6 +155,9 @@ func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, erro
 	context := screenContext{
 		doc: doc, locale: screenLocale(app.Dir, c.Locale), vars: vars, actionIDs: actionIDSet(app),
 		appDir: app.Dir, value: value,
+	}
+	if app.ID == HostSettingsID {
+		context.hiddenApps = c.hiddenAppRows()
 	}
 	reply := context.reply(appID, screen, isLive)
 	reply.Stale = isStale
@@ -322,14 +327,31 @@ func stringProp(object map[string]any, key string) string {
 
 func (s screenContext) components(components []uikit.Component) []ScreenComponent {
 	resolved := make([]ScreenComponent, 0, len(components))
-	for _, component := range components {
-		next := s.component(component)
-		if (next.Type == "notice" || next.Type == "text" || next.Type == "row") && next.Text == "" {
-			continue // a notice or text bound to an empty variable is hidden
+	for i := 0; i < len(components); i++ {
+		if isHiddenAppTemplate(components[i]) {
+			resolved = append(resolved, s.hiddenAppComponents()...)
+			i++ // the caption after the template toggle is part of the template
+			continue
+		}
+		next := s.component(components[i])
+		if next.isEmptyBinding() {
+			continue
 		}
 		resolved = append(resolved, next)
 	}
 	return resolved
+}
+
+// isEmptyBinding is true for a notice, text, row or kv whose bound variables resolved to
+// nothing: such a component is hidden.
+func (c ScreenComponent) isEmptyBinding() bool {
+	switch c.Type {
+	case "notice", "text", "row":
+		return c.Text == ""
+	case "kv":
+		return c.Rows == nil
+	}
+	return false
 }
 
 func (s screenContext) component(c uikit.Component) ScreenComponent {
@@ -362,7 +384,10 @@ func (s screenContext) kvComponent(c uikit.Component) ScreenComponent {
 	rows := make([][2]string, 0, len(raw))
 	for _, entry := range raw {
 		if pair, isPair := entry.([]any); isPair && len(pair) == 2 {
-			rows = append(rows, [2]string{s.text(pair[0]), s.text(pair[1])})
+			row := [2]string{s.text(pair[0]), s.text(pair[1])}
+			if row != [2]string{} { // a row whose key and value are both empty is hidden
+				rows = append(rows, row)
+			}
 		}
 	}
 	if len(rows) == 0 {
