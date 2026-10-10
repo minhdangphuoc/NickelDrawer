@@ -175,6 +175,10 @@ void ScreenSession::onScreenLoaded(bool isLoaded, const ScreenModel &screen, con
     bool wasReload = isReloading;
     isReloading = false;
     isLoading = false;
+    if (isLoaded) {
+        // Handed over once by the state script, so a stale reply may carry them too.
+        runner->performScreenRequests(screen.requests, app.name);
+    }
     if (keepsPreviousScreen(wasReload, isLoaded, screen)) {
         nh_log("screen: %s reply kept the previous screen (%s)", qPrintable(app.id),
                isLoaded ? "stale: the app's state failed" : qPrintable(failure));

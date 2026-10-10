@@ -5,6 +5,7 @@
 #include "dialogs.h"
 #include "drawer_logic.h"
 #include "fallback_strings.h"
+#include "host_request_runner.h"
 #include "model_client.h"
 #include "nickel_bridge.h"
 #include "toast_gate.h"
@@ -13,11 +14,6 @@
 // Menu ids of the drawer's own entries; '#' cannot start an app action id.
 static const char *const MENU_INFO_ID = "#info";
 static const char *const MENU_REMOVE_ID = "#remove";
-// The app's status and state actions feed the drawer and its screen; they are not menu entries.
-static const char *const STATUS_ACTION_ID = "status";
-static const char *const STATE_ACTION_ID = "state";
-static const char *const RESCAN_QUICK = "quick";
-static const char *const RESCAN_FULL = "full";
 
 static DialogChoice choice(const QString &id, const QString &label)
 {
@@ -25,8 +21,31 @@ static DialogChoice choice(const QString &id, const QString &label)
     return entry;
 }
 
+// The actions after the primary one that fit the menu; the primary runs on tap.
+static QList<DialogChoice> actionChoices(const DrawerItem &item, int entryLimit)
+{
+    QList<DialogChoice> choices;
+    int skippedCount = 0;
+    for (int i = 1; i < item.actions.size(); i++) {
+        const DrawerAction &action = item.actions[i];
+        if (!DrawerLogic::isMenuAction(qPrintable(action.id), action.isInMenu)) {
+            continue;
+        }
+        if (choices.size() >= entryLimit) {
+            skippedCount++;
+            continue;
+        }
+        choices << choice(action.id, action.label);
+    }
+    if (skippedCount > 0) {
+        nh_log("action: %s menu holds %d action(s), %d left out (the popup fits %d entries)", qPrintable(item.id),
+               choices.size(), skippedCount, DrawerLogic::MAX_MENU_ENTRIES);
+    }
+    return choices;
+}
+
 ActionRunner::ActionRunner(ModelClient *modelClient, QObject *parent)
-    : QObject(parent), client(modelClient), isScreenEvent(false), hasRetriedAfterWifi(false), isBusy(false)
+    : QObject(parent), client(modelClient), hostRequests(new HostRequestRunner(this)), isScreenEvent(false), hasRetriedAfterWifi(false), isBusy(false)
 {
     connect(client, SIGNAL(actionFinished(ActionResult)), this, SLOT(onActionFinished(ActionResult)));
     connect(client, SIGNAL(infoLoaded(bool, AppInfo, QString)), this, SLOT(onInfoLoaded(bool, AppInfo, QString)));
@@ -107,7 +126,7 @@ void ActionRunner::onActionFinished(const ActionResult &result)
         return;
     case DrawerLogic::RUN_SHOW_RESULT:
         presentResult(result);
-        rescanIfAsked(result);
+        performRequestsOf(result);
         finishAndReload();
         return;
     }
@@ -218,16 +237,18 @@ void ActionRunner::onDeclaredDialogAnswer(bool isAccepted)
     runScreenEvent(currentItem, event);
 }
 
-void ActionRunner::rescanIfAsked(const ActionResult &result)
+// A failed script asks for nothing.
+void ActionRunner::performRequestsOf(const ActionResult &result)
 {
     if (!result.isOk) {
         return;
     }
-    if (result.rescan == QLatin1String(RESCAN_QUICK)) {
-        NickelBridge::rescanLibrary(NickelBridge::RESCAN_QUICK);
-    } else if (result.rescan == QLatin1String(RESCAN_FULL)) {
-        NickelBridge::rescanLibrary(NickelBridge::RESCAN_FULL);
-    }
+    hostRequests->perform(HostRequestRunner::planFor(result.requests, result.rescan), currentItem.name);
+}
+
+void ActionRunner::performScreenRequests(const QList<HostRequest> &requests, const QString &title)
+{
+    hostRequests->perform(HostRequestRunner::planFor(requests, QString()), title);
 }
 
 void ActionRunner::finishAndReload()
@@ -249,12 +270,8 @@ void ActionRunner::openMenu(const DrawerItem &item, const QPoint &anchor)
     if (isApp && !item.isProblem) {
         choices << choice(QString::fromLatin1(MENU_INFO_ID), FallbackStrings::text(FallbackStrings::MENU_INFO));
     }
-    for (int i = 1; i < item.actions.size(); i++) {
-        const QString &id = item.actions[i].id;
-        if (id != QLatin1String(STATUS_ACTION_ID) && id != QLatin1String(STATE_ACTION_ID)) {
-            choices << choice(item.actions[i].id, item.actions[i].label);
-        }
-    }
+    int fixedEntries = choices.size() + (isApp ? 1 : 0); // Info above, Remove below
+    choices << actionChoices(item, DrawerLogic::menuActionLimit(fixedEntries));
     if (isApp) {
         choices << choice(QString::fromLatin1(MENU_REMOVE_ID), FallbackStrings::text(FallbackStrings::MENU_REMOVE));
     }

@@ -6,13 +6,14 @@
 
 #include "drawer_model.h"
 
+class HostRequestRunner;
 class ModelClient;
 
 // What a tap or long-press on a drawer item does (docs/spec/drawer-protocol.md,
 // ui-kit §3.15–3.18, §5.4):
 //   tap        → run the first action; needs_wifi → ask, connect, retry once;
 //                show the result (dialog for "show", toast for "background");
-//                rescan the library when the reply asks for it.
+//                perform the reply's `requests` and `rescan` (Wi-Fi first, one rescan).
 //   long-press → menu at the pressed item: Info, the other actions, Remove…
 //                last (with confirm).
 //   screen tap → `drawer event` with the same Wi-Fi, result and rescan rules;
@@ -28,6 +29,8 @@ public:
     void openMenu(const DrawerItem &item, const QPoint &anchor);
     void runScreenEvent(const DrawerItem &app, const ScreenEvent &event);
     bool isRunning() const { return isBusy; }
+    // Wi-Fi then rescan, as a screen reply's `requests` ask (title: Wi-Fi dialog heading).
+    void performScreenRequests(const QList<HostRequest> &requests, const QString &title);
 
 signals:
     void busyChanged(bool isBusy);
@@ -53,12 +56,13 @@ private:
     void presentScreenEventOutcome(const ActionResult &result);
     void askForWifi();
     void presentResult(const ActionResult &result);
-    void rescanIfAsked(const ActionResult &result);
+    void performRequestsOf(const ActionResult &result);
     void finishAndReload();
     void askToRemove();
     QString formatInfo(const AppInfo &info) const;
 
     ModelClient *client;
+    HostRequestRunner *hostRequests;
     DrawerItem currentItem;
     DrawerAction currentAction;
     bool isScreenEvent;

@@ -12,6 +12,7 @@ struct DrawerAction {
     QString id;
     QString label;
     bool isBackground = false; // kind "background": start, then toast
+    bool isInMenu = true;      // "menu": false keeps the action out of the long-press menu
 };
 
 struct DrawerItem {
@@ -42,6 +43,7 @@ struct DrawerModel {
     QString hint;
     QList<DrawerSection> sections;
     bool isUsable = false; // false: the sections hold only an error row
+    bool updateAvailable = false; // "update_available": a checked update is waiting
 };
 
 // A dialog declared on an app screen, or a button's confirm question.
@@ -53,12 +55,19 @@ struct DeclaredDialog {
     QString action; // run as a screen event when OK is tapped; may be empty
 };
 
+// One entry of a reply's `requests` (host_requests.h decides what it means).
+struct HostRequest {
+    QString request; // "wifi" or "rescan"
+    QString mode;    // rescan: "quick" or "full"
+};
+
 // Reply of `drawer run`, `drawer event` and `drawer remove`.
 struct ActionResult {
     bool isOk = false;
     bool needsWifi = false;
     QString text;
     QString rescan; // "none", "quick", "full" or empty
+    QList<HostRequest> requests; // services the script asked for; performed once, never kept
     QString toast;  // drawer event: a toast declared on the screen
     bool hasDialog = false;
     DeclaredDialog dialog; // drawer event: a dialog declared on the screen

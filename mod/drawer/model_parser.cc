@@ -67,6 +67,7 @@ static DrawerAction parseAction(const QJsonObject &object)
     action.id = stringField(object, "id");
     action.label = stringField(object, "label");
     action.isBackground = stringField(object, "kind") == QLatin1String(KIND_BACKGROUND);
+    action.isInMenu = !object.contains(QLatin1String("menu")) || boolField(object, "menu");
     return action;
 }
 
@@ -319,6 +320,20 @@ static DrawerSection parseProblems(const QJsonArray &errors)
 
 namespace ModelParser {
 
+static QList<HostRequest> parseRequests(const QJsonObject &object)
+{
+    QList<HostRequest> requests;
+    QJsonArray entries = object.value(QLatin1String("requests")).toArray();
+    for (int i = 0; i < entries.size(); i++) {
+        QJsonObject entry = entries.at(i).toObject();
+        HostRequest request;
+        request.request = stringField(entry, "request");
+        request.mode = stringField(entry, "mode");
+        requests.append(request);
+    }
+    return requests;
+}
+
 bool parseModel(const QByteArray &json, DrawerModel *model, QString *failure)
 {
     QJsonObject object;
@@ -333,6 +348,7 @@ bool parseModel(const QByteArray &json, DrawerModel *model, QString *failure)
     model->hint = stringField(object, "hint");
     model->sections.clear();
     model->isUsable = true;
+    model->updateAvailable = boolField(object, "update_available");
     QJsonArray sections = object.value(QLatin1String("sections")).toArray();
     for (int i = 0; i < sections.size(); i++) {
         DrawerSection section = parseSection(sections.at(i).toObject());
@@ -362,6 +378,7 @@ bool parseActionResult(const QByteArray &json, ActionResult *result, QString *fa
     result->text = stringField(object, "text");
     result->rescan = stringField(object, "rescan");
     result->toast = stringField(object, "toast");
+    result->requests = parseRequests(object);
     QJsonValue dialog = object.value(QLatin1String("dialog"));
     result->hasDialog = dialog.isObject();
     if (result->hasDialog) {
@@ -404,6 +421,7 @@ bool parseScreen(const QByteArray &json, ScreenModel *screen, QString *failure)
     screen->app = stringField(object, "app");
     screen->screen = stringField(object, "screen");
     screen->title = stringField(object, "title");
+    screen->requests = parseRequests(object);
     screen->status = stringField(object, "status");
     QJsonObject header = object.value(QLatin1String("action")).toObject();
     screen->headerLabel = stringField(header, "label");

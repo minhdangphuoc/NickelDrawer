@@ -55,11 +55,12 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `plain_dialog.{h,cc}` | plain Qt dialog (menu, fallback for Nickel dialogs), 120 s timeout |
 | `dialogs.{h,cc}` | result dialog and confirm question: Nickel's own first, plain fallback |
 | `wifi_connector.{h,cc}` | Nickel's Wi-Fi connect, poll 1 s × 30 |
-| `action_runner.{h,cc}` | tap → first action; `needs_wifi` → ask, connect, retry once; result; rescan; long-press menu, Info, Remove with confirm |
+| `host_requests.{h,cc}`, `host_request_runner.{h,cc}` | reply `requests` + manifest `rescan` → one plan (Qt-free, tested): Wi-Fi first (ask, connect; skipped when online), then one rescan (full covers quick; full falls back to quick when its symbols are missing); never remembered. Run/event replies and `drawer screen` replies both go through it |
+| `action_runner.{h,cc}` | tap → first action; `needs_wifi` → ask, connect, retry once; result; requests; long-press menu (Info, actions, Remove; at most 8 entries, extra actions and `menu:false` ones left out and logged) |
 | `drawer_session.{h,cc}` | one open drawer: model → view, view taps → runner |
 | `drawer_controller.{h,cc}` | ABI mirror of Nickel's `AbstractController` (built with `-frtti`, no `Q_OBJECT`) |
 | `drawer_navigator.{h,cc}` | open/close by route A (push/pop) or route B (pushView/popView + watcher) |
-| `entry_row.{h,cc}` | More-tab row, status summary line and update dot |
+| `entry_row.{h,cc}` | More-tab row, status summary line and update dot (items with a badge, or the model's `update_available`) |
 | `more_row.{h,cc}` | builds and inserts one IconLeftButton row in the More tab (Apps and Tweaks rows) |
 | `tweaks_logic.{h,cc}` | Qt-free: `drawer tweaks` / `drawer tweak` JSON replies, 2-column grid math (unit-tested) |
 | `tweaks_model.h`, `tweaks_parser.{h,cc}` | Qt structs of the tweaks replies, built from tweaks_logic |

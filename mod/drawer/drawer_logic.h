@@ -127,6 +127,17 @@ bool isHostItemId(const char *id);
 // "_updates"); other host rows (the error "_retry") stay cells.
 bool isHeaderControlId(const char *id);
 
+// ---- Long-press menu ----
+
+// Entries a Nickel popup shows without scrolling (Info + actions + Remove).
+static const int MAX_MENU_ENTRIES = 8;
+
+// How many action entries fit next to the drawer's own entries (Info, Remove).
+int menuActionLimit(int fixedEntries);
+// An action is a menu entry unless it is the status / state feed of the drawer
+// and its screen, or the model marked it "menu": false.
+bool isMenuAction(const char *id, bool isInMenu);
+
 // ---- Wi-Fi retry (drawer-protocol "needs_wifi": connect, then retry once) ----
 
 enum RunStep { RUN_SHOW_RESULT, RUN_ASK_FOR_WIFI, RUN_GIVE_UP_WIFI };

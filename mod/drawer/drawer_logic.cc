@@ -214,6 +214,20 @@ bool isHeaderControlId(const char *id)
     return id && (strcmp(id, "_refresh") == 0 || strcmp(id, "_updates") == 0);
 }
 
+int menuActionLimit(int fixedEntries)
+{
+    int limit = MAX_MENU_ENTRIES - fixedEntries;
+    return limit > 0 ? limit : 0;
+}
+
+bool isMenuAction(const char *id, bool isInMenu)
+{
+    if (!isInMenu || !id) {
+        return false;
+    }
+    return strcmp(id, "status") != 0 && strcmp(id, "state") != 0;
+}
+
 RunStep nextStepAfterRun(bool needsWifi, bool hasRetriedAfterWifi)
 {
     if (!needsWifi) {

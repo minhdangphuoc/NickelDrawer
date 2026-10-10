@@ -191,6 +191,19 @@ static void testQt6UpgradePending()
     EXPECT_EQ(true, isQt6UpgradePending("http://x/b", "http://x/a"));  // a new offer
 }
 
+static void testMenuCap()
+{
+    EXPECT_EQ(6, menuActionLimit(2)); // Info + Remove
+    EXPECT_EQ(7, menuActionLimit(1));
+    EXPECT_EQ(MAX_MENU_ENTRIES, menuActionLimit(0));
+    EXPECT_EQ(0, menuActionLimit(MAX_MENU_ENTRIES + 3));
+    EXPECT_EQ(true, isMenuAction("sync", true));
+    EXPECT_EQ(false, isMenuAction("sync", false)); // "menu": false
+    EXPECT_EQ(false, isMenuAction("status", true));
+    EXPECT_EQ(false, isMenuAction("state", true));
+    EXPECT_EQ(false, isMenuAction(0, true));
+}
+
 int main()
 {
     testPageCount();
@@ -207,5 +220,6 @@ int main()
     testWifiRetry();
     testLocale();
     testQt6UpgradePending();
+    testMenuCap();
     return finishTests("drawer_logic");
 }

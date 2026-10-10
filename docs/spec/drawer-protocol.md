@@ -52,7 +52,7 @@ Returns everything the drawer list/grid shows. Status lines come from each app's
 }
 ```
 
-- `update_available` (bool): a checked update is waiting (see Updates below). The mod may use it to mark the More row.
+- `update_available` (bool): a checked update is waiting (see Updates below). The mod shows a dot on the More row.
 - `kind`: `show` (run, then show the printed result in a native dialog) or `background` (start, show a toast).
 - `primary`: the action run when the row is tapped. Other actions appear in the long-press menu (with Info and Remove).
 - Items with app-level `menu: false` still appear in the drawer (the flag is a leftover of the retired NickelMenu items and has no effect). Apps with `hidden: true` in the manifest are omitted from the model (and their `status` action is not run), but `drawer run` still runs them by id.
@@ -188,14 +188,6 @@ The backend of the "Tinh chỉnh" modal; see [tweaks.md](tweaks.md).
 ## Updates screen (host item `_updates`)
 
 `_updates` is a built-in item with its own screen, loaded from `<koboapps>/screens/updates/` (a `ui.json` and `locales/` laid out like an app folder, validated like any screen). `drawer screen _updates`, `drawer event _updates <action> --screen main` and `drawer run _updates <action>` work like for apps. Its state is computed by `appsctl` from `data/update/available.json` (written by `appsctl update check`) and `data/update/status.json`; actions: `check` (fetch and verify the signed index, install nothing) and `apply` (download, verify, install; a changed mod is staged as `.kobo/KoboRoot.tgz`). Both start a detached `appsctl update ...` and answer with a toast; both declare `wifi: true`. After a result that says "restart the Kobo", the mod needs nothing special: the reboot installs the mod.
-
-## Pending mod support
-
-Everything below exists in `appsctl` and is documented here for the mod to implement:
-
-- Perform `requests` of `drawer run`, `drawer event` and `drawer screen` replies (see Requests).
-- List row menus: render `menu` of a `list`, call `drawer event ... --list --index --value`.
-- Mark the More row with a dot when the model has `update_available: true` (optional).
 
 ## Versioning
 

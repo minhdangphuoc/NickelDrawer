@@ -134,6 +134,7 @@ struct ScreenModel {
     bool isStale = false; // the app's state action failed: values are defaults, keep the previous screen
     QString value;        // the screen value the reply was made for (viewer: the picture id)
     QList<HeaderIconAction> headerActions;
+    QList<HostRequest> requests; // from the app's state (a finished job); performed once, never kept
 };
 
 #endif

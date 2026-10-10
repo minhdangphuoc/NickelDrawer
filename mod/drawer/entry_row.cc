@@ -124,7 +124,7 @@ void EntryRow::onModelLoaded(const DrawerModel &model)
     }
     int updateCount = 0;
     QString summary = entrySummary(model, &updateCount);
-    showSummary(summary, updateCount > 0);
+    showSummary(summary, updateCount > 0 || model.updateAvailable);
 }
 
 void EntryRow::showSummary(const QString &summary, bool hasUpdate)

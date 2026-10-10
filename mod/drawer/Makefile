@@ -28,8 +28,8 @@ override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar
                      screen_layout.cc screen_canvas.cc screen_view.cc field_editor.cc screen_session.cc \
                      navigation_stack.cc navigation.cc event_queue.cc picture_loader.cc tile_menu.cc \
                      more_row.cc tweaks_logic.cc tweaks_parser.cc tweaks_panel.cc tweaks_overlay.cc tweaks_session.cc \
-                     tweaks_row.cc row_menu_logic.cc toast_limiter.cc toast_gate.cc qt6_notice.cc
-override MOCS     += nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
+                     tweaks_row.cc row_menu_logic.cc host_requests.cc host_request_runner.cc toast_limiter.cc toast_gate.cc qt6_notice.cc
+override MOCS     += host_request_runner.h nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
                      dialogs.h open_popups.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
                      screen_canvas.h screen_view.h field_editor.h screen_session.h tile_menu.h \
                      tweaks_panel.h tweaks_overlay.h tweaks_session.h tweaks_row.h
@@ -44,7 +44,7 @@ endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
-TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter
+TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests
 # Other Qt-free units a test links besides its own (unit=dependency).
 TEST_LINKS  := tweaks_logic=drawer_logic
 TEST_BINARY := tests/unit_test.bin
