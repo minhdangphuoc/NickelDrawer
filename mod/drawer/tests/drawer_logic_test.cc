@@ -6,20 +6,24 @@
 
 using namespace DrawerLogic;
 
+#define EXPECT_TRUE(condition) EXPECT_EQ(1, (condition) ? 1 : 0)
+
 static void testPageCount()
 {
     EXPECT_EQ(1, pageCount(0, LIST_ROWS_PER_PAGE));
     EXPECT_EQ(1, pageCount(7, LIST_ROWS_PER_PAGE));
     EXPECT_EQ(2, pageCount(8, LIST_ROWS_PER_PAGE));
-    EXPECT_EQ(2, pageCount(12, GRID_TILES_PER_PAGE));
-    EXPECT_EQ(3, pageCount(13, GRID_TILES_PER_PAGE));
+    EXPECT_EQ(1, pageCount(20, itemsPerPage(VIEW_GRID, 5)));
+    EXPECT_EQ(2, pageCount(21, itemsPerPage(VIEW_GRID, 5)));
     EXPECT_EQ(1, pageCount(5, 0));
 }
 
 static void testPerPage()
 {
-    EXPECT_EQ(7, itemsPerPage(VIEW_LIST));
-    EXPECT_EQ(6, itemsPerPage(VIEW_GRID));
+    EXPECT_EQ(7, itemsPerPage(VIEW_LIST, 5)); // rows do not matter in list mode
+    EXPECT_EQ(20, itemsPerPage(VIEW_GRID, 5));
+    EXPECT_EQ(4, itemsPerPage(VIEW_GRID, 1));
+    EXPECT_EQ(4, itemsPerPage(VIEW_GRID, 0)); // at least one row
 }
 
 static void testPageContents()
@@ -49,11 +53,71 @@ static void testClampAndKeys()
 
 static void testViewSwitchKeepsItem()
 {
-    // Item 8 is on list page 2 (index 1) and grid page 2 (index 1).
+    // Item 8 is on list page 2 (index 1); with 8 per grid page (2 rows) too.
     EXPECT_EQ(1, pageContainingItem(8, LIST_ROWS_PER_PAGE));
-    EXPECT_EQ(1, pageContainingItem(8, GRID_TILES_PER_PAGE));
-    EXPECT_EQ(2, pageContainingItem(12, GRID_TILES_PER_PAGE));
-    EXPECT_EQ(0, pageContainingItem(-1, GRID_TILES_PER_PAGE));
+    EXPECT_EQ(1, pageContainingItem(8, itemsPerPage(VIEW_GRID, 2)));
+    EXPECT_EQ(0, pageContainingItem(7, itemsPerPage(VIEW_GRID, 2)));
+    EXPECT_EQ(0, pageContainingItem(-1, itemsPerPage(VIEW_GRID, 2)));
+}
+
+static const int CONTENT_WIDTH = 1120; // 1264 - 2 * 72, the header's gutters
+
+static void testGridCellMath()
+{
+    EXPECT_EQ(280, gridCellWidth(CONTENT_WIDTH, 4));
+    EXPECT_EQ(0, gridSideInset(CONTENT_WIDTH, 4));
+    // 1121 / 4 = 280 rem 1: the leftover pixel goes to the sides, never into a cell.
+    EXPECT_EQ(280, gridCellWidth(1123, 4));
+    EXPECT_EQ(1, gridSideInset(1123, 4));
+    EXPECT_EQ(1, gridRowsThatFit(100, GRID_ROW_HEIGHT));
+    EXPECT_EQ(5, gridRowsThatFit(1300, GRID_ROW_HEIGHT));
+    EXPECT_EQ(5, gridRowsThatFit(1200, GRID_ROW_HEIGHT));
+    EXPECT_EQ(4, gridRowsThatFit(1199, GRID_ROW_HEIGHT));
+    // The icon and the two name lines sit inside the cell.
+    EXPECT_TRUE(gridNameTop(GRID_ROW_HEIGHT) + GRID_NAME_LINES * GRID_NAME_LINE_HEIGHT <= GRID_ROW_HEIGHT);
+    EXPECT_EQ(24, gridIconTop(GRID_ROW_HEIGHT));
+}
+
+// Cells for 1..12 items: identical size, on the grid lines, inside the content
+// width, no overlap, last column ends where the content ends.
+static void testGridCellRects()
+{
+    for (int widthCase = 0; widthCase < 3; widthCase++) {
+        int contentWidth = CONTENT_WIDTH + widthCase; // 1120, 1121, 1122: leftover pixels
+        int cellWidth = gridCellWidth(contentWidth, GRID_COLUMNS);
+        int inset = gridSideInset(contentWidth, GRID_COLUMNS);
+        for (int count = 1; count <= 12; count++) {
+            for (int i = 0; i < count; i++) {
+                CellRect cell = gridCellRect(i, GRID_COLUMNS, contentWidth, GRID_ROW_HEIGHT);
+                EXPECT_EQ(cellWidth, cell.width);
+                EXPECT_EQ(GRID_ROW_HEIGHT, cell.height);
+                EXPECT_EQ(inset + (i % GRID_COLUMNS) * cellWidth, cell.x);
+                EXPECT_EQ((i / GRID_COLUMNS) * GRID_ROW_HEIGHT, cell.y);
+                EXPECT_TRUE(cell.x >= 0 && cell.x + cell.width <= contentWidth);
+                if (i > 0) {
+                    CellRect before = gridCellRect(i - 1, GRID_COLUMNS, contentWidth, GRID_ROW_HEIGHT);
+                    bool isSameRow = before.y == cell.y;
+                    EXPECT_TRUE(isSameRow ? cell.x == before.x + before.width : cell.y == before.y + GRID_ROW_HEIGHT);
+                }
+            }
+        }
+        CellRect last = gridCellRect(GRID_COLUMNS - 1, GRID_COLUMNS, contentWidth, GRID_ROW_HEIGHT);
+        // Left and right leftovers differ by at most one pixel.
+        int rightGap = contentWidth - (last.x + last.width);
+        EXPECT_TRUE(rightGap - inset >= 0 && rightGap - inset <= 1);
+    }
+    CellRect third = gridCellRect(2, GRID_COLUMNS, CONTENT_WIDTH, GRID_ROW_HEIGHT);
+    EXPECT_EQ(560, third.x); // the cell the device photo showed offset
+    EXPECT_EQ(240, gridCellRect(4, GRID_COLUMNS, CONTENT_WIDTH, GRID_ROW_HEIGHT).y);
+}
+
+static void testHeaderControls()
+{
+    EXPECT_TRUE(isHeaderControlId("_refresh"));
+    EXPECT_TRUE(isHeaderControlId("_updates"));
+    EXPECT_TRUE(!isHeaderControlId("_retry"));
+    EXPECT_TRUE(!isHeaderControlId("localsend"));
+    EXPECT_TRUE(!isHeaderControlId(0));
 }
 
 static void testSectionLabels()
@@ -123,6 +187,9 @@ int main()
     testPageContents();
     testClampAndKeys();
     testViewSwitchKeepsItem();
+    testGridCellMath();
+    testGridCellRects();
+    testHeaderControls();
     testSectionLabels();
     testRefreshPolicy();
     testProtocol();

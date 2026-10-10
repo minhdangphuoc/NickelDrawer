@@ -11,11 +11,43 @@ namespace DrawerLogic {
 enum ViewMode { VIEW_LIST = 0, VIEW_GRID = 1 };
 
 static const int LIST_ROWS_PER_PAGE = 7;
-static const int GRID_COLUMNS = 3;
-static const int GRID_ROWS = 2;
-static const int GRID_TILES_PER_PAGE = GRID_COLUMNS * GRID_ROWS;
 
-int itemsPerPage(ViewMode mode);
+// ---- Grid geometry (docs/spec/ui-kit.md §5.2 "Grid view") ----
+// A phone-launcher grid: GRID_COLUMNS identical cells spanning the content
+// width (the header's gutters), icon over name, no borders.
+
+static const int GRID_COLUMNS = 4;
+static const int GRID_ROW_HEIGHT = 240;
+static const int GRID_ICON_SIDE = 96;
+static const int GRID_ICON_NAME_GAP = 12;
+static const int GRID_NAME_LINES = 2;
+static const int GRID_NAME_LINE_HEIGHT = 42;
+// Rows assumed before the page area is laid out, and the lower bound after.
+static const int GRID_DEFAULT_ROWS = 5;
+
+struct CellRect {
+    int x; // relative to the page area (which already sits inside the gutters)
+    int y;
+    int width;
+    int height;
+};
+
+// Integer width of one cell; the pixels left over (contentWidth % columns)
+// are split between the two sides by gridSideInset, so the grid stays centred.
+int gridCellWidth(int contentWidth, int columns);
+int gridSideInset(int contentWidth, int columns);
+// At least 1, so a small screen still shows one row.
+int gridRowsThatFit(int availableHeight, int rowHeight);
+// Cell of the item at indexOnPage (row-major). Identical size for every index,
+// columns*cellWidth + 2*inset == contentWidth: no drift.
+CellRect gridCellRect(int indexOnPage, int columns, int contentWidth, int rowHeight);
+// Top of the icon inside a cell: icon + gap + name lines are centred as one
+// group, the icon always at this offset so icons line up across a row.
+int gridIconTop(int rowHeight);
+int gridNameTop(int rowHeight);
+
+// gridRows is ignored in list mode.
+int itemsPerPage(ViewMode mode, int gridRows);
 
 // At least 1, so an empty drawer still shows "1 / 1".
 int pageCount(int itemCount, int perPage);
@@ -90,6 +122,10 @@ ExitClass classifyExitCode(int exitCode);
 
 // Host items ("_refresh", "_updates") cannot be removed or inspected.
 bool isHostItemId(const char *id);
+
+// Host items the grid shows as header buttons instead of cells ("_refresh",
+// "_updates"); other host rows (the error "_retry") stay cells.
+bool isHeaderControlId(const char *id);
 
 // ---- Wi-Fi retry (drawer-protocol "needs_wifi": connect, then retry once) ----
 

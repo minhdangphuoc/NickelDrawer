@@ -26,9 +26,53 @@ static const int REMOVE_TIMEOUT_MILLISECONDS = 10000;
 static const int EXIT_CODE_OK = 0;
 static const int EXIT_CODE_PROTOCOL_ERROR = 2;
 
-int itemsPerPage(ViewMode mode)
+int itemsPerPage(ViewMode mode, int gridRows)
 {
-    return mode == VIEW_GRID ? GRID_TILES_PER_PAGE : LIST_ROWS_PER_PAGE;
+    if (mode != VIEW_GRID) {
+        return LIST_ROWS_PER_PAGE;
+    }
+    return GRID_COLUMNS * (gridRows < 1 ? 1 : gridRows);
+}
+
+int gridCellWidth(int contentWidth, int columns)
+{
+    return columns > 0 ? contentWidth / columns : 0;
+}
+
+int gridSideInset(int contentWidth, int columns)
+{
+    return (contentWidth - columns * gridCellWidth(contentWidth, columns)) / 2;
+}
+
+int gridRowsThatFit(int availableHeight, int rowHeight)
+{
+    int rows = rowHeight > 0 ? availableHeight / rowHeight : 1;
+    return rows < 1 ? 1 : rows;
+}
+
+CellRect gridCellRect(int indexOnPage, int columns, int contentWidth, int rowHeight)
+{
+    int cellWidth = gridCellWidth(contentWidth, columns);
+    int column = columns > 0 ? indexOnPage % columns : 0;
+    int row = columns > 0 ? indexOnPage / columns : 0;
+    CellRect cell = {gridSideInset(contentWidth, columns) + column * cellWidth, row * rowHeight, cellWidth, rowHeight};
+    return cell;
+}
+
+static int gridGroupHeight()
+{
+    return GRID_ICON_SIDE + GRID_ICON_NAME_GAP + GRID_NAME_LINES * GRID_NAME_LINE_HEIGHT;
+}
+
+int gridIconTop(int rowHeight)
+{
+    int top = (rowHeight - gridGroupHeight()) / 2;
+    return top < 0 ? 0 : top;
+}
+
+int gridNameTop(int rowHeight)
+{
+    return gridIconTop(rowHeight) + GRID_ICON_SIDE + GRID_ICON_NAME_GAP;
 }
 
 int pageCount(int itemCount, int perPage)
@@ -163,6 +207,11 @@ ExitClass classifyExitCode(int exitCode)
 bool isHostItemId(const char *id)
 {
     return id && id[0] == '_';
+}
+
+bool isHeaderControlId(const char *id)
+{
+    return id && (strcmp(id, "_refresh") == 0 || strcmp(id, "_updates") == 0);
 }
 
 RunStep nextStepAfterRun(bool needsWifi, bool hasRetriedAfterWifi)

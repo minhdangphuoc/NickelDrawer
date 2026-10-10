@@ -1,7 +1,7 @@
 # NickelDrawer: native drawer host (Phase 3)
 
 `libnickeldrawer.so` is a NickelHook mod. It adds an **Apps** row to Nickel's More tab and opens a native
-drawer page (list by default, 3 × 2 grid optional). It only renders and handles input. All app logic
+drawer page (list by default, 4-column launcher grid optional). It only renders and handles input. All app logic
 lives in `appsctl`, which the mod runs as a child process (`docs/spec/drawer-protocol.md`). Screens follow
 `docs/spec/ui-kit.md` §5. The libnickel facts behind it are in `re/notes/G2-findings.md`.
 
@@ -50,8 +50,8 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `model_client.{h,cc}` | `drawer model / run / info / remove --confirm`, maps every failure to a localized reply |
 | `view_settings.{h,cc}` | list/grid choice in `.adds/koboapps/data/drawer.ini` (open, write, close; only on change) |
 | `painted_marks.{h,cc}` | update dot, list/grid toggles, header icon buttons, app mark; icons from `../common/system_icon` (Nickel's images, else Tabler PNGs, never drawn) |
-| `item_widgets.{h,cc}` | list row (152 px) and grid tile; status/dot change in place |
-| `drawer_view.{h,cc}` | header, page of rows/tiles with section labels, hint, `1 / N` with arrows, page keys |
+| `item_widgets.{h,cc}` | list row (152 px) and grid cell (icon + 2-line name, no status line); status/dot change in place |
+| `drawer_view.{h,cc}` | header, page of rows or grid cells (host items as header buttons in the grid) with section labels, hint, `1 / N` with arrows, page keys |
 | `plain_dialog.{h,cc}` | plain Qt dialog (menu, fallback for Nickel dialogs), 120 s timeout |
 | `dialogs.{h,cc}` | result dialog and confirm question: Nickel's own first, plain fallback |
 | `wifi_connector.{h,cc}` | Nickel's Wi-Fi connect, poll 1 s × 30 |
@@ -185,7 +185,7 @@ Shell rule: absolute paths, never `cd` into `/Volumes/KOBOeReader`.
 3. Tap "Apps": drawer with back chevron, title, list/grid toggles (list underlined), sections
    INSTALLED / SYSTEM, hint, `1 / N`; **tab bar visible with More active**; one flash.
 4. Page buttons: forward/back flip pages (one flash each); at the edges nothing changes. On-screen
-   arrows do the same. Toggle grid: 3 × 2 tiles; leave and re-open: grid is remembered.
+   arrows do the same. Toggle grid: 4 columns of icon + name cells, refresh icon in the header; leave and re-open: grid is remembered.
 5. Tap an app (e.g. LocalSend): result dialog; status line updates in place after closing it.
    Tap "Refresh list": dialog, list reloads.
 6. Long-press an app: menu with Info, other actions, Remove…; Info shows version/storage/folder;

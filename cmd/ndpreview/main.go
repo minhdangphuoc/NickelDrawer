@@ -33,6 +33,9 @@ commands:
           --value ID (screen value, e.g. the picture a viewer opens on)  --chrome shown|hidden (viewer)
           --font FILE  --font-serif FILE  --font-mono FILE
 
+  drawer-grid  headless PNG of the drawer's grid view with sample apps
+          --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --font FILE
+
 --exec runs the app's action scripts on this computer inside a temporary folder when you tap
 a button. Without a font file render draws shapes only and prints a warning.
 `
@@ -51,6 +54,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runServe(args[1:], stdout, stderr)
 	case "render":
 		return runRender(args[1:], stdout, stderr)
+	case "drawer-grid":
+		return runDrawerGrid(args[1:], stdout, stderr)
 	case "-h", "--help", "help":
 		fmt.Fprint(stdout, usage)
 		return exitOK

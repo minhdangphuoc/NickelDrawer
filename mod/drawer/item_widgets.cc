@@ -5,15 +5,18 @@
 #include <QPainter>
 #include <QVBoxLayout>
 
+#include <QFontMetrics>
+
+#include "drawer_logic.h"
+#include "nickel_fonts.h"
 #include "painted_marks.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
 static const int ROW_HEIGHT = 152;
 static const int ROW_ICON_SIDE = 52;
 static const int SPACING = 24;
-static const int TILE_MARK_SIDE = 96;
-static const int TILE_PADDING = 24;
-static const int OUTLINE_WIDTH = 2;
+static const int TILE_NAME_SIZE = 32; // one step under the list row's 36
+static const int TILE_NAME_INSET = 8;
 static const int SECTION_LABEL_HEIGHT = 64;
 
 static QLabel *createLabel(const QString &text, const char *objectName, QWidget *parent)
@@ -30,22 +33,29 @@ ItemWidget::ItemWidget(const DrawerItem &item, QWidget *parent)
     setAttribute(Qt::WA_StyledBackground, true);
 }
 
+void ItemWidget::createDot()
+{
+    updateDot = new UpdateDot(this);
+}
+
 void ItemWidget::createStatusAndDot()
 {
     statusLabel = createLabel(QString(), "drawerItemStatus", this);
     statusLabel->setWordWrap(false);
-    updateDot = new UpdateDot(this);
+    createDot();
 }
 
 bool ItemWidget::applyLiveState(const DrawerItem &item)
 {
-    if (item.id != id || !statusLabel || !updateDot) {
+    if (item.id != id || !updateDot) {
         return false;
     }
-    if (statusLabel->text() != item.status) {
-        statusLabel->setText(item.status);
+    if (statusLabel) { // grid cells have no status line
+        if (statusLabel->text() != item.status) {
+            statusLabel->setText(item.status);
+        }
+        statusLabel->setVisible(!item.status.isEmpty());
     }
-    statusLabel->setVisible(!item.status.isEmpty());
     updateDot->setVisible(item.hasUpdate);
     return true;
 }
@@ -78,40 +88,66 @@ AppRow::AppRow(const DrawerItem &item, QWidget *parent) : ItemWidget(item, paren
     applyLiveState(item);
 }
 
-AppTile::AppTile(const DrawerItem &item, int side, QWidget *parent) : ItemWidget(item, parent)
+// Greedy word wrap into at most maxLines lines; the last line is elided. A
+// single word wider than the cell is elided too.
+static QStringList wrapName(const QString &name, const QFontMetrics &metrics, int width, int maxLines)
+{
+    QStringList lines;
+    QStringList words = name.simplified().split(QLatin1Char(' '), QString::SkipEmptyParts);
+    QString current;
+    for (int i = 0; i < words.size(); i++) {
+        QString candidate = current.isEmpty() ? words[i] : current + QLatin1Char(' ') + words[i];
+        if (current.isEmpty() || metrics.width(candidate) <= width) {
+            current = candidate;
+            continue;
+        }
+        lines.append(current);
+        current = words[i];
+        if (lines.size() == maxLines - 1) {
+            current = QStringList(words.mid(i)).join(QStringLiteral(" "));
+            break;
+        }
+    }
+    if (!current.isEmpty()) {
+        lines.append(current);
+    }
+    for (int i = 0; i < lines.size(); i++) {
+        lines[i] = metrics.elidedText(lines[i], Qt::ElideRight, width);
+    }
+    return lines;
+}
+
+AppTile::AppTile(const DrawerItem &item, int width, int height, QWidget *parent)
+    : ItemWidget(item, parent), nameLines(), nameTop(DrawerLogic::gridNameTop(height))
 {
     setObjectName(QStringLiteral("drawerTile"));
-    setFixedSize(side, side);
-    createStatusAndDot();
-    statusLabel->setAlignment(Qt::AlignHCenter);
+    setFixedSize(width, height);
+    createDot();
 
-    QLabel *name = createLabel(item.name, "drawerItemName", this);
-    name->setAlignment(Qt::AlignHCenter);
-    name->setWordWrap(true);
+    QFont font = NickelFonts::font(NickelFonts::ROLE_BODY, TILE_NAME_SIZE, false);
+    nameLines = wrapName(item.name, QFontMetrics(font), width - 2 * TILE_NAME_INSET, DrawerLogic::GRID_NAME_LINES);
 
-    QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(TILE_PADDING, TILE_PADDING, TILE_PADDING, TILE_PADDING);
-    layout->setSpacing(SPACING / 2);
-    layout->addWidget(new AppMark(item.iconPath, TILE_MARK_SIDE, this), 0, Qt::AlignHCenter);
-    layout->addStretch(1);
-    layout->addWidget(statusLabel);
-    layout->addWidget(name);
+    int iconLeft = (width - DrawerLogic::GRID_ICON_SIDE) / 2;
+    int iconTop = DrawerLogic::gridIconTop(height);
+    AppMark *mark = new AppMark(item.iconPath, DrawerLogic::GRID_ICON_SIDE, this);
+    mark->move(iconLeft, iconTop);
+    updateDot->move(iconLeft + DrawerLogic::GRID_ICON_SIDE - updateDot->width(), iconTop);
     applyLiveState(item);
 }
 
+// The name is painted (not a QLabel) because QLabel word-wraps but cannot elide
+// the last line. The press overlay inverts the cell, text included.
 void AppTile::paintEvent(QPaintEvent *event)
 {
     PressArea::paintEvent(event);
     QPainter painter(this);
-    painter.setPen(QPen(Qt::black, OUTLINE_WIDTH));
-    painter.setBrush(Qt::NoBrush);
-    painter.drawRect(rect().adjusted(1, 1, -1, -1));
-}
-
-void AppTile::resizeEvent(QResizeEvent *event)
-{
-    PressArea::resizeEvent(event);
-    updateDot->move(width() - TILE_PADDING / 2 - updateDot->width(), TILE_PADDING / 2);
+    painter.setFont(NickelFonts::font(NickelFonts::ROLE_BODY, TILE_NAME_SIZE, false));
+    painter.setPen(Qt::black);
+    for (int i = 0; i < nameLines.size(); i++) {
+        QRect line(TILE_NAME_INSET, nameTop + i * DrawerLogic::GRID_NAME_LINE_HEIGHT, width() - 2 * TILE_NAME_INSET,
+                   DrawerLogic::GRID_NAME_LINE_HEIGHT);
+        painter.drawText(line, Qt::AlignHCenter | Qt::AlignTop, nameLines[i]);
+    }
 }
 
 QLabel *createSectionLabel(const QString &title, QWidget *parent)

@@ -29,7 +29,7 @@ All sizes are device pixels on the Kobo Libra 2: 300 dpi, 1264 x 1680, 1 mm = 11
 | Row icon | 52 px, outline style |
 | BigCode | monospace, 144 px |
 | Separator | 2 px, Nickel's row colour |
-| Grid tile (drawer grid view) | square, 3 columns |
+| Grid cell (drawer grid view) | 280 x 240 px, 4 columns, no border |
 
 Rules: no shadows, no gradients, no animation. Title font about 1.25 x body. Text follows Nickel's font and size settings; layouts must hold at the largest size (KIT-12).
 
@@ -242,13 +242,17 @@ Default is **list**. The choice is remembered (written on change, small file in 
 - Page indicator "1 / N" (centred, below the hint).
 - 7 rows per page.
 
-**Grid view (optional)**
-- 3 columns of square outlined tiles. Each tile: the app's icon (or the generic apps icon) at the top, status line, name. 3 x 2 per page.
-- Same long-press menu and update dot (top-right corner of the tile).
+**Grid view (optional)**, a phone-launcher grid
+- 4 columns spanning exactly the content gutters (same left and right edges as the header title and divider): identical cells of 280 x 240 px. Cell width is `contentWidth / 4`; any leftover pixels are split evenly at the two sides (`DrawerLogic::gridCellRect`, unit-tested).
+- Cell: no border. The app's icon (96 px, the generic apps icon without one) centred; under it the name centred in Nickel's sans at 32 px (one step under the list's 36), at most 2 lines, the last one elided. No status line (list view keeps it). Icon and name are one group centred in the cell with the icon at a fixed offset, so icons line up across a row.
+- Rows start right under the header; as many rows as fit above the hint and page bar (5 on the Libra 2), so 20 apps per page. The page bar and hint stay as in the list.
+- Pressed: the whole cell is inverted, as on Nickel's pressed rows. Long press and the update dot (at the icon's top-right) work as in the list.
+- Host items are not apps and are never cells: **refresh** is a header icon button (Nickel's reload icon) left of the list/grid toggles; **check for updates** (only when the host offers it) is a second header button (Nickel's download icon) with the black update dot when an update is waiting. The list view still shows both as rows.
+- `ndpreview drawer-grid --out build/preview/drawer-grid.png --locale vi` renders the grid with sample apps (icons approximated).
 
 ### 5.3 Paging and hard keys
 
-- Page-turn buttons flip pages in the drawer (list 7 rows, grid 3 x 2) and on long app screens (one screen height minus the header).
+- Page-turn buttons flip pages in the drawer (list 7 rows, grid 4 columns x the rows that fit) and on long app screens (one screen height minus the header).
 - While a menu or dialog is open, a page key closes it instead of paging; keys are ignored while an action or the keyboard is busy.
 - Every dialog has a visible OK or Cancel. A tap outside closes info, result and non-destructive dialogs (Nickel's `ConfirmationDialog::setRejectOnOutsideTap`); a destructive question (Remove, a screen button's confirm) closes only by its buttons.
 - Direction follows Nickel's own page-turn direction setting (Reading settings, "swap page-turn buttons"). Read it at drawer open.
@@ -301,7 +305,7 @@ The `appsctl validate` step checks the rules of [ui-json.md](ui-json.md) and `nd
 | Plan v2 wireframe | UI kit v1 (approved) | Why |
 |---|---|---|
 | Bottom tab "Ứng dụng" (DRW-01) | One **Apps** row in the More tab, with status line and update dot | No extra tab; fewer Nickel changes; fits the stock look |
-| 2-column tiles as the drawer (DRW-02) | **List** by default (sections Installed / System), grid optional (3 columns) | Lists read better, show status, and match Nickel's settings pages |
+| 2-column tiles as the drawer (DRW-02) | **List** by default (sections Installed / System), grid optional (4-column launcher grid) | Lists read better, show status, and match Nickel's settings pages |
 | Tile height set by content | **Nickel-sized rows**: 152 px drawer rows, 104 px key-value rows, 120 px buttons | Same tap size and rhythm as stock screens |
 | Header badge pill (`badge`) | **Plain status text** at the right of the header | No pills; less ink and flicker |
 | Progress bar with 5 % steps | **Step text** ("Downloading 2 / 3" + file), at most every 5 s | No moving bars on e-ink |

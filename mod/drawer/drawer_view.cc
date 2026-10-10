@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QResizeEvent>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -15,17 +16,18 @@
 #include "nickel_fonts.h"
 #include "open_popups.h"
 #include "page_header.h"
+#include "screen_logic.h"
+#include "system_icon.h"
 #include "painted_marks.h"
 #include "status_bar_inset.h"
 #include "view_settings.h"
 
 // Sizes in device pixels (docs/spec/ui-kit.md §2).
-static const int SIDE_GUTTER = 72;
+static const int SIDE_GUTTER = ScreenLogic::GUTTER;
+static const int CONTENT_WIDTH = ScreenLogic::CONTENT_WIDTH;
 static const int FOOTER_BUTTON_SIDE = 120;
-static const int SPACING = 24;
-static const int CONTENT_WIDTH = 1120;
-static const int GRID_TILE_SIDE =
-    (CONTENT_WIDTH - (DrawerLogic::GRID_COLUMNS - 1) * SPACING) / DrawerLogic::GRID_COLUMNS;
+static const char *const HOST_REFRESH_ID = "_refresh";
+static const char *const HOST_UPDATES_ID = "_updates";
 
 // Black on white, no grey fills; separators 2 px (ui-kit §1, §2). Families are
 // Nickel's own, filled in at run time (nickel_fonts.h): never generic ones.
@@ -47,6 +49,8 @@ static const char *const VIEW_STYLE =
     "#drawerEmptyTitle { font-family: @TITLE_FAMILY@; font-size: 40px; font-weight: bold; }"
     "#drawerEmptyText { font-size: 30px; }";
 
+static const int HOST_DOT_INSET = 28;
+
 static QLabel *createTextLabel(const QString &text, const char *objectName, QWidget *parent)
 {
     QLabel *label = new QLabel(text, parent);
@@ -56,7 +60,8 @@ static QLabel *createTextLabel(const QString &text, const char *objectName, QWid
 
 DrawerView::DrawerView()
     : QWidget(NULL), rootLayout(NULL), header(NULL), listToggle(NULL), gridToggle(NULL), pageArea(NULL), pageLayout(NULL),
-      hintLabel(NULL), pageIndicator(NULL), viewMode(ViewSettings::load()), currentPage(0), isInputBlocked(false),
+      hintLabel(NULL), pageIndicator(NULL), refreshButton(NULL), updatesButton(NULL), updatesDot(NULL),
+      viewMode(ViewSettings::load()), gridRows(DrawerLogic::GRID_DEFAULT_ROWS), currentPage(0), isInputBlocked(false),
       hasModel(false), hasLoggedLayout(false)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
@@ -73,6 +78,9 @@ DrawerView::DrawerView()
     pageLayout = new QVBoxLayout(pageArea);
     pageLayout->setContentsMargins(0, 0, 0, 0);
     pageLayout->setSpacing(0);
+    // The page area takes what the header and footer leave; its content (grid
+    // rows) is fitted to that height, never the other way round.
+    pageArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
     hintLabel = createTextLabel(QString(), "drawerHint", this);
     hintLabel->setAlignment(Qt::AlignHCenter);
     hintLabel->setWordWrap(true);
@@ -130,7 +138,14 @@ PageHeader *DrawerView::createHeader()
     gridToggle = new ViewToggleIcon(ViewToggleIcon::SHAPE_GRID, pageHeader);
     connect(listToggle, SIGNAL(tapped()), this, SLOT(onListToggleTapped()));
     connect(gridToggle, SIGNAL(tapped()), this, SLOT(onGridToggleTapped()));
+    refreshButton = createHostButton(HeaderIconButton::ICON_REFRESH, SLOT(onRefreshTapped()), pageHeader);
+    updatesButton = createHostButton(HeaderIconButton::ICON_IMPORT, SLOT(onUpdatesTapped()), pageHeader);
+    updatesDot = new UpdateDot(updatesButton);
+    updatesDot->move(updatesButton->width() - updatesDot->width() - HOST_DOT_INSET, HOST_DOT_INSET);
+    updatesDot->hide();
     pressables << listToggle << gridToggle;
+    pageHeader->addTrailingWidget(refreshButton);
+    pageHeader->addTrailingWidget(updatesButton);
     pageHeader->addTrailingWidget(listToggle);
     pageHeader->addTrailingWidget(gridToggle);
     hideToggleWithoutIcon(listToggle, "list");
@@ -138,6 +153,17 @@ PageHeader *DrawerView::createHeader()
     DebugLog::write("drawer view: header created (%s back, title, list/grid toggles)",
                     pageHeader->usesNickelHeader() ? "Nickel's" : "own");
     return pageHeader;
+}
+
+// The grid's stand-ins for the "_refresh" and "_updates" host items. Without
+// an icon the button stays hidden (we never draw one) and the log says so.
+HeaderIconButton *DrawerView::createHostButton(HeaderIconButton::Icon icon, const char *slot, QWidget *parent)
+{
+    HeaderIconButton *button = new HeaderIconButton(icon, QString(), parent);
+    connect(button, SIGNAL(tapped()), this, slot);
+    pressables.append(button);
+    button->hide();
+    return button;
 }
 
 QWidget *DrawerView::createFooter()
@@ -162,12 +188,14 @@ void DrawerView::setModel(const DrawerModel &model)
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
     hintLabel->setText(hint);
     flatten(model);
+    rebuildShownIndices();
+    updateHostButtons();
     if (isStatusOnlyChange) {
         applyLiveStates();
         scheduleRefresh(DrawerLogic::refreshForStatusChange(&refreshPolicy));
         return;
     }
-    currentPage = DrawerLogic::clampPage(currentPage, items.size(), DrawerLogic::itemsPerPage(viewMode));
+    currentPage = DrawerLogic::clampPage(currentPage, shownIndices.size(), perPage());
     renderPage();
     scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy));
 }
@@ -204,9 +232,85 @@ bool DrawerView::hasSameItems(const DrawerModel &model) const
 
 void DrawerView::applyLiveStates()
 {
-    int first = DrawerLogic::firstIndexOnPage(currentPage, DrawerLogic::itemsPerPage(viewMode));
-    for (int i = 0; i < pageWidgets.size() && first + i < items.size(); i++) {
-        pageWidgets[i]->applyLiveState(items[first + i]);
+    int first = DrawerLogic::firstIndexOnPage(currentPage, perPage());
+    for (int i = 0; i < pageWidgets.size() && first + i < shownIndices.size(); i++) {
+        pageWidgets[i]->applyLiveState(items[shownIndices[first + i]]);
+    }
+    updateHostButtons();
+}
+
+int DrawerView::perPage() const
+{
+    return DrawerLogic::itemsPerPage(viewMode, gridRows);
+}
+
+// The grid hides the host items its header buttons stand for; the list shows all.
+void DrawerView::rebuildShownIndices()
+{
+    shownIndices.clear();
+    for (int i = 0; i < items.size(); i++) {
+        bool isHidden = viewMode == DrawerLogic::VIEW_GRID && DrawerLogic::isHeaderControlId(qPrintable(items[i].id));
+        if (!isHidden) {
+            shownIndices.append(i);
+        }
+    }
+}
+
+const DrawerItem *DrawerView::hostItem(const char *id) const
+{
+    for (int i = 0; i < items.size(); i++) {
+        if (items[i].id == QLatin1String(id)) {
+            return &items[i];
+        }
+    }
+    return NULL;
+}
+
+// Grid mode only: the refresh button, and the updates button (with the dot when
+// an update is waiting) when the host offers the item and an icon is installed.
+void DrawerView::updateHostButtons()
+{
+    bool isGrid = viewMode == DrawerLogic::VIEW_GRID;
+    const DrawerItem *updates = hostItem(HOST_UPDATES_ID);
+    refreshButton->setVisible(isGrid && hostItem(HOST_REFRESH_ID) && !SystemIcon::icon(SystemIcon::REFRESH).isNull());
+    updatesButton->setVisible(isGrid && updates && !SystemIcon::icon(SystemIcon::IMPORT).isNull());
+    updatesDot->setVisible(updates && updates->hasUpdate);
+}
+
+void DrawerView::onRefreshTapped()
+{
+    const DrawerItem *item = isInputBlocked ? NULL : hostItem(HOST_REFRESH_ID);
+    if (item) {
+        emit itemTapped(*item);
+    }
+}
+
+void DrawerView::onUpdatesTapped()
+{
+    const DrawerItem *item = isInputBlocked ? NULL : hostItem(HOST_UPDATES_ID);
+    if (item) {
+        emit itemTapped(*item);
+    }
+}
+
+// Rows that fit the page area under the header; a change re-pages in place,
+// keeping the first visible item on screen.
+void DrawerView::fitGridRows()
+{
+    if (pageArea->height() <= 0) {
+        return;
+    }
+    int rows = DrawerLogic::gridRowsThatFit(pageArea->height(), DrawerLogic::GRID_ROW_HEIGHT);
+    if (rows == gridRows) {
+        return;
+    }
+    DebugLog::write("drawer view: grid rows %d -> %d (page area %d px)", gridRows, rows, pageArea->height());
+    int firstVisible = DrawerLogic::firstIndexOnPage(currentPage, perPage());
+    gridRows = rows;
+    if (viewMode == DrawerLogic::VIEW_GRID) {
+        currentPage = DrawerLogic::pageContainingItem(firstVisible, perPage());
+        renderPage();
+        scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy));
     }
 }
 
@@ -224,22 +328,32 @@ void DrawerView::setInputBlocked(bool isBlocked)
 
 void DrawerView::setViewMode(DrawerLogic::ViewMode mode)
 {
-    int firstVisible = DrawerLogic::firstIndexOnPage(currentPage, DrawerLogic::itemsPerPage(viewMode));
+    int firstVisible = shownIndices.value(DrawerLogic::firstIndexOnPage(currentPage, perPage()), 0);
     viewMode = mode;
     listToggle->setActive(mode == DrawerLogic::VIEW_LIST);
     gridToggle->setActive(mode == DrawerLogic::VIEW_GRID);
-    currentPage = DrawerLogic::pageContainingItem(firstVisible, DrawerLogic::itemsPerPage(mode));
+    rebuildShownIndices();
+    updateHostButtons();
+    // Position of that item among the items the new mode shows.
+    int position = 0;
+    while (position < shownIndices.size() && shownIndices[position] < firstVisible) {
+        position++;
+    }
+    currentPage = DrawerLogic::pageContainingItem(position, perPage());
 }
 
 void DrawerView::restoreState(DrawerLogic::ViewMode mode, int page)
 {
-    int clamped = DrawerLogic::clampPage(page, items.size(), DrawerLogic::itemsPerPage(mode));
+    DrawerLogic::ViewMode previousMode = viewMode;
+    int previousPage = currentPage;
+    setViewMode(mode);
+    int clamped = DrawerLogic::clampPage(page, shownIndices.size(), perPage());
     DebugLog::write("drawer view: restore %s, page %d (was %s, page %d)", mode == DrawerLogic::VIEW_GRID ? "grid" : "list",
-                    clamped + 1, viewMode == DrawerLogic::VIEW_GRID ? "grid" : "list", currentPage + 1);
-    if (mode == viewMode && clamped == currentPage) {
+                    clamped + 1, previousMode == DrawerLogic::VIEW_GRID ? "grid" : "list", previousPage + 1);
+    if (mode == previousMode && clamped == previousPage) {
+        currentPage = previousPage;
         return;
     }
-    setViewMode(mode);
     goToPage(clamped);
 }
 
@@ -265,14 +379,12 @@ void DrawerView::onGridToggleTapped()
 
 void DrawerView::onPreviousTapped()
 {
-    goToPage(DrawerLogic::pageAfterKey(currentPage, DrawerLogic::PAGE_KEY_PREVIOUS, items.size(),
-                                       DrawerLogic::itemsPerPage(viewMode)));
+    goToPage(DrawerLogic::pageAfterKey(currentPage, DrawerLogic::PAGE_KEY_PREVIOUS, shownIndices.size(), perPage()));
 }
 
 void DrawerView::onNextTapped()
 {
-    goToPage(DrawerLogic::pageAfterKey(currentPage, DrawerLogic::PAGE_KEY_NEXT, items.size(),
-                                       DrawerLogic::itemsPerPage(viewMode)));
+    goToPage(DrawerLogic::pageAfterKey(currentPage, DrawerLogic::PAGE_KEY_NEXT, shownIndices.size(), perPage()));
 }
 
 void DrawerView::goToPage(int page)
@@ -290,16 +402,6 @@ void DrawerView::clearPage()
         if (child->widget()) {
             child->widget()->hide();
             child->widget()->deleteLater();
-        } else if (child->layout()) {
-            // Grid layouts hold the tiles; the tiles are children of pageArea.
-            QLayout *nested = child->layout();
-            while (QLayoutItem *nestedChild = nested->takeAt(0)) {
-                if (nestedChild->widget()) {
-                    nestedChild->widget()->hide();
-                    nestedChild->widget()->deleteLater();
-                }
-                delete nestedChild;
-            }
         }
         delete child;
     }
@@ -308,10 +410,10 @@ void DrawerView::clearPage()
 void DrawerView::renderPage()
 {
     clearPage();
-    int perPage = DrawerLogic::itemsPerPage(viewMode);
-    int first = DrawerLogic::firstIndexOnPage(currentPage, perPage);
-    int count = DrawerLogic::itemCountOnPage(currentPage, items.size(), perPage);
-    if (items.isEmpty()) {
+    int pageSize = perPage();
+    int first = DrawerLogic::firstIndexOnPage(currentPage, pageSize);
+    int count = DrawerLogic::itemCountOnPage(currentPage, shownIndices.size(), pageSize);
+    if (shownIndices.isEmpty()) {
         renderEmptyState();
     } else if (viewMode == DrawerLogic::VIEW_GRID) {
         renderGridPage(first, count);
@@ -326,7 +428,7 @@ void DrawerView::renderPage()
 void DrawerView::renderListPage(int first, int count)
 {
     for (int i = 0; i < count; i++) {
-        int index = first + i;
+        int index = shownIndices[first + i]; // the list shows every item: the same as first + i
         int previousSection = i > 0 ? sectionOfItem[index - 1] : -1;
         if (DrawerLogic::startsSectionOnPage(i, sectionOfItem[index], previousSection)) {
             pageLayout->addWidget(createSectionLabel(sectionTitles[sectionOfItem[index]], pageArea));
@@ -339,19 +441,22 @@ void DrawerView::renderListPage(int first, int count)
     }
 }
 
+// Cells are placed with the pure grid math (drawer_logic), not a layout, so
+// all of them have the same size and sit on exact column lines.
 void DrawerView::renderGridPage(int first, int count)
 {
-    QGridLayout *grid = new QGridLayout();
-    grid->setContentsMargins(0, SPACING, 0, 0);
-    grid->setSpacing(SPACING);
+    QWidget *gridHost = new QWidget(pageArea);
+    gridHost->setFixedSize(CONTENT_WIDTH, gridRows * DrawerLogic::GRID_ROW_HEIGHT);
     for (int i = 0; i < count; i++) {
-        AppTile *tile = new AppTile(items[first + i], GRID_TILE_SIDE, pageArea);
+        DrawerLogic::CellRect cell =
+            DrawerLogic::gridCellRect(i, DrawerLogic::GRID_COLUMNS, CONTENT_WIDTH, DrawerLogic::GRID_ROW_HEIGHT);
+        AppTile *tile = new AppTile(items[shownIndices[first + i]], cell.width, cell.height, gridHost);
+        tile->move(cell.x, cell.y);
         connect(tile, SIGNAL(tapped()), this, SLOT(onItemTapped()));
         connect(tile, SIGNAL(longPressed()), this, SLOT(onItemLongPressed()));
-        grid->addWidget(tile, i / DrawerLogic::GRID_COLUMNS, i % DrawerLogic::GRID_COLUMNS);
         pageWidgets.append(tile);
     }
-    pageLayout->addLayout(grid);
+    pageLayout->addWidget(gridHost);
 }
 
 void DrawerView::renderEmptyState()
@@ -370,7 +475,7 @@ void DrawerView::renderEmptyState()
 
 void DrawerView::updateFooter()
 {
-    int pages = DrawerLogic::pageCount(items.size(), DrawerLogic::itemsPerPage(viewMode));
+    int pages = DrawerLogic::pageCount(shownIndices.size(), perPage());
     pageIndicator->setText(QStringLiteral("%1 / %2").arg(currentPage + 1).arg(pages));
 }
 
@@ -398,6 +503,7 @@ void DrawerView::showEvent(QShowEvent *event)
         QTimer::singleShot(0, this, SLOT(logLayoutGeometry())); // runs after the layout pass
     }
     setFocus(Qt::OtherFocusReason);
+    QTimer::singleShot(0, this, SLOT(fitGridRows())); // after the layout pass: the page area has its height
     scheduleRefresh(DrawerLogic::refreshForOpen(&refreshPolicy));
 }
 
@@ -406,6 +512,12 @@ void DrawerView::hideEvent(QHideEvent *event)
 {
     OpenPopups::closeAll("drawer view hidden");
     QWidget::hideEvent(event);
+}
+
+void DrawerView::resizeEvent(QResizeEvent *event)
+{
+    QWidget::resizeEvent(event);
+    fitGridRows();
 }
 
 void DrawerView::applyStatusBarInset()
@@ -424,10 +536,10 @@ void DrawerView::logLayoutGeometry()
 const DrawerItem *DrawerView::itemForSender() const
 {
     QObject *pressed = sender();
-    int first = DrawerLogic::firstIndexOnPage(currentPage, DrawerLogic::itemsPerPage(viewMode));
+    int first = DrawerLogic::firstIndexOnPage(currentPage, perPage());
     for (int i = 0; i < pageWidgets.size(); i++) {
-        if (pageWidgets[i] == pressed && first + i < items.size()) {
-            return &items[first + i];
+        if (pageWidgets[i] == pressed && first + i < shownIndices.size()) {
+            return &items[shownIndices[first + i]];
         }
     }
     return NULL;
@@ -467,8 +579,7 @@ void DrawerView::keyPressEvent(QKeyEvent *event)
         DebugLog::write("drawer: page key ignored while an action is pending");
         return;
     }
-    int perPage = DrawerLogic::itemsPerPage(viewMode);
-    int target = DrawerLogic::pageAfterKey(currentPage, key, items.size(), perPage);
+    int target = DrawerLogic::pageAfterKey(currentPage, key, shownIndices.size(), perPage());
     DebugLog::write("drawer: key 0x%x page %d -> %d", event->key(), currentPage + 1, target + 1);
     if (target != currentPage) {
         goToPage(target);

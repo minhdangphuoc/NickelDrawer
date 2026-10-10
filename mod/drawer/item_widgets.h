@@ -1,6 +1,8 @@
 #ifndef NICKELDRAWER_ITEM_WIDGETS_H
 #define NICKELDRAWER_ITEM_WIDGETS_H
 
+#include <QStringList>
+
 #include "drawer_model.h"
 #include "press_area.h"
 
@@ -20,6 +22,7 @@ public:
 
 protected:
     void createStatusAndDot();
+    void createDot();
 
     QLabel *statusLabel;
     UpdateDot *updateDot;
@@ -34,15 +37,20 @@ public:
     AppRow(const DrawerItem &item, QWidget *parent);
 };
 
-// Grid tile: outlined square with the mark at the top, status line, name and
-// the dot in the top-right corner.
+// Grid cell (docs/spec/ui-kit.md §5.2): no border, the 96 px icon centred, the
+// name centred under it (two lines at most, elided), the update dot at the
+// icon's top-right. No status line. The caller places it with
+// DrawerLogic::gridCellRect.
 class AppTile : public ItemWidget {
 public:
-    AppTile(const DrawerItem &item, int side, QWidget *parent);
+    AppTile(const DrawerItem &item, int width, int height, QWidget *parent);
 
 protected:
     void paintEvent(QPaintEvent *event);
-    void resizeEvent(QResizeEvent *event);
+
+private:
+    QStringList nameLines;
+    int nameTop;
 };
 
 // Small-caps section label ("INSTALLED", "SYSTEM").
