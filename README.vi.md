@@ -39,7 +39,11 @@ Kobo Libra 2 (Mark 9, dòng firmware `kobo9`), năm bản 4.38 mới nhất. Ng�
 | 4.38.23648 | kiểm ký hiệu trong CI | chưa chạy trên máy |
 | 4.38.23552 | kiểm ký hiệu trong CI | chưa chạy trên máy |
 
-Firmware 5.x **chưa** được hỗ trợ. Các mẫu Kobo khác chưa thử. Chi tiết: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Firmware 5.x **chưa** được hỗ trợ. Chi tiết: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+
+### Thiết bị được hỗ trợ
+
+Trong 27 mẫu Kobo đã bán, **1 mẫu đã thử** (Libra 2, firmware 4.38.23828), **21 mẫu dự kiến chạy được nhưng chưa thử** (mọi mẫu chạy firmware 4.x, từ Touch đến Clara Colour) và **5 mẫu không hỗ trợ** (Kobo eReader và Wireless, Mini, máy tính bảng Vox và Arc). Máy Libra Colour và Clara đã chuyển sang 5.x cũng không được hỗ trợ. Mod chỉ nạp trên đúng các bản firmware liệt kê ở trên, và màn hình ứng dụng được dàn trang cho màn Libra 2 (1264×1680), nên mẫu khác có thể hiện thông báo "firmware chưa được hỗ trợ" hoặc hiển thị sai. Bảng đầy đủ (năm ra mắt, nền tảng, mã thiết bị, cách giúp thêm một mẫu) nằm ở [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md#supported-devices).
 
 ## Cài đặt
 

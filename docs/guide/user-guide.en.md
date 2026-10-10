@@ -49,6 +49,10 @@ Not supported:
 - **Firmware 5.x.** Do not install NickelDrawer on a 5.x Kobo. If your Kobo offers to upgrade to 5.x, say no (see [FAQ](#faq)).
 - **Other Kobo models.** No other model has been checked. Do not install it on them.
 
+### Other Kobo models
+
+Of the 27 Kobo models ever sold, only the Libra 2 is tested. 21 more that run firmware 4.x (Touch to Clara Colour) are expected to work but untested. The Kobo eReader, Wireless, Mini, the Vox and Arc tablets, and any Kobo on firmware 5.x are not supported. The drawer loads only on the exact builds above, and its screens are laid out for the Libra 2 panel (1264×1680), so other models may show the "unsupported firmware" message or render wrongly. See the full table and how to help add a model in [Supported devices](../COMPATIBILITY.md#supported-devices).
+
 ### Find your firmware version
 
 On the Kobo:
@@ -662,7 +666,7 @@ No. NickelDrawer works with or without it.
 No. Nothing in NickelDrawer edits `KoboReader.sqlite`. Library edits book files only (after a backup) and asks Kobo to rescan.
 
 **Can I use it on a Kobo Clara or Libra Colour?**
-Not yet. Only the Libra 2 is supported.
+Not yet. Only the Libra 2 is tested. Other 4.x models are untested and may show the "unsupported firmware" message; see [Supported devices](../COMPATIBILITY.md#supported-devices).
 
 **Can I use it in a shop or company?**
 No. The license allows personal, study, hobby and non-profit use only.

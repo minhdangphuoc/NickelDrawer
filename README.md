@@ -39,7 +39,11 @@ Kobo Libra 2 (Mark 9, firmware family `kobo9`), the five newest 4.38 builds. The
 | 4.38.23648 | symbols checked in CI | not run on a device yet |
 | 4.38.23552 | symbols checked in CI | not run on a device yet |
 
-Firmware 5.x is **not** supported. Other Kobo models are untested. Details: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Firmware 5.x is **not** supported. Details: [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+
+### Supported devices
+
+Of the 27 Kobo models ever sold, **1 is tested** (Libra 2, firmware 4.38.23828), **21 are expected to work but untested** (every model that runs firmware 4.x, from the Touch to the Clara Colour), and **5 are not supported** (Kobo eReader and Wireless, Mini, the Vox and Arc tablets). Libra Colour and Clara units converted to 5.x are not supported either. The mod loads only on the exact builds listed above, and the screens are laid out for the Libra 2 panel (1264×1680), so other models may show the "unsupported firmware" toast or render wrongly. The full table, with years, platforms, device ids and how to help add a model, is in [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md#supported-devices).
 
 ## Install
 

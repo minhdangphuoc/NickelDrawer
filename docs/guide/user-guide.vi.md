@@ -49,6 +49,10 @@ Không hỗ trợ:
 - **Firmware 5.x.** Đừng cài NickelDrawer lên Kobo chạy 5.x. Nếu Kobo mời nâng cấp lên 5.x, hãy từ chối (xem [Hỏi đáp](#s-hoi-ap)).
 - **Các dòng Kobo khác.** Chưa dòng nào khác được kiểm. Đừng cài lên chúng.
 
+### Các dòng Kobo khác
+
+Trong 27 mẫu Kobo đã bán, chỉ Libra 2 đã được thử. 21 mẫu khác chạy firmware 4.x (từ Touch đến Clara Colour) dự kiến chạy được nhưng chưa thử. Kobo eReader, Wireless, Mini, máy tính bảng Vox và Arc, cùng mọi Kobo chạy firmware 5.x đều không được hỗ trợ. Ngăn chỉ nạp trên đúng các bản firmware ở trên, và màn hình ứng dụng được dàn trang cho màn Libra 2 (1264×1680), nên mẫu khác có thể hiện thông báo "firmware chưa được hỗ trợ" hoặc hiển thị sai. Xem bảng đầy đủ và cách giúp thêm một mẫu ở [Thiết bị được hỗ trợ](../COMPATIBILITY.md#supported-devices).
+
 ### Xem phiên bản firmware
 
 Trên Kobo:
@@ -676,7 +680,7 @@ Không. NickelDrawer chạy được dù có hay không có NickelMenu.
 Không. Không phần nào của NickelDrawer sửa `KoboReader.sqlite`. Thư viện chỉ sửa tệp sách (sau khi sao lưu) và nhờ Kobo quét lại.
 
 **Dùng được trên Kobo Clara hay Libra Colour không?**
-Chưa. Chỉ hỗ trợ Libra 2.
+Chưa. Chỉ Libra 2 đã được thử. Các mẫu 4.x khác chưa thử và có thể hiện thông báo "firmware chưa được hỗ trợ"; xem [Thiết bị được hỗ trợ](../COMPATIBILITY.md#supported-devices).
 
 **Tôi có thể dùng trong cửa hàng hay công ty không?**
 Không. Giấy phép chỉ cho phép dùng cá nhân, học tập, sở thích và phi lợi nhuận.
