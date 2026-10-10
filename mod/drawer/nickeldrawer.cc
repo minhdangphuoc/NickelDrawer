@@ -10,6 +10,7 @@
 #include "nickel_bridge.h"
 #include "press_area.h"
 #include "tweaks_row.h"
+#include "wake_rotation.h"
 
 static const int FAILSAFE_DELAY_SECONDS = 15;
 
@@ -18,6 +19,7 @@ static void addMoreRows(QWidget *moreView)
 {
     EntryRow::addTo(moreView);
     TweaksRow::addTo(moreView);
+    WakeRotation::install();
 }
 
 static int initialize()
@@ -35,6 +37,7 @@ static int initialize()
     NickelBridge::setMoreViewCreatedHandler(addMoreRows);
     PressArea::setTapGestureTypeProvider(NickelBridge::tapGestureType);
     PressArea::setTapPositionProvider(NickelBridge::tapGesturePosition);
+    WakeRotation::scheduleInstall();
     nh_log("active on %s (route %s, app screens %s)", NickelBridge::firmware(),
            ModSwitches::usesViewPushRoute() ? "B pushView" : "A controller", ModSwitches::usesScreens() ? "on" : "off");
     return 0;

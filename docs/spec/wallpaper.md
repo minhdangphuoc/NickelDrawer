@@ -10,7 +10,7 @@ The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](w
 |---|---|
 | `import` | converts every new picture (background job with a progress file), writes thumbnails, shows the newest one; pictures the user removed (`data/removed.json`) are skipped |
 | `mode` | fill or fit (value `fill`/`fit`; `toggle` from a shell). The mode is stored at once; the pictures are re-fitted in the background (thumbnails are dropped and regenerated lazily). While a job runs only the mode is stored and that job re-fits again when it ends |
-| `rotation` | fixed or random, applied at once (foreground) |
+| `rotation` | fixed or random, applied at once (foreground); see "Random rotation" |
 | `off` | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
 | `status` | running job or last result, picture count, mode, rotation, files on the sleep screen |
 | `state` | the screen variables as one JSON line (below) |
@@ -18,7 +18,7 @@ The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](w
 | `remove` | value = picture id; removes it from Wallpaper (passes `--confirm`, never `--delete-original`); prints `{"toast":"removed"}` |
 | `remove-all` | value = picture id; the long-press menu item "Remove with original..." (own confirm dialog): passes `--confirm --delete-original --signal` and prints `{"toast":"removed_original"}` (original deleted), `{"toast":"removed_original_kept"}` (no identical original found, nothing else deleted) |
 
-Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command.
+Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command (the NickelDrawer mod runs it after a wake, see "Random rotation").
 
 **Requirement.** Pictures show only with a current book and both Kobo settings on: Settings → Energy saving and privacy → "Show current read" and "Show book cover full screen" (see "What Nickel does"). The app reads `[PowerOptions] ShowBookCover` and `FullscreenCoverStretch` from `Kobo eReader.conf` (read only, never written) and, when either is not true or the file is unreadable, adds a hint line to Status, the import result and the screen (state fields `sleep_screen_ready`, `sleep_screen_hint`; the notice is hidden when the hint is empty). It cannot check for a current book.
 
@@ -44,7 +44,7 @@ Write:
 | Path | What |
 |---|---|
 | `/mnt/onboard/.kobo/screensaver/nd-wallpaper-NNNN.png` | our converted pictures only (temp files `.nd-wallpaper-*.tmp` while copying) |
-| `/mnt/onboard/.adds/apps/wallpaper/data/` | `config.json`, `images/` (converted PNGs + `index.json`), `thumbs/` (300 x 400 previews), `removed.json` (hashes of removed pictures), `log.txt` |
+| `/mnt/onboard/.adds/apps/wallpaper/data/` | `config.json`, `images/` (converted PNGs + `index.json`), `thumbs/` (300 x 400 previews), `removed.json` (hashes of removed pictures), `rotation-history.json`, `rotate-on-wake` (empty flag), `log.txt` |
 | `/tmp/wallpaper-progress.json`, `/tmp/wallpaper.pid`, `/tmp/wallpaper-last.txt` | job progress, pid, last output; temp storage, not on the user partition |
 | `/mnt/onboard/Pictures/<name>` | deleted only by `remove --delete-original` (never sent by the screens), under the rule below |
 | `/mnt/onboard/Pictures/` | created if missing (empty folder only) |
@@ -76,14 +76,24 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 - `data/images/NNNN.png` converted pictures, `data/images/index.json` (`id`, `hash` of the original, `mode` the file was fitted for, original `name`; newer entries also `width`, `height` of the original and `added`, RFC 3339 UTC).
 - `data/thumbs/NNNN.png`: written at import (fit inside 300 x 400, 16 grey levels, atomic). `state` creates at most 2 missing ones per call; a mode re-fit deletes the picture's thumbnail.
 - `data/removed.json`: JSON array of SHA-256 hashes of removed pictures.
-- `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`. Every writer changes one field on a fresh copy, so a background job never overwrites a later choice.
+- `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`. Every writer changes one field on a fresh copy, so a background job never overwrites a later choice. `current` is always the picture on the sleep screen, so the gallery's ✓ badge follows a random change.
+- `data/rotation-history.json`: the last 2 pictures shown in random rotation, most recent first.
+- `data/rotate-on-wake`: an empty file that exists exactly while rotation is random (every config write and `state` keep it in step).
 - Progress file (`--progress-file`, default `/tmp/wallpaper-progress.json`): `{"done": 3, "total": 7, "name": "bien-xanh.jpg"}`, plus `"kind": "refit"` for a re-fit; written atomically after each picture, removed at the end. `state` believes it while the pid is alive or the file is under 2 minutes old.
-- Fixed rotation puts exactly the current picture into `.kobo/screensaver`; random puts all of them (Nickel chooses).
+- Both rotations put exactly the current picture into `.kobo/screensaver`. With random, we choose, not Nickel (see "Random rotation").
 - Import runs detached because converting a large photo on the Kobo can take longer than a drawer script may; output goes to `/tmp/wallpaper-last.txt`.
 
 After an import that added pictures the app queues one quick library rescan; `state` hands it over once as `"requests":[{"request":"rescan","mode":"quick"}]` when no job is running (`app.json`: `"requests": ["rescan"]`).
 
 `state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `import_step`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
+
+## Random rotation
+
+Random used to put every picture into `.kobo/screensaver` and let Nickel pick (`qrand() % count`, below). On the device the same picture kept coming back: Nickel's pick is independent each time, so with few pictures a repeat is likely (1 in 2 with two pictures), and nothing stops a run of repeats. Now we choose:
+
+- `wallpaper next` in random rotation picks uniformly (`crypto/rand`) among the pictures that are neither the current one nor the one shown before it (`data/rotation-history.json`). With 2 pictures it alternates; with 1 it keeps it. It makes the pick current, publishes only that picture (identical bytes are not rewritten) and removes our previous file. In fixed rotation `next` takes the following picture in library order, as before.
+- The NickelDrawer mod connects to Nickel's `N3PowerWorkflowManager::resumedFromSleep()` signal. After each wake, when `data/rotate-on-wake` exists (a stat, nothing is opened), it starts `bin/wallpaper next --app-dir <app>` detached (never waited for), at most once per 30 s, and logs it. Rotating after the wake, not before sleep, never races Nickel reading the folder while it builds the sleep screen; the new picture shows at the next sleep.
+- Without the mod (NickelMenu only, or a firmware where the signal is missing) random keeps showing the current picture until `wallpaper next` runs.
 
 ## What Nickel does (libnickel 4.38.23828, Ghidra headless)
 
@@ -100,7 +110,7 @@ When the flag is set, `PowerViewController::updateCover`:
 - opens `/mnt/onboard/.kobo/screensaver`; if the folder is missing, it shows the book cover;
 - hides the info panel (`FullScreenDragonPowerView::setInfoPanelVisible(false)`), which overrides `FullscreenCoverInfoPanel`;
 - lists `*.<fmt>` for every format in `QImageReader::supportedImageFormats()` (lowercase; case-sensitive on Linux; hidden files skipped). Any name works, no prefix needed, no size check;
-- picks `qrand() % count`; up to 5 random tries while the decoded image is null;
+- picks `qrand() % count`; up to 5 random tries while the decoded image is null (`qrand` is seeded once per boot: `ApplicationBase<QApplication>` calls `qsrand(QDateTime::currentDateTimeUtc().toTime_t())`);
 - if no image loads, falls back to the book cover (`VolumePixmapView::getCoverImage` "N3_FULL", then "N3_LIBRARY_FULL"; SD books use `getSdCoverPowerImage`).
 
 The retailer (FNAC) logo never overrides the folder: it only appears on the no-book path. The sleep reason (power button, timer or SleepCover) makes no difference: every path goes through `N3PowerWorkflowManager::show`. The power-off screen uses the same controller, so the same rules apply there.

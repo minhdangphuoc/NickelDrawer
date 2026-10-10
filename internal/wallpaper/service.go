@@ -16,11 +16,13 @@ type Service struct {
 	Log            *Logger
 	// ProgressFile is where a running import or re-fit reports progress ("" = none).
 	ProgressFile string
+	// RandomIndex returns a uniform index in [0, count) for a random pick; tests replace it.
+	RandomIndex func(count int) int
 }
 
 // NewService fills the device defaults.
 func NewService(paths Paths, size Size, log *Logger) *Service {
-	return &Service{Paths: paths, Size: size, Sources: DefaultSources(), ScreensaverDir: ScreensaverFolder(), Log: log}
+	return &Service{Paths: paths, Size: size, Sources: DefaultSources(), ScreensaverDir: ScreensaverFolder(), Log: log, RandomIndex: cryptoIndex}
 }
 
 func (service *Service) load() (*Library, Config, error) {
@@ -40,7 +42,19 @@ func (service *Service) updateConfig(change func(*Config)) error {
 		return err
 	}
 	change(&config)
-	return SaveConfig(service.Paths.Config(), config)
+	if err := SaveConfig(service.Paths.Config(), config); err != nil {
+		return err
+	}
+	service.syncWakeFlag(config.Rotation)
+	return nil
+}
+
+// syncWakeFlag keeps data/rotate-on-wake in step with the rotation. A failure is only logged: the
+// picture on the sleep screen stays valid, it just does not change on wake.
+func (service *Service) syncWakeFlag(rotation Rotation) {
+	if err := syncWakeFlag(service.Paths.WakeFlag(), rotation); err != nil {
+		service.Log.Printf("cannot update %s: %v", service.Paths.WakeFlag(), err)
+	}
 }
 
 // applyCurrentSettings applies with the settings as they are on disk now.
@@ -128,13 +142,15 @@ func (service *Service) Apply() (ApplyReport, error) {
 	return Apply(library, config, service.ScreensaverDir, service.Log)
 }
 
-// Next selects the following picture and applies it.
+// Next makes another picture current and applies it. Random rotation picks uniformly among the
+// pictures not shown recently (the NickelDrawer mod runs this after each wake); fixed rotation takes
+// the following picture in library order.
 func (service *Service) Next() (Entry, error) {
 	library, config, err := service.load()
 	if err != nil {
 		return Entry{}, err
 	}
-	nextID := library.NextID(config.Current)
+	nextID := service.nextID(library, config)
 	entry, found := library.find(nextID)
 	if !found {
 		return Entry{}, i18n.NewError("msg.err_no_pictures")
@@ -142,8 +158,35 @@ func (service *Service) Next() (Entry, error) {
 	if err := service.updateConfig(func(config *Config) { config.Current = nextID }); err != nil {
 		return Entry{}, err
 	}
+	service.Log.Printf("next: picture %s (%s)", pictureID(nextID), config.Rotation)
 	_, err = service.applyCurrentSettings(library)
 	return entry, err
+}
+
+func (service *Service) nextID(library *Library, config Config) int {
+	if config.Rotation != RotationRandom {
+		return library.NextID(config.Current)
+	}
+	history := loadHistory(service.Paths.RotationHistory())
+	if config.Current != 0 {
+		history = rememberShown(history, config.Current)
+	}
+	randomIndex := service.RandomIndex
+	if randomIndex == nil {
+		randomIndex = cryptoIndex
+	}
+	picked := pickRandom(library.Entries, config.Current, history, randomIndex)
+	if picked != 0 {
+		service.saveHistory(rememberShown(history, picked))
+	}
+	return picked
+}
+
+// saveHistory only logs a failure: without the history the next pick still avoids the current picture.
+func (service *Service) saveHistory(history []int) {
+	if err := saveHistory(service.Paths.RotationHistory(), history); err != nil {
+		service.Log.Printf("cannot write %s: %v", service.Paths.RotationHistory(), err)
+	}
 }
 
 // SaveMode only stores the fit mode. A running background job notices the change when it ends

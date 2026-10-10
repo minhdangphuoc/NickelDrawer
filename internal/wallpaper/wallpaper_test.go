@@ -295,12 +295,12 @@ func TestApplyTouchesOnlyOwnedFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	got = listing(t, r.screensaver)
-	if !contains(got, "nd-wallpaper-0001.png") || !contains(got, "nd-wallpaper-0002.png") {
-		t.Errorf("random must hold all pictures, got %v", got)
+	if !contains(got, "nd-wallpaper-0002.png") || contains(got, "nd-wallpaper-0001.png") {
+		t.Errorf("random must also hold exactly the current picture (we choose, not Nickel), got %v", got)
 	}
 
 	removed, err := r.service.TurnOff()
-	if err != nil || removed != 2 {
+	if err != nil || removed != 1 {
 		t.Fatalf("off removed %d, %v", removed, err)
 	}
 	got = listing(t, r.screensaver)

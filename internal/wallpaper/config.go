@@ -12,7 +12,7 @@ import (
 // Mode says how a picture is fitted to the screen.
 type Mode string
 
-// Rotation says which pictures Nickel may choose from.
+// Rotation says how the one picture in the screensaver folder changes.
 type Rotation string
 
 const (
@@ -20,7 +20,7 @@ const (
 	ModeFit  Mode = "fit"  // whole picture, white bars
 
 	RotationFixed  Rotation = "fixed"  // exactly the current picture
-	RotationRandom Rotation = "random" // Nickel picks one of all pictures
+	RotationRandom Rotation = "random" // `wallpaper next` picks a new one after each wake
 )
 
 // Config is data/config.json.

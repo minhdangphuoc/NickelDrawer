@@ -108,11 +108,15 @@ func (current *session) setRotation(arguments []string) error {
 	if err != nil {
 		return err
 	}
-	applied, err := current.service.SetRotation(rotation)
+	if _, err := current.service.SetRotation(rotation); err != nil {
+		return err
+	}
+	// Random still shows one picture at a time; the message counts the pictures it rotates through.
+	status, err := current.service.Status()
 	if err != nil {
 		return err
 	}
-	current.say("msg.rotation_"+string(rotation), "count", strconv.Itoa(applied.Shown))
+	current.say("msg.rotation_"+string(rotation), "count", strconv.Itoa(status.Pictures))
 	return nil
 }
 

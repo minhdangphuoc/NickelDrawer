@@ -42,6 +42,15 @@ func (paths Paths) Thumb(id int) string { return filepath.Join(paths.Thumbs(), i
 // Removed lists the hashes of pictures the user removed, so an import does not bring them back.
 func (paths Paths) Removed() string { return filepath.Join(paths.Data(), "removed.json") }
 
+// RotationHistory lists the last shown pictures (most recent first), so a random pick avoids them.
+func (paths Paths) RotationHistory() string {
+	return filepath.Join(paths.Data(), "rotation-history.json")
+}
+
+// WakeFlag exists while rotation is random; the NickelDrawer mod then runs `wallpaper next` after
+// each wake from sleep.
+func (paths Paths) WakeFlag() string { return filepath.Join(paths.Data(), "rotate-on-wake") }
+
 // FirstImportMarker exists once the automatic first import was started; it is never removed, so a
 // user who emptied the gallery on purpose keeps it empty.
 func (paths Paths) FirstImportMarker() string {

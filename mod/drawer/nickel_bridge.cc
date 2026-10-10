@@ -93,6 +93,7 @@ static void (*MoreView_construct_original)(void *moreView, QWidget *parent);
 // signal-symbol: _ZN12MenuTextItem6tappedEb
 // signal-symbol: _ZN19PlugWorkflowManager24usbPlugPermissionRequestEP17PermissionRequest
 // signal-symbol: _ZN19PlugWorkflowManager36connectConfirmationPermissionRequestEP17PermissionRequestPb
+// signal-symbol: _ZN22N3PowerWorkflowManager16resumedFromSleepEv
 
 static const char *const VERSION_FILE_PATH = "/mnt/onboard/.kobo/version";
 static const int FIRMWARE_FIELD_INDEX = 2; // "serial,3.0.0,4.38.23828,..."
@@ -750,6 +751,17 @@ bool runPowerAction(PowerAction action)
         N3PowerWorkflowManager_reboot(manager);
     }
     return true;
+}
+
+QObject *powerWorkflowManager()
+{
+    bool hasManager = isBridgeActive && N3PowerWorkflowManager_sharedInstance;
+    // Its QObject base is at offset 0 (resumedFromSleep() activates on this pointer).
+    QObject *manager = hasManager ? static_cast<QObject *>(N3PowerWorkflowManager_sharedInstance()) : NULL;
+    if (!manager) {
+        nh_log("bridge: N3PowerWorkflowManager unavailable, wake not watched");
+    }
+    return manager;
 }
 
 // ---- Wi-Fi and library ----

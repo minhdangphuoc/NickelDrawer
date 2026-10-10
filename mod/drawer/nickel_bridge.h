@@ -135,6 +135,9 @@ enum PowerAction { POWER_SLEEP, POWER_REBOOT };
 bool hasPowerAction(PowerAction action);
 // false (logged) when the symbols are missing.
 bool runPowerAction(PowerAction action);
+// Nickel's N3PowerWorkflowManager (a QObject; its resumedFromSleep() signal is
+// connected by name), or NULL (logged).
+QObject *powerWorkflowManager();
 
 // ---- Wi-Fi and library ----
 bool hasWifi();

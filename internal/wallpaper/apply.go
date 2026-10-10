@@ -26,8 +26,9 @@ type ApplyReport struct {
 	Removed int
 }
 
-// Apply makes the screensaver folder hold exactly the wanted pictures among our own files:
-// fixed rotation = only the current picture, random = all of them.
+// Apply makes the screensaver folder hold exactly the current picture among our own files, in both
+// rotations: with random, `wallpaper next` changes the current picture (we choose, not Nickel; its
+// qrand() pick repeated pictures).
 func Apply(library *Library, config Config, screensaverDir string, log *Logger) (ApplyReport, error) {
 	wanted := wantedEntries(library, config)
 	if len(wanted) == 0 {
@@ -55,9 +56,6 @@ func Apply(library *Library, config Config, screensaverDir string, log *Logger) 
 }
 
 func wantedEntries(library *Library, config Config) []Entry {
-	if config.Rotation == RotationRandom {
-		return library.Entries
-	}
 	if entry, found := library.find(config.Current); found {
 		return []Entry{entry}
 	}
