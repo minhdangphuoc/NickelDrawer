@@ -18,19 +18,28 @@ import (
 	"time"
 
 	"koboapps/internal/i18n"
+	"koboapps/internal/inbox"
+	"koboapps/internal/storage"
 )
 
 const testToken = "ghp_SECRET123"
 
 type fakeGitHub struct {
-	files      map[string]string // repo path -> content
-	truncated  bool
-	corrupt    map[string]bool // serve wrong bytes
-	status     int             // forced status for every request
-	flaky      int32           // 5xx responses to serve before succeeding
-	downloads  int32
-	server     *httptest.Server
-	authHeader string
+	files       map[string]string // repo path -> content
+	truncated   bool
+	corrupt     map[string]bool // serve wrong bytes
+	status      int             // forced status for every request
+	flaky       int32           // 5xx responses to serve before succeeding
+	empty       bool            // a repository without commits: the tree answers 409
+	noBranch    bool            // the tree answers 404, as for a branch that does not exist
+	etag        string          // validator served with the tree; a matching If-None-Match gets 304
+	abort       map[string]bool // serve a body shorter than announced, as a dropped connection does
+	onDownload  func(repoPath string)
+	treeHits    int32
+	notModified int32
+	downloads   int32
+	server      *httptest.Server
+	authHeader  string
 }
 
 func blobSHA(content string) string {
@@ -60,11 +69,19 @@ func (fake *fakeGitHub) handle(w http.ResponseWriter, r *http.Request) {
 	case path == "/repos/o/r":
 		json.NewEncoder(w).Encode(map[string]string{"default_branch": "main"})
 	case strings.HasPrefix(path, "/repos/o/r/git/trees/"):
-		fake.serveTree(w)
+		fake.serveTree(w, r)
 	case strings.HasPrefix(path, "/repos/o/r/contents/"):
 		atomic.AddInt32(&fake.downloads, 1)
 		repoPath := strings.TrimPrefix(path, "/repos/o/r/contents/")
 		content := fake.files[repoPath]
+		if fake.onDownload != nil {
+			fake.onDownload(repoPath)
+		}
+		if fake.abort[repoPath] {
+			w.Header().Set("Content-Length", fmt.Sprint(len(content)+1000))
+			w.Write([]byte(content[:2]))
+			return
+		}
 		if fake.corrupt[repoPath] {
 			content = "tampered"
 		}
@@ -74,7 +91,22 @@ func (fake *fakeGitHub) handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (fake *fakeGitHub) serveTree(w http.ResponseWriter) {
+func (fake *fakeGitHub) serveTree(w http.ResponseWriter, r *http.Request) {
+	atomic.AddInt32(&fake.treeHits, 1)
+	switch {
+	case fake.empty:
+		http.Error(w, `{"message":"Git Repository is empty."}`, http.StatusConflict)
+		return
+	case fake.noBranch:
+		http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
+		return
+	case fake.etag != "" && r.Header.Get("If-None-Match") == fake.etag:
+		atomic.AddInt32(&fake.notModified, 1)
+		w.WriteHeader(http.StatusNotModified)
+		return
+	case fake.etag != "":
+		w.Header().Set("ETag", fake.etag)
+	}
 	var entries []TreeEntry
 	for path, content := range fake.files {
 		entries = append(entries, TreeEntry{Path: path, Type: "blob", SHA: blobSHA(content), Size: int64(len(content))})
@@ -108,17 +140,40 @@ func must(t *testing.T, err error) {
 }
 
 func (e env) run(t *testing.T, fake *fakeGitHub) (Summary, error) {
-	return Run(context.Background(), Options{
+	return Run(context.Background(), e.options(t, fake))
+}
+
+func (e env) options(t *testing.T, fake *fakeGitHub) Options {
+	return Options{
 		Paths: e.paths, APIBase: fake.server.URL, Backoff: time.Millisecond,
-		Log: NewLogger(e.log, testToken),
-	})
+		Log: NewLogger(e.log, testToken), Rules: testRules(t),
+	}
+}
+
+// epubContent is the smallest file the inbox allowlist accepts as an EPUB: a ZIP whose first
+// entry is the stored "mimetype" file.
+func epubContent(body string) string {
+	const mimetype = "application/epub+zip"
+	header := make([]byte, 30)
+	copy(header, "PK\x03\x04")
+	header[26] = byte(len("mimetype"))
+	return string(header) + "mimetype" + mimetype + body
+}
+
+func pdfContent(body string) string { return "%PDF-1.7 " + body }
+
+func testRules(t *testing.T) *inbox.Rules {
+	t.Helper()
+	rules, _, err := inbox.LoadRules("../../host/config/routing.json", filepath.Join(t.TempDir(), "no-override.json"))
+	must(t, err)
+	return &rules
 }
 
 func sampleFiles() map[string]string {
 	return map[string]string{
-		"books/a.epub":           "AAA",
-		"books/sub/b.KEPUB.EPUB": "BBBB",
-		"books/c.pdf":            "CCCCC",
+		"books/a.epub":           epubContent("AAA"),
+		"books/sub/b.KEPUB.EPUB": epubContent("BBBB"),
+		"books/c.pdf":            pdfContent("CCCCC"),
 		"books/notes.txt":        "ignore me",
 		"other/d.epub":           "outside path",
 	}
@@ -158,7 +213,7 @@ func TestRerunIsIdempotentAndStateRoundTrips(t *testing.T) {
 	}
 	state, err := LoadState(e.paths.State())
 	must(t, err)
-	if len(state.Files) != 3 || state.Files["books/a.epub"].SHA != blobSHA("AAA") || state.LastRun == "" {
+	if len(state.Files) != 3 || state.Files["books/a.epub"].SHA != blobSHA(epubContent("AAA")) || state.LastRun == "" {
 		t.Fatalf("bad state: %+v", state)
 	}
 }
@@ -202,10 +257,9 @@ func TestRedownloadDeletedOverride(t *testing.T) {
 	_, err := e.run(t, fake)
 	must(t, err)
 	must(t, os.Remove(filepath.Join(e.dest, "c.pdf")))
-	summary, err := Run(context.Background(), Options{
-		Paths: e.paths, APIBase: fake.server.URL, Backoff: time.Millisecond,
-		Log: NewLogger(e.log, testToken), RedownloadDeleted: true,
-	})
+	options := e.options(t, fake)
+	options.RedownloadDeleted = true
+	summary, err := Run(context.Background(), options)
 	must(t, err)
 	if summary.New != 1 || summary.Deleted != 0 {
 		t.Fatalf("want 1 re-download, got %+v", summary)
@@ -283,7 +337,7 @@ func hasMessageKey(err error, key string) bool {
 }
 
 func TestHTTPErrorsHaveClearMessagesAndNoToken(t *testing.T) {
-	cases := map[int]string{401: "msg.err_http_401", 403: "msg.err_http_403", 404: "msg.err_http_404"}
+	cases := map[int]string{401: "msg.err_http_401", 403: "msg.err_http_403", 404: "msg.err_repo_not_found"}
 	for status, want := range cases {
 		fake := newFakeGitHub(t, sampleFiles())
 		fake.status = status
@@ -351,7 +405,9 @@ func TestRateLimitStopsRun(t *testing.T) {
 	}))
 	defer server.Close()
 	e := newEnv(t, "")
-	_, err := Run(context.Background(), Options{Paths: e.paths, APIBase: server.URL, Backoff: time.Millisecond, Log: NewLogger(e.log, testToken)})
+	options := e.options(t, newFakeGitHub(t, nil))
+	options.APIBase = server.URL
+	_, err := Run(context.Background(), options)
 	if !hasMessageKey(err, "msg.err_rate_limited") {
 		t.Fatalf("want rate limit error, got %v", err)
 	}
@@ -360,7 +416,9 @@ func TestRateLimitStopsRun(t *testing.T) {
 func TestDryRunWritesNothing(t *testing.T) {
 	fake := newFakeGitHub(t, sampleFiles())
 	e := newEnv(t, "")
-	summary, err := Run(context.Background(), Options{Paths: e.paths, APIBase: fake.server.URL, DryRun: true, Log: NewLogger(e.log, testToken)})
+	options := e.options(t, fake)
+	options.DryRun = true
+	summary, err := Run(context.Background(), options)
 	must(t, err)
 	if summary.New != 3 || atomic.LoadInt32(&fake.downloads) != 0 {
 		t.Fatalf("dry run misbehaved: %+v", summary)
@@ -383,27 +441,40 @@ func TestConfigValidation(t *testing.T) {
 	must(t, os.WriteFile(file, []byte(`{"repo":"o/r"}`), 0o644))
 	config, err := LoadConfig(file)
 	must(t, err)
-	if config.Dest != defaultDest() || len(config.Extensions) != 5 {
+	if config.Dest != "" || len(config.Extensions) != 5 {
 		t.Errorf("defaults missing: %+v", config)
 	}
 }
 
-func TestDefaultDestinationIsBooksGitHubAndAnExplicitDestStillWorks(t *testing.T) {
-	loadDest := func(body string) string {
+func TestEachTypeGoesToItsLibraryFolderUnderGitHubUnlessDestIsSet(t *testing.T) {
+	restore := storage.SetRoot("/mnt/onboard")
+	defer restore()
+	load := func(body string) Config {
 		file := filepath.Join(t.TempDir(), "config.json")
 		must(t, os.WriteFile(file, []byte(body), 0o644))
 		config, err := LoadConfig(file)
 		must(t, err)
-		return config.Dest
+		return config
 	}
-	if got := loadDest(`{"repo":"o/r"}`); got != "/mnt/onboard/Books/GitHub" {
-		t.Errorf("default dest = %q, want /mnt/onboard/Books/GitHub", got)
+	rules := testRules(t)
+	epub, _, _ := rules.Match("a.epub")
+	pdf, _, _ := rules.Match("a.pdf")
+	cbz, _, _ := rules.Match("a.cbz")
+	byType := load(`{"repo":"o/r"}`)
+	for _, expected := range []struct {
+		rule inbox.Rule
+		want string
+	}{
+		{epub, "/mnt/onboard/Books/GitHub"}, {pdf, "/mnt/onboard/Documents/GitHub"}, {cbz, "/mnt/onboard/Comics/GitHub"},
+	} {
+		if got := byType.DestinationFor(expected.rule); got != expected.want {
+			t.Errorf("%s went to %q, want %q", expected.rule.Type, got, expected.want)
+		}
 	}
-	if got := loadDest(`{"repo":"o/r","dest":"/mnt/onboard/GitHub"}`); got != "/mnt/onboard/GitHub" {
-		t.Errorf("an explicit dest must be kept, got %q", got)
-	}
-	if got := loadDest(`{"repo":"o/r","dest":"/mnt/onboard/Books"}`); got != "/mnt/onboard/Books" {
-		t.Errorf("an explicit dest must be kept, got %q", got)
+	for _, dest := range []string{"/mnt/onboard/GitHub", "/mnt/onboard/Books"} {
+		if got := load(`{"repo":"o/r","dest":"` + dest + `"}`).DestinationFor(pdf); got != dest {
+			t.Errorf("an explicit dest must be kept, got %q want %q", got, dest)
+		}
 	}
 }
 
@@ -426,11 +497,10 @@ func TestStatusErrorIsSavedInTheUserLanguage(t *testing.T) {
 	fake := newFakeGitHub(t, sampleFiles())
 	fake.status = 404
 	e := newEnv(t, "")
-	messages := i18n.NewBundle(i18n.Catalog{"msg.err_http_404": "not found here"})
-	_, err := Run(context.Background(), Options{
-		Paths: e.paths, APIBase: fake.server.URL, Backoff: time.Millisecond,
-		Log: NewLogger(e.log, testToken), Messages: messages,
-	})
+	messages := i18n.NewBundle(i18n.Catalog{"msg.err_repo_not_found": "not found here"})
+	options := e.options(t, fake)
+	options.Messages = messages
+	_, err := Run(context.Background(), options)
 	if err == nil {
 		t.Fatal("want an error")
 	}

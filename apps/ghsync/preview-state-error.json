@@ -1,0 +1,23 @@
+{
+  "status": "Sẵn sàng",
+  "configured": true,
+  "guide": "",
+  "repo": "me/sach-cua-toi",
+  "branch": "Mặc định",
+  "folder": "epub",
+  "last_sync": "2026-10-10 08:14",
+  "added": "0",
+  "summary": "Lần đồng bộ cuối bị lỗi.",
+  "last_error": "Thư mục epub không có trên nhánh main. Hãy thêm một cuốn sách vào thư mục đó, hoặc bỏ trống thư mục.",
+  "running": false,
+  "can_sync": true,
+  "step_detail": "",
+  "pairing": false,
+  "pair_row": "",
+  "pair_url": "",
+  "pair_code": "",
+  "pair_expires": "",
+  "pair_hint": "Bắt đầu ghép nối để lấy địa chỉ và mã.",
+  "pair_note": "",
+  "progress": ""
+}

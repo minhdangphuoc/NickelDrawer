@@ -197,25 +197,6 @@ func isValidBranch(branch string) bool {
 		!strings.Contains(branch, "..") && !strings.HasPrefix(branch, "/") && !strings.HasSuffix(branch, "/")
 }
 
-// CheckAccess proves the token can read the repository and list the configured folder.
-func (client *Client) CheckAccess(ctx context.Context, config Config) error {
-	branch := config.Branch
-	defaultBranch, err := client.DefaultBranch(ctx, config)
-	if err != nil {
-		return err
-	}
-	if branch == "" {
-		branch = defaultBranch
-	}
-	endpoint := repoEndpoint(config) + "/contents"
-	if config.Path != "" {
-		endpoint += "/" + escapePath(config.Path)
-	}
-	endpoint += "?ref=" + queryEscape(branch)
-	var listing json.RawMessage
-	return client.getJSON(ctx, endpoint, &listing)
-}
-
 // savePairing writes the token first, then the config, each atomically with mode 600.
 func savePairing(paths Paths, input pairInput) error {
 	if err := os.MkdirAll(filepath.Dir(paths.Token()), 0o755); err != nil {

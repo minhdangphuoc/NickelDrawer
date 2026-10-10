@@ -1,0 +1,23 @@
+{
+  "status": "Chưa ghép nối",
+  "configured": false,
+  "guide": "Ghép nối bằng điện thoại để nhập repo và token ở đó; không gõ gì trên Kobo.",
+  "repo": "—",
+  "branch": "—",
+  "folder": "—",
+  "last_sync": "—",
+  "added": "—",
+  "summary": "Chưa đồng bộ lần nào",
+  "last_error": "",
+  "running": false,
+  "can_sync": false,
+  "step_detail": "",
+  "pairing": false,
+  "pair_row": "",
+  "pair_url": "",
+  "pair_code": "",
+  "pair_expires": "",
+  "pair_hint": "Bắt đầu ghép nối để lấy địa chỉ và mã.",
+  "pair_note": "",
+  "progress": ""
+}

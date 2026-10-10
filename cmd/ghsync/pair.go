@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	defaultPairPidFile  = "/tmp/ghsync-pair.pid"
-	defaultPairInfoFile = "/tmp/ghsync-pair.json"
+	defaultPairPidFile    = "/tmp/ghsync-pair.pid"
+	defaultPairInfoFile   = "/tmp/ghsync-pair.json"
+	defaultPairResultFile = "/tmp/ghsync-pair-result"
 )
 
 func pairCommand(args []string, out io.Writer) int {
@@ -31,6 +32,7 @@ func pairCommand(args []string, out io.Writer) int {
 	lifetime := flags.Duration("lifetime", ghsync.DefaultPairLifetime, "how long pairing stays open")
 	pidFile := flags.String("pid-file", defaultPairPidFile, "where the running session records its process id")
 	infoFile := flags.String("info-file", defaultPairInfoFile, "where the open session writes its address and code for the app screen")
+	resultFile := flags.String("result-file", defaultPairResultFile, "where the session records how it ended, for the app screen")
 	shouldStop := flags.Bool("stop", false, "stop a running pairing session")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
@@ -40,13 +42,14 @@ func pairCommand(args []string, out io.Writer) int {
 		return stopPairing(out, messages, *pidFile)
 	}
 	return runPairing(out, messages, common, ghsync.PairOptions{
-		Paths:    ghsync.Paths{AppDir: common.appDir},
-		APIBase:  *apiBase,
-		IP:       *address,
-		Port:     *port,
-		Lifetime: *lifetime,
-		Backoff:  time.Second,
-		InfoFile: *infoFile,
+		Paths:      ghsync.Paths{AppDir: common.appDir},
+		APIBase:    *apiBase,
+		IP:         *address,
+		Port:       *port,
+		Lifetime:   *lifetime,
+		Backoff:    time.Second,
+		InfoFile:   *infoFile,
+		ResultFile: *resultFile,
 	}, *pidFile)
 }
 

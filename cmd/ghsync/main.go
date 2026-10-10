@@ -22,6 +22,9 @@ const (
 	defaultAppDir  = "/mnt/onboard/.adds/apps/ghsync"
 	defaultAPIBase = "https://api.github.com"
 	exitUsage      = 2
+
+	defaultProgressFile = "/tmp/ghsync-progress.json"
+	defaultRescanFlag   = "/tmp/ghsync-rescan.flag"
 )
 
 func main() {
@@ -69,8 +72,6 @@ func execute(args []string, out io.Writer) int {
 	switch args[0] {
 	case "run":
 		return runCommand(args[1:], out)
-	case "status":
-		return statusCommand(args[1:], out)
 	case "state":
 		return stateCommand(args[1:], out)
 	case "pair":
@@ -90,6 +91,8 @@ func runCommand(args []string, out io.Writer) int {
 	timeout := flags.Duration("timeout", 10*time.Minute, "overall timeout")
 	dryRun := flags.Bool("dry-run", false, "list what would be downloaded")
 	redownloadDeleted := flags.Bool("redownload-deleted", false, "download again files the user deleted from the device")
+	progressFile := flags.String("progress-file", defaultProgressFile, "where the running sync leaves its download count for the app screen")
+	rescanFlag := flags.String("rescan-flag", defaultRescanFlag, "marker created when books were added, so the screen asks for a library rescan")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
 	}
@@ -105,6 +108,8 @@ func runCommand(args []string, out io.Writer) int {
 
 		RedownloadDeleted: *redownloadDeleted,
 		Backoff:           2 * time.Second,
+		ProgressFile:      *progressFile,
+		RescanFlag:        *rescanFlag,
 	})
 	if err != nil {
 		say(out, messages, "msg.error", "message", messages.Describe(err))
@@ -123,38 +128,19 @@ func printSummary(out io.Writer, messages *i18n.Bundle, summary ghsync.Summary, 
 	if summary.Deleted > 0 {
 		say(out, messages, "msg.deleted_locally", "count", strconv.Itoa(summary.Deleted))
 	}
+	if summary.Skipped > 0 {
+		say(out, messages, "msg.skipped", "count", strconv.Itoa(summary.Skipped))
+	}
+	if summary.Unchanged {
+		say(out, messages, "msg.unchanged")
+	}
+	if summary.FolderMissing {
+		say(out, messages, "msg.folder_missing")
+	}
 	if summary.Errors > 0 {
 		say(out, messages, "msg.file_errors", "count", strconv.Itoa(summary.Errors))
 	}
 	if summary.Truncated {
 		say(out, messages, "msg.truncated")
 	}
-}
-
-func statusCommand(args []string, out io.Writer) int {
-	flags := flag.NewFlagSet("status", flag.ContinueOnError)
-	flags.SetOutput(out)
-	var common commonFlags
-	common.register(flags)
-	if err := flags.Parse(args); err != nil {
-		return exitUsage
-	}
-	messages := common.messages()
-	state, err := ghsync.LoadState(ghsync.Paths{AppDir: common.appDir}.State())
-	if err != nil {
-		say(out, messages, "msg.error", "message", messages.Describe(err))
-		return 1
-	}
-	if state.LastRun == "" {
-		say(out, messages, "msg.never_synced")
-		return 0
-	}
-	say(out, messages, "msg.last_run", "time", state.LastRun)
-	say(out, messages, "msg.last_result",
-		"new", strconv.Itoa(state.LastNew), "existing", strconv.Itoa(state.LastExisting), "errors", strconv.Itoa(state.LastErrors))
-	say(out, messages, "msg.tracked", "count", strconv.Itoa(len(state.Files)))
-	if state.LastError != "" {
-		say(out, messages, "msg.error", "message", state.LastError)
-	}
-	return 0
 }

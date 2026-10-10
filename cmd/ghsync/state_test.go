@@ -60,7 +60,8 @@ func (env stateEnv) state() (string, screenVariables) {
 	var out bytes.Buffer
 	status := execute([]string{"state", "--app-dir", env.appDir, "--locale", "en",
 		"--sync-pid-file", env.pair("sync.pid"), "--pair-pid-file", env.pair("pair.pid"),
-		"--pair-info-file", env.pair("pair.json")}, &out)
+		"--pair-info-file", env.pair("pair.json"), "--pair-result-file", env.pair("pair-result"),
+		"--progress-file", env.pair("progress.json"), "--rescan-flag", env.pair("rescan.flag")}, &out)
 	if status != 0 {
 		env.t.Fatalf("state exit %d: %s", status, out.String())
 	}
@@ -81,7 +82,7 @@ func (env stateEnv) configure() {
 
 func TestStateBeforePairingIsEmptyButUsable(t *testing.T) {
 	_, variables := newStateEnv(t).state()
-	if variables.Configured || variables.CanSync || variables.Pairing || variables.Repo != "" {
+	if variables.Configured || variables.CanSync || variables.Pairing || variables.Repo != "—" {
 		t.Fatalf("state = %+v", variables)
 	}
 	if variables.Status != "Not paired" || variables.Summary != "Never synced" || variables.PairHint == "" {
@@ -132,7 +133,7 @@ func TestStateOpenPairingShowsAddressAndCode(t *testing.T) {
 	if !variables.Pairing || variables.PairURL != "http://192.168.1.23:8765" || variables.PairCode != "482913" {
 		t.Fatalf("state = %+v", variables)
 	}
-	if !strings.HasPrefix(variables.PairExpires, "Valid until ") {
+	if !strings.HasPrefix(variables.PairExpires, "Open 5 more min, until ") {
 		t.Fatalf("expires = %q", variables.PairExpires)
 	}
 }
@@ -153,12 +154,88 @@ func TestStateHidesStaleOrExpiredPairing(t *testing.T) {
 	}
 }
 
-func TestStateReportsFailedLastSyncWithoutTheErrorText(t *testing.T) {
+func TestStateShowsTheFailureReasonButNeverTheToken(t *testing.T) {
 	env := newStateEnv(t)
 	env.configure()
 	env.write("data/state.json", `{"last_run":"2026-10-08T21:14:00Z","last_error":"boom `+secretToken+`","files":{}}`, 0o600)
 	raw, variables := env.state()
-	if strings.Contains(raw, "boom") || strings.Contains(raw, secretToken) || variables.Summary != "Last sync failed. See data/log.txt." {
+	if strings.Contains(raw, secretToken) || variables.LastError != "boom ***" || variables.Summary != "The last sync failed." {
 		t.Fatalf("state = %s", raw)
+	}
+}
+
+func TestStateCutsALongFailureReasonToFitTheScreen(t *testing.T) {
+	env := newStateEnv(t)
+	env.configure()
+	long := strings.Repeat("Thư mục không có. ", 30)
+	env.write("data/state.json", `{"last_run":"2026-10-08T21:14:00Z","last_error":"`+long+`","files":{}}`, 0o600)
+	_, variables := env.state()
+	if got := len([]rune(variables.LastError)); got != maxErrorChars || !strings.HasSuffix(variables.LastError, "…") {
+		t.Fatalf("reason has %d characters: %q", got, variables.LastError)
+	}
+}
+
+func TestStateShowsDownloadProgressOnlyWhileSyncing(t *testing.T) {
+	env := newStateEnv(t)
+	env.configure()
+	env.write(env.pair("progress.json"), `{"done":2,"total":7,"file":"Dế Mèn.epub"}`, 0o644)
+	if _, idle := env.state(); idle.Progress != "" || idle.StepDetail != "" {
+		t.Fatalf("progress shown while idle: %+v", idle)
+	}
+	env.write(env.pair("sync.pid"), strconv.Itoa(os.Getpid()), 0o644)
+	_, running := env.state()
+	if running.Progress != "Downloading 2 / 7" || running.StepDetail != "Dế Mèn.epub" {
+		t.Fatalf("progress = %+v", running)
+	}
+	os.Remove(env.pair("progress.json"))
+	if _, starting := env.state(); starting.Progress != "Contacting GitHub…" {
+		t.Fatalf("before the first file the screen says it is contacting GitHub: %+v", starting)
+	}
+}
+
+func TestStateAsksForARescanOnceAfterABookWasAdded(t *testing.T) {
+	env := newStateEnv(t)
+	env.configure()
+	env.write(env.pair("rescan.flag"), "", 0o644)
+	env.write(env.pair("sync.pid"), strconv.Itoa(os.Getpid()), 0o644)
+	if _, whileRunning := env.state(); len(whileRunning.Requests) != 0 {
+		t.Fatalf("no rescan while the sync still runs: %+v", whileRunning.Requests)
+	}
+	os.Remove(env.pair("sync.pid"))
+	raw, first := env.state()
+	if len(first.Requests) != 1 || first.Requests[0].Request != "rescan" || first.Requests[0].Mode != "quick" {
+		t.Fatalf("want one quick rescan request: %s", raw)
+	}
+	if _, second := env.state(); len(second.Requests) != 0 {
+		t.Fatalf("the host must be asked once, not on every refresh: %+v", second.Requests)
+	}
+}
+
+func TestStateTellsHowTheLastPairingEnded(t *testing.T) {
+	env := newStateEnv(t)
+	env.configure()
+	env.write(env.pair("pair-result"), "paired", 0o644)
+	if _, variables := env.state(); variables.PairNote != "Paired with me/books. Tap 'Sync now'." {
+		t.Fatalf("note = %q", variables.PairNote)
+	}
+	env.write(env.pair("pair-result"), "expired", 0o644)
+	if _, variables := env.state(); variables.PairNote != "Pairing timed out. Start it again." {
+		t.Fatalf("note = %q", variables.PairNote)
+	}
+	env.write(env.pair("pair-result"), "garbage", 0o644)
+	if _, variables := env.state(); variables.PairNote != "" {
+		t.Fatalf("an unknown result must say nothing: %q", variables.PairNote)
+	}
+}
+
+func TestStateGuidesAnUnpairedUserToPairing(t *testing.T) {
+	_, variables := newStateEnv(t).state()
+	if !strings.Contains(variables.Guide, "Pair with your phone") || variables.CanSync {
+		t.Fatalf("state = %+v", variables)
+	}
+	env := newStateEnv(t)
+	env.configure()
+	if _, paired := env.state(); paired.Guide != "" {
+		t.Fatalf("the guide must disappear once paired: %q", paired.Guide)
 	}
 }

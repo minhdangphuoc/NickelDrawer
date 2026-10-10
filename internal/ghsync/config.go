@@ -9,10 +9,11 @@ import (
 	"strings"
 
 	"koboapps/internal/i18n"
+	"koboapps/internal/inbox"
 	"koboapps/internal/storage"
 )
 
-// githubSubfolder keeps synced books apart from the user's own under the books folder.
+// githubSubfolder keeps synced files apart from the user's own inside each library folder.
 const githubSubfolder = "GitHub"
 
 var (
@@ -20,16 +21,14 @@ var (
 	repoPattern       = regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`)
 )
 
-// defaultDest is Books/GitHub (/mnt/onboard/Books/GitHub on the device). A config.json that
-// sets "dest" explicitly, such as the old /mnt/onboard/GitHub, keeps working unchanged.
-func defaultDest() string { return filepath.Join(storage.Path(storage.Books), githubSubfolder) }
-
-// Config is data/config.json.
+// Config is data/config.json. Without "dest" every file goes to the library folder the inbox
+// rules choose for its type, below a GitHub subfolder (Books/GitHub, Documents/GitHub,
+// Comics/GitHub); a "dest" sets one folder for everything, as older configs did.
 type Config struct {
 	Repo       string   `json:"repo"`
 	Branch     string   `json:"branch"`
 	Path       string   `json:"path"`
-	Dest       string   `json:"dest"`
+	Dest       string   `json:"dest,omitempty"`
 	Extensions []string `json:"extensions"`
 }
 
@@ -47,9 +46,6 @@ func LoadConfig(configPath string) (Config, error) {
 }
 
 func (config Config) withDefaults() Config {
-	if config.Dest == "" {
-		config.Dest = defaultDest()
-	}
 	if len(config.Extensions) == 0 {
 		config.Extensions = defaultExtensions
 	}
@@ -61,7 +57,7 @@ func (config Config) validated() (Config, error) {
 	if !repoPattern.MatchString(config.Repo) {
 		return Config{}, i18n.NewError("msg.err_repo_invalid", "repo", config.Repo)
 	}
-	if !path.IsAbs(config.Dest) {
+	if config.Dest != "" && !path.IsAbs(config.Dest) {
 		return Config{}, i18n.NewError("msg.err_dest_invalid", "dest", config.Dest)
 	}
 	if config.Path != "" {
@@ -84,3 +80,11 @@ func (config Config) validated() (Config, error) {
 // Owner and Name split Repo, which validation guarantees has one slash.
 func (config Config) Owner() string { return strings.SplitN(config.Repo, "/", 2)[0] }
 func (config Config) Name() string  { return strings.SplitN(config.Repo, "/", 2)[1] }
+
+// DestinationFor is the folder a file of the rule's type is written to.
+func (config Config) DestinationFor(rule inbox.Rule) string {
+	if config.Dest != "" {
+		return config.Dest
+	}
+	return filepath.Join(storage.Path(rule.Destination), githubSubfolder)
+}

@@ -18,6 +18,7 @@ Licensed under PolyForm Noncommercial 1.0.0: free for personal and non-profit us
 - **Apps**, all using only the NickelDrawer API (toasts, confirmations and state signals, never raw script output):
   - LocalSend: receive files from a phone; the inbox router sorts them into Books, Documents, Comics and Pictures.
   - GitHub sync: add-only book sync from a private repo, paired from your phone (token never typed on the Kobo).
+  - GitHub sync details: its screen shows the repo, last sync, books added and any error; a pairing check names a missing repository, branch or folder instead of a bare 404 (an empty repository pairs); files are checked against the inbox allowlist and magic bytes, sorted into Books, Documents or Comics under `GitHub`, and never overwritten or deleted.
   - Wallpaper: a phone-style gallery with a full-screen viewer for your sleep screen pictures; tells you which Nickel setting to enable.
   - Library: dedupe, language tags and Unicode normalisation.
 - **Developer kit**: `appsctl new` scaffolds an app, `appsctl validate` checks manifests, locales and `ui.json`; guide in [docs/APPS.md](docs/APPS.md), examples in [examples/](examples/README.md).

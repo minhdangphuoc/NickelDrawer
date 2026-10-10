@@ -746,14 +746,14 @@ Baseline: the user records battery % twice a day for 3 days in W1 with no mod in
 
 | ID | Steps | Expected | Pass criteria |
 |---|---|---|---|
-| GH-01 | First open without token | Screen explains where to put the token; sync button disabled | True |
-| GH-02 | With token, set repo and folder via fields | Saved to `data/config.json`; fields persist after reopen | True |
-| GH-03 | "Đồng bộ ngay" with 3 new books in the repo | Wi-Fi on → progress 0/3…3/3 → toast "Đã đồng bộ 3 sách" → rescan → books in library | ≤ 2 min on normal Wi-Fi |
-| GH-04 | Run again | "0 mới", nothing downloaded | True |
-| GH-05 | Delete a book on the Kobo, run again | Book re-downloaded (add-only, no tombstones in v1) — or, if user prefers, skipped via `state.json` (**decision**, section 13) | Behaviour matches decision |
-| GH-06 | Delete a book in the repo, run again | Nothing deleted on the Kobo | True |
-| GH-07 | Wrong token | Toast "GitHub từ chối (401)"; no crash | True |
-| GH-08 | No internet | Toast and "Thử lại" | ≤ 30 s |
+| GH-01 | First open before pairing | Header "Not paired", a guide to pair with the phone (nothing typed on the Kobo), empty rows, sync button disabled | True |
+| GH-02 | Pair with the phone (QR + one-time code), wrong code once, then the right one with the token | QR, address, 6-digit code and time left on the Kobo; wrong code counts down; on success the Kobo says "Paired with <repo>"; `data/token` and `config.json` are written, the token is shown nowhere | ≤ 10 s from the phone's submit to the Kobo's note |
+| GH-03 | "Sync now" with ≥ 1 book in the folder, plus a fake `.epub` and a `.txt` | Progress "Downloading 1 / N", result "N new", library rescans by itself; the fake file and the text file are skipped; books sorted into `Books/GitHub` (PDF into `Documents/GitHub`) with NFC names | ≤ 2 min on normal Wi-Fi |
+| GH-04 | Run again | "0 new", nothing downloaded, no rescan | True |
+| GH-05 | Delete a book on the Kobo, run again | Not downloaded again (decision Q6: remember deletions in `state.json`) | True |
+| GH-06 | Delete a book in the repo and add another, run again | New book arrives; nothing is deleted on the Kobo | True |
+| GH-07 | Pair with a wrong repo, branch, folder and token (one phone session); then an empty repo | Four different messages (repo or token access, branch, folder, bad token), nothing saved; an empty repo pairs and syncs 0 books | True |
+| GH-08 | Wi-Fi off: "Sync now" and "Start pairing"; "Stop pairing" while open | Nickel's Wi-Fi dialog or a short toast, no hang; pairing stops within 10 s | ≤ 30 s |
 
 **Library tool (session T7)**
 

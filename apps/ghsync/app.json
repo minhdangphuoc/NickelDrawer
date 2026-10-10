@@ -2,11 +2,16 @@
   "schema": 1,
   "id": "ghsync",
   "name": "GitHub",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sync books from a private GitHub repo (add-only, never deletes)",
-  "menu": false,
-  "hidden": true,
-  "storage": { "reads": [], "writes": ["books"] },
+  "storage": {
+    "reads": [],
+    "writes": [
+      "books",
+      "documents",
+      "comics"
+    ]
+  },
   "network": true,
   "actions": [
     {
@@ -28,12 +33,13 @@
       "rescan": "none"
     },
     {
-      "id": "status",
-      "label": "Status",
-      "run": "bin/status.sh",
+      "id": "stop-pairing",
+      "label": "Stop pairing",
+      "run": "bin/stop-pairing.sh",
       "output": "show",
       "timeout_ms": 3000,
-      "rescan": "quick"
+      "rescan": "none",
+      "menu": false
     },
     {
       "id": "state",
@@ -44,5 +50,8 @@
       "rescan": "none",
       "menu": false
     }
+  ],
+  "requests": [
+    "rescan"
   ]
 }

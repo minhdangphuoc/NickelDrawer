@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"golang.org/x/text/unicode/norm"
+
 	"koboapps/internal/i18n"
 )
 
@@ -38,8 +40,9 @@ func sanitizeSegment(segment string) (string, error) {
 	if strings.ContainsRune(segment, ':') {
 		return "", i18n.NewError("msg.err_segment_colon", "segment", segment)
 	}
+	// Vietnamese names must be in one Unicode form (NFC) or the same title exists twice on the device.
 	var builder strings.Builder
-	for _, character := range segment {
+	for _, character := range norm.NFC.String(segment) {
 		if character < 0x20 || character == 0x7f {
 			return "", i18n.NewError("msg.err_segment_control", "segment", segment)
 		}

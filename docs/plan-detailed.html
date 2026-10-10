@@ -1987,50 +1987,50 @@ make release VERSION=1.0.0
 <tbody>
 <tr>
 <td>GH-01</td>
-<td>First open without token</td>
-<td>Screen explains where to put the token; sync button disabled</td>
+<td>First open before pairing</td>
+<td>Header "Not paired", a guide to pair with the phone (nothing typed on the Kobo), empty rows, sync button disabled</td>
 <td>True</td>
 </tr>
 <tr>
 <td>GH-02</td>
-<td>With token, set repo and folder via fields</td>
-<td>Saved to <code>data/config.json</code>; fields persist after reopen</td>
-<td>True</td>
+<td>Pair with the phone (QR + one-time code), wrong code once, then the right one with the token</td>
+<td>QR, address, 6-digit code and time left on the Kobo; wrong code counts down; on success the Kobo says "Paired with <repo>"; <code>data/token</code> and <code>config.json</code> are written, the token is shown nowhere</td>
+<td>≤ 10 s from the phone's submit to the Kobo's note</td>
 </tr>
 <tr>
 <td>GH-03</td>
-<td>"Đồng bộ ngay" with 3 new books in the repo</td>
-<td>Wi-Fi on → progress 0/3…3/3 → toast "Đã đồng bộ 3 sách" → rescan → books in library</td>
+<td>"Sync now" with ≥ 1 book in the folder, plus a fake <code>.epub</code> and a <code>.txt</code></td>
+<td>Progress "Downloading 1 / N", result "N new", library rescans by itself; the fake file and the text file are skipped; books sorted into <code>Books/GitHub</code> (PDF into <code>Documents/GitHub</code>) with NFC names</td>
 <td>≤ 2 min on normal Wi-Fi</td>
 </tr>
 <tr>
 <td>GH-04</td>
 <td>Run again</td>
-<td>"0 mới", nothing downloaded</td>
+<td>"0 new", nothing downloaded, no rescan</td>
 <td>True</td>
 </tr>
 <tr>
 <td>GH-05</td>
 <td>Delete a book on the Kobo, run again</td>
-<td>Book re-downloaded (add-only, no tombstones in v1) — or, if user prefers, skipped via <code>state.json</code> (<strong>decision</strong>, section 13)</td>
-<td>Behaviour matches decision</td>
+<td>Not downloaded again (decision Q6: remember deletions in <code>state.json</code>)</td>
+<td>True</td>
 </tr>
 <tr>
 <td>GH-06</td>
-<td>Delete a book in the repo, run again</td>
-<td>Nothing deleted on the Kobo</td>
+<td>Delete a book in the repo and add another, run again</td>
+<td>New book arrives; nothing is deleted on the Kobo</td>
 <td>True</td>
 </tr>
 <tr>
 <td>GH-07</td>
-<td>Wrong token</td>
-<td>Toast "GitHub từ chối (401)"; no crash</td>
+<td>Pair with a wrong repo, branch, folder and token (one phone session); then an empty repo</td>
+<td>Four different messages (repo or token access, branch, folder, bad token), nothing saved; an empty repo pairs and syncs 0 books</td>
 <td>True</td>
 </tr>
 <tr>
 <td>GH-08</td>
-<td>No internet</td>
-<td>Toast and "Thử lại"</td>
+<td>Wi-Fi off: "Sync now" and "Start pairing"; "Stop pairing" while open</td>
+<td>Nickel's Wi-Fi dialog or a short toast, no hang; pairing stops within 10 s</td>
 <td>≤ 30 s</td>
 </tr>
 </tbody>

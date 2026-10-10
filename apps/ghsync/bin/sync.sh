@@ -31,7 +31,6 @@ fi
 
 if is_sync_running; then
     report already_running "$APP_ID" msg.already_running
-    is_drawer || msg "$APP_ID" msg.see_status
     exit 0
 fi
 
@@ -46,7 +45,6 @@ sleep 1
 
 if is_sync_running; then
     report syncing "$APP_ID" msg.syncing
-    is_drawer || msg "$APP_ID" msg.see_status
     exit 0
 fi
 

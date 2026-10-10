@@ -34,21 +34,86 @@ type pairEnv struct {
 	gitHits *[]string
 }
 
+// fakeRepo is a GitHub repository as the pairing check sees it. status forces one answer for
+// every call; otherwise the other fields describe what exists.
+type fakeRepo struct {
+	status   int
+	missing  bool            // the repository is unknown to the token (GitHub answers 404)
+	empty    bool            // no commits, so no branches
+	branches []string        // branch names; the first is the default
+	folders  map[string]bool // folders that exist on every branch
+	files    map[string]bool // paths that are single files
+}
+
+func healthyRepo() *fakeRepo {
+	return &fakeRepo{branches: []string{"main", "dev"}, folders: map[string]bool{"books": true}}
+}
+
+func (repo *fakeRepo) handle(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/repos/me/books")
+	switch {
+	case repo.status != 0 && repo.status != http.StatusOK:
+		http.Error(w, "nope", repo.status)
+	case repo.missing:
+		http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
+	case path == "":
+		io.WriteString(w, `{"default_branch":"main"}`)
+	case path == "/branches":
+		repo.listBranches(w)
+	case strings.HasPrefix(path, "/branches/"):
+		repo.showBranch(w, strings.TrimPrefix(path, "/branches/"))
+	case strings.HasPrefix(path, "/contents"):
+		repo.listFolder(w, strings.TrimPrefix(strings.TrimPrefix(path, "/contents"), "/"))
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func (repo *fakeRepo) listBranches(w http.ResponseWriter) {
+	if repo.empty {
+		io.WriteString(w, `[]`)
+		return
+	}
+	io.WriteString(w, `[{"name":"`+repo.branches[0]+`"}]`)
+}
+
+func (repo *fakeRepo) showBranch(w http.ResponseWriter, name string) {
+	for _, branch := range repo.branches {
+		if branch == name {
+			io.WriteString(w, `{"name":"`+name+`"}`)
+			return
+		}
+	}
+	http.Error(w, `{"message":"Branch not found"}`, http.StatusNotFound)
+}
+
+func (repo *fakeRepo) listFolder(w http.ResponseWriter, folder string) {
+	switch {
+	case repo.empty:
+		http.Error(w, `{"message":"This repository is empty."}`, http.StatusNotFound)
+	case folder == "" || repo.folders[folder]:
+		io.WriteString(w, `[]`)
+	case repo.files[folder]:
+		io.WriteString(w, `{"type":"file"}`)
+	default:
+		http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
+	}
+}
+
 // newPairEnv wires a session to a fake GitHub API; githubStatus is the status for every API call.
 func newPairEnv(t *testing.T, githubStatus int) pairEnv {
+	t.Helper()
+	repo := healthyRepo()
+	repo.status = githubStatus
+	return newPairEnvForRepo(t, repo)
+}
+
+func newPairEnvForRepo(t *testing.T, repo *fakeRepo) pairEnv {
 	t.Helper()
 	var hits []string
 	github := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits = append(hits, r.URL.RequestURI())
-		if githubStatus != http.StatusOK {
-			http.Error(w, "nope", githubStatus)
-			return
-		}
-		if strings.HasSuffix(r.URL.Path, "/contents/books") || strings.HasSuffix(r.URL.Path, "/contents") {
-			io.WriteString(w, `[]`)
-			return
-		}
-		io.WriteString(w, `{"default_branch":"main"}`)
+		repo.handle(w, r)
 	}))
 	t.Cleanup(github.Close)
 
@@ -187,7 +252,7 @@ func TestPairSuccessWritesPrivateFilesAndNeverEchoesToken(t *testing.T) {
 	if err := json.Unmarshal(raw, &saved); err != nil {
 		t.Fatal(err)
 	}
-	if saved.Repo != "me/books" || saved.Path != "books" || saved.Branch != "" || saved.Dest != defaultDest() {
+	if saved.Repo != "me/books" || saved.Path != "books" || saved.Branch != "" || saved.Dest != "" {
 		t.Errorf("config = %+v", saved)
 	}
 	if _, err := LoadConfig(e.paths.Config()); err != nil {
@@ -283,6 +348,62 @@ func TestPairChecksRepoAndContents(t *testing.T) {
 	if !strings.Contains(got, "/repos/me/books/contents/books?ref=main") {
 		t.Errorf("contents not read from default branch: %s", got)
 	}
+}
+
+// A pairing check must say which of repo, branch and folder is wrong: GitHub answers 404 for all
+// three, and the first version of this check showed one vague message for every case.
+func TestPairNamesWhatIsMissingInsteadOfAVague404(t *testing.T) {
+	cases := []struct {
+		name  string
+		repo  *fakeRepo
+		form  map[string]string
+		want  string
+		saved bool
+	}{
+		{"repository missing or hidden from the token", &fakeRepo{missing: true}, goodForm(), "Repository me/books not found, or the token cannot see it", false},
+		{"branch missing", healthyRepo(), withField(goodForm(), "branch", "nope"), "Branch nope does not exist in me/books", false},
+		{"folder missing", healthyRepo(), withField(goodForm(), "folder", "novels"), "Folder novels does not exist on branch main", false},
+		{"folder missing on a chosen branch", healthyRepo(), withFields(goodForm(), map[string]string{"folder": "novels", "branch": "dev"}), "on branch dev", false},
+		{"folder is a file", &fakeRepo{branches: []string{"main"}, files: map[string]bool{"books": true}}, goodForm(), "Folder books does not exist", false},
+		{"empty repository", &fakeRepo{empty: true}, goodForm(), "", true},
+		{"empty repository with a branch and folder typed", &fakeRepo{empty: true}, withField(goodForm(), "branch", "main"), "", true},
+		{"existing branch and folder", healthyRepo(), withField(goodForm(), "branch", "dev"), "", true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			e := newPairEnvForRepo(t, c.repo)
+			status, body := e.post(t, c.form)
+			e.assertNoSecrets(t, body)
+			_, configErr := os.Stat(e.paths.Config())
+			if c.saved {
+				if status != http.StatusOK || configErr != nil {
+					t.Fatalf("an accessible repository must pair: %d %v\n%s", status, configErr, body)
+				}
+				return
+			}
+			if status != http.StatusUnprocessableEntity || !strings.Contains(body, c.want) || configErr == nil {
+				t.Fatalf("want %q and nothing saved: %d %v\n%s", c.want, status, configErr, body)
+			}
+			if strings.Contains(body, "check the repo, branch and folder") {
+				t.Errorf("the vague 404 text came back: %s", body)
+			}
+		})
+	}
+}
+
+func withField(form map[string]string, name, value string) map[string]string {
+	return withFields(form, map[string]string{name: value})
+}
+
+func withFields(form map[string]string, changes map[string]string) map[string]string {
+	copied := map[string]string{}
+	for name, value := range form {
+		copied[name] = value
+	}
+	for name, value := range changes {
+		copied[name] = value
+	}
+	return copied
 }
 
 func TestPairNetworkErrorRedactsToken(t *testing.T) {

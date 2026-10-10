@@ -24,11 +24,20 @@ type State struct {
 	LastErrors   int                  `json:"last_errors"`
 	LastError    string               `json:"last_error,omitempty"`
 	Files        map[string]FileState `json:"files"`
+
+	// Rejected remembers files that failed the content check (repo path -> blob sha), so an
+	// unchanged bad file is not downloaded again on every run.
+	Rejected map[string]string `json:"rejected,omitempty"`
+
+	// TreeETag is the validator of the last complete listing; TreeKey says which repo, branch and
+	// settings it belongs to. GitHub answers 304 (free of rate limit) while nothing changed.
+	TreeETag string `json:"tree_etag,omitempty"`
+	TreeKey  string `json:"tree_key,omitempty"`
 }
 
 // LoadState returns an empty state when the file does not exist yet.
 func LoadState(statePath string) (State, error) {
-	state := State{Files: map[string]FileState{}}
+	state := State{Files: map[string]FileState{}, Rejected: map[string]string{}}
 	raw, err := os.ReadFile(statePath)
 	if errors.Is(err, os.ErrNotExist) {
 		return state, nil
@@ -41,6 +50,9 @@ func LoadState(statePath string) (State, error) {
 	}
 	if state.Files == nil {
 		state.Files = map[string]FileState{}
+	}
+	if state.Rejected == nil {
+		state.Rejected = map[string]string{}
 	}
 	return state, nil
 }

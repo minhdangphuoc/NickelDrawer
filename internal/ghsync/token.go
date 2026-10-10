@@ -1,6 +1,7 @@
 package ghsync
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,4 +59,23 @@ func filesystemEnforcesModes(dir string) (bool, error) {
 		return false, err
 	}
 	return info.Mode().Perm()&0o077 == 0, nil
+}
+
+// scrubbed returns err without the token in any message it carries. An error that never held the
+// token is returned as it is, so callers keep matching its type; one that did is rebuilt with the
+// same message key, so it still renders in the user's language.
+func scrubbed(err error, token Token) error {
+	if err == nil || token == "" || !strings.Contains(err.Error(), string(token)) {
+		return err
+	}
+	var messageErr *i18n.MessageError
+	if !errors.As(err, &messageErr) {
+		return errors.New(strings.ReplaceAll(err.Error(), string(token), "***"))
+	}
+	clean := &i18n.MessageError{Key: messageErr.Key, Params: map[string]string{}}
+	for name, value := range messageErr.Params {
+		clean.Params[name] = strings.ReplaceAll(value, string(token), "***")
+	}
+	clean.Cause = scrubbed(messageErr.Cause, token)
+	return clean
 }

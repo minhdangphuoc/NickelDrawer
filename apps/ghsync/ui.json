@@ -4,18 +4,25 @@
   "vars": {
     "status": "",
     "configured": false,
+    "guide": "",
     "repo": "",
     "branch": "",
     "folder": "",
     "last_sync": "",
+    "added": "",
     "summary": "",
+    "last_error": "",
     "running": false,
     "can_sync": false,
+    "progress": "",
+    "step_detail": "",
     "pairing": false,
+    "pair_row": "",
     "pair_url": "",
     "pair_code": "",
     "pair_expires": "",
-    "pair_hint": ""
+    "pair_hint": "",
+    "pair_note": ""
   },
   "screens": {
     "main": {
@@ -23,19 +30,8 @@
       "status": "$status",
       "body": [
         {
-          "pair": {
-            "url": "$pair_url",
-            "code": "$pair_code",
-            "title": "@ui.pair_title",
-            "hint": "$pair_hint",
-            "expires": "$pair_expires"
-          }
-        },
-        {
-          "button": "@ui.pair",
-          "action": "pair",
-          "style": "secondary",
-          "enabled": "!$pairing"
+          "notice": "$guide",
+          "title": "@ui.guide_title"
         },
         {
           "kv": [
@@ -54,12 +50,32 @@
             [
               "@ui.last_sync",
               "$last_sync"
+            ],
+            [
+              "@ui.added",
+              "$added"
             ]
           ]
         },
         {
           "text": "$summary",
           "style": "caption"
+        },
+        {
+          "notice": "$last_error",
+          "title": "@ui.error_title"
+        },
+        {
+          "text": "$progress"
+        },
+        {
+          "text": "$step_detail",
+          "style": "caption"
+        },
+        {
+          "row": "@ui.pair_row",
+          "detail": "$pair_row",
+          "push": "pair"
         }
       ],
       "footer": [
@@ -75,8 +91,46 @@
         "already_running": "@ui.toast_already_running",
         "sync_done": "@ui.toast_sync_done",
         "sync_failed": "@ui.toast_sync_failed",
+        "wifi_missing": "@ui.toast_wifi_missing",
+        "failed": "@ui.toast_failed"
+      }
+    },
+    "pair": {
+      "title": "@ui.pair_screen_title",
+      "status": "$status",
+      "body": [
+        {
+          "pair": {
+            "url": "$pair_url",
+            "code": "$pair_code",
+            "title": "@ui.pair_block_title",
+            "hint": "$pair_hint",
+            "expires": "$pair_expires"
+          }
+        },
+        {
+          "notice": "$pair_note"
+        }
+      ],
+      "footer": [
+        {
+          "button": "@ui.pair_stop",
+          "action": "stop-pairing",
+          "style": "secondary",
+          "enabled": "$pairing"
+        },
+        {
+          "button": "@ui.pair_start",
+          "action": "pair",
+          "style": "primary",
+          "enabled": "!$pairing"
+        }
+      ],
+      "toasts": {
         "pair_started": "@ui.toast_pair_started",
         "pair_failed": "@ui.toast_pair_failed",
+        "pair_stopped": "@ui.toast_pair_stopped",
+        "pair_not_running": "@ui.toast_pair_not_running",
         "wifi_missing": "@ui.toast_wifi_missing",
         "failed": "@ui.toast_failed"
       }

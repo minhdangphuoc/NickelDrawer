@@ -1,0 +1,23 @@
+{
+  "status": "Đang ghép nối",
+  "configured": true,
+  "guide": "",
+  "repo": "me/sach-cua-toi",
+  "branch": "Mặc định",
+  "folder": "epub",
+  "last_sync": "2026-10-10 08:14",
+  "added": "3",
+  "summary": "3 mới, 120 đã có, 0 lỗi",
+  "last_error": "",
+  "running": false,
+  "can_sync": true,
+  "step_detail": "",
+  "pairing": true,
+  "pair_row": "Đang mở: xem mã",
+  "pair_url": "http://192.168.1.23:8765",
+  "pair_code": "482913",
+  "pair_expires": "Còn mở 9 phút, đến 21:30",
+  "pair_hint": "Quét mã hoặc mở địa chỉ trên điện thoại rồi nhập mã. Chỉ dùng trên Wi-Fi nhà bạn.",
+  "pair_note": "",
+  "progress": ""
+}

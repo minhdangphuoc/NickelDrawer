@@ -2,6 +2,5 @@
   "repo": "owner/name",
   "branch": "main",
   "path": "books",
-  "dest": "/mnt/onboard/Books/GitHub",
   "extensions": [".epub", ".kepub.epub", ".pdf", ".cbz", ".cbr"]
 }

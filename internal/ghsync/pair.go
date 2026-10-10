@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -52,6 +53,9 @@ type PairOptions struct {
 	Backoff  time.Duration
 	// InfoFile receives the address and code as JSON while pairing is open, for the app screen.
 	InfoFile string
+	// ResultFile receives how the last session ended (paired, locked, expired, stopped), so the
+	// screen can say so after the session is gone. The next session replaces it.
+	ResultFile string
 
 	// Code and Now are test seams; zero values mean a random code and the real clock.
 	Code string
@@ -80,15 +84,47 @@ func Pair(ctx context.Context, options PairOptions) (PairOutcome, error) {
 		WriteTimeout:      60 * time.Second,
 	}
 	go server.Serve(listener)
+	removeIfSet(options.ResultFile)
 	session.announce(listener.Addr().String())
-	defer os.Remove(options.InfoFile)
+	defer removeIfSet(options.InfoFile)
 
 	outcome := session.wait(ctx)
+	session.recordOutcome(outcome)
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownGracePeriod)
 	defer cancel()
 	shutdownErr := server.Shutdown(shutdownCtx)
 	session.options.Log.Printf("pairing ended: %s", outcome)
 	return outcome, shutdownErr
+}
+
+func removeIfSet(path string) {
+	if path != "" {
+		os.Remove(path)
+	}
+}
+
+// recordOutcome leaves the result for the screen; failing to do so only costs that one message.
+func (session *pairSession) recordOutcome(outcome PairOutcome) {
+	path := session.options.ResultFile
+	if path == "" {
+		return
+	}
+	if err := os.WriteFile(path, []byte(outcome), 0o644); err != nil {
+		session.options.Log.Printf("cannot write the pairing result for the screen: %v", err)
+	}
+}
+
+// ReadPairOutcome returns how the last pairing session ended, or "" when none is recorded.
+func ReadPairOutcome(path string) PairOutcome {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	switch outcome := PairOutcome(strings.TrimSpace(string(raw))); outcome {
+	case PairPaired, PairLocked, PairExpired, PairStopped:
+		return outcome
+	}
+	return ""
 }
 
 // resolvePairIP returns the address to bind. It never returns a wildcard address,

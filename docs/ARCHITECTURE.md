@@ -135,7 +135,7 @@ Everything else (`.exe`, `.sh`, `.apk`, `.zip`, unknown) is rejected. Extension 
 | Source | How |
 |---|---|
 | LocalSend | localgo saves into `inbox`; its `--exec` hook runs `appsctl inbox route --from-env --source localsend` per file. "Stop receiving" waits up to 2 s for running hooks, runs `appsctl inbox sort` as a safety net, prints `appsctl inbox status`, then the library rescan runs. "Sort old files" runs `appsctl inbox sort --source-dir /mnt/onboard/LocalSend` in the background to migrate the old folder. |
-| GitHub sync | downloads already go through an extension allowlist; the default destination is `books` -> `Books/GitHub` (`/mnt/onboard/Books/GitHub`). A `config.json` with an explicit `dest` (such as the old `/mnt/onboard/GitHub`) keeps working. |
+| GitHub sync | add-only. Each file must pass the same allowlist as the router (`routing.json`: extension, size cap, magic bytes on the downloaded temp file) and goes to the folder its type maps to, below a `GitHub` subfolder: `Books/GitHub`, `Documents/GitHub`, `Comics/GitHub` (names in NFC). A `config.json` with an explicit `dest` (such as the old `/mnt/onboard/GitHub`) puts everything there instead. |
 | USB | `appsctl inbox route <path>` and `sort` apply the same rules to files in the inbox |
 
 #### Security: the `--exec` hook must have no `%` placeholders
@@ -175,6 +175,6 @@ localgo builds the hook by replacing `%f` (path), `%n` (file name), `%a` (sender
 
 1. Done: `internal/storage` (logical folders incl. `inbox`, `rejected`), `internal/inbox` and `appsctl inbox route|sort|status|purge`, `host/config/routing.json`, tests on a fake Kobo.
 2. Done: LocalSend receives into `inbox`, routes per file, shows the summary; "Sort old files" migrates the old `/LocalSend` folder.
-3. Done: ghsync destination `Books/GitHub`; an explicit `dest` keeps working.
+3. Done: ghsync routes by type to `Books|Documents|Comics/GitHub` with the inbox rules; an explicit `dest` keeps working.
 4. Done: `app.json` has `storage` / `network`; `appsctl validate` checks them.
 5. Open: signed updates (`internal/release`) do not yet ship `.adds/koboapps/config/`; until `config` is added to the host folders an update leaves `routing.json` as the installer wrote it.
