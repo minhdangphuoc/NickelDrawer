@@ -201,7 +201,7 @@ func drawerScreen(session drawerSession) (any, error) {
 	if len(session.positions) != 1 {
 		return nil, drawerUsageError()
 	}
-	return session.config.Screen(session.positions[0], session.options.screenID)
+	return session.config.Screen(session.positions[0], session.options.screenID, session.options.value.pointer())
 }
 
 func drawerEvent(session drawerSession) (any, error) {

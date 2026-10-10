@@ -1,6 +1,7 @@
 #include "painted_marks.h"
 
 #include <QPainter>
+#include <QPolygonF>
 #include <QPixmap>
 
 #include "nickel_fonts.h"
@@ -78,6 +79,117 @@ void ViewToggleIcon::paintGrid(QPainter *painter, const QRect &area)
         for (int column = 0; column < 2; column++) {
             painter->drawRect(area.left() + column * (cell + gap), area.top() + row * (cell + gap), cell - 1, cell - 1);
         }
+    }
+}
+
+// ---- Header icons: black strokes on white, inside a 64 px glyph box ----
+
+static const int HEADER_ICON_SIDE = 120;
+static const int HEADER_GLYPH_SIDE = 64;
+static const int HEADER_STROKE = 4;
+static const int GEAR_TEETH = 8;
+static const int GEAR_RING_DIAMETER = 40;
+static const int GEAR_RING_THICKNESS = 10;
+static const int GEAR_TOOTH_SIDE = 12;
+
+static void paintImportIcon(QPainter *painter, const QRectF &box)
+{
+    qreal centre = box.center().x();
+    painter->drawLine(QPointF(centre, box.top()), QPointF(centre, box.top() + 0.62 * box.height()));
+    QPolygonF head;
+    head << QPointF(centre - 0.2 * box.width(), box.top() + 0.42 * box.height())
+         << QPointF(centre, box.top() + 0.64 * box.height()) << QPointF(centre + 0.2 * box.width(), box.top() + 0.42 * box.height());
+    painter->drawPolyline(head);
+    QPolygonF tray;
+    tray << QPointF(box.left(), box.top() + 0.66 * box.height()) << QPointF(box.left(), box.bottom())
+         << QPointF(box.right(), box.bottom()) << QPointF(box.right(), box.top() + 0.66 * box.height());
+    painter->drawPolyline(tray);
+}
+
+// Same shapes as cmd/ndpreview/icons.go gearShapes (64 px glyph box): a ring
+// 40 px wide and 10 px thick, and eight 12 px square teeth at radius 26 (N, S,
+// E, W) and offset 18,18 (diagonals) from the centre. Change both.
+static void paintGearIcon(QPainter *painter, const QRectF &box)
+{
+    QPointF centre = box.center();
+    painter->save();
+    painter->setPen(QPen(Qt::black, GEAR_RING_THICKNESS));
+    painter->setBrush(Qt::NoBrush);
+    qreal ringRadius = (GEAR_RING_DIAMETER - GEAR_RING_THICKNESS) / 2.0;
+    painter->drawEllipse(centre, ringRadius, ringRadius);
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(Qt::black);
+    static const int OFFSETS[GEAR_TEETH][2] = {{0, -26}, {0, 26}, {-26, 0}, {26, 0}, {-18, -18}, {18, -18}, {-18, 18}, {18, 18}};
+    for (int tooth = 0; tooth < GEAR_TEETH; tooth++) {
+        painter->drawRect(QRectF(centre.x() + OFFSETS[tooth][0] - GEAR_TOOTH_SIDE / 2.0,
+                                 centre.y() + OFFSETS[tooth][1] - GEAR_TOOTH_SIDE / 2.0, GEAR_TOOTH_SIDE, GEAR_TOOTH_SIDE));
+    }
+    painter->restore();
+}
+
+static void paintRefreshIcon(QPainter *painter, const QRectF &box)
+{
+    QRectF ring = box.adjusted(4, 4, -4, -4);
+    painter->drawArc(ring, 40 * 16, 280 * 16);
+    // The arrow head at the arc's start (upper right), pointing along it.
+    QPointF tip(ring.center().x() + ring.width() / 2 * 0.77, ring.center().y() - ring.height() / 2 * 0.64);
+    QPolygonF head;
+    head << QPointF(tip.x() + 2, tip.y() - 14) << tip << QPointF(tip.x() - 16, tip.y() - 2);
+    painter->drawPolyline(head);
+}
+
+static void paintAddIcon(QPainter *painter, const QRectF &box)
+{
+    painter->drawLine(QPointF(box.center().x(), box.top()), QPointF(box.center().x(), box.bottom()));
+    painter->drawLine(QPointF(box.left(), box.center().y()), QPointF(box.right(), box.center().y()));
+}
+
+bool HeaderIconButton::iconNamed(const QString &name, Icon *icon)
+{
+    if (name == QLatin1String("import")) {
+        *icon = ICON_IMPORT;
+    } else if (name == QLatin1String("settings")) {
+        *icon = ICON_SETTINGS;
+    } else if (name == QLatin1String("refresh")) {
+        *icon = ICON_REFRESH;
+    } else if (name == QLatin1String("add")) {
+        *icon = ICON_ADD;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+HeaderIconButton::HeaderIconButton(Icon iconShape, QWidget *parent) : PressArea(parent), icon(iconShape)
+{
+    setFixedSize(HEADER_ICON_SIDE, HEADER_ICON_SIDE);
+    setPressHighlight(HIGHLIGHT_CIRCLE);
+}
+
+void HeaderIconButton::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.fillRect(rect(), Qt::white);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    QPen pen(Qt::black, HEADER_STROKE);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    QRectF box((width() - HEADER_GLYPH_SIDE) / 2.0, (height() - HEADER_GLYPH_SIDE) / 2.0, HEADER_GLYPH_SIDE, HEADER_GLYPH_SIDE);
+    switch (icon) {
+    case ICON_IMPORT:
+        paintImportIcon(&painter, box);
+        break;
+    case ICON_SETTINGS:
+        paintGearIcon(&painter, box);
+        break;
+    case ICON_REFRESH:
+        paintRefreshIcon(&painter, box);
+        break;
+    case ICON_ADD:
+        paintAddIcon(&painter, box);
+        break;
     }
 }
 

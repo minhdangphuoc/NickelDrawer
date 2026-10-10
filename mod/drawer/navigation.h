@@ -16,7 +16,10 @@
 //                    back → pop, the parent is reloaded at its page
 namespace Navigation {
 
-bool push(Level level, const QString &id, const ViewState &current);
+// value: the pushed screen's value (a picture id); "" for none.
+bool push(Level level, const QString &id, const ViewState &current, const QString &value = QString());
+// The viewer follows the picture on screen.
+bool setTopValue(const QString &value);
 // parent: the new top with its recorded state (may be NULL).
 bool pop(Entry *parent);
 bool popTo(Level level, Entry *restored);

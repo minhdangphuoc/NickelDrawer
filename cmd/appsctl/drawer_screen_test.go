@@ -121,3 +121,29 @@ func TestDrawerEvent(t *testing.T) {
 		})
 	}
 }
+
+func TestDrawerScreenValueAndStale(t *testing.T) {
+	root := newDrawerRoot(t)
+	dir := writeScriptApp(t, root.apps, `{"schema":1,"id":"echo","name":"Echo","version":"1.0.0",
+ "actions":[{"id":"state","label":"State","run":"bin/state.sh","output":"show","menu":false}]}`,
+		map[string]string{"state.sh": `echo "{\"line\":\"v=${NICKELDRAWER_VALUE-unset} d=$NICKELDRAWER\"}"`})
+	ui := `{"kit":1,"start":"main","vars":{"line":"","selected":""},"screens":{"main":{"title":"T","body":[{"text":"$line"}]}}}`
+	if err := os.WriteFile(filepath.Join(dir, "ui.json"), []byte(ui), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reply, code, raw := root.call(t, "en", "screen", "echo", "--value", "0007")
+	body, _ := reply["body"].([]any)
+	if code != exitOK || reply["value"] != "0007" || len(body) != 1 || body[0].(map[string]any)["text"] != "v=0007 d=1" {
+		t.Errorf("with --value: %d %s", code, raw)
+	}
+	reply, _, raw = root.call(t, "en", "screen", "echo")
+	if _, has := reply["value"]; has || reply["stale"] != nil {
+		t.Errorf("no --value, good state: %s", raw)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bin", "state.sh"), []byte("#!/bin/sh\nexit 1\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if reply, _, raw = root.call(t, "en", "screen", "echo"); reply["stale"] != true {
+		t.Errorf("a failing state must be stale: %s", raw)
+	}
+}

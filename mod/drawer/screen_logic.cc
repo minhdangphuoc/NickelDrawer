@@ -375,4 +375,138 @@ QrPlacement placeQr(int moduleCount, int side)
     return placement;
 }
 
+// ---- Gallery and viewer ----
+
+static int clampInt(int value, int low, int high)
+{
+    return value < low ? low : (value > high ? high : value);
+}
+
+int galleryTileWidth(int columns)
+{
+    columns = clampInt(columns, 1, GALLERY_MAX_COLUMNS);
+    return (GALLERY_CONTENT_WIDTH - (columns - 1) * GALLERY_GUTTER) / columns;
+}
+
+int galleryTileHeight(int columns)
+{
+    return galleryTileWidth(columns) * 4 / 3;
+}
+
+static int rowsThatFit(int columns, int wantedRows, int availableHeight)
+{
+    int tileHeight = galleryTileHeight(columns);
+    int rows = wantedRows;
+    while (rows > 1 && rows * tileHeight + (rows - 1) * GALLERY_GUTTER > availableHeight) {
+        rows--;
+    }
+    return rows;
+}
+
+GalleryFrame galleryFrame(int columns, int wantedRows, int slotCount, int availableHeight)
+{
+    GalleryFrame frame;
+    frame.columns = clampInt(columns, 1, GALLERY_MAX_COLUMNS);
+    wantedRows = clampInt(wantedRows, 1, GALLERY_MAX_ROWS);
+    frame.rows = rowsThatFit(frame.columns, wantedRows, availableHeight);
+    frame.perPage = frame.columns * frame.rows;
+    if (slotCount > frame.perPage) {
+        frame.rows = rowsThatFit(frame.columns, wantedRows, availableHeight - PAGE_BAR_HEIGHT - RHYTHM);
+        frame.perPage = frame.columns * frame.rows;
+    }
+    frame.pageCount = slotCount > frame.perPage ? (slotCount + frame.perPage - 1) / frame.perPage : 1;
+    return frame;
+}
+
+IntRect galleryTileRect(int slotOnPage, int columns, int gridTop)
+{
+    columns = clampInt(columns, 1, GALLERY_MAX_COLUMNS);
+    int width = galleryTileWidth(columns);
+    int height = galleryTileHeight(columns);
+    int row = slotOnPage / columns;
+    int column = slotOnPage % columns;
+    IntRect rect = {GALLERY_SIDE_PADDING + column * (width + GALLERY_GUTTER), gridTop + row * (height + GALLERY_GUTTER),
+                    width, height};
+    return rect;
+}
+
+int galleryPageOfSlot(int index, int perPage)
+{
+    return index < 0 || perPage <= 0 ? 0 : index / perPage;
+}
+
+int neighbourAfterRemoval(int index, int count)
+{
+    if (index < 0 || index >= count || count <= 1) {
+        return -1;
+    }
+    return index + 1 < count ? index + 1 : index - 1;
+}
+
+int viewerIndexAfterStep(int index, int count, int step)
+{
+    int next = index + step;
+    return next < 0 || next >= count ? index : next;
+}
+
+ViewerZone viewerZoneAt(int x, int width)
+{
+    if (x < width / 3) {
+        return ZONE_PREVIOUS;
+    }
+    return x >= width - width / 3 ? ZONE_NEXT : ZONE_TOGGLE_CHROME;
+}
+
+static int viewerBarTop(int viewHeight)
+{
+    return viewHeight - BOTTOM_MARGIN - VIEWER_BAR_HEIGHT;
+}
+
+IntRect viewerPictureArea(bool isChromeShown, int viewHeight)
+{
+    if (!isChromeShown) {
+        IntRect whole = {0, 0, SCREEN_WIDTH, viewHeight};
+        return whole;
+    }
+    int bottom = viewerBarTop(viewHeight) - RHYTHM;
+    IntRect area = {0, HEADER_HEIGHT, SCREEN_WIDTH, bottom - HEADER_HEIGHT};
+    return area;
+}
+
+IntRect viewerSecondaryRect(int viewHeight)
+{
+    IntRect rect = {GUTTER, viewerBarTop(viewHeight), VIEWER_SECONDARY_WIDTH, VIEWER_BAR_HEIGHT};
+    return rect;
+}
+
+IntRect viewerPrimaryRect(int viewHeight)
+{
+    int left = GUTTER + VIEWER_SECONDARY_WIDTH + VIEWER_BAR_GAP;
+    IntRect rect = {left, viewerBarTop(viewHeight), GUTTER + CONTENT_WIDTH - left, VIEWER_BAR_HEIGHT};
+    return rect;
+}
+
+void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, int *width, int *height)
+{
+    *width = 0;
+    *height = 0;
+    if (sourceWidth <= 0 || sourceHeight <= 0 || boxWidth <= 0 || boxHeight <= 0) {
+        return;
+    }
+    // Compare aspect ratios by cross-multiplying (no floating point).
+    if ((long long)sourceWidth * boxHeight >= (long long)sourceHeight * boxWidth) {
+        *width = boxWidth;
+        *height = (int)((long long)sourceHeight * boxWidth / sourceWidth);
+    } else {
+        *height = boxHeight;
+        *width = (int)((long long)sourceWidth * boxHeight / sourceHeight);
+    }
+    if (*width < 1) {
+        *width = 1;
+    }
+    if (*height < 1) {
+        *height = 1;
+    }
+}
+
 } // namespace ScreenLogic

@@ -144,8 +144,135 @@ static void testQrPlacement()
     EXPECT_EQ(0, placeQr(0, QR_SIDE).moduleSize);
 }
 
+static void testGalleryMetricsMatchTheSpec()
+{
+    EXPECT_EQ(270, galleryTileWidth(4));
+    EXPECT_EQ(360, galleryTileHeight(4));
+    EXPECT_EQ(1152, GALLERY_CONTENT_WIDTH);
+    IntRect last = galleryTileRect(11, 4, 100);
+    EXPECT_EQ(56 + 3 * (270 + 24), last.x);
+    EXPECT_EQ(100 + 2 * (360 + 24), last.y);
+    EXPECT_EQ(100 + 1128, last.y + last.height); // three rows are 1128 px
+}
+
+static void testGalleryRowsThatFit()
+{
+    GalleryFrame frame = galleryFrame(4, 3, 12, 1128);
+    EXPECT_EQ(3, frame.rows);
+    EXPECT_EQ(12, frame.perPage);
+    EXPECT_EQ(1, frame.pageCount);
+    frame = galleryFrame(4, 3, 12, 1127); // one pixel short: two rows
+    EXPECT_EQ(2, frame.rows);
+    EXPECT_EQ(8, frame.perPage);
+    EXPECT_EQ(2, frame.pageCount);
+    frame = galleryFrame(4, 3, 5, 10); // never below one row
+    EXPECT_EQ(1, frame.rows);
+    EXPECT_EQ(2, frame.pageCount);
+}
+
+static void testGalleryPageBarTakesRoomOnlyWhenPaging()
+{
+    EXPECT_EQ(3, galleryFrame(4, 3, 12, 1200).rows);
+    GalleryFrame paged = galleryFrame(4, 3, 13, 1200);
+    EXPECT_EQ(2, paged.rows); // 1200 - 80 = 1120 < 1128
+    EXPECT_EQ(2, paged.pageCount);
+    EXPECT_EQ(3, galleryFrame(4, 3, 13, 1208).rows);
+    EXPECT_EQ(1, galleryFrame(4, 3, 0, 1500).pageCount);
+}
+
+static void testGalleryClampsColumnsAndRows()
+{
+    GalleryFrame frame = galleryFrame(0, 99, 1, 100000);
+    EXPECT_EQ(1, frame.columns);
+    EXPECT_EQ(GALLERY_MAX_ROWS, frame.rows);
+    EXPECT_EQ(GALLERY_MAX_COLUMNS, galleryFrame(50, 1, 1, 1000).columns);
+}
+
+static void testGalleryPageOfSlot()
+{
+    EXPECT_EQ(0, galleryPageOfSlot(0, 12));
+    EXPECT_EQ(0, galleryPageOfSlot(11, 12));
+    EXPECT_EQ(1, galleryPageOfSlot(12, 12));
+    EXPECT_EQ(2, galleryPageOfSlot(17, 8));
+    EXPECT_EQ(0, galleryPageOfSlot(-1, 12));
+    EXPECT_EQ(0, galleryPageOfSlot(5, 0));
+}
+
+static void testViewerZones()
+{
+    EXPECT_EQ(ZONE_PREVIOUS, viewerZoneAt(0, 1264));
+    EXPECT_EQ(ZONE_PREVIOUS, viewerZoneAt(420, 1264));
+    EXPECT_EQ(ZONE_TOGGLE_CHROME, viewerZoneAt(421, 1264));
+    EXPECT_EQ(ZONE_TOGGLE_CHROME, viewerZoneAt(842, 1264));
+    EXPECT_EQ(ZONE_NEXT, viewerZoneAt(843, 1264));
+    EXPECT_EQ(ZONE_NEXT, viewerZoneAt(1263, 1264));
+}
+
+static void testViewerNavigationHasNoWrap()
+{
+    EXPECT_EQ(2, viewerIndexAfterStep(1, 5, 1));
+    EXPECT_EQ(0, viewerIndexAfterStep(1, 5, -1));
+    EXPECT_EQ(0, viewerIndexAfterStep(0, 5, -1));
+    EXPECT_EQ(4, viewerIndexAfterStep(4, 5, 1));
+    EXPECT_EQ(0, viewerIndexAfterStep(0, 0, 1));
+}
+
+static void testNeighbourAfterRemoval()
+{
+    EXPECT_EQ(3, neighbourAfterRemoval(2, 5));
+    EXPECT_EQ(3, neighbourAfterRemoval(4, 5)); // the last one: the previous
+    EXPECT_EQ(1, neighbourAfterRemoval(0, 3));
+    EXPECT_EQ(-1, neighbourAfterRemoval(0, 1));
+    EXPECT_EQ(-1, neighbourAfterRemoval(7, 3));
+    EXPECT_EQ(-1, neighbourAfterRemoval(-1, 3));
+}
+
+static void testViewerAreas()
+{
+    IntRect full = viewerPictureArea(false, 1500);
+    EXPECT_EQ(0, full.y);
+    EXPECT_EQ(1500, full.height);
+    IntRect shown = viewerPictureArea(true, 1500);
+    EXPECT_EQ(HEADER_HEIGHT, shown.y);
+    IntRect secondary = viewerSecondaryRect(1500);
+    IntRect primary = viewerPrimaryRect(1500);
+    EXPECT_EQ(1500 - BOTTOM_MARGIN - 120, secondary.y);
+    EXPECT_EQ(360, secondary.width);
+    EXPECT_EQ(secondary.x + secondary.width + 24, primary.x);
+    EXPECT_EQ(GUTTER + CONTENT_WIDTH, primary.x + primary.width);
+    EXPECT_EQ(secondary.y - RHYTHM, shown.y + shown.height);
+}
+
+static void testFitInside()
+{
+    int w = 0;
+    int h = 0;
+    fitInside(300, 400, 270, 360, &w, &h);
+    EXPECT_EQ(270, w);
+    EXPECT_EQ(360, h);
+    fitInside(4000, 3000, 270, 360, &w, &h); // landscape in a portrait tile
+    EXPECT_EQ(270, w);
+    EXPECT_EQ(202, h);
+    fitInside(100, 1000, 500, 500, &w, &h);
+    EXPECT_EQ(50, w);
+    EXPECT_EQ(500, h);
+    fitInside(0, 10, 500, 500, &w, &h);
+    EXPECT_EQ(0, w);
+    EXPECT_EQ(0, h);
+}
+
 int main()
 {
+    testGalleryMetricsMatchTheSpec();
+    testGalleryRowsThatFit();
+    testGalleryPageBarTakesRoomOnlyWhenPaging();
+    testGalleryClampsColumnsAndRows();
+    testGalleryPageOfSlot();
+    testViewerZones();
+    testViewerNavigationHasNoWrap();
+    testNeighbourAfterRemoval();
+    testViewerAreas();
+    testFitInside();
     testCharsPerLine();
     testCodePoints();
     testWrap();

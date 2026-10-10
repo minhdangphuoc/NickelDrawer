@@ -5,6 +5,9 @@
 #include <QKeyEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPolygonF>
+#include <QVector>
 #include <QTimer>
 
 #include "debug_log.h"
@@ -13,11 +16,16 @@
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
 #include "open_popups.h"
+#include "picture_loader.h"
 
 using namespace ScreenLogic;
 
 static const int RUN_FROM_EVENT_LOOP = 0;
 static const int ONE_PAGE_PER_STEP = 1;
+static const qreal DASH_LENGTH = 4; // in pen widths
+static const int MISSING_GLYPH_WIDTH = 96;
+static const int MISSING_GLYPH_HEIGHT = 80;
+static const int MISSING_GLYPH_STROKE = 3;
 
 static QColor grey(int level)
 {
@@ -52,6 +60,14 @@ static const char *targetName(TapTarget::Kind kind)
         return "previous page";
     case TapTarget::TAP_NEXT_PAGE:
         return "next page";
+    case TapTarget::TAP_TILE:
+        return "tile";
+    case TapTarget::TAP_VIEWER_PREVIOUS:
+        return "viewer previous zone";
+    case TapTarget::TAP_VIEWER_NEXT:
+        return "viewer next zone";
+    case TapTarget::TAP_VIEWER_TOGGLE_CHROME:
+        return "viewer chrome zone";
     case TapTarget::TAP_COMPONENT:
         break;
     }
@@ -59,41 +75,86 @@ static const char *targetName(TapTarget::Kind kind)
 }
 
 ScreenCanvas::ScreenCanvas(QWidget *drawerView, QWidget *parent)
-    : PressArea(parent), host(drawerView), hasScreen(false), pageIndex(0), pendingPage(-1), isInputBlocked(false)
+    : PressArea(parent), host(drawerView), hasScreen(false), pageIndex(0), pendingPage(-1), isInputBlocked(false),
+      isChrome(true)
 {
     DrawerLogic::resetRefreshPolicy(&refreshPolicy);
     setObjectName(QStringLiteral("nickelDrawerScreenCanvas"));
     setAttribute(Qt::WA_OpaquePaintEvent, true); // paintEvent covers every pixel
     host->installEventFilter(this);
     connect(this, SIGNAL(tapped()), this, SLOT(onTapped()));
+    connect(this, SIGNAL(longPressed()), this, SLOT(onLongPressed()));
 }
 
-const ScreenComponent *ScreenCanvas::component(int index) const
+bool ScreenCanvas::componentAt(int index, ScreenComponent *copy) const
 {
-    return index >= 0 && index < layout.componentCount() ? &layout.component(index) : NULL;
+    if (index < 0 || index >= layout.componentCount()) {
+        return false;
+    }
+    *copy = layout.component(index);
+    return true;
+}
+
+QString ScreenCanvas::viewerPictureId() const
+{
+    const PictureTile *tile = layout.viewerShownTile();
+    return tile ? tile->id : QString();
+}
+
+bool ScreenCanvas::isViewerPictureCurrent() const
+{
+    const PictureTile *tile = layout.viewerShownTile();
+    return tile && tile->isCurrent;
+}
+
+void ScreenCanvas::dropPictures()
+{
+    if (!pixmaps.isEmpty()) {
+        DebugLog::write("screen: %d decoded picture(s) released", pixmaps.size());
+        pixmaps.clear();
+    }
 }
 
 void ScreenCanvas::showScreen(const ScreenModel &next)
 {
     bool isSameScreen = hasScreen && next.app == model.app && next.screen == model.screen;
+    // The picture on screen is the user's, not the reply's: a reload that was
+    // asked before a flip must not jump back.
+    QString keptPicture = isSameScreen ? viewerPictureId() : QString();
     model = next;
     hasScreen = true;
     layout = ScreenLayout(model, height(), hostTexts());
+    if (layout.viewerComponent() >= 0) {
+        isChrome = isSameScreen ? isChrome : true;
+        layout.setChromeShown(isChrome);
+        int kept = layout.viewerIndexOfTile(keptPicture);
+        if (kept >= 0) {
+            layout.showViewerPictureAt(kept);
+        }
+    }
     if (!isSameScreen && model.screen.isEmpty()) {
         // A placeholder (no screen id: loading) is drawn without the flash.
         pageIndex = 0;
         page = layout.page(0);
+        refreshPictures();
         update();
         return;
     }
     if (!isSameScreen) {
         pageIndex = pendingPage < 0 ? 0 : qBound(0, pendingPage, layout.pageCount() - 1);
+        int tilePage = layout.pageOfGalleryTile(pendingTileId);
+        pageIndex = tilePage >= 0 ? tilePage : pageIndex;
         pendingPage = -1;
+        pendingTileId.clear();
         applyPage(pageIndex, true);
-        return;
+    } else {
+        pageIndex = qBound(0, pageIndex, layout.pageCount() - 1);
+        applyPage(pageIndex, layout.viewerComponent() >= 0 && viewerPictureId() != keptPicture);
     }
-    pageIndex = qBound(0, pageIndex, layout.pageCount() - 1);
-    applyPage(pageIndex, false);
+    emit viewerStateChanged();
+    if (layout.viewerComponent() >= 0 && !viewerPictureId().isEmpty() && viewerPictureId() != keptPicture) {
+        emit viewerPictureChanged(viewerPictureId());
+    }
 }
 
 void ScreenCanvas::setInputBlocked(bool isBlocked)
@@ -125,6 +186,7 @@ void ScreenCanvas::applyPage(int index, bool isFullRefresh)
     ScreenPage next = layout.page(index);
     if (isFullRefresh) {
         page = next;
+        refreshPictures();
         logTargets();
         scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy), QRegion());
         return;
@@ -132,6 +194,7 @@ void ScreenCanvas::applyPage(int index, bool isFullRefresh)
     bool isSameStructure = false;
     QRegion region = changedRegion(next, &isSameStructure);
     page = next;
+    refreshPictures();
     if (!isSameStructure) {
         logTargets();
         scheduleRefresh(DrawerLogic::refreshForPageChange(&refreshPolicy), QRegion());
@@ -156,6 +219,64 @@ QRegion ScreenCanvas::changedRegion(const ScreenPage &next, bool *isSameStructur
         }
     }
     return region;
+}
+
+// Keeps only the pictures of the shown page decoded (the previous page's, or
+// the previous viewer picture, are released first), then decodes what is new.
+// Reads are small and capped (picture_loader.h) and happen when the page is
+// laid out, never while painting.
+void ScreenCanvas::refreshPictures()
+{
+    QHash<QString, QSize> wanted;
+    for (int i = 0; i < page.items.size(); i++) {
+        const PaintItem &item = page.items[i];
+        if (item.shape == PaintItem::SHAPE_IMAGE && !item.imagePath.isEmpty()) {
+            wanted.insert(item.imagePath, item.rect.size());
+        }
+    }
+    QList<QString> held = pixmaps.keys();
+    int released = 0;
+    for (int i = 0; i < held.size(); i++) {
+        if (!wanted.contains(held[i]) || wanted.value(held[i]) != pixmaps.value(held[i]).box) {
+            pixmaps.remove(held[i]);
+            released++;
+        }
+    }
+    int decoded = 0;
+    for (QHash<QString, QSize>::const_iterator it = wanted.constBegin(); it != wanted.constEnd(); ++it) {
+        if (pixmaps.contains(it.key())) {
+            continue;
+        }
+        CachedPicture picture;
+        picture.box = it.value();
+        picture.pixmap = PictureLoader::load(it.key(), it.value());
+        pixmaps.insert(it.key(), picture);
+        decoded++;
+    }
+    if (released > 0 || decoded > 0) {
+        DebugLog::write("screen: pictures released %d, decoded %d, held %d", released, decoded, pixmaps.size());
+    }
+}
+
+const QPixmap *ScreenCanvas::pictureFor(const PaintItem &item) const
+{
+    QHash<QString, CachedPicture>::const_iterator found = pixmaps.constFind(item.imagePath);
+    return found == pixmaps.constEnd() || found.value().pixmap.isNull() ? NULL : &found.value().pixmap;
+}
+
+void ScreenCanvas::hideEvent(QHideEvent *event)
+{
+    PressArea::hideEvent(event);
+    dropPictures(); // a hidden screen keeps nothing decoded
+}
+
+void ScreenCanvas::showEvent(QShowEvent *event)
+{
+    PressArea::showEvent(event);
+    if (hasScreen && pixmaps.isEmpty()) {
+        refreshPictures();
+        update();
+    }
 }
 
 void ScreenCanvas::scheduleRefresh(DrawerLogic::RefreshKind kind, const QRegion &region)
@@ -187,9 +308,9 @@ void ScreenCanvas::logTargets() const
                     isInputBlocked ? ", input blocked" : "");
     for (int i = 0; i < page.targets.size(); i++) {
         const TapTarget &target = page.targets[i];
-        const ScreenComponent *tapped = component(target.component);
+        bool hasComponent = target.component >= 0 && target.component < layout.componentCount();
         DebugLog::write("screen: target %d: %s %d (%s \"%s\") at %d,%d %dx%d", i, targetName(target.kind),
-                        target.component, tapped ? qPrintable(tapped->type) : "-", qPrintable(target.value),
+                        target.component, hasComponent ? qPrintable(layout.component(target.component).type) : "-", qPrintable(target.value),
                         target.rect.x(), target.rect.y(), target.rect.width(), target.rect.height());
     }
 }
@@ -218,8 +339,36 @@ bool ScreenCanvas::handlePageKey(int key)
         DebugLog::write("screen: page key ignored while an action is pending");
         return true;
     }
+    if (hasViewer()) {
+        stepViewer(pageKey == DrawerLogic::PAGE_KEY_NEXT ? 1 : -1);
+        return true;
+    }
     goToPage(DrawerLogic::pageAfterKey(pageIndex, pageKey, layout.pageCount(), ONE_PAGE_PER_STEP));
     return true;
+}
+
+// Every picture change is a full refresh (GC16); at the ends nothing happens.
+void ScreenCanvas::stepViewer(int step)
+{
+    int next = ScreenLogic::viewerIndexAfterStep(layout.viewerShownIndex(), layout.viewerCount(), step);
+    if (next == layout.viewerShownIndex()) {
+        return;
+    }
+    OpenPopups::closeAll("viewer picture change");
+    DebugLog::write("viewer: picture %d -> %d of %d", layout.viewerShownIndex() + 1, next + 1, layout.viewerCount());
+    layout.showViewerPictureAt(next);
+    applyPage(0, true);
+    emit viewerStateChanged();
+    emit viewerPictureChanged(viewerPictureId());
+}
+
+void ScreenCanvas::toggleChrome()
+{
+    isChrome = !isChrome;
+    DebugLog::write("viewer: chrome %s", isChrome ? "shown" : "hidden");
+    layout.setChromeShown(isChrome);
+    applyPage(0, true);
+    emit viewerStateChanged();
 }
 
 void ScreenCanvas::goToPage(int index)
@@ -250,7 +399,9 @@ PressArea::PressFeedback ScreenCanvas::feedbackAt(const QPoint &position) const
     PressFeedback feedback;
     feedback.highlight = HIGHLIGHT_NONE;
     const TapTarget *target = isInputBlocked ? NULL : targetAt(position);
-    if (target) {
+    bool isZone = target && (target->kind == TapTarget::TAP_VIEWER_PREVIOUS || target->kind == TapTarget::TAP_VIEWER_NEXT ||
+                             target->kind == TapTarget::TAP_VIEWER_TOGGLE_CHROME);
+    if (target && !isZone) { // a third of the picture never inverts
         feedback.rect = target->rect;
         feedback.highlight = HIGHLIGHT_INVERT;
     }
@@ -279,17 +430,60 @@ void ScreenCanvas::onTapped()
     case TapTarget::TAP_NEXT_PAGE:
         goToPage(qMin(layout.pageCount() - 1, pageIndex + 1));
         return;
+    case TapTarget::TAP_VIEWER_PREVIOUS:
+        stepViewer(-1);
+        return;
+    case TapTarget::TAP_VIEWER_NEXT:
+        stepViewer(1);
+        return;
+    case TapTarget::TAP_VIEWER_TOGGLE_CHROME:
+        toggleChrome();
+        return;
+    case TapTarget::TAP_TILE:
     case TapTarget::TAP_COMPONENT:
         emit componentTapped(target.component, target.value);
         return;
     }
 }
 
+// A held gallery tile opens the tile menu at the tile; PressArea keeps the
+// pressed state until this returns, and does not also send tapped().
+void ScreenCanvas::onLongPressed()
+{
+    QPoint position = pressPosition();
+    const TapTarget *found = isInputBlocked ? NULL : targetAt(position);
+    if (!found || found->kind != TapTarget::TAP_TILE) {
+        DebugLog::write("screen: long press at %d,%d ignored (%s)", position.x(), position.y(),
+                        found ? "not a gallery tile" : "no target");
+        return;
+    }
+    TapTarget target = *found;
+    DebugLog::write("screen: long press on tile \"%s\" at %d,%d", qPrintable(target.value), position.x(), position.y());
+    emit tileLongPressed(target.component, target.value, mapToGlobal(target.rect.center()));
+}
+
 // ---- Painting (cmd/ndpreview/render_png.go) ----
 
 // Borders are drawn in the item's ink (a disabled button's outline is dim).
+static void paintDashedRect(QPainter *painter, const PaintItem &item)
+{
+    painter->save();
+    QPen pen(grey(item.ink), item.border);
+    pen.setStyle(Qt::DashLine);
+    pen.setDashPattern(QVector<qreal>() << DASH_LENGTH << DASH_LENGTH);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    qreal inset = item.border / 2.0;
+    painter->drawRect(QRectF(item.rect).adjusted(inset, inset, -inset - 1, -inset - 1));
+    painter->restore();
+}
+
 static void paintRect(QPainter *painter, const PaintItem &item)
 {
+    if (item.isDashed) {
+        paintDashedRect(painter, item);
+        return;
+    }
     const QRect &r = item.rect;
     if (item.fill != NO_FILL) {
         painter->fillRect(r, grey(item.fill));
@@ -378,7 +572,66 @@ static void paintQr(QPainter *painter, const PaintItem &item)
     }
 }
 
-static void paintItem(QPainter *painter, const PaintItem &item)
+// A picture icon: frame, sun and two hills, drawn in ink.
+static void paintPictureGlyph(QPainter *painter, const QRect &box, int ink, int stroke)
+{
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    QPen pen(grey(ink), stroke);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+    painter->setBrush(Qt::NoBrush);
+    qreal inset = stroke / 2.0;
+    QRectF frame = QRectF(box).adjusted(inset, inset, -inset, -inset);
+    painter->drawRoundedRect(frame, 6, 6);
+    qreal w = frame.width();
+    qreal h = frame.height();
+    painter->drawEllipse(QPointF(frame.x() + 0.28 * w, frame.y() + 0.32 * h), 0.08 * w, 0.08 * w);
+    QPolygonF hills;
+    hills << QPointF(frame.x() + 0.06 * w, frame.y() + 0.86 * h) << QPointF(frame.x() + 0.36 * w, frame.y() + 0.52 * h)
+          << QPointF(frame.x() + 0.55 * w, frame.y() + 0.72 * h) << QPointF(frame.x() + 0.70 * w, frame.y() + 0.56 * h)
+          << QPointF(frame.x() + 0.94 * w, frame.y() + 0.86 * h);
+    painter->drawPolyline(hills);
+    painter->restore();
+}
+
+static void paintCheck(QPainter *painter, const PaintItem &item)
+{
+    if (item.border <= 0) {
+        return;
+    }
+    painter->save();
+    painter->setRenderHint(QPainter::Antialiasing, true);
+    QPen pen(grey(item.ink), item.border);
+    pen.setJoinStyle(Qt::RoundJoin);
+    pen.setCapStyle(Qt::RoundCap);
+    painter->setPen(pen);
+    const QRect &r = item.rect;
+    QPolygonF mark;
+    mark << QPointF(r.x() + 0.28 * r.width(), r.y() + 0.52 * r.height())
+         << QPointF(r.x() + 0.44 * r.width(), r.y() + 0.68 * r.height())
+         << QPointF(r.x() + 0.74 * r.width(), r.y() + 0.34 * r.height());
+    painter->drawPolyline(mark);
+    painter->restore();
+}
+
+// The picture centred in its box (it was decoded to fit); the glyph when it is missing.
+static void paintImage(QPainter *painter, const PaintItem &item, const QPixmap *picture)
+{
+    if (picture) {
+        painter->drawPixmap(item.rect.x() + (item.rect.width() - picture->width()) / 2,
+                            item.rect.y() + (item.rect.height() - picture->height()) / 2, *picture);
+        return;
+    }
+    if (item.showsMissingGlyph) {
+        QRect glyph(0, 0, MISSING_GLYPH_WIDTH, MISSING_GLYPH_HEIGHT);
+        glyph.moveCenter(item.rect.center());
+        paintPictureGlyph(painter, glyph, INK_DIM, MISSING_GLYPH_STROKE);
+    }
+}
+
+static void paintItem(QPainter *painter, const PaintItem &item, const QPixmap *picture)
 {
     switch (item.shape) {
     case PaintItem::SHAPE_RECT:
@@ -393,6 +646,15 @@ static void paintItem(QPainter *painter, const PaintItem &item)
     case PaintItem::SHAPE_QR:
         paintQr(painter, item);
         break;
+    case PaintItem::SHAPE_IMAGE:
+        paintImage(painter, item, picture);
+        break;
+    case PaintItem::SHAPE_CHECK:
+        paintCheck(painter, item);
+        break;
+    case PaintItem::SHAPE_PICTURE_GLYPH:
+        paintPictureGlyph(painter, item.rect, item.ink, item.border);
+        break;
     }
 }
 
@@ -402,7 +664,8 @@ void ScreenCanvas::paintEvent(QPaintEvent *event)
     painter.fillRect(event->rect(), grey(PAPER_WHITE));
     for (int i = 0; i < page.items.size(); i++) {
         if (page.items[i].rect.intersects(event->rect())) {
-            paintItem(&painter, page.items[i]);
+            const PaintItem &item = page.items[i];
+            paintItem(&painter, item, item.shape == PaintItem::SHAPE_IMAGE ? pictureFor(item) : NULL);
         }
     }
 }

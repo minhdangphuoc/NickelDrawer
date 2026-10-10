@@ -35,7 +35,7 @@ Rules: no shadows, no gradients, no animation. Title font about 1.25 x body. Tex
 
 ## 3. Components
 
-Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Extra components of `ui-json.md`: `section` (small-caps group label), `row` (128 px tappable row with detail and chevron), `qr` (QR of one value), `empty` (§3.17); dialogs and toasts are declared per screen (`dialogs`, `toasts`). Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
+Every component below keeps the `ui.json` keys of plan §7.2 unless marked **new**. Extra components of `ui-json.md`: `gallery` and `viewer` (§3.19, §3.20), `section` (small-caps group label), `row` (128 px tappable row with detail and chevron), `qr` (QR of one value), `empty` (§3.17); dialogs and toasts are declared per screen (`dialogs`, `toasts`). Strings may be plain or `{ "en": "...", "vi": "..." }`. Bindings use `$name` (plan §7.3).
 
 Common to all components:
 - **E-ink refresh:** a bound-value change repaints only that widget (partial). Push or pop does one full refresh. After 8 partial updates, the next change forces a full refresh. At most 2 updates per second per screen.
@@ -55,6 +55,7 @@ Purpose: title, back, one status text, one optional action.
 - Parts: back arrow (left), title, then at the right of the same row the status text (sans 32 px, dark grey, at most 340 px, elided) and the optional action (underlined, 120 px tap target, inverts while pressed). **Status is plain text, never a pill.** (`badge` from plan v2 is renamed `status`; `badge` stays accepted as an alias.)
 - Size: 121 px (row + divider); the body starts 24 px below it. `cmd/ndpreview` draws the same boxes ("←" stands for Nickel's arrow image).
 - Events: `action` (when `action.action` is set); back pops the screen (a pushed screen returns to the one under it, the start screen returns to the drawer). Back is ignored while an action is pending.
+- **Icon actions** (`actions`, 1 to 2, instead of the text `action`): `{ "icon": "import", "label": "Import", "action": "import" }`. Icons: `import` (arrow into a tray), `settings` (gear), `refresh`, `add`. Each is a 120 x 120 px tap target at the right end of the header row (the last one rightmost, the status text left of them); pressed, it shows Nickel's black circle with the icon in white. `label` is the accessible name (ndpreview's sidebar, the log), not drawn. Exactly one of `push` / `action` per icon.
 - States: status empty (hidden), status long (elided at the end, one line).
 - Refresh: status change repaints the header text only.
 - Drawer header differs: see §5.1.
@@ -127,6 +128,7 @@ Replaces `progress` for v1 apps. Plan §7.2's bar is dropped.
 **New.** `{ "radio": "Language", "bind": "lang", "options": [["en", "English"], ["vi", "Tiếng Việt"]] }`
 
 - One row per option, whole row tappable, filled ring on the chosen one. Up to 8 options; more goes to a List screen.
+- An option may have a **sub-line** (third entry, text 60): caption style under the label; the row is 128 px instead of 104.
 - Event: `{"event":"input","bind":"lang","value":"vi"}`.
 
 ### 3.10 Text field
@@ -187,6 +189,27 @@ Centered Text (heading + caption) and one primary button. Drawer empty state: "N
 ### 3.18 No-Wi-Fi dialog
 
 Shown by the host when an action needs Wi-Fi and it is off. Text "Wi-Fi is off. Turn it on to continue." Buttons: **Cancel** / **Turn on Wi-Fi**. Turn on sends `{"event":"wifi",…}` after the connect flow. Cancel returns to the screen unchanged.
+
+### 3.19 Gallery
+
+**New.** `{ "gallery": "$pictures", "on_tap": { "push": "viewer" }, "on_long_press": [ … ], "pending": "$pending", "empty": { … } }`. Contract: [wallpaper-gallery.md](wallpaper-gallery.md) §2.1, §3.2.
+
+- A grid of picture tiles, 4 columns x 3 rows by default (`columns`, `rows` 1 to 6). Side padding 56 px, gutter 24 px; with 4 columns a tile is 270 x 360 px (3:4, the screen's aspect), 1 px black border, the thumbnail fitted inside on white, no caption. When the rows do not fit the free height, fewer rows are drawn.
+- The current picture (`badge: current`): 4 px border and a black 56 px circle with a white check at the top-right corner (12 px inset).
+- `pending` adds that many dashed placeholder tiles (2 px dashes, grey 140, no fill) after the items. A tile whose thumbnail is missing keeps the border and shows a small outline picture glyph in dim grey.
+- More than one page: pager `‹ 1 / 2 ›` at the bottom; page-turn keys flip grid pages. Components before the gallery repeat on every grid page.
+- Tap: `on_tap` (push a screen or run an action; the tile id is the value). Long press: Nickel's popup menu from `on_long_press` (title row: the tile label); `info: true` opens a plain dialog with the tile's `info` text; an item with `confirm` asks first.
+- Empty (no tiles and no pending): the `empty` object draws a picture icon, heading, text and a primary button.
+- Tiles repaint partially when a thumbnail or badge changes; a page change is a full refresh.
+
+### 3.20 Viewer
+
+**New.** `{ "viewer": "$pictures", "selected": "selected", "current_status": "In use", "primary": { … }, "secondary": { … } }`. The only component of its screen, no footer.
+
+- The picture fitted as large as possible below the header and above the bottom bar, on white; every picture change is a full refresh.
+- Chrome shown: header title `n / N` (built from the position), `current_status` at the right while the shown picture is current; bottom bar of 120 px: `secondary` (360 px) at the left, `primary` filling the rest, 24 px gap. When the shown picture is current the primary is disabled and reads `label_current`.
+- Tap zones: left third previous, right third next, centre toggles the chrome. Chrome hidden: the picture fills the whole area. Page-turn keys: next / previous picture, no wrap.
+- Events: `primary` and `secondary` (after its `confirm`) send the shown id as the value. The variable `selected` holds the screen value (the shown id) so bindings can read it.
 
 ## 4. i18n and layout notes
 

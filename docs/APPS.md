@@ -44,6 +44,10 @@ Apps run as **root** on a device that holds the user's library. So:
 - Secrets live in `data/` with mode 600 and never appear in output or logs.
 - Do not ship Kobo binaries or firmware files.
 
+### Running inside the drawer
+
+Every script the native drawer starts (actions, events, the `state` read) has `NICKELDRAWER=1` in its environment. In that case return at once (no waiting loops) and print only a JSON signal (`{"toast":"id"}`, `{"dialog":"id"}`) or nothing; never print prose meant for a dialog. Declare the toast or dialog in `ui.json` instead.
+
 ### Naming and versioning
 
 - `id`: lowercase, digits, `-`; it equals the folder name and never changes after release (the user's data lives under it).
@@ -128,6 +132,7 @@ More (Nickel) → Apps drawer → your app's main screen → sub-screen → (det
 | Choose one of several actions on an item | **Popup menu** (long-press) | Duplicate → Move to trash / Keep |
 | Confirm something destructive, or show one result | **Dialog** (OK / Cancel) | "Remove this app?" |
 | Tell the user something finished | **Toast** (one line, disappears) | "3 books added" |
+| Browse many pictures as a grid, then view one | **Gallery** on `main` and **viewer** on a pushed screen (both bound to one array from `state`; header icon `actions`) | Wallpaper ([spec/wallpaper-gallery.md](spec/wallpaper-gallery.md)) |
 
 - **Never stack modals:** no dialog on top of a popup, no navigation from inside a dialog, at most one dialog at a time.
 - **Don't hide screens behind long-press only.** Long-press is a shortcut; every screen must also be reachable by a visible row or header action.

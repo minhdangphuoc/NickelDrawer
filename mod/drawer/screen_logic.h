@@ -139,6 +139,79 @@ struct QrPlacement {
 };
 QrPlacement placeQr(int moduleCount, int side);
 
+// ---- Gallery and viewer (docs/spec/wallpaper-gallery.md sections 2 and 5) ----
+// Constants mirror cmd/ndpreview/metrics.go GALLERY_* and VIEWER_*; change both.
+
+static const int GALLERY_SIDE_PADDING = 56;
+static const int GALLERY_CONTENT_WIDTH = SCREEN_WIDTH - 2 * GALLERY_SIDE_PADDING;
+static const int GALLERY_GUTTER = 24;
+static const int GALLERY_DEFAULT_COLUMNS = 4;
+static const int GALLERY_DEFAULT_ROWS = 3;
+static const int GALLERY_MAX_COLUMNS = 6;
+static const int GALLERY_MAX_ROWS = 6;
+static const int GALLERY_BORDER = 1;
+static const int GALLERY_CURRENT_BORDER = 4;
+static const int GALLERY_BADGE_SIDE = 56;
+static const int GALLERY_BADGE_INSET = 12;
+static const int GALLERY_PLACEHOLDER_BORDER = 2;
+static const int GALLERY_BOTTOM_MARGIN = RHYTHM;
+static const int GALLERY_EMPTY_ICON_SIDE = 160;
+
+static const int VIEWER_BAR_HEIGHT = 120;
+static const int VIEWER_SECONDARY_WIDTH = 360;
+static const int VIEWER_BAR_GAP = 24;
+
+// Larger files are never read (a picture is decoded from memory).
+static const int MAX_PICTURE_FILE_BYTES = 8 * 1024 * 1024;
+
+struct IntRect {
+    int x;
+    int y;
+    int width;
+    int height;
+};
+
+// 270 x 360 for 4 columns: 3:4, the screen's aspect.
+int galleryTileWidth(int columns);
+int galleryTileHeight(int columns);
+
+struct GalleryFrame {
+    int columns;
+    int rows;
+    int perPage;
+    int pageCount; // at least 1
+};
+
+// Columns and wanted rows are clamped to 1..6. Rows shrink (at least 1) until
+// the grid fits availableHeight; when the slots then need more than one page,
+// the page bar takes PAGE_BAR_HEIGHT + RHYTHM and the rows are fitted again.
+GalleryFrame galleryFrame(int columns, int wantedRows, int slotCount, int availableHeight);
+
+// Slot (tile or placeholder) rectangle on its page, row-major from gridTop.
+IntRect galleryTileRect(int slotOnPage, int columns, int gridTop);
+
+// Page that holds the slot at index; 0 for a negative index.
+int galleryPageOfSlot(int index, int perPage);
+
+// Index of the picture to show after removing index of count: the next one,
+// else the previous one; -1 when none is left.
+int neighbourAfterRemoval(int index, int count);
+
+// Picture index after a flip of step (-1 or +1); no wrap-around, the ends stay.
+int viewerIndexAfterStep(int index, int count, int step);
+
+enum ViewerZone { ZONE_PREVIOUS, ZONE_TOGGLE_CHROME, ZONE_NEXT };
+// Left third, right third, centre of a view width px wide.
+ViewerZone viewerZoneAt(int x, int width);
+
+// Picture area: below the header and above the bottom bar, or the whole view.
+IntRect viewerPictureArea(bool isChromeShown, int viewHeight);
+IntRect viewerSecondaryRect(int viewHeight);
+IntRect viewerPrimaryRect(int viewHeight);
+
+// Largest size with the source's aspect that fits the box (scales up too).
+void fitInside(int sourceWidth, int sourceHeight, int boxWidth, int boxHeight, int *width, int *height);
+
 // ---- Live screens ----
 
 // A live screen (state action) is re-read this often while visible and idle;

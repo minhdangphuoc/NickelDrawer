@@ -1,6 +1,10 @@
 #ifndef NICKELDRAWER_SCREEN_CANVAS_H
 #define NICKELDRAWER_SCREEN_CANVAS_H
 
+#include <QHash>
+#include <QPixmap>
+#include <QSize>
+
 #include "drawer_logic.h"
 #include "press_area.h"
 #include "screen_layout.h"
@@ -26,23 +30,48 @@ public:
     // A different screen starts at page 1; the same screen keeps its page.
     void showScreen(const ScreenModel &model);
     const ScreenModel &screen() const { return model; }
-    const ScreenComponent *component(int index) const;
+    // A copy: the layout (and its components) is rebuilt on the next showScreen.
+    bool componentAt(int index, ScreenComponent *copy) const;
     // While a dialog or an action is pending: taps and page keys are ignored.
     void setInputBlocked(bool isBlocked);
     int currentPage() const { return pageIndex; }
     void restorePageOnNextScreen(int page) { pendingPage = page; }
+    // The next new screen opens at the grid page holding this picture (back from the viewer).
+    void restoreTileOnNextScreen(const QString &id) { pendingTileId = id; }
+
+    // Viewer state for the header ("n / N", status).
+    bool hasViewer() const { return layout.viewerComponent() >= 0; }
+    bool isChromeShown() const { return layout.chromeShown(); }
+    int viewerPosition() const { return layout.viewerShownIndex() + 1; }
+    int viewerCount() const { return layout.viewerCount(); }
+    QString viewerCurrentStatus() const { return hasViewer() ? layout.component(layout.viewerComponent()).currentStatus : QString(); }
+    QString viewerPictureId() const;
+    bool isViewerPictureCurrent() const;
+    // Shown pictures held in memory (tests and the log).
+    int cachedPictureCount() const { return pixmaps.size(); }
+    // Pop and close: nothing stays decoded.
+    void dropPictures();
 
 signals:
     void componentTapped(int component, const QString &value);
+    // A gallery tile was held; anchor in global coordinates.
+    void tileLongPressed(int component, const QString &id, const QPoint &anchor);
+    // The viewer shows another picture (the user flipped).
+    void viewerPictureChanged(const QString &id);
+    // The picture, the chrome or the viewer itself changed: refresh the header.
+    void viewerStateChanged();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event);
     void resizeEvent(QResizeEvent *event);
+    void hideEvent(QHideEvent *event);
+    void showEvent(QShowEvent *event);
     void paintEvent(QPaintEvent *event);
     PressFeedback feedbackAt(const QPoint &position) const;
 
 private slots:
     void onTapped();
+    void onLongPressed();
     void flashNow();
 
 private:
@@ -52,6 +81,10 @@ private:
     void scheduleRefresh(DrawerLogic::RefreshKind kind, const QRegion &region);
     bool handlePageKey(int key);
     void goToPage(int index);
+    void stepViewer(int step);
+    void toggleChrome();
+    void refreshPictures();
+    const QPixmap *pictureFor(const PaintItem &item) const;
     const TapTarget *targetAt(const QPoint &position) const;
     void logTargets() const;
 
@@ -64,6 +97,15 @@ private:
     int pendingPage; // -1: a new screen opens at page 1
     DrawerLogic::RefreshPolicy refreshPolicy;
     bool isInputBlocked;
+    QString pendingTileId;
+    bool isChrome; // the viewer's chrome, kept across reloads of the same screen
+    // Decoded pictures of the shown page only (thumbnails of the grid page, or
+    // the one viewer picture), with the box each was decoded for.
+    struct CachedPicture {
+        QSize box;
+        QPixmap pixmap; // null: unreadable, not retried until the page changes
+    };
+    QHash<QString, CachedPicture> pixmaps;
 };
 
 #endif

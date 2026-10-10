@@ -146,7 +146,17 @@ func drawShape(canvas *image.Gray, item Item) {
 		drawRect(canvas, item)
 	case "ellipse":
 		drawEllipse(canvas, item)
+	case "image":
+		drawPicture(canvas, item)
 	}
+}
+
+func drawPicture(canvas *image.Gray, item Item) {
+	if item.Picture == nil {
+		return
+	}
+	target := image.Rect(item.X, item.Y, item.X+item.W, item.Y+item.H)
+	draw.Draw(canvas, target.Intersect(canvas.Bounds()), item.Picture, image.Pt(max(0, canvas.Bounds().Min.X-item.X), max(0, canvas.Bounds().Min.Y-item.Y)), draw.Src)
 }
 
 func fillRect(canvas *image.Gray, rect image.Rectangle, level int) {
@@ -162,10 +172,34 @@ func drawRect(canvas *image.Gray, item Item) {
 	if border == 0 {
 		return
 	}
+	if item.Dashed {
+		drawDashedBorder(canvas, bounds, border, item.Ink)
+		return
+	}
 	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Min.Y+border), item.Ink)
 	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Max.Y-border, bounds.Max.X, bounds.Max.Y), item.Ink)
 	fillRect(canvas, image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Min.X+border, bounds.Max.Y), item.Ink)
 	fillRect(canvas, image.Rect(bounds.Max.X-border, bounds.Min.Y, bounds.Max.X, bounds.Max.Y), item.Ink)
+}
+
+const (
+	dashLength = 16
+	dashGap    = 12
+)
+
+// drawDashedBorder draws the four sides of bounds as dashes, so a placeholder tile reads as
+// "not there yet".
+func drawDashedBorder(canvas *image.Gray, bounds image.Rectangle, width, level int) {
+	for x := bounds.Min.X; x < bounds.Max.X; x += dashLength + dashGap {
+		end := min(x+dashLength, bounds.Max.X)
+		fillRect(canvas, image.Rect(x, bounds.Min.Y, end, bounds.Min.Y+width), level)
+		fillRect(canvas, image.Rect(x, bounds.Max.Y-width, end, bounds.Max.Y), level)
+	}
+	for y := bounds.Min.Y; y < bounds.Max.Y; y += dashLength + dashGap {
+		end := min(y+dashLength, bounds.Max.Y)
+		fillRect(canvas, image.Rect(bounds.Min.X, y, bounds.Min.X+width, end), level)
+		fillRect(canvas, image.Rect(bounds.Max.X-width, y, bounds.Max.X, end), level)
+	}
 }
 
 func drawEllipse(canvas *image.Gray, item Item) {

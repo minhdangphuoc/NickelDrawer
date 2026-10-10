@@ -70,19 +70,24 @@ Runs the declared action exactly like the NickelMenu item would (same script, sa
 
 - `wifi: true` in the manifest → `appsctl` returns `{"v":1,"ok":false,"needs_wifi":true,…}` without running when there is no IP; the mod then calls Nickel's Wi-Fi connect and retries once.
 - `rescan`: the mod triggers Nickel's library rescan (quick/full) after showing the result.
-- A script that exits non-zero still returns exit 0 with `"ok": false` and its stdout (stderr if stdout is empty) as `text`; `rescan` is then `none`. `kind: show` is capped at 30 s (then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH` and `HOME=/`.
+- A script that exits non-zero still returns exit 0 with `"ok": false` and its stdout (stderr if stdout is empty) as `text`; `rescan` is then `none`. `kind: show` is capped at 30 s (then `ok:false` with a timeout text). `kind: background` starts the script detached and returns `ok:true` at once. Scripts run from `/` with only `PATH`, `HOME=/` and `NICKELDRAWER=1` (the script runs inside the drawer: return at once, print only JSON signals or nothing).
 - Only actions declared in `app.json` can run (same validation as the menu). Unknown app/action → error.
 
-## `appsctl drawer screen <app-id> [--screen <id>]`
+## `appsctl drawer screen <app-id> [--screen <id>] [--value <v>]`
 
 Returns one screen of the app's `ui.json` (default: `start`), validated exactly like `appsctl validate`, with every text localized (`"@ui.key"` and `{en, vi}` maps, device language, English fallback) and every binding filled in. The mod only lays it out (`docs/spec/ui-kit.md`); it never evaluates bindings.
 
-Variables: the app's optional action with id `state` is run with the status budget (1 s, no cache). Its stdout must be one JSON object of variable values. A declared variable (`vars` in `ui.json`) takes the value from that object, else its `vars` default; a missing state action, a slow or failing script, or bad JSON leaves the defaults. Undeclared names are ignored.
+Variables: the app's optional action with id `state` is run with the status budget (1 s, no cache). Its stdout must be one JSON object of variable values. A declared variable (`vars` in `ui.json`) takes the value from that object, else its `vars` default; a missing state action leaves the defaults. When the state action fails, times out, exits non-zero or prints bad JSON, the defaults are used and the reply carries `"stale": true` (omitted otherwise): the mod then keeps its previous model instead of showing defaults. Undeclared names are ignored.
+
+`--value <v>` (a picture id of a gallery or viewer): the state action runs with `NICKELDRAWER_VALUE=<v>`, the variable `selected`, when declared, is set to `<v>` after the state values, and the reply echoes `"value": "<v>"` (omitted without `--value`; `--value ''` echoes an empty string).
+
+Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the state read of `drawer screen`) gets `NICKELDRAWER=1`, so an app script knows it runs inside the drawer: it must return at once (no waiting loops) and print only JSON signals (`{"toast":"id"}`, `{"dialog":"id"}`) or nothing, never prose meant for a dialog.
 
 ```json
 {
   "v": 1, "app": "localsend", "screen": "main", "title": "LocalSend", "status": "Receiving",
   "action": {"label": "Settings", "push": "settings"},
+  "actions": [{"icon": "import", "label": "Import", "action": "import"}],
   "body": [
     {"type": "bigcode", "text": "4821", "digits": 4},
     {"type": "kv", "rows": [["Device", "Kobo Libra 2"], ["IP", "192.168.1.23"]]},
@@ -95,7 +100,8 @@ Variables: the app's optional action with id `state` is run with the status budg
 }
 ```
 
-- `action` (header, optional): `label` and either `push` (screen id) or `action` (action id). `dialogs`, `toasts` are omitted when the screen declares none.
+- `action` (header text link, optional): `label` and either `push` (screen id) or `action` (action id). `actions` (header icon buttons, 1 to 2, instead of `action`): `[{icon, label, push | action}]` with `icon` one of `import`, `settings`, `refresh`, `add`. `dialogs`, `toasts` are omitted when the screen declares none.
+- `value`: echo of `--value`. `stale`: the state action failed (see above).
 - `live`: the app has a `state` action; the mod re-reads the screen every 5 s while it is visible and idle.
 - Components keep the `ui.json` order; `type` is the component key. Fields per type (empty strings and `false` may be omitted):
 
@@ -106,7 +112,7 @@ Variables: the app's optional action with id `state` is run with the status budg
 | `kv` | `rows`: `[[key, value], …]` |
 | `row` | `text`, `detail`, `action` |
 | `toggle` | `text`, `bind`, `value` (bool), `enabled` (bool), `action` |
-| `radio` | `text`, `bind`, `value` (selected option id), `options` `[[id, label], …]`, `enabled`, `action` |
+| `radio` | `text`, `bind`, `value` (selected option id), `options` `[[id, label], …]`, `option_details` (`[sub-line, …]` parallel to `options`, only when an option has a sub-line; `""` for the others), `enabled`, `action` |
 | `field` | `text`, `bind`, `value`, `placeholder`, `keyboard` (`text`/`number`/`url`), `secret`, `enabled`, `action` |
 | `bigcode` | `text` (empty: show `digits` dashes), `digits` |
 | `qr` | `text` (the encoded value), `caption` |
@@ -116,7 +122,11 @@ Variables: the app's optional action with id `state` is run with the status budg
 | `button` | `text`, `action`, `style` (`primary`/`secondary`), `enabled`, `confirm` `{title, text, ok, cancel}`, `async` |
 | `list` | `bind`, `title`, `empty_text`, `tap`, `items` `[[primary, secondary], …]` (already cut to the last `max`) |
 | `empty` | `text` (heading), `caption`, `button`, `action` |
+| `gallery` | `bind`, `columns`, `rows` (ints), `tiles` `[{id, thumb, label, info, current}]`, `tap` `{push \| action}`, `menu` `[{label, action \| push \| info: true, confirm {title, text, ok, cancel}}]`, `pending` (int), `empty` `{icon, title, text, button, action}` |
+| `viewer` | `bind`, `tiles` `[{id, image, label, current}]`, `value` (the shown id), `current_status`, `primary` `{label, label_current, action}`, `secondary` `{label, action, confirm}` |
 
+- `gallery` / `viewer` tiles come from the bound array of the state: items without a valid id (`^[A-Za-z0-9_-]{1,32}$`) are dropped, at most 500 are sent, `badge: "current"` becomes `current: true`. **Path safety:** `thumb` / `image` are sent only when absolute, already clean (`filepath.Clean(p) == p`), ending in `.png` and below `<app dir>/data/`; otherwise `""` (the mod draws the missing-picture glyph). Viewer `value` is the `--value` when it names a tile, else the first tile's id, else `""`.
+- A `text` that resolves to empty is left out of the reply, like a `notice`.
 - Input controls (`toggle`, `radio`, `field`) run the app action whose id equals their `bind` variable; `action` names it. Without such an action the control is read-only (`enabled: false`), because nothing could store the change.
 - A `secret` field's value is sent as the same number of `•`; the secret never reaches the mod.
 - List row menus (`menu`) are not sent yet (no backend to receive them in v1).
@@ -124,7 +134,7 @@ Variables: the app's optional action with id `state` is run with the status budg
 
 ## `appsctl drawer event <app-id> <action-id> [--value <v>] [--screen <id>]`
 
-A tap on an app screen. Runs the declared action exactly like `drawer run` (same reply, Wi-Fi and rescan rules) with one addition: `--value` is passed to the script as the environment variable `NICKELDRAWER_VALUE` (toggle `true`/`false`, the radio option id, the field text, the list row's primary text). Without `--value` the variable is not set; `--value ''` sets it empty.
+A tap on an app screen. Runs the declared action exactly like `drawer run` (same reply, Wi-Fi and rescan rules) with one addition: `--value` is passed to the script as the environment variable `NICKELDRAWER_VALUE` (toggle `true`/`false`, the radio option id, the field text, the list row's primary text). Without `--value` the variable is not set; `--value ''` sets it empty. Gallery `tap`/`menu` actions and the viewer's `primary`/`secondary` send the picture id as `--value`. Like every drawer script it also gets `NICKELDRAWER=1`.
 
 When `--screen` is given and the script's stdout is one JSON object `{"toast":"<id>"}` or `{"dialog":"<id>"}` naming a toast or dialog declared on that screen, the reply carries it resolved and `text` is empty:
 

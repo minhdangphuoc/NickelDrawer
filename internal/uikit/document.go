@@ -22,6 +22,7 @@ type Screen struct {
 	Title   any
 	Status  any
 	Action  map[string]any
+	Actions []map[string]any
 	Body    []Component
 	Footer  []Component
 	Dialogs map[string]map[string]any
@@ -49,6 +50,11 @@ func (c Component) IsPrimary() bool {
 		return c.Props["style"] == "primary"
 	case "empty":
 		return c.Props["button"] != nil
+	case "gallery":
+		empty, _ := c.Props["empty"].(map[string]any)
+		return empty["button"] != nil
+	case "viewer":
+		return true
 	}
 	return false
 }

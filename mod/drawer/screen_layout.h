@@ -10,12 +10,17 @@
 #include <QList>
 #include <QRect>
 #include <QStringList>
+#include <QVector>
 
 #include "screen_logic.h"
 #include "screen_model.h"
 
 struct PaintItem {
-    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR };
+    // SHAPE_IMAGE: the picture at imagePath fitted inside rect; the picture glyph
+    // when the path is empty or unreadable (unless showsMissingGlyph is off).
+    // SHAPE_CHECK: a check mark in ink inside rect, border = stroke width (0: not drawn).
+    // SHAPE_PICTURE_GLYPH: an outline picture icon in ink, border = stroke width.
+    enum Shape { SHAPE_RECT, SHAPE_ELLIPSE, SHAPE_TEXT, SHAPE_QR, SHAPE_IMAGE, SHAPE_CHECK, SHAPE_PICTURE_GLYPH };
     enum Align { ALIGN_START, ALIGN_CENTER, ALIGN_END };
 
     Shape shape = SHAPE_RECT;
@@ -32,18 +37,31 @@ struct PaintItem {
     int ink = ScreenLogic::INK_BLACK; // text, and the border of rects and ellipses
     QByteArray qrModules; // SHAPE_QR: side * side bytes, 1 = dark, quiet zone not included
     int qrSide = 0;
+    QString imagePath;            // compared, so a thumbnail that appears repaints its tile only
+    bool isDashed = false;        // SHAPE_RECT border drawn dashed
+    bool showsMissingGlyph = true;
 
     bool operator==(const PaintItem &other) const;
     bool operator!=(const PaintItem &other) const { return !(*this == other); }
 };
 
 struct TapTarget {
-    enum Kind { TAP_PREVIOUS_PAGE, TAP_NEXT_PAGE, TAP_COMPONENT };
+    // TAP_TILE: a gallery picture (value = its id); tap and long press.
+    // TAP_VIEWER_*: the viewer's picture zones (no pressed feedback).
+    enum Kind {
+        TAP_PREVIOUS_PAGE,
+        TAP_NEXT_PAGE,
+        TAP_COMPONENT,
+        TAP_TILE,
+        TAP_VIEWER_PREVIOUS,
+        TAP_VIEWER_NEXT,
+        TAP_VIEWER_TOGGLE_CHROME
+    };
 
     Kind kind = TAP_COMPONENT;
     QRect rect;
     int component = -1; // index into ScreenLayout::component()
-    QString value;      // radio: the option id; list: the row's primary text
+    QString value;      // radio: the option id; list: the row's primary text; tile: its id; viewer button: "primary" / "secondary"
 };
 
 struct ScreenPage {
@@ -68,7 +86,8 @@ struct LayoutBlock {
         KIND_DETAIL_LINE,
         KIND_CENTERED_LINE,
         KIND_NOTICE,
-        KIND_BUTTON
+        KIND_BUTTON,
+        KIND_PICTURE_ICON
     };
 
     Kind kind = KIND_SPACER;
@@ -107,6 +126,21 @@ public:
     // The body blocks of page index, the page bar and the footer, in view
     // coordinates; the top HEADER_HEIGHT pixels are the ScreenView's header.
     ScreenPage page(int index) const;
+    // Gallery: the grid page holding the tile, or -1 (also when there is no grid).
+    int pageOfGalleryTile(const QString &id) const;
+    int galleryComponent() const { return hasGrid ? galleryIndex : -1; }
+    // Viewer: the pictures, the shown one and the chrome. Changing them only
+    // changes what page(0) draws.
+    int viewerComponent() const { return viewerIndex; }
+    int viewerCount() const { return viewerIndex < 0 ? 0 : components[viewerIndex].tiles.size(); }
+    int viewerShownIndex() const { return shownIndex; }
+    const PictureTile *viewerShownTile() const;
+    void showViewerPicture(const QString &id);
+    // Index of the picture with this id, or -1.
+    int viewerIndexOfTile(const QString &id) const;
+    void showViewerPictureAt(int index);
+    void setChromeShown(bool isShown) { isChromeShown = isShown; }
+    bool chromeShown() const { return isChromeShown; }
     // Body components first, then footer components.
     int componentCount() const { return components.size(); }
     const ScreenComponent &component(int index) const { return components[index]; }
@@ -115,6 +149,11 @@ private:
     void addComponentBlocks(int index, QList<LayoutBlock> *blocks) const;
     void drawBlock(const LayoutBlock &block, int y, ScreenPage *page) const;
     void drawPageBar(int index, ScreenPage *page) const;
+    void drawGalleryPage(int index, ScreenPage *page) const;
+    void drawGallerySlot(int slotIndex, int slotOnPage, ScreenPage *page) const;
+    void planGrid(int footerHeight, const QVector<ScreenLogic::Block> &bodySizes);
+    void drawViewerPage(ScreenPage *page) const;
+    void addGalleryEmptyBlocks(int component, QList<LayoutBlock> *blocks) const;
 
     ScreenModel model;
     HostTexts hostTexts;
@@ -124,6 +163,13 @@ private:
     QList<LayoutBlock> footer;
     QList<int> pageOfBlock;
     ScreenLogic::BodyFrame frame;
+    int galleryIndex;
+    bool hasGrid;
+    ScreenLogic::GalleryFrame gridFrame;
+    int gridTop;
+    int viewerIndex;
+    int shownIndex;
+    bool isChromeShown;
 };
 
 #endif

@@ -4,18 +4,28 @@ The user puts PNG or JPEG pictures in `/mnt/onboard/Pictures`. **Wallpaper · Im
 
 ## Actions
 
+The screens (gallery, viewer, options) are specified in [wallpaper-gallery.md](wallpaper-gallery.md). `app.json` declares 8 actions:
+
 | Action | Effect |
 |---|---|
-| Import pictures | converts every new picture (background job; Status shows the result), shows the newest one |
-| Next picture | selects the following picture in library order (wraps) and applies it |
-| Fill / Fit | toggles the mode, re-fits every picture whose original is still in a source folder, applies |
-| Fixed / Random | toggles the rotation and applies |
-| Turn off | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
-| Status | running job or last result, picture count, mode, rotation, files on the sleep screen |
+| `import` | converts every new picture (background job with a progress file), writes thumbnails, shows the newest one; pictures the user removed (`data/removed.json`) are skipped |
+| `mode` | fill or fit (value `fill`/`fit`; `toggle` from NickelMenu). The mode is stored at once; the pictures are re-fitted in the background (thumbnails are dropped and regenerated lazily). While a job runs only the mode is stored and that job re-fits again when it ends |
+| `rotation` | fixed or random, applied at once (foreground) |
+| `off` | removes our files from `.kobo/screensaver` (library in `data/images` stays) |
+| `status` | running job or last result, picture count, mode, rotation, files on the sleep screen |
+| `state` | the screen variables as one JSON line (below) |
+| `set-current` | value = picture id; makes it the wallpaper and applies; prints `{"toast":"set"}` |
+| `remove` | value = picture id; removes it from Wallpaper (passes `--confirm`, never `--delete-original`); prints `{"toast":"removed"}` |
+
+Inside the drawer (`NICKELDRAWER=1`) scripts never print prose: background jobs start detached and return at once with a declared toast (`import_started`, `mode_started`, `busy`), errors give the toast `failed` and the reason goes to `data/log.txt`. `next` exists only as a CLI command.
 
 **Requirement.** Pictures show only with a current book and both Kobo settings on: Settings → Energy saving and privacy → "Show current read" and "Show book cover full screen" (see "What Nickel does"). The app reads `[PowerOptions] ShowBookCover` and `FullscreenCoverStretch` from `Kobo eReader.conf` (read only, never written) and, when either is not true or the file is unreadable, adds a hint line to Status, the import result and the screen (state fields `sleep_screen_ready`, `sleep_screen_hint`; the notice is hidden when the hint is empty). It cannot check for a current book.
 
-CLI: `wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status [--app-dir DIR] [--locale CODE] [--version-file FILE]` (flags before positional arguments).
+CLI: `wallpaper import|apply|next|mode fill|fit|toggle|rotation fixed|random|toggle|off|status|state [--app-dir DIR] [--locale CODE] [--version-file FILE] [--progress-file FILE]` (flags before positional arguments), plus:
+
+- `wallpaper set-current <id>`: ids are `0003` or `3`.
+- `wallpaper remove [--confirm] [--delete-original] <id>`: without `--confirm` nothing happens and the error says so. Removes our converted copy, its thumbnail, its index entry and our `nd-wallpaper-*` file; records the original's SHA-256 in `data/removed.json`; if it was current, the next picture (else the previous) becomes current. `--delete-original` also deletes the original in Pictures, only when it is a regular direct child (after `EvalSymlinks`, the name itself not a link) whose SHA-256 equals the entry's hash; otherwise it is kept and the message says so.
+- `wallpaper mode --save-only <mode>`: only stores the mode (used while a job runs).
 
 ## Safety: what the app reads and writes
 
@@ -33,7 +43,9 @@ Write:
 | Path | What |
 |---|---|
 | `/mnt/onboard/.kobo/screensaver/nd-wallpaper-NNNN.png` | our converted pictures only (temp files `.nd-wallpaper-*.tmp` while copying) |
-| `/mnt/onboard/.adds/apps/wallpaper/data/` | `config.json`, `images/` (converted PNGs + `index.json`), `log.txt` |
+| `/mnt/onboard/.adds/apps/wallpaper/data/` | `config.json`, `images/` (converted PNGs + `index.json`), `thumbs/` (300 x 400 previews), `removed.json` (hashes of removed pictures), `log.txt` |
+| `/tmp/wallpaper-progress.json`, `/tmp/wallpaper.pid`, `/tmp/wallpaper-last.txt` | job progress, pid, last output; temp storage, not on the user partition |
+| `/mnt/onboard/Pictures/<name>` | deleted only by `remove --delete-original` (never sent by the screens), under the rule below |
 | `/mnt/onboard/Pictures/` | created if missing (empty folder only) |
 
 Rules, enforced in code (`internal/storage`, `internal/wallpaper`) and covered by tests:
@@ -43,7 +55,8 @@ Rules, enforced in code (`internal/storage`, `internal/wallpaper`) and covered b
 - Every entry is resolved with `filepath.EvalSymlinks`; it must be a direct child of the real source folder. A link that points elsewhere (another folder, `/etc/...`, a file in a sub-folder) is refused and logged.
 - Only regular files (no devices, pipes, sockets).
 - PNG/JPEG is decided by magic bytes, not by name. Other files are ignored silently (the Pictures folder may hold anything). Pictures over 20 MB are skipped with a logged reason; decoded size is capped at 48 megapixels.
-- Pictures with identical content (SHA-256) are imported once.
+- Pictures with identical content (SHA-256) are imported once; a hash listed in `data/removed.json` is skipped.
+- `remove --delete-original` deletes an original only if it is found by `storage.ListImages` in a source folder (direct child, links resolved), its path equals `<real folder>/<name>` (a link is refused), it is a regular file, its name equals the entry's `name` and its SHA-256 equals the entry's `hash`. Nothing else in Pictures is ever deleted.
 - Nothing is held open on `/mnt/onboard`: each file is read whole (capped) and closed; all writes are temp file + fsync + rename.
 - In `.kobo/screensaver` only names starting with `nd-wallpaper-` (or `.nd-wallpaper-`) are ever replaced or deleted, regular files only (symlinks are never followed or removed). Other files there are never read, changed or deleted.
 - Nothing is read under `/`, `/etc`, `/usr`, other `.kobo` or `.adds` folders.
@@ -59,10 +72,15 @@ Resolution table keyed by the last three digits of the device id (`internal/wall
 
 ## State
 
-- `data/images/NNNN.png` converted pictures, `data/images/index.json` (`id`, `hash` of the original, `mode` the file was fitted for, original `name`).
-- `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`.
+- `data/images/NNNN.png` converted pictures, `data/images/index.json` (`id`, `hash` of the original, `mode` the file was fitted for, original `name`; newer entries also `width`, `height` of the original and `added`, RFC 3339 UTC).
+- `data/thumbs/NNNN.png`: written at import (fit inside 300 x 400, 16 grey levels, atomic). `state` creates at most 2 missing ones per call; a mode re-fit deletes the picture's thumbnail.
+- `data/removed.json`: JSON array of SHA-256 hashes of removed pictures.
+- `data/config.json`: `{"mode": "fill|fit", "rotation": "fixed|random", "current": <id>}`. Every writer changes one field on a fresh copy, so a background job never overwrites a later choice.
+- Progress file (`--progress-file`, default `/tmp/wallpaper-progress.json`): `{"done": 3, "total": 7, "name": "bien-xanh.jpg"}`, plus `"kind": "refit"` for a re-fit; written atomically after each picture, removed at the end. `state` believes it while the pid is alive or the file is under 2 minutes old.
 - Fixed rotation puts exactly the current picture into `.kobo/screensaver`; random puts all of them (Nickel chooses).
 - Import runs detached because converting a large photo on the Kobo can exceed NickelMenu's 10 s limit; output goes to `/tmp/wallpaper-last.txt`.
+
+`state` prints one JSON line with the keys `status`, `summary`, `pictures`, `current_id`, `count`, `mode`, `rotation`, `busy`, `pending`, `import_step`, `sleep_screen_ready`, `sleep_screen_hint`, `sleep_screen_line`, `last_import`. A picture is `{id, thumb, image, label, info, badge}`: absolute paths (`thumb` omitted while missing), `label` = file name without extension, `info` = name, original size and date added (`dd/MM/yyyy`) on separate lines, `badge` = `current` only for the current picture. It reads files only, so it stays fast while a job runs.
 
 ## What Nickel does (libnickel 4.38.23828, Ghidra headless)
 

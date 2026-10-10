@@ -2,7 +2,7 @@ package uikit
 
 import "strings"
 
-// The view flow of an app is derived from the screens' header "push" links; there is no
+// The view flow of an app is derived from the screens' push links (header action, header icon actions, gallery tap and long-press menu); there is no
 // separate flow field. Rules (docs/spec/ui-json.md "Navigation"): the root screen is "main"
 // (and "start" names it), every screen is reachable from it, nothing is pushed deeper than
 // MaxPushDepth below it, no push forms a cycle (a screen pushing itself included), and a push
@@ -30,23 +30,63 @@ type Flow struct {
 }
 
 // flowOf reads the push links of raw screen objects; links to unknown screens are left out
-// (they are reported as ui.unknown_screen).
+// (they are reported as ui.unknown_screen). A screen can have several links.
 func flowOf(screens map[string]any) Flow {
 	flow := Flow{Root: RootScreenID, Edges: map[string][]string{}}
 	for _, id := range sortedKeys(screens) {
 		flow.Edges[id] = nil
-		target := pushTarget(screens[id])
-		if _, exists := screens[target]; target != "" && exists {
-			flow.Edges[id] = append(flow.Edges[id], target)
+		for _, target := range pushTargets(screens[id]) {
+			if _, exists := screens[target]; exists && !contains(flow.Edges[id], target) {
+				flow.Edges[id] = append(flow.Edges[id], target)
+			}
 		}
 	}
 	return flow
 }
 
-func pushTarget(screen any) string {
+// pushTargets lists the screens a screen can open: its header action, header icon actions,
+// gallery tap and gallery long-press menu.
+func pushTargets(screen any) []string {
 	object, _ := screen.(map[string]any)
-	action, _ := object["action"].(map[string]any)
-	target, _ := action["push"].(string)
+	targets := []string{pushOf(object["action"])}
+	icons, _ := object["actions"].([]any)
+	for _, icon := range icons {
+		targets = append(targets, pushOf(icon))
+	}
+	for _, component := range componentObjects(object["body"], object["footer"]) {
+		targets = append(targets, galleryPushTargets(component)...)
+	}
+	return targets
+}
+
+func componentObjects(lists ...any) []map[string]any {
+	var objects []map[string]any
+	for _, list := range lists {
+		items, _ := list.([]any)
+		for _, item := range items {
+			if object, isObject := item.(map[string]any); isObject {
+				objects = append(objects, object)
+			}
+		}
+	}
+	return objects
+}
+
+func galleryPushTargets(component map[string]any) []string {
+	if _, isGallery := component["gallery"]; !isGallery {
+		return nil
+	}
+	targets := []string{pushOf(component["on_tap"])}
+	menu, _ := component["on_long_press"].([]any)
+	for _, item := range menu {
+		targets = append(targets, pushOf(item))
+	}
+	return targets
+}
+
+func pushOf(raw any) string {
+	object, _ := raw.(map[string]any)
+	target, _ := object["push"].(string)
 	return target
 }
 
@@ -79,40 +119,29 @@ func (f Flow) Depths() map[string]int {
 // smallest id (a self-push is a cycle of one).
 func (f Flow) Cycles() [][]string {
 	var cycles [][]string
-	seen := map[string]bool{}
 	for _, start := range sortedKeys(f.Edges) {
-		path := []string{start}
-		for current := start; ; {
-			next := f.Edges[current]
-			if len(next) == 0 {
-				break
-			}
-			current = next[0]
-			if current == start {
-				key := strings.Join(rotateToSmallest(path), ">")
-				if !seen[key] {
-					seen[key] = true
-					cycles = append(cycles, rotateToSmallest(path))
-				}
-				break
-			}
-			if contains(path, current) {
-				break // a cycle that does not pass through start; found from its own start
-			}
-			path = append(path, current)
-		}
+		cycles = append(cycles, f.cyclesThrough(start)...)
 	}
 	return cycles
 }
 
-func rotateToSmallest(path []string) []string {
-	smallest := 0
-	for i, id := range path {
-		if id < path[smallest] {
-			smallest = i
+// cyclesThrough finds the cycles whose smallest screen id is start, so each cycle is found
+// exactly once whatever the number of edges per screen.
+func (f Flow) cyclesThrough(start string) [][]string {
+	var found [][]string
+	var walk func(current string, path []string)
+	walk = func(current string, path []string) {
+		for _, next := range f.Edges[current] {
+			switch {
+			case next == start:
+				found = append(found, append([]string{}, path...))
+			case next > start && !contains(path, next):
+				walk(next, append(path, next))
+			}
 		}
 	}
-	return append(append([]string{}, path[smallest:]...), path[:smallest]...)
+	walk(start, []string{start})
+	return found
 }
 
 // checkFlow applies the navigation rules to the merged screens.
@@ -129,7 +158,7 @@ func (v *validator) checkFlow(root map[string]any, screens map[string]any) {
 		v.fail(CodeFlowStartNotMain, "start", "must be %q (the app opens on main; other screens are opened from it with a header \"push\")", RootScreenID)
 	}
 	for _, cycle := range flow.Cycles() {
-		v.fail(CodeFlowCycle, "screens."+cycle[0]+".action.push", "screens push each other in a circle (%s → %s); back would never end: remove one push", strings.Join(cycle, " → "), cycle[0])
+		v.fail(CodeFlowCycle, "screens."+cycle[0], "screens push each other in a circle (%s → %s); back would never end: remove one push", strings.Join(cycle, " → "), cycle[0])
 	}
 	depths := flow.Depths()
 	for _, id := range sortedKeys(screens) {

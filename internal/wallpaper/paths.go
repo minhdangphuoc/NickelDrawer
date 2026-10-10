@@ -34,3 +34,10 @@ func (paths Paths) Index() string       { return filepath.Join(paths.Images(), "
 func (paths Paths) Config() string      { return filepath.Join(paths.Data(), "config.json") }
 func (paths Paths) Log() string         { return filepath.Join(paths.Data(), "log.txt") }
 func (paths Paths) Image(id int) string { return filepath.Join(paths.Images(), imageFileName(id)) }
+
+// Thumbs holds one small preview per picture for the gallery.
+func (paths Paths) Thumbs() string      { return filepath.Join(paths.Data(), "thumbs") }
+func (paths Paths) Thumb(id int) string { return filepath.Join(paths.Thumbs(), imageFileName(id)) }
+
+// Removed lists the hashes of pictures the user removed, so an import does not bring them back.
+func (paths Paths) Removed() string { return filepath.Join(paths.Data(), "removed.json") }

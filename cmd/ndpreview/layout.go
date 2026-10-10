@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"strings"
 	"unicode/utf8"
 
@@ -11,7 +12,7 @@ import (
 // Item is one drawing primitive in device pixels. Both the HTML and the PNG preview draw
 // the same items, so they cannot disagree about the layout.
 type Item struct {
-	Shape     string // "rect", "ellipse" or "text"
+	Shape     string // "rect", "ellipse", "text" or "image"
 	X, Y      int
 	W, H      int
 	Fill      int // grey 0..255, noFill for none
@@ -22,13 +23,15 @@ type Item struct {
 	Family    string
 	Bold      bool
 	Underline bool
-	Align     string // start, center, end
-	Ink       int    // text colour, and the border of rects and ellipses
-	Event     string // protocol line sent to the backend when tapped
-	Action    string // app.json action a tap also runs (list rows with "tap")
-	Confirm   string // component path whose confirm dialog opens first
-	Close     bool   // tap closes the open dialog
-	Label     string // what the item is, for tooltips and the tap log
+	Align     string      // start, center, end
+	Ink       int         // text colour, and the border of rects and ellipses
+	Event     string      // protocol line sent to the backend when tapped
+	Action    string      // app.json action a tap also runs (list rows with "tap")
+	Confirm   string      // component path whose confirm dialog opens first
+	Close     bool        // tap closes the open dialog
+	Label     string      // what the item is, for tooltips and the tap log
+	Dashed    bool        // rect border drawn as dashes
+	Picture   *image.Gray // "image": already scaled to W x H
 }
 
 // block is a vertical slice of a screen. Blocks never split across pages; a list is many blocks.
@@ -169,6 +172,12 @@ func layoutScreen(rc renderContext, screenID string, pageIndex int, overlay Over
 	if !found {
 		return Page{}, fmt.Errorf("screen %q does not exist; screens: %s", screenID, strings.Join(rc.doc.ScreenIDs(), ", "))
 	}
+	if viewer, isViewer := soleViewer(screen); isViewer {
+		return rc.layoutViewer(screen, viewer, overlay), nil
+	}
+	if index := galleryIndex(screen.Body); index >= 0 {
+		return rc.layoutGalleryScreen(screen, index, pageIndex, overlay), nil
+	}
 	footer := rc.blocksFor(screen.Footer)
 	footerHeight := blocksHeight(footer)
 	bodyTop := headerHeight + rhythm
@@ -205,9 +214,12 @@ func clamp(value, low, high int) int {
 
 // renderContext carries what resolving texts needs.
 type renderContext struct {
-	doc    *uikit.Document
-	locale string
-	vars   map[string]any
+	doc     *uikit.Document
+	locale  string
+	vars    map[string]any
+	baseDir string  // relative picture paths in the state resolve against this folder
+	value   *string // the screen value (--value), e.g. the picture a viewer opens on
+	chrome  string  // viewer: chromeShown (default) or chromeHidden
 }
 
 func (rc renderContext) text(raw any) string {
@@ -222,19 +234,22 @@ func (rc renderContext) host(key string) string { return hostText(rc.locale, key
 func (rc renderContext) headerItems(screen *uikit.Screen) []Item {
 	back := textItem(gutter, 0, headerIconWidth, headerRowHeight, "←", headerTitleSz+8, familySans, "center")
 	back.Label = rc.host("back")
-	right := rc.headerRight(screen)
+	icons := rc.headerIconActionItems(screen)
+	rightEdge := screenWidth - gutter - len(screen.Actions)*headerIconTarget
+	right := rc.headerRight(screen, rightEdge)
 	titleX := gutter + headerIconWidth + rhythm
-	titleWidth := screenWidth - gutter - titleX - len(right)*(headerSideWidth+rhythm)
+	titleWidth := rightEdge - titleX - len(right)*(headerSideWidth+rhythm)
 	title := textItem(titleX, 0, titleWidth, headerRowHeight, elide(rc.text(screen.Title), titleWidth, headerTitleSz, familySans, false), headerTitleSz, familySans, "start")
 	divider := Item{Shape: "rect", X: gutter, Y: headerRowHeight, W: contentWidth, H: headerDivider, Fill: headerDividerInk}
 	items := []Item{back, title}
 	items = append(items, right...)
+	items = append(items, icons...)
 	return append(items, divider)
 }
 
 // headerRight draws the status text and the optional action at the right of the header row,
 // the action last (rightmost), each in a column of at most headerSideWidth.
-func (rc renderContext) headerRight(screen *uikit.Screen) []Item {
+func (rc renderContext) headerRight(screen *uikit.Screen, rightEdge int) []Item {
 	var items []Item
 	if screen.Status != nil {
 		if status := rc.text(screen.Status); status != "" {
@@ -251,10 +266,25 @@ func (rc renderContext) headerRight(screen *uikit.Screen) []Item {
 		item.Label = label
 		items = append(items, item)
 	}
-	x := screenWidth - gutter - len(items)*headerSideWidth - (len(items)-1)*rhythm
+	x := rightEdge - len(items)*headerSideWidth - (len(items)-1)*rhythm
 	for index := range items {
 		items[index].X = x
 		x += headerSideWidth + rhythm
+	}
+	return items
+}
+
+// headerIconActionItems draws the icon buttons of the header at its right edge, the last one
+// rightmost.
+func (rc renderContext) headerIconActionItems(screen *uikit.Screen) []Item {
+	var items []Item
+	x := screenWidth - gutter - len(screen.Actions)*headerIconTarget
+	for _, action := range screen.Actions {
+		icon, _ := action["icon"].(string)
+		label := rc.text(action["label"])
+		item := headerIconItems(icon, x, 0, actionEventFor(action), label)
+		items = append(items, item...)
+		x += headerIconTarget
 	}
 	return items
 }

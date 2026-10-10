@@ -25,8 +25,9 @@ public:
     void requestInfo(const QString &appId);
     // Only after the user confirmed; passes --confirm.
     void requestRemove(const QString &appId);
-    // One app screen; an empty screenId asks for the start screen.
-    void requestScreen(const QString &appId, const QString &screenId);
+    // One app screen; an empty screenId asks for the start screen. A value
+    // (a picture id) is passed as --value; empty: none.
+    void requestScreen(const QString &appId, const QString &screenId, const QString &value = QString());
     // A tap on an app screen; the reply arrives as actionFinished().
     void requestEvent(const QString &appId, const ScreenEvent &event);
 

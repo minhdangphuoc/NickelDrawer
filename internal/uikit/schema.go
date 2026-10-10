@@ -25,7 +25,7 @@ func buildSchema() object {
 		"$schema":     "https://json-schema.org/draft/2020-12/schema",
 		"$id":         SchemaID,
 		"title":       "NickelDrawer ui.json, kit 1",
-		"description": "Generated from internal/uikit by `go test ./internal/uikit -run TestSchemaFileIsCurrent -update`. Rules a schema cannot express (bindings name declared vars, action ids exist in app.json, one primary button per screen, @ui.key texts exist in locales/en.json, the push graph: every screen reachable from main, no cycles, at most 2 below main) are checked by `appsctl validate`. The same screen object is the schema of screens/<id>.json (#/$defs/screen).",
+		"description": "Generated from internal/uikit by `go test ./internal/uikit -run TestSchemaFileIsCurrent -update`. Rules a schema cannot express (bindings name declared vars, action ids exist in app.json, one primary button per screen, exactly one of push/action/info, a viewer alone on its screen, @ui.key texts exist in locales/en.json, the push graph: every screen reachable from main, no cycles, at most 2 below main) are checked by `appsctl validate`. The same screen object is the schema of screens/<id>.json (#/$defs/screen).",
 		"type":        "object",
 		"required":    []string{"kit", "start", "screens"},
 		"properties": object{
@@ -106,7 +106,11 @@ func structuredSchema(shape Shape) object {
 		for i, item := range shape.Tuple {
 			prefix[i] = shapeSchema(item)
 		}
-		return object{"type": "array", "prefixItems": prefix, "items": false, "minItems": len(prefix), "maxItems": len(prefix)}
+		shortest := shape.MinLen
+		if shortest == 0 {
+			shortest = len(prefix)
+		}
+		return object{"type": "array", "prefixItems": prefix, "items": false, "minItems": shortest, "maxItems": len(prefix)}
 	case KindMap:
 		return object{"type": "object", "propertyNames": object{"pattern": idRegexp}, "additionalProperties": shapeSchema(*shape.Item)}
 	}

@@ -3,53 +3,146 @@
   "start": "main",
   "vars": {
     "status": "",
-    "count": "0",
-    "current": "",
+    "summary": "",
+    "pictures": [],
+    "selected": "",
+    "current_id": "",
+    "count": 0,
     "mode": "fill",
     "rotation": "fixed",
-    "last_import": "",
     "busy": false,
+    "pending": 0,
+    "import_step": "",
     "sleep_screen_ready": true,
-    "sleep_screen_hint": ""
+    "sleep_screen_hint": "",
+    "sleep_screen_line": "",
+    "last_import": ""
   },
   "screens": {
     "main": {
       "title": "@ui.title",
       "status": "$status",
+      "actions": [
+        {
+          "icon": "import",
+          "label": "@ui.import",
+          "action": "import"
+        },
+        {
+          "icon": "settings",
+          "label": "@ui.options",
+          "push": "options"
+        }
+      ],
       "body": [
         {
-          "text": "@ui.intro"
-        },
-        {
-          "kv": [
-            [
-              "@ui.pictures",
-              "$count"
-            ],
-            [
-              "@ui.now_showing",
-              "$current"
-            ]
-          ]
-        },
-        {
-          "text": "$last_import",
+          "text": "$summary",
           "style": "caption"
         },
+        {
+          "notice": "$sleep_screen_hint"
+        },
+        {
+          "notice": "$import_step"
+        },
+        {
+          "gallery": "$pictures",
+          "columns": 4,
+          "rows": 3,
+          "on_tap": {
+            "push": "viewer"
+          },
+          "on_long_press": [
+            {
+              "label": "@ui.menu_set",
+              "action": "set-current"
+            },
+            {
+              "label": "@ui.menu_view",
+              "push": "viewer"
+            },
+            {
+              "label": "@ui.menu_info",
+              "info": true
+            },
+            {
+              "label": "@ui.menu_remove",
+              "action": "remove",
+              "confirm": {
+                "title": "@ui.remove_title",
+                "text": "@ui.remove_text",
+                "ok": "@ui.remove_ok",
+                "cancel": "@ui.cancel"
+              }
+            }
+          ],
+          "pending": "$pending",
+          "empty": {
+            "icon": "picture",
+            "title": "@ui.empty_title",
+            "text": "@ui.empty_text",
+            "button": "@ui.import",
+            "action": "import"
+          }
+        }
+      ],
+      "toasts": {
+        "set": "@ui.toast_set",
+        "removed": "@ui.toast_removed",
+        "import_started": "@ui.toast_import_started",
+        "busy": "@ui.toast_busy",
+        "failed": "@ui.toast_failed"
+      }
+    },
+    "viewer": {
+      "title": "@ui.viewer_title",
+      "body": [
+        {
+          "viewer": "$pictures",
+          "selected": "selected",
+          "current_status": "@ui.viewer_current",
+          "primary": {
+            "label": "@ui.set_wallpaper",
+            "label_current": "@ui.in_use",
+            "action": "set-current"
+          },
+          "secondary": {
+            "label": "@ui.remove",
+            "action": "remove",
+            "confirm": {
+              "title": "@ui.remove_title",
+              "text": "@ui.remove_text",
+              "ok": "@ui.remove_ok",
+              "cancel": "@ui.cancel"
+            }
+          }
+        }
+      ],
+      "toasts": {
+        "set": "@ui.toast_set",
+        "removed": "@ui.toast_removed",
+        "failed": "@ui.toast_failed",
+        "busy": "@ui.toast_busy"
+      }
+    },
+    "options": {
+      "title": "@ui.options",
+      "body": [
         {
           "radio": "@ui.mode",
           "bind": "mode",
           "options": [
             [
               "fill",
-              "@ui.mode_fill"
+              "@ui.mode_fill",
+              "@ui.mode_fill_detail"
             ],
             [
               "fit",
-              "@ui.mode_fit"
+              "@ui.mode_fit",
+              "@ui.mode_fit_detail"
             ]
-          ],
-          "enabled": "!$busy"
+          ]
         },
         {
           "radio": "@ui.rotation",
@@ -57,36 +150,27 @@
           "options": [
             [
               "fixed",
-              "@ui.rotation_fixed"
+              "@ui.rotation_fixed",
+              "@ui.rotation_fixed_detail"
             ],
             [
               "random",
-              "@ui.rotation_random"
+              "@ui.rotation_random",
+              "@ui.rotation_random_detail"
             ]
-          ],
-          "enabled": "!$busy"
+          ]
         },
         {
-          "notice": "$sleep_screen_hint"
+          "section": "@ui.section_sleep"
         },
         {
-          "notice": "@ui.note"
-        },
-        {
-          "button": "@ui.turn_off",
-          "action": "off",
-          "style": "secondary",
-          "enabled": "!$busy"
+          "text": "$sleep_screen_line"
         }
       ],
-      "footer": [
-        {
-          "button": "@ui.import",
-          "action": "import",
-          "style": "primary",
-          "enabled": "!$busy"
-        }
-      ]
+      "toasts": {
+        "mode_started": "@ui.toast_mode_started",
+        "failed": "@ui.toast_failed"
+      }
     }
   }
 }

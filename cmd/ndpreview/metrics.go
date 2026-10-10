@@ -48,6 +48,29 @@ const (
 
 	dialogWidth = 1040
 	toastBottom = 260
+
+	// Gallery and viewer (docs/spec/wallpaper-gallery.md section 2). mod/drawer/screen_logic.h
+	// must have the same numbers; change both together.
+	gallerySidePadding  = 56
+	galleryGutter       = 24
+	galleryTileWidth    = 270 // 4 columns: (1264 - 2*56 - 3*24) / 4
+	galleryTileHeight   = 360 // 3:4, the screen's aspect
+	galleryBorder       = 1
+	galleryCurrentBdr   = 4
+	galleryBadgeSize    = 56
+	galleryBadgeInset   = 12
+	galleryDashWidth    = 2
+	galleryPagerHeight  = 56
+	defaultGalleryCols  = 4
+	defaultGalleryRows  = 3
+	headerIconTarget    = 120 // tap target of a header icon action
+	headerIconGlyph     = 64
+	radioDetailRow      = 128 // a radio option with a sub-line
+	viewerBarHeight     = 120
+	viewerSecondaryWide = 360
+	viewerBarGap        = 24
+	selectedVarName     = "selected" // receives the screen value, as in appsctl
+	maxPictureBytes     = 8 << 20    // larger files are not decoded (mod and preview)
 )
 
 // Greys in 0 (black) .. 255 (white). Only the notice box may have a grey fill.

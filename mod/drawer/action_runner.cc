@@ -67,6 +67,8 @@ void ActionRunner::runAction(const DrawerAction &action)
 void ActionRunner::runScreenEvent(const DrawerItem &app, const ScreenEvent &event)
 {
     if (isBusy) {
+        nh_log("action: event %s dropped, an action is running (the screen queues radios and toggles itself)",
+               qPrintable(event.actionId));
         return;
     }
     currentItem = app;
@@ -149,6 +151,10 @@ void ActionRunner::presentResult(const ActionResult &result)
     if (presentScreenSignal(result)) {
         return;
     }
+    if (isScreenEvent) {
+        presentScreenEventOutcome(result);
+        return;
+    }
     bool isToast = currentAction.isBackground && result.isOk;
     if (isToast && NickelBridge::hasToast()) {
         NickelBridge::showToast(result.text.isEmpty() ? currentAction.label : result.text);
@@ -156,6 +162,23 @@ void ActionRunner::presentResult(const ActionResult &result)
     }
     if (!result.text.isEmpty()) {
         Dialogs::showMessage(currentItem.name, result.text);
+    }
+}
+
+// Apps use only the NickelDrawer API: a screen event shows the JSON toast or
+// dialog of its reply (presentScreenSignal), never the script's text. A
+// failure gets one short host toast; the text goes to the log (not the value).
+void ActionRunner::presentScreenEventOutcome(const ActionResult &result)
+{
+    if (result.isOk) {
+        return;
+    }
+    nh_log("action: event %s failed: %s", qPrintable(currentEvent.actionId), qPrintable(result.text));
+    QString notice = FallbackStrings::text(FallbackStrings::ACTION_FAILED);
+    if (NickelBridge::hasToast()) {
+        NickelBridge::showToast(notice);
+    } else {
+        Dialogs::showMessage(currentItem.name, notice);
     }
 }
 

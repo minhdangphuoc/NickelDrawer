@@ -12,6 +12,7 @@
 
 static const char *const KIND_BACKGROUND = "background";
 static const char *const PROBLEM_ROW_ID = "_problem";
+static const int MAX_HEADER_ICONS = 2;
 
 static bool readObject(const QByteArray &json, QJsonObject *object)
 {
@@ -123,6 +124,88 @@ static QList<TextPair> pairListField(const QJsonObject &object, const char *key)
     return pairs;
 }
 
+static QList<PictureTile> parseTiles(const QJsonArray &array)
+{
+    QList<PictureTile> tiles;
+    for (int i = 0; i < array.size(); i++) {
+        QJsonObject object = array.at(i).toObject();
+        PictureTile tile;
+        tile.id = stringField(object, "id");
+        if (tile.id.isEmpty()) {
+            nh_log("parser: picture without id skipped");
+            continue;
+        }
+        tile.thumb = stringField(object, "thumb");
+        tile.image = stringField(object, "image");
+        tile.label = stringField(object, "label");
+        tile.info = stringField(object, "info");
+        tile.isCurrent = boolField(object, "current");
+        tiles.append(tile);
+    }
+    return tiles;
+}
+
+static QList<TileMenuItem> parseMenu(const QJsonArray &array)
+{
+    QList<TileMenuItem> menu;
+    for (int i = 0; i < array.size(); i++) {
+        QJsonObject object = array.at(i).toObject();
+        TileMenuItem item;
+        item.label = stringField(object, "label");
+        item.action = stringField(object, "action");
+        item.push = stringField(object, "push");
+        item.isInfo = boolField(object, "info");
+        QJsonValue confirm = object.value(QLatin1String("confirm"));
+        item.hasConfirm = confirm.isObject();
+        if (item.hasConfirm) {
+            item.confirm = parseDeclaredDialog(confirm.toObject());
+        }
+        if (item.label.isEmpty() || (item.action.isEmpty() && item.push.isEmpty() && !item.isInfo)) {
+            nh_log("parser: gallery menu entry without label or target skipped");
+            continue;
+        }
+        menu.append(item);
+    }
+    return menu;
+}
+
+static BarButton parseBarButton(const QJsonObject &object)
+{
+    BarButton button;
+    button.label = stringField(object, "label");
+    button.labelCurrent = stringField(object, "label_current");
+    button.action = stringField(object, "action");
+    QJsonValue confirm = object.value(QLatin1String("confirm"));
+    button.hasConfirm = confirm.isObject();
+    if (button.hasConfirm) {
+        button.confirm = parseDeclaredDialog(confirm.toObject());
+    }
+    return button;
+}
+
+static void parsePictureFields(const QJsonObject &object, ScreenComponent *component)
+{
+    component->gridColumns = object.value(QLatin1String("columns")).toInt(4);
+    component->gridRows = object.value(QLatin1String("rows")).toInt(3);
+    component->pending = object.value(QLatin1String("pending")).toInt(0);
+    component->tiles = parseTiles(object.value(QLatin1String("tiles")).toArray());
+    QJsonObject tap = object.value(QLatin1String("tap")).toObject();
+    if (!tap.isEmpty()) { // gallery: {push|action}; list: a string (handled by the caller)
+        component->tapPush = stringField(tap, "push");
+        component->tapAction = stringField(tap, "action");
+    }
+    component->menu = parseMenu(object.value(QLatin1String("menu")).toArray());
+    QJsonObject empty = object.value(QLatin1String("empty")).toObject();
+    component->galleryEmpty.icon = stringField(empty, "icon");
+    component->galleryEmpty.title = stringField(empty, "title");
+    component->galleryEmpty.text = stringField(empty, "text");
+    component->galleryEmpty.button = stringField(empty, "button");
+    component->galleryEmpty.action = stringField(empty, "action");
+    component->currentStatus = stringField(object, "current_status");
+    component->primary = parseBarButton(object.value(QLatin1String("primary")).toObject());
+    component->secondary = parseBarButton(object.value(QLatin1String("secondary")).toObject());
+}
+
 static ScreenComponent parseComponent(const QJsonObject &object)
 {
     ScreenComponent component;
@@ -159,9 +242,13 @@ static ScreenComponent parseComponent(const QJsonObject &object)
     }
     component.isAsync = boolField(object, "async");
     component.emptyText = stringField(object, "empty_text");
-    component.tap = stringField(object, "tap");
+    component.tap = object.value(QLatin1String("tap")).toString();
     component.items = pairListField(object, "items");
     component.button = stringField(object, "button");
+    component.optionDetails = stringListField(object, "option_details");
+    if (component.type == QLatin1String("gallery") || component.type == QLatin1String("viewer")) {
+        parsePictureFields(object, &component);
+    }
     return component;
 }
 
@@ -312,6 +399,18 @@ bool parseScreen(const QByteArray &json, ScreenModel *screen, QString *failure)
         screen->toasts.insert(it.key(), it.value().toString());
     }
     screen->isLive = boolField(object, "live");
+    screen->isStale = boolField(object, "stale");
+    screen->value = stringField(object, "value");
+    QJsonArray icons = object.value(QLatin1String("actions")).toArray();
+    for (int i = 0; i < icons.size() && i < MAX_HEADER_ICONS; i++) {
+        QJsonObject icon = icons.at(i).toObject();
+        HeaderIconAction headerIcon;
+        headerIcon.icon = stringField(icon, "icon");
+        headerIcon.label = stringField(icon, "label");
+        headerIcon.push = stringField(icon, "push");
+        headerIcon.action = stringField(icon, "action");
+        screen->headerActions.append(headerIcon);
+    }
     return true;
 }
 

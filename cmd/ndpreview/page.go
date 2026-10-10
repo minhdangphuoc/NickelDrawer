@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"html"
+	"image/png"
 	"net/url"
 	"strings"
 )
@@ -17,6 +20,8 @@ type viewOptions struct {
 	Toast   string
 	Dialog  string
 	Confirm string
+	Value   string // screen value (viewer picture id)
+	Chrome  string // viewer chrome: shown or hidden
 }
 
 func (o viewOptions) query(changes map[string]string) string {
@@ -37,6 +42,8 @@ func (o viewOptions) query(changes map[string]string) string {
 	set("toast", o.Toast)
 	set("dialog", o.Dialog)
 	set("confirm", o.Confirm)
+	set("value", o.Value)
+	set("chrome", o.Chrome)
 	return "?" + values.Encode()
 }
 
@@ -107,7 +114,11 @@ func itemHTML(item Item) string {
 		style += "background:" + greyCSS(item.Fill) + ";"
 	}
 	if item.Border > 0 {
-		style += fmt.Sprintf("border:%dpx solid %s;", item.Border, greyCSS(item.Ink))
+		borderStyle := "solid"
+		if item.Dashed {
+			borderStyle = "dashed"
+		}
+		style += fmt.Sprintf("border:%dpx %s %s;", item.Border, borderStyle, greyCSS(item.Ink))
 	}
 	if item.Shape == "ellipse" {
 		style += "border-radius:50%;"
@@ -123,7 +134,20 @@ func itemHTML(item Item) string {
 		attributes = fmt.Sprintf(` data-event='%s' data-action='%s' data-confirm='%s' data-close='%s' title='%s'`,
 			html.EscapeString(item.Event), html.EscapeString(item.Action), html.EscapeString(item.Confirm), closeFlag(item.Close), html.EscapeString(item.Label))
 	}
-	return fmt.Sprintf(`<div class="%s" style="%s"%s>%s</div>`, classes, style, attributes, html.EscapeString(strings.Join(item.Lines, "\n")))
+	return fmt.Sprintf(`<div class="%s" style="%s"%s>%s</div>`, classes, style, attributes, itemContentHTML(item))
+}
+
+// itemContentHTML is the text of a text item, or the picture of an image item as a data URI so
+// the page needs no file server.
+func itemContentHTML(item Item) string {
+	if item.Shape != "image" {
+		return html.EscapeString(strings.Join(item.Lines, "\n"))
+	}
+	var encoded bytes.Buffer
+	if item.Picture == nil || png.Encode(&encoded, item.Picture) != nil {
+		return ""
+	}
+	return `<img alt="" style="width:100%;height:100%;display:block" src="data:image/png;base64,` + base64.StdEncoding.EncodeToString(encoded.Bytes()) + `">`
 }
 
 func closeFlag(isClose bool) string {

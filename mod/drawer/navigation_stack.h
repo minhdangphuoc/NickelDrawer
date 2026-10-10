@@ -25,6 +25,7 @@ static const int MAX_DEPTH = 8;
 // limit as appsctl validate (internal/uikit MaxPushDepth).
 static const int MAX_SUB_SCREENS = 2;
 static const int MAX_ID_BYTES = 64; // app or screen id, NUL included
+static const int MAX_VALUE_BYTES = 64; // a screen's value (picture id), NUL included, truncated safely
 
 // What a view needs to look the same when the user comes back to it.
 struct ViewState {
@@ -36,6 +37,7 @@ struct Entry {
     Level level;
     char id[MAX_ID_BYTES]; // "" for More and the drawer
     ViewState state;       // recorded when something was pushed over it
+    char value[MAX_VALUE_BYTES]; // the value the screen was opened with ("" when none); the viewer keeps it current
 };
 
 class Stack {
@@ -54,7 +56,10 @@ public:
     // top (More < drawer < app screen < sub-screen/modal; sub-screens and
     // modals may stack). False, and nothing changed, when the stack is full
     // or the level does not fit, or it would be a third sub-screen.
-    bool push(Level level, const char *id, const ViewState &current);
+    bool push(Level level, const char *id, const ViewState &current, const char *value = 0);
+    // Replaces the top's value (the viewer follows the picture on screen).
+    // False when the stack is empty.
+    bool setTopValue(const char *value);
     // Removes the top; parent (may be NULL) receives the new top with the
     // state recorded when the removed level was pushed. False when the stack
     // is empty or only the root is left (back from the root is Nickel's).

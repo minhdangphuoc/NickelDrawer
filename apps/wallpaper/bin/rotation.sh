@@ -3,4 +3,4 @@
 # without it (NickelMenu) the rotation toggles.
 . "$(dirname "$0")/lib.sh"
 require_binary
-run_wallpaper rotation "${NICKELDRAWER_VALUE:-toggle}"
+run_quick "" rotation "${NICKELDRAWER_VALUE:-toggle}"

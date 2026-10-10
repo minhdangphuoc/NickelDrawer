@@ -50,6 +50,7 @@ private:
     void runAction(const DrawerAction &action);
     void runCurrent();
     bool presentScreenSignal(const ActionResult &result);
+    void presentScreenEventOutcome(const ActionResult &result);
     void askForWifi();
     void presentResult(const ActionResult &result);
     void rescanIfAsked(const ActionResult &result);

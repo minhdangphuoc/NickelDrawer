@@ -28,10 +28,10 @@ static void logDepth(const char *event)
                     entry ? entry->state.page + 1 : 0);
 }
 
-bool push(Level level, const QString &id, const ViewState &current)
+bool push(Level level, const QString &id, const ViewState &current, const QString &value)
 {
     QByteArray utf8 = id.toUtf8();
-    if (!sharedStack().push(level, utf8.constData(), current)) {
+    if (!sharedStack().push(level, utf8.constData(), current, value.toUtf8().constData())) {
         bool isTooDeep = level == LEVEL_SUB_SCREEN && sharedStack().countOf(LEVEL_SUB_SCREEN) >= MAX_SUB_SCREENS;
         DebugLog::write("navigation: push %s \"%s\" refused: %s (depth %d, top %s)", levelName(level), utf8.constData(),
                         isTooDeep ? "already 2 screens below main" : "does not fit on the stack", sharedStack().depth(),
@@ -41,6 +41,15 @@ bool push(Level level, const QString &id, const ViewState &current)
     DebugLog::write("navigation: push %s \"%s\", parent recorded at mode %d, page %d", levelName(level),
                     utf8.constData(), current.viewMode, current.page + 1);
     logDepth("after push");
+    return true;
+}
+
+bool setTopValue(const QString &value)
+{
+    if (!sharedStack().setTopValue(value.toUtf8().constData())) {
+        return false;
+    }
+    DebugLog::write("navigation: top value now \"%s\"", qPrintable(value));
     return true;
 }
 

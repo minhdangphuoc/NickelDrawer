@@ -1,11 +1,67 @@
 {
-  "count": "7",
-  "current": "mountain-sunrise.jpg",
-  "mode": "fit",
-  "rotation": "random",
-  "last_import": "New pictures: 3. Already known: 4.",
+  "status": "",
+  "summary": "7 ảnh · Đang dùng: hoa-sen · Lấp đầy",
+  "pictures": [
+    {
+      "id": "0001",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0001.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0001.png",
+      "label": "nui-trang",
+      "info": "Tên: nui-trang.png\nKích thước: 1600 × 1200\nNgày nhập: 08/10/2026"
+    },
+    {
+      "id": "0002",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0002.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0002.png",
+      "label": "bien-xanh",
+      "info": "Tên: bien-xanh.jpg\nKích thước: 1200 × 1600\nNgày nhập: 08/10/2026"
+    },
+    {
+      "id": "0003",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0003.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0003.png",
+      "label": "hoa-sen",
+      "info": "Tên: hoa-sen.png\nKích thước: 2000 × 2000\nNgày nhập: 08/10/2026",
+      "badge": "current"
+    },
+    {
+      "id": "0004",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0004.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0004.png",
+      "label": "rung-thong",
+      "info": "Tên: rung-thong.jpg\nKích thước: 1200 × 1600\nNgày nhập: 08/10/2026"
+    },
+    {
+      "id": "0005",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0005.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0005.png",
+      "label": "pho-co",
+      "info": "Tên: pho-co.png\nKích thước: 1600 × 1200\nNgày nhập: 08/10/2026"
+    },
+    {
+      "id": "0006",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0006.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0006.png",
+      "label": "dong-lua",
+      "info": "Tên: dong-lua.jpg\nKích thước: 2000 × 2000\nNgày nhập: 08/10/2026"
+    },
+    {
+      "id": "0007",
+      "thumb": "../../build/preview/wallpaper-samples/data/thumbs/0007.png",
+      "image": "../../build/preview/wallpaper-samples/data/images/0007.png",
+      "label": "hoang-hon",
+      "info": "Tên: hoang-hon.png\nKích thước: 1600 × 1200\nNgày nhập: 08/10/2026"
+    }
+  ],
+  "current_id": "0003",
+  "count": 7,
+  "mode": "fill",
+  "rotation": "fixed",
   "busy": false,
+  "pending": 0,
+  "import_step": "",
   "sleep_screen_ready": false,
-  "sleep_screen_hint": "Turn on in Settings → Energy saving and privacy: “Show current read” and “Show book cover full screen”.",
-  "status": "7 pictures"
+  "sleep_screen_hint": "Bật trong Cài đặt → Tiết kiệm pin và riêng tư: «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình».",
+  "sleep_screen_line": "Bật trong Cài đặt → Tiết kiệm pin và riêng tư: «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình».",
+  "last_import": "Ảnh mới: 7. Đã có sẵn: 0."
 }

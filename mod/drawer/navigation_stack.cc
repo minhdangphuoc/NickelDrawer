@@ -2,10 +2,10 @@
 
 namespace Navigation {
 
-static void copyId(char *target, const char *source)
+static void copyText(char *target, const char *source, int capacity)
 {
     int i = 0;
-    for (; source && source[i] && i < MAX_ID_BYTES - 1; i++) {
+    for (; source && source[i] && i < capacity - 1; i++) {
         target[i] = source[i];
     }
     target[i] = '\0';
@@ -31,7 +31,7 @@ const Entry *Stack::at(int index) const
     return index >= 0 && index < count ? &entries[index] : 0;
 }
 
-bool Stack::push(Level level, const char *id, const ViewState &current)
+bool Stack::push(Level level, const char *id, const ViewState &current, const char *value)
 {
     if (count >= MAX_DEPTH) {
         return false;
@@ -47,10 +47,20 @@ bool Stack::push(Level level, const char *id, const ViewState &current)
     }
     Entry &entry = entries[count];
     entry.level = level;
-    copyId(entry.id, id);
+    copyText(entry.id, id, MAX_ID_BYTES);
+    copyText(entry.value, value, MAX_VALUE_BYTES);
     entry.state.viewMode = 0;
     entry.state.page = 0;
     count++;
+    return true;
+}
+
+bool Stack::setTopValue(const char *value)
+{
+    if (count == 0) {
+        return false;
+    }
+    copyText(entries[count - 1].value, value, MAX_VALUE_BYTES);
     return true;
 }
 

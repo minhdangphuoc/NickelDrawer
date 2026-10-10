@@ -1,11 +1,14 @@
 #ifndef NICKELDRAWER_SCREEN_VIEW_H
 #define NICKELDRAWER_SCREEN_VIEW_H
 
+#include <QList>
+#include <QStringList>
 #include <QWidget>
 
 #include "press_area.h"
 #include "screen_model.h"
 
+class HeaderIconButton;
 class PageHeader;
 class QLabel;
 class ScreenCanvas;
@@ -42,20 +45,34 @@ public:
     // A different screen starts at page 1; the same screen keeps its page.
     void showScreen(const ScreenModel &model);
     const ScreenModel &screen() const { return model; }
-    const ScreenComponent *component(int index) const;
-    // Shows a tapped toggle or radio at once; the reload confirms or reverts it.
-    void showToggleState(int component, bool isOn);
-    void showRadioValue(int component, const QString &value);
+    // A copy: showScreen rebuilds the layout the component came from.
+    bool componentAt(int index, ScreenComponent *copy) const;
+    // The picture on screen in the viewer, "" without one.
+    QString viewerPictureId() const;
+    // Nothing stays decoded (pop, close).
+    void dropPictures();
     // While a dialog or an action is pending: back, taps and page keys are ignored.
     void setInputBlocked(bool isBlocked);
     int currentPage() const;
     // Back to a parent screen: its next showScreen opens at page instead of page 1.
     void restorePageOnNextScreen(int page);
+    // Back from the viewer: the gallery opens at the page holding this picture.
+    void restoreTileOnNextScreen(const QString &id);
+
+public slots:
+    // Shows a tapped toggle or radio at once; the reload confirms or reverts
+    // it. Slots, so a tap handler can queue them: rebuilding the layout inside
+    // the handler would free the component the handler still reads.
+    void showToggleState(int component, bool isOn);
+    void showRadioValue(int component, const QString &value);
 
 signals:
     void backRequested();
     void headerActionTapped();
+    void headerIconTapped(int index);
     void componentTapped(int component, const QString &value);
+    void tileLongPressed(int component, const QString &id, const QPoint &anchor);
+    void viewerPictureChanged(const QString &id);
 
 protected:
     bool event(QEvent *event);
@@ -64,12 +81,14 @@ protected:
     void showEvent(QShowEvent *event);
 
 private slots:
+    void showHeader();
     void onBackTapped();
     void onHeaderActionTapped();
+    void onHeaderIconTapped();
 
 private:
+    void showHeaderIcons();
     PageHeader *createHeader(const QString &title);
-    void showHeader();
     void placeBelowStatusBar();
 
     QWidget *host;
@@ -78,6 +97,8 @@ private:
     PageHeader *header;
     QLabel *statusLabel;
     HeaderActionButton *actionButton;
+    QList<HeaderIconButton *> iconButtons;
+    QStringList shownIconNames;
     bool isInputBlocked;
 };
 

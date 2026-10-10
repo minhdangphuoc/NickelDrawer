@@ -5,8 +5,8 @@
 Dùng ảnh của bạn làm màn hình chờ (ảnh hiện khi máy ngủ, bấm nút nguồn để xem).
 
 1. Cắm USB, chép ảnh PNG hoặc JPEG (tối đa 20 MB mỗi ảnh) thẳng vào thư mục `Pictures`. Thư mục này được tạo khi bạn bấm **Hình nền · Nhập ảnh** lần đầu nếu chưa có.
-2. Bấm **Hình nền · Nhập ảnh**. Ảnh được đổi sang kích thước màn hình, 16 mức xám, rồi đặt vào `.kobo/screensaver`. Việc này chạy nền; một phút sau bấm **Trạng thái** để xem kết quả.
-3. **Ảnh kế tiếp** đổi ảnh. **Lấp đầy / Vừa khung**: phủ kín màn hình (cắt mép) hoặc giữ nguyên cả ảnh trên nền trắng. **Cố định / Ngẫu nhiên**: một ảnh, hoặc máy chọn ngẫu nhiên trong tất cả. **Tắt hình nền** gỡ ảnh của ứng dụng khỏi `.kobo/screensaver`.
+2. Bấm **Hình nền · Nhập ảnh**. Ảnh được đổi sang kích thước màn hình, 16 mức xám, rồi đặt vào `.kobo/screensaver`. Việc này chạy nền; màn hình hiển thị tiến độ.
+3. Màn hình chính là thư viện ảnh: chạm một ảnh để xem, nhấn giữ để đặt làm hình nền, xem thông tin hoặc xoá khỏi Hình nền (ảnh gốc trong `Pictures` vẫn được giữ). Biểu tượng bánh răng mở **Tùy chọn**: **Lấp đầy / Vừa khung** (phủ kín màn hình hoặc giữ cả ảnh trên nền trắng) và **Cố định / Ngẫu nhiên**.
 
 Điều kiện để ảnh hiện: bật trong Cài đặt → Tiết kiệm pin và riêng tư cả «Hiển thị sách đang đọc» và «Hiển thị bìa sách toàn màn hình», và máy có một cuốn sách đã mở gần đây. Ứng dụng sẽ nhắc nếu hai mục này đang tắt.
 
@@ -17,8 +17,8 @@ Dùng ảnh của bạn làm màn hình chờ (ảnh hiện khi máy ngủ, bấ
 Use your own pictures as the Kobo's sleep screen (shown when the device sleeps; press power to see it).
 
 1. Over USB, copy PNG or JPEG files (up to 20 MB each) into `Pictures`. The folder is created the first time you tap **Wallpaper · Import pictures** if it is missing.
-2. Tap **Wallpaper · Import pictures**. Pictures are scaled to the screen, reduced to 16 gray levels with dithering and placed in `.kobo/screensaver`. It runs in the background; tap **Status** a minute later for the result.
-3. **Next picture** changes the picture. **Fill / Fit**: cover the screen (edges cropped) or keep the whole picture on white. **Fixed / Random**: one picture, or Nickel picks any. **Turn off** removes the app's pictures from `.kobo/screensaver`.
+2. Tap **Wallpaper · Import pictures**. Pictures are scaled to the screen, reduced to 16 gray levels with dithering and placed in `.kobo/screensaver`. It runs in the background; the screen shows the progress.
+3. The main screen is a picture gallery: tap a picture to view it, long-press to set it as the wallpaper, see its info or remove it from Wallpaper (the original in `Pictures` is kept). The gear opens **Options**: **Fill / Fit** (cover the screen or keep the whole picture on white) and **Fixed / Random**.
 
 Requirement: in Settings → Energy saving and privacy turn on both “Show current read” and “Show book cover full screen”, and have a recently opened book. The app shows a hint while either setting is off.
 

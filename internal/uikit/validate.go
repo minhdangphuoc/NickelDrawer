@@ -43,6 +43,7 @@ const (
 	CodeTranslationLong  = "ui.translation_longer"
 	CodeSecretField      = "ui.secret_field"
 	CodeLocaleMissingVi  = "ui.locale_key_untranslated"
+	CodeViewerNotAlone   = "ui.viewer_not_alone"
 )
 
 const translationLimitPercent = 150
@@ -105,6 +106,8 @@ type validator struct {
 	current      *Screen
 	allScreenIDs map[string]bool
 	primary      int
+	galleries    int
+	viewers      int
 }
 
 func (v *validator) fail(code, path, format string, args ...any) {
@@ -233,17 +236,29 @@ func (v *validator) checkScreen(id string, raw any) {
 		return
 	}
 	v.current = &Screen{ID: id}
-	v.primary = 0
+	v.primary, v.galleries, v.viewers = 0, 0, 0
 	v.checkObject(path, ScreenShape.Fields, object)
-	v.checkHeaderAction(path+".action", object)
+	v.checkHeaderActions(path, object)
 	v.current.Title, v.current.Status = object["title"], firstPresent(object["status"], object["badge"])
 	v.current.Action, _ = object["action"].(map[string]any)
+	v.current.Actions = objectList(object["actions"])
 	v.current.Dialogs = objectMap(object["dialogs"])
 	v.current.Toasts, _ = object["toasts"].(map[string]any)
 	if v.primary > 1 {
 		v.fail(CodeMultiplePrimary, path, "has %d primary buttons; a screen has one primary action, make the others \"style\": \"secondary\"", v.primary)
 	}
+	v.checkViewerAlone(path)
 	v.screens[id] = v.current
+}
+
+// checkViewerAlone: the viewer owns the whole screen, so nothing else may share it.
+func (v *validator) checkViewerAlone(path string) {
+	if v.viewers == 0 {
+		return
+	}
+	if len(v.current.Body) != 1 || len(v.current.Footer) != 0 {
+		v.fail(CodeViewerNotAlone, path, "a screen with a viewer must have the viewer as its only body component and no footer; the viewer draws its own bottom bar")
+	}
 }
 
 func firstPresent(values ...any) any {
@@ -267,15 +282,43 @@ func objectMap(raw any) map[string]map[string]any {
 	return result
 }
 
-func (v *validator) checkHeaderAction(path string, screen map[string]any) {
-	action, isObject := screen["action"].(map[string]any)
-	if !isObject {
-		return
+func objectList(raw any) []map[string]any {
+	var result []map[string]any
+	items, _ := raw.([]any)
+	for _, item := range items {
+		if object, ok := item.(map[string]any); ok {
+			result = append(result, object)
+		}
 	}
-	_, hasPush := action["push"]
-	_, hasAction := action["action"]
-	if hasPush == hasAction {
-		v.fail(CodeNeedsOne, path, "needs exactly one of \"push\" (open a screen) or \"action\" (run an app action)")
+	return result
+}
+
+// checkHeaderActions: a screen has a text link ("action") or icon buttons ("actions"), not both,
+// and each one either pushes a screen or runs an action.
+func (v *validator) checkHeaderActions(path string, screen map[string]any) {
+	_, hasLink := screen["action"]
+	_, hasIcons := screen["actions"]
+	if hasLink && hasIcons {
+		v.fail(CodeNeedsOne, path, "has both \"action\" (text link) and \"actions\" (icon buttons); keep one")
+	}
+	if action, isObject := screen["action"].(map[string]any); isObject {
+		v.checkExactlyOne(path+".action", action, "push", "action")
+	}
+	for i, action := range objectList(screen["actions"]) {
+		v.checkExactlyOne(fmt.Sprintf("%s.actions[%d]", path, i), action, "push", "action")
+	}
+}
+
+// checkExactlyOne fails unless exactly one of the keys is present (info counts only when true).
+func (v *validator) checkExactlyOne(path string, object map[string]any, keys ...string) {
+	present := 0
+	for _, key := range keys {
+		if value, has := object[key]; has && value != false {
+			present++
+		}
+	}
+	if present != 1 {
+		v.fail(CodeNeedsOne, path, "needs exactly one of %s", `"`+strings.Join(keys, `", "`)+`"`)
 	}
 }
 
@@ -368,13 +411,24 @@ func (v *validator) checkArray(path string, shape Shape, value any) {
 
 func (v *validator) checkTuple(path string, shape Shape, value any) {
 	items, isArray := value.([]any)
-	if !isArray || len(items) != len(shape.Tuple) {
-		v.fail(CodeWrongType, path, "must be an array of exactly %d entries", len(shape.Tuple))
+	shortest := shape.MinLen
+	if shortest == 0 {
+		shortest = len(shape.Tuple)
+	}
+	if !isArray || len(items) < shortest || len(items) > len(shape.Tuple) {
+		v.fail(CodeWrongType, path, "must be an array of %s entries", tupleLengthText(shortest, len(shape.Tuple)))
 		return
 	}
 	for i, item := range items {
 		v.checkShape(fmt.Sprintf("%s[%d]", path, i), shape.Tuple[i], item)
 	}
+}
+
+func tupleLengthText(shortest, longest int) string {
+	if shortest == longest {
+		return fmt.Sprintf("exactly %d", longest)
+	}
+	return fmt.Sprintf("%d to %d", shortest, longest)
 }
 
 func (v *validator) checkMap(path string, shape Shape, value any) {
@@ -601,12 +655,44 @@ func (v *validator) checkComponentRules(path string, component Component) {
 	switch component.Kind {
 	case "list":
 		v.checkListVar(path, component)
+	case "gallery":
+		v.checkGallery(path, component)
+	case "viewer":
+		v.checkViewer(path, component)
 	case "empty":
 		v.checkEmptyButton(path, component)
 	case "field":
 		v.checkSecretField(path, component)
 	case "radio":
 		v.checkRadioOptions(path, component)
+	}
+}
+
+func (v *validator) checkGallery(path string, component Component) {
+	v.checkListVar(path, component)
+	v.galleries++
+	if v.galleries == 2 {
+		v.fail(CodeDuplicate, path, "a screen has at most one gallery")
+	}
+	if tap, isObject := component.Props["on_tap"].(map[string]any); isObject {
+		v.checkExactlyOne(path+".on_tap", tap, "push", "action")
+	}
+	items, _ := component.Props["on_long_press"].([]any)
+	for i, item := range items {
+		if object, isObject := item.(map[string]any); isObject {
+			v.checkExactlyOne(fmt.Sprintf("%s.on_long_press[%d]", path, i), object, "action", "push", "info")
+		}
+	}
+	if empty, isObject := component.Props["empty"].(map[string]any); isObject {
+		v.checkEmptyButton(path+".empty", Component{Kind: "empty", Props: empty})
+	}
+}
+
+func (v *validator) checkViewer(path string, component Component) {
+	v.checkListVar(path, component)
+	v.viewers++
+	if v.viewers == 2 {
+		v.fail(CodeDuplicate, path, "a screen has at most one viewer")
 	}
 }
 
@@ -618,7 +704,7 @@ func (v *validator) checkListVar(path string, component Component) {
 	}
 	if value, declared := Lookup(v.vars, reference); declared {
 		if _, isArray := value.([]any); !isArray {
-			v.fail(CodeListNotArray, path+".list", "variable %q must default to an array (for example []) because a list shows its items", reference)
+			v.fail(CodeListNotArray, path+"."+component.Kind, "variable %q must default to an array (for example []) because a %s shows its items", reference, component.Kind)
 		}
 	}
 }

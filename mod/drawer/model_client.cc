@@ -66,11 +66,14 @@ void ModelClient::requestRemove(const QString &appId)
               DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_REMOVE));
 }
 
-void ModelClient::requestScreen(const QString &appId, const QString &screenId)
+void ModelClient::requestScreen(const QString &appId, const QString &screenId, const QString &value)
 {
     QStringList arguments = drawerArguments("screen") << appId;
     if (!screenId.isEmpty()) {
         arguments << QStringLiteral("--screen") << screenId;
+    }
+    if (!value.isEmpty()) {
+        arguments << QStringLiteral("--value") << value;
     }
     startCall(REQUEST_SCREEN, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_SCREEN));
 }

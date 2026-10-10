@@ -38,7 +38,7 @@ func (c Config) RunEvent(event Event) (RunResult, error) {
 	if !isSignal {
 		return result, nil
 	}
-	screen, err := c.Screen(event.AppID, event.ScreenID)
+	screen, err := c.Screen(event.AppID, event.ScreenID, event.Value)
 	if err != nil {
 		return result, nil // the action already ran; show its text rather than fail
 	}

@@ -16,6 +16,10 @@ const (
 	scriptPath     = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
+// InsideDrawerEnvName is set to 1 for every script the drawer runs, so an app script knows it
+// must return at once and print only JSON signals, never prose for a dialog.
+const InsideDrawerEnvName = "NICKELDRAWER"
+
 // ScriptOutput is what a finished script left behind.
 type ScriptOutput struct {
 	Stdout   string
@@ -32,7 +36,7 @@ type ScriptRunner func(ctx context.Context, script string) ScriptOutput
 // login shell, so scripts must not depend on anything else. extra carries the few protocol
 // variables a drawer event passes (NICKELDRAWER_VALUE).
 func scriptEnvironment(extra []string) []string {
-	return append([]string{"PATH=" + scriptPath, "HOME=/"}, extra...)
+	return append([]string{"PATH=" + scriptPath, "HOME=/", InsideDrawerEnvName + "=1"}, extra...)
 }
 
 // ExecScript runs script from "/" with the minimal environment.

@@ -30,6 +30,7 @@ commands:
           --locale en|vi  --state FILE  --port N (default 8790)  --exec
   render  headless PNG of one screen
           --out FILE (required)  --screen ID  --locale en|vi  --state FILE  --page N  --grey 16
+          --value ID (screen value, e.g. the picture a viewer opens on)  --chrome shown|hidden (viewer)
           --font FILE  --font-serif FILE  --font-mono FILE
 
 --exec runs the app's action scripts on this computer inside a temporary folder when you tap
@@ -134,6 +135,11 @@ func runRender(args []string, stdout, stderr io.Writer) int {
 	flags.StringVar(&options.Screen, "screen", "", "screen id (default: the start screen)")
 	flags.StringVar(&options.Locale, "locale", "en", "language of the preview (en or vi)")
 	flags.StringVar(&options.StatePath, "state", "", "JSON file with variable values")
+	flags.Func("value", "screen value, e.g. the picture id a viewer opens on (sets the variable selected)", func(text string) error {
+		options.Value = &text
+		return nil
+	})
+	flags.StringVar(&options.Chrome, "chrome", chromeShown, "viewer chrome: shown or hidden")
 	flags.IntVar(&options.Page, "page", 1, "page number of a long screen (1 is the first)")
 	flags.IntVar(&options.Grey, "grey", greyLevelsOff, "16 snaps the picture to 16 grey levels")
 	flags.StringVar(&options.FontSans, "font", "", "TrueType or OpenType file for text (default: a system font if found)")
@@ -146,6 +152,10 @@ func runRender(args []string, stdout, stderr io.Writer) int {
 	appDir, ok := appDirArgument(positional, stderr)
 	if !ok || options.OutPath == "" {
 		fmt.Fprintln(stderr, "ndpreview render needs an app folder and --out FILE")
+		return exitFailure
+	}
+	if options.Chrome != chromeShown && options.Chrome != chromeHidden {
+		fmt.Fprintf(stderr, "ndpreview: --chrome must be %s or %s, got %q\n", chromeShown, chromeHidden, options.Chrome)
 		return exitFailure
 	}
 	options.AppDir = appDir

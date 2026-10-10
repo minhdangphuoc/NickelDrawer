@@ -20,6 +20,11 @@ static const int TAP_ROW_TEXT_INSET = 360;
 static const int TOGGLE_WORD_WIDTH = 140;
 static const int FIELD_BORDER = 2;
 static const int QR_FRAME_BORDER = 2;
+static const int RADIO_LABEL_TOP_WITH_DETAIL = 12;
+static const int RADIO_DETAIL_TOP = 68;
+static const int GALLERY_EMPTY_SPACER_HEIGHT = 120;
+static const int GALLERY_PICTURE_STROKE = 4;
+static const int GALLERY_CHECK_STROKE = 6;
 
 // ---- Text helpers (Qt strings over the UTF-8 rules of screen_logic) ----
 
@@ -67,7 +72,8 @@ bool PaintItem::operator==(const PaintItem &other) const
     return shape == other.shape && rect == other.rect && fill == other.fill && border == other.border &&
            lines == other.lines && size == other.size && lineHeight == other.lineHeight && family == other.family &&
            isBold == other.isBold && isUnderlined == other.isUnderlined && align == other.align && ink == other.ink &&
-           qrSide == other.qrSide && qrModules == other.qrModules;
+           qrSide == other.qrSide && qrModules == other.qrModules && imagePath == other.imagePath &&
+           isDashed == other.isDashed && showsMissingGlyph == other.showsMissingGlyph;
 }
 
 static PaintItem rectItem(int x, int y, int width, int height, int fill, int border)
@@ -104,6 +110,14 @@ static PaintItem textItem(int x, int y, int width, int height, const QString &te
 static PaintItem separatorItem(int y)
 {
     return rectItem(GUTTER, y, CONTENT_WIDTH, SEPARATOR, INK_BLACK, 0);
+}
+
+static PaintItem pictureGlyph(const QRect &rect, int ink)
+{
+    PaintItem item = rectItem(rect.x(), rect.y(), rect.width(), rect.height(), NO_FILL, GALLERY_PICTURE_STROKE);
+    item.shape = PaintItem::SHAPE_PICTURE_GLYPH;
+    item.ink = ink;
+    return item;
 }
 
 static void addTarget(ScreenPage *page, const QRect &rect, int component, const QString &value)
@@ -244,8 +258,10 @@ static void addRadioBlocks(int component, const ScreenComponent &c, QList<Layout
     int first = blocks->size();
     blocks->append(sectionBlock(component, c.text));
     for (int i = 0; i < c.options.size(); i++) {
-        LayoutBlock option = block(LayoutBlock::KIND_RADIO_OPTION, component, ROW_HEIGHT, 0);
+        QString detail = i < c.optionDetails.size() ? c.optionDetails[i] : QString();
+        LayoutBlock option = block(LayoutBlock::KIND_RADIO_OPTION, component, detail.isEmpty() ? ROW_HEIGHT : TAP_ROW_HEIGHT, 0);
         option.primary = c.options[i].second;
+        option.secondary = detail;
         option.tapValue = c.options[i].first;
         option.isOn = c.options[i].first == c.value;
         option.isTappable = c.isEnabled;
@@ -328,6 +344,24 @@ static void addEmptyBlocks(int component, const ScreenComponent &c, QList<Layout
     }
 }
 
+// The gallery's own empty state: picture icon, heading, text, primary button.
+void ScreenLayout::addGalleryEmptyBlocks(int component, QList<LayoutBlock> *blocks) const
+{
+    const GalleryEmpty &empty = components[component].galleryEmpty;
+    if (empty.title.isEmpty()) {
+        return;
+    }
+    blocks->append(block(LayoutBlock::KIND_SPACER, component, GALLERY_EMPTY_SPACER_HEIGHT, 0));
+    blocks->append(block(LayoutBlock::KIND_PICTURE_ICON, component, GALLERY_EMPTY_ICON_SIDE, RHYTHM));
+    blocks->append(paragraph(component, empty.title, STYLE_HEADING, FAMILY_SANS, true, PaintItem::ALIGN_CENTER, INK_BLACK));
+    if (!empty.text.isEmpty()) {
+        blocks->append(paragraph(component, empty.text, STYLE_CAPTION, FAMILY_SANS, false, PaintItem::ALIGN_CENTER, INK_MUTED));
+    }
+    if (!empty.button.isEmpty() && !empty.action.isEmpty()) {
+        blocks->append(buttonBlock(component, empty.button, true, true));
+    }
+}
+
 void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) const
 {
     const ScreenComponent &c = components[index];
@@ -372,6 +406,8 @@ void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) con
         addListBlocks(index, c, blocks);
     } else if (type == QLatin1String("empty")) {
         addEmptyBlocks(index, c, blocks);
+    } else if (type == QLatin1String("gallery")) {
+        addGalleryEmptyBlocks(index, blocks); // a gallery with pictures is a grid, not blocks
     }
 }
 
@@ -386,17 +422,41 @@ static QVector<Block> sizesOf(const QList<LayoutBlock> &blocks)
     return sizes;
 }
 
-ScreenLayout::ScreenLayout() : height(SCREEN_HEIGHT)
+ScreenLayout::ScreenLayout()
+    : height(SCREEN_HEIGHT), galleryIndex(-1), hasGrid(false), gridTop(0), viewerIndex(-1), shownIndex(-1),
+      isChromeShown(true)
 {
     frame.top = frame.bottom = frame.footerTop = frame.pageBarTop = 0;
     frame.pageCount = 1;
+    gridFrame.columns = GALLERY_DEFAULT_COLUMNS;
+    gridFrame.rows = gridFrame.perPage = gridFrame.pageCount = 1;
+}
+
+static int indexOfType(const QList<ScreenComponent> &list, const char *type)
+{
+    for (int i = 0; i < list.size(); i++) {
+        if (list[i].type == QLatin1String(type)) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 ScreenLayout::ScreenLayout(const ScreenModel &screenModel, int viewHeight, const HostTexts &texts)
-    : model(screenModel), hostTexts(texts), height(viewHeight)
+    : model(screenModel), hostTexts(texts), height(viewHeight), galleryIndex(-1), hasGrid(false), gridTop(0),
+      viewerIndex(-1), shownIndex(-1), isChromeShown(true)
 {
     components = model.body + model.footer;
-    for (int i = 0; i < model.body.size(); i++) {
+    galleryIndex = indexOfType(model.body, "gallery");
+    viewerIndex = indexOfType(model.body, "viewer");
+    hasGrid = galleryIndex >= 0 && model.body[galleryIndex].tiles.size() + model.body[galleryIndex].pending > 0;
+    if (viewerIndex >= 0) {
+        const ScreenComponent &viewer = model.body[viewerIndex];
+        showViewerPicture(viewer.value);
+    }
+    // A viewer is alone on its screen; components after a grid are not shown.
+    int bodyEnd = hasGrid ? galleryIndex : model.body.size();
+    for (int i = 0; i < bodyEnd && viewerIndex < 0; i++) {
         addComponentBlocks(i, &body);
     }
     for (int i = 0; i < model.footer.size(); i++) {
@@ -410,17 +470,90 @@ ScreenLayout::ScreenLayout(const ScreenModel &screenModel, int viewHeight, const
     for (int i = 0; i < bodySizes.size(); i++) {
         pageOfBlock.append(pages[i]);
     }
+    gridFrame.columns = GALLERY_DEFAULT_COLUMNS;
+    gridFrame.rows = gridFrame.perPage = gridFrame.pageCount = 1;
+    if (hasGrid) {
+        planGrid(footerHeight, bodySizes);
+    }
+}
+
+// The grid takes what the blocks before it and the footer leave; every grid
+// page repeats those blocks (docs/spec/wallpaper-gallery.md section 2.1).
+void ScreenLayout::planGrid(int footerHeight, const QVector<Block> &bodySizes)
+{
+    const ScreenComponent &gallery = components[galleryIndex];
+    gridTop = frame.top;
+    for (int i = 0; i < bodySizes.size(); i++) {
+        gridTop += bodySizes[i].height + bodySizes[i].gap;
+    }
+    int bottom = footerHeight > 0 ? frame.footerTop - RHYTHM : height - GALLERY_BOTTOM_MARGIN;
+    gridFrame = galleryFrame(gallery.gridColumns, gallery.gridRows, gallery.tiles.size() + gallery.pending, bottom - gridTop);
+    frame.pageCount = gridFrame.pageCount;
+    frame.pageBarTop = bottom - PAGE_BAR_HEIGHT;
+}
+
+int ScreenLayout::pageOfGalleryTile(const QString &id) const
+{
+    if (!hasGrid) {
+        return -1;
+    }
+    const QList<PictureTile> &tiles = components[galleryIndex].tiles;
+    for (int i = 0; i < tiles.size(); i++) {
+        if (tiles[i].id == id) {
+            return galleryPageOfSlot(i, gridFrame.perPage);
+        }
+    }
+    return -1;
+}
+
+const PictureTile *ScreenLayout::viewerShownTile() const
+{
+    return viewerIndex >= 0 && shownIndex >= 0 && shownIndex < viewerCount() ? &components[viewerIndex].tiles[shownIndex]
+                                                                                : NULL;
+}
+
+int ScreenLayout::viewerIndexOfTile(const QString &id) const
+{
+    if (viewerIndex < 0) {
+        return -1;
+    }
+    const QList<PictureTile> &tiles = components[viewerIndex].tiles;
+    for (int i = 0; i < tiles.size(); i++) {
+        if (tiles[i].id == id) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+// An unknown id shows the first picture (the backend does the same).
+void ScreenLayout::showViewerPicture(const QString &id)
+{
+    int found = viewerIndexOfTile(id);
+    shownIndex = viewerCount() == 0 ? -1 : (found < 0 ? 0 : found);
+}
+
+void ScreenLayout::showViewerPictureAt(int index)
+{
+    shownIndex = index >= 0 && index < viewerCount() ? index : shownIndex;
 }
 
 ScreenPage ScreenLayout::page(int index) const
 {
     ScreenPage result;
+    if (viewerIndex >= 0) {
+        drawViewerPage(&result);
+        return result;
+    }
     int y = frame.top;
     for (int i = 0; i < body.size(); i++) {
-        if (pageOfBlock[i] == index) {
+        if (hasGrid || pageOfBlock[i] == index) {
             drawBlock(body[i], y, &result);
             y += body[i].size.height + body[i].size.gap;
         }
+    }
+    if (hasGrid) {
+        drawGalleryPage(index, &result);
     }
     if (frame.pageCount > 1) {
         drawPageBar(index, &result);
@@ -435,8 +568,12 @@ ScreenPage ScreenLayout::page(int index) const
 
 void ScreenLayout::drawPageBar(int index, ScreenPage *page) const
 {
-    PaintItem bar = textItem(GUTTER, frame.pageBarTop, CONTENT_WIDTH, PAGE_BAR_HEIGHT,
-                             QStringLiteral("%1 / %2").arg(index + 1).arg(frame.pageCount), CAPTION_SIZE, FAMILY_SANS,
+    // The gallery's pager shows its tap arrows: "‹ 1 / 2 ›".
+    QString text = QStringLiteral("%1 / %2").arg(index + 1).arg(frame.pageCount);
+    if (hasGrid) {
+        text = QString::fromUtf8("\xE2\x80\xB9  ") + text + QString::fromUtf8("  \xE2\x80\xBA");
+    }
+    PaintItem bar = textItem(GUTTER, frame.pageBarTop, CONTENT_WIDTH, PAGE_BAR_HEIGHT, text, CAPTION_SIZE, FAMILY_SANS,
                              PaintItem::ALIGN_CENTER);
     bar.ink = INK_MUTED;
     page->items.append(bar);
@@ -524,18 +661,29 @@ static void drawToggle(const LayoutBlock &b, int y, const HostTexts &texts, Scre
 
 static void drawRadioOption(const LayoutBlock &b, int y, ScreenPage *page)
 {
-    page->items.append(ellipseItem(GUTTER, y + 26, RADIO_RING_SIDE, NO_FILL, RADIO_RING_BORDER));
+    bool hasDetail = !b.secondary.isEmpty();
+    int ringTop = y + (b.size.height - RADIO_RING_SIDE) / 2;
+    page->items.append(ellipseItem(GUTTER, ringTop, RADIO_RING_SIDE, NO_FILL, RADIO_RING_BORDER));
     if (b.isOn) {
-        page->items.append(ellipseItem(GUTTER + 14, y + 40, RADIO_DOT, INK_BLACK, 0));
+        page->items.append(ellipseItem(GUTTER + 14, ringTop + 14, RADIO_DOT, INK_BLACK, 0));
     }
     int textWidth = CONTENT_WIDTH - RADIO_RING_SIDE - RHYTHM;
-    PaintItem label = textItem(GUTTER + RADIO_RING_SIDE + RHYTHM, y + 24, textWidth, 56,
+    int textLeft = GUTTER + RADIO_RING_SIDE + RHYTHM;
+    PaintItem label = textItem(textLeft, y + (hasDetail ? RADIO_LABEL_TOP_WITH_DETAIL : 24), textWidth, 56,
                                elided(b.primary, textWidth, ROW_TEXT_SIZE, FAMILY_SANS, false), ROW_TEXT_SIZE,
                                FAMILY_SANS, PaintItem::ALIGN_START);
     label.isBold = b.isOn;
-    page->items << label << separatorItem(y + ROW_HEIGHT - SEPARATOR);
+    page->items.append(label);
+    if (hasDetail) {
+        PaintItem detail = textItem(textLeft, y + RADIO_DETAIL_TOP, textWidth, CAPTION_LINE_HEIGHT,
+                                    elided(b.secondary, textWidth, CAPTION_SIZE, FAMILY_SANS, false), CAPTION_SIZE,
+                                    FAMILY_SANS, PaintItem::ALIGN_START);
+        detail.ink = INK_MUTED;
+        page->items.append(detail);
+    }
+    page->items.append(separatorItem(y + b.size.height - SEPARATOR));
     if (b.isTappable) {
-        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, ROW_HEIGHT), b.component, b.tapValue);
+        addTarget(page, QRect(GUTTER, y, CONTENT_WIDTH, b.size.height), b.component, b.tapValue);
     }
 }
 
@@ -587,32 +735,40 @@ static void drawNotice(const LayoutBlock &b, int y, ScreenPage *page)
     page->items.append(text);
 }
 
-static void drawButton(const LayoutBlock &b, int y, ScreenPage *page)
+// A bordered button in box: filled black when primary, dimmed and without a
+// target when disabled. value tells the session which button was tapped.
+static void paintButton(const QRect &box, const QStringList &lines, bool isPrimary, bool isEnabled, int component,
+                        const QString &value, ScreenPage *page)
 {
-    int height = b.size.height;
-    PaintItem box = rectItem(GUTTER, y, CONTENT_WIDTH, height, NO_FILL, BUTTON_BORDER);
+    PaintItem outline = rectItem(box.x(), box.y(), box.width(), box.height(), NO_FILL, BUTTON_BORDER);
     int ink = INK_BLACK;
-    if (b.isOn) {
-        box.fill = INK_BLACK;
+    if (isPrimary) {
+        outline.fill = INK_BLACK;
         ink = PAPER_WHITE;
     }
-    if (!b.isTappable) {
+    if (!isEnabled) {
         // Disabled: outline and label dimmed, no target (no press, taps ignored).
-        box.fill = NO_FILL;
-        box.ink = INK_DIM;
+        outline.fill = NO_FILL;
+        outline.ink = INK_DIM;
         ink = INK_DIM;
     }
-    int textHeight = b.lines.size() * BODY_LINE_HEIGHT;
-    PaintItem text = textItem(GUTTER + RHYTHM, y + (height - textHeight) / 2, CONTENT_WIDTH - 2 * RHYTHM, textHeight,
-                              QString(), BODY_SIZE, FAMILY_SANS, PaintItem::ALIGN_CENTER);
-    text.lines = b.lines;
+    int textHeight = lines.size() * BODY_LINE_HEIGHT;
+    PaintItem text = textItem(box.x() + RHYTHM, box.y() + (box.height() - textHeight) / 2, box.width() - 2 * RHYTHM,
+                              textHeight, QString(), BODY_SIZE, FAMILY_SANS, PaintItem::ALIGN_CENTER);
+    text.lines = lines;
     text.lineHeight = BODY_LINE_HEIGHT;
     text.isBold = true;
     text.ink = ink;
-    page->items << box << text;
-    if (b.isTappable) {
-        addTarget(page, box.rect, b.component, QString());
+    page->items << outline << text;
+    if (isEnabled) {
+        addTarget(page, box, component, value);
     }
+}
+
+static void drawButton(const LayoutBlock &b, int y, ScreenPage *page)
+{
+    paintButton(QRect(GUTTER, y, CONTENT_WIDTH, b.size.height), b.lines, b.isOn, b.isTappable, b.component, QString(),
+                page);
 }
 
 static void drawLine(const LayoutBlock &b, int y, bool isMiddleElided, ScreenPage *page)
@@ -686,5 +842,120 @@ void ScreenLayout::drawBlock(const LayoutBlock &b, int y, ScreenPage *page) cons
     case LayoutBlock::KIND_BUTTON:
         drawButton(b, y, page);
         break;
+    case LayoutBlock::KIND_PICTURE_ICON:
+        page->items.append(pictureGlyph(QRect((SCREEN_WIDTH - GALLERY_EMPTY_ICON_SIDE) / 2, y, GALLERY_EMPTY_ICON_SIDE,
+                                              GALLERY_EMPTY_ICON_SIDE),
+                                        INK_DIM));
+        break;
+    }
+}
+
+// ---- Gallery grid ----
+
+// Every slot makes the same four items (frame, picture, badge, check), so a
+// thumbnail that appears or a badge that moves changes one tile and the page
+// is repainted partially; only a different number of slots is a new structure.
+void ScreenLayout::drawGallerySlot(int slotIndex, int slotOnPage, ScreenPage *page) const
+{
+    const ScreenComponent &gallery = components[galleryIndex];
+    bool isPlaceholder = slotIndex >= gallery.tiles.size();
+    IntRect slot = galleryTileRect(slotOnPage, gridFrame.columns, gridTop);
+    QRect box(slot.x, slot.y, slot.width, slot.height);
+    bool isCurrent = !isPlaceholder && gallery.tiles[slotIndex].isCurrent;
+
+    PaintItem frameItem = rectItem(box.x(), box.y(), box.width(), box.height(), NO_FILL,
+                                   isPlaceholder ? GALLERY_PLACEHOLDER_BORDER : (isCurrent ? GALLERY_CURRENT_BORDER : GALLERY_BORDER));
+    if (isPlaceholder) {
+        frameItem.isDashed = true;
+        frameItem.ink = INK_DIM;
+    }
+    page->items.append(frameItem);
+
+    PaintItem picture = rectItem(box.x() + GALLERY_CURRENT_BORDER, box.y() + GALLERY_CURRENT_BORDER,
+                                 box.width() - 2 * GALLERY_CURRENT_BORDER, box.height() - 2 * GALLERY_CURRENT_BORDER,
+                                 NO_FILL, 0);
+    picture.shape = PaintItem::SHAPE_IMAGE;
+    picture.showsMissingGlyph = !isPlaceholder;
+    picture.imagePath = isPlaceholder ? QString() : gallery.tiles[slotIndex].thumb;
+    page->items.append(picture);
+
+    QRect badge(box.right() + 1 - GALLERY_BADGE_INSET - GALLERY_BADGE_SIDE, box.y() + GALLERY_BADGE_INSET,
+                GALLERY_BADGE_SIDE, GALLERY_BADGE_SIDE);
+    page->items.append(ellipseItem(badge.x(), badge.y(), GALLERY_BADGE_SIDE, isCurrent ? INK_BLACK : NO_FILL, 0));
+    PaintItem check = rectItem(badge.x(), badge.y(), badge.width(), badge.height(), NO_FILL, isCurrent ? GALLERY_CHECK_STROKE : 0);
+    check.shape = PaintItem::SHAPE_CHECK;
+    check.ink = PAPER_WHITE;
+    page->items.append(check);
+
+    if (!isPlaceholder) {
+        TapTarget target;
+        target.kind = TapTarget::TAP_TILE;
+        target.rect = box;
+        target.component = galleryIndex;
+        target.value = gallery.tiles[slotIndex].id;
+        page->targets.append(target);
+    }
+}
+
+void ScreenLayout::drawGalleryPage(int index, ScreenPage *page) const
+{
+    const ScreenComponent &gallery = components[galleryIndex];
+    int slotCount = gallery.tiles.size() + gallery.pending;
+    int first = index * gridFrame.perPage;
+    for (int slot = 0; slot < gridFrame.perPage && first + slot < slotCount; slot++) {
+        drawGallerySlot(first + slot, slot, page);
+    }
+}
+
+// ---- Viewer ----
+
+static QRect toQRect(const IntRect &rect)
+{
+    return QRect(rect.x, rect.y, rect.width, rect.height);
+}
+
+static void addZone(ScreenPage *page, TapTarget::Kind kind, const QRect &rect)
+{
+    TapTarget zone;
+    zone.kind = kind;
+    zone.rect = rect;
+    page->targets.append(zone);
+}
+
+// The picture fills the area (fitted by the painter); thirds of the area turn
+// pages or toggle the chrome. Buttons come after the zones, so they win.
+void ScreenLayout::drawViewerPage(ScreenPage *page) const
+{
+    const PictureTile *tile = viewerShownTile();
+    if (!tile) {
+        return;
+    }
+    const ScreenComponent &viewer = components[viewerIndex];
+    QRect area = toQRect(viewerPictureArea(isChromeShown, height));
+    PaintItem picture = rectItem(area.x(), area.y(), area.width(), area.height(), NO_FILL, 0);
+    picture.shape = PaintItem::SHAPE_IMAGE;
+    picture.imagePath = tile->image;
+    page->items.append(picture);
+
+    int third = area.width() / 3;
+    addZone(page, TapTarget::TAP_VIEWER_PREVIOUS, QRect(area.x(), area.y(), third, area.height()));
+    addZone(page, TapTarget::TAP_VIEWER_NEXT, QRect(area.right() + 1 - third, area.y(), third, area.height()));
+    addZone(page, TapTarget::TAP_VIEWER_TOGGLE_CHROME, QRect(area.x() + third, area.y(), area.width() - 2 * third, area.height()));
+    if (!isChromeShown) {
+        return;
+    }
+    QRect primaryBox = toQRect(viewerPrimaryRect(height));
+    if (viewer.secondary.isDefined()) {
+        QRect secondaryBox = toQRect(viewerSecondaryRect(height));
+        QStringList label(elided(viewer.secondary.label, secondaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false));
+        paintButton(secondaryBox, label, false, true, viewerIndex, QStringLiteral("secondary"), page);
+    } else {
+        primaryBox.setLeft(GUTTER);
+    }
+    if (viewer.primary.isDefined()) {
+        bool isCurrent = tile->isCurrent;
+        const QString &text = isCurrent && !viewer.primary.labelCurrent.isEmpty() ? viewer.primary.labelCurrent : viewer.primary.label;
+        QStringList label(elided(text, primaryBox.width() - 2 * RHYTHM, BODY_SIZE, FAMILY_SANS, false));
+        paintButton(primaryBox, label, true, !isCurrent, viewerIndex, QStringLiteral("primary"), page);
     }
 }

@@ -107,16 +107,30 @@ func copyLocales(t *testing.T, appDir string) {
 }
 
 type stateReply struct {
-	Count      int    `json:"count"`
-	Current    string `json:"current"`
-	Mode       string `json:"mode"`
-	Rotation   string `json:"rotation"`
-	LastImport string `json:"last_import"`
-	Busy       bool   `json:"busy"`
-	Status     string `json:"status"`
+	Count      int           `json:"count"`
+	CurrentID  string        `json:"current_id"`
+	Mode       string        `json:"mode"`
+	Rotation   string        `json:"rotation"`
+	LastImport string        `json:"last_import"`
+	Busy       bool          `json:"busy"`
+	Status     string        `json:"status"`
+	Summary    string        `json:"summary"`
+	Pictures   []pictureItem `json:"pictures"`
+	Pending    int           `json:"pending"`
+	ImportStep string        `json:"import_step"`
 
 	SleepScreenReady bool   `json:"sleep_screen_ready"`
 	SleepScreenHint  string `json:"sleep_screen_hint"`
+	SleepScreenLine  string `json:"sleep_screen_line"`
+}
+
+type pictureItem struct {
+	ID    string `json:"id"`
+	Thumb string `json:"thumb"`
+	Image string `json:"image"`
+	Label string `json:"label"`
+	Info  string `json:"info"`
+	Badge string `json:"badge"`
 }
 
 const enSleepHint = "Turn on in Settings → Energy saving and privacy: “Show current read” and “Show book cover full screen”."
@@ -137,9 +151,9 @@ func readState(t *testing.T, appDir, lastFile, pidFile string) stateReply {
 func TestStateOfFreshInstallIsEmptyButComplete(t *testing.T) {
 	_, appDir, _ := deviceRoot(t)
 	reply := readState(t, appDir, filepath.Join(appDir, "none.txt"), filepath.Join(appDir, "none.pid"))
-	want := stateReply{Mode: "fill", Rotation: "fixed", Status: "No pictures", SleepScreenHint: enSleepHint}
-	if reply != want {
-		t.Fatalf("state = %+v, want %+v", reply, want)
+	if reply.Mode != "fill" || reply.Rotation != "fixed" || reply.Status != "" || reply.SleepScreenHint != enSleepHint ||
+		reply.Count != 0 || reply.Summary != "" || reply.Pictures == nil || len(reply.Pictures) != 0 || reply.SleepScreenLine != enSleepHint {
+		t.Fatalf("state = %+v", reply)
 	}
 }
 
@@ -153,12 +167,12 @@ func TestStateAfterImportNamesPictureAndReadsLastResult(t *testing.T) {
 	pidFile := filepath.Join(appDir, "run.pid")
 	write(t, pidFile, []byte(strconv.Itoa(os.Getpid())))
 	reply := readState(t, appDir, lastFile, pidFile)
-	if reply.Count != 1 || reply.Current != "a.png" || !reply.Busy || reply.Status != "Converting…" {
+	if reply.Count != 1 || reply.CurrentID != "0001" || !reply.Busy || reply.Status != "Converting…" {
 		t.Fatalf("state with a live pid = %+v", reply)
 	}
 	write(t, pidFile, []byte("2147483646"))
-	if reply := readState(t, appDir, lastFile, pidFile); reply.Busy || reply.Status != "1 pictures" {
-		t.Fatalf("state with a stale pid = %+v", reply)
+	if reply := readState(t, appDir, lastFile, pidFile); reply.Busy || reply.Status != "" {
+		t.Fatalf("idle state (no header status) = %+v", reply)
 	}
 	if reply.LastImport != "New pictures: 1. Already known: 0." {
 		t.Fatalf("last import = %q", reply.LastImport)

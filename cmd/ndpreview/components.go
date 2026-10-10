@@ -31,6 +31,9 @@ func (rc renderContext) blocksFor(components []uikit.Component) []block {
 func (rc renderContext) componentBlocks(c uikit.Component) []block {
 	switch c.Kind {
 	case "text":
+		if rc.text(c.Main()) == "" {
+			return nil // a text bound to an empty variable is hidden
+		}
 		return rc.textBlocks(c)
 	case "section":
 		return []block{rc.sectionBlock(rc.text(c.Main()))}
@@ -217,11 +220,15 @@ func (rc renderContext) radioBlocks(c uikit.Component) []block {
 	options, _ := c.Prop("options").([]any)
 	for _, raw := range options {
 		pair, _ := raw.([]any)
-		if len(pair) != 2 {
+		if len(pair) < 2 {
 			continue
 		}
 		value, _ := pair[0].(string)
-		blocks = append(blocks, rc.radioOption(bind, value, rc.text(pair[1]), value == selected))
+		detail := ""
+		if len(pair) > 2 {
+			detail = rc.text(pair[2])
+		}
+		blocks = append(blocks, rc.radioOption(bind, value, rc.text(pair[1]), detail, value == selected))
 	}
 	return withTrailingGap(blocks)
 }
@@ -231,19 +238,36 @@ func lookupVar(vars map[string]any, path string) any {
 	return value
 }
 
-func (rc renderContext) radioOption(bind, value, label string, isSelected bool) block {
-	return block{height: rowHeight, gap: 0, draw: func(y int) []Item {
-		ring := Item{Shape: "ellipse", X: gutter, Y: y + 26, W: 52, H: 52, Fill: noFill, Border: 4}
-		items := []Item{ring}
+// radioOption is one row; an option with a sub-line is radioDetailRow high and shows the
+// sub-line in caption style under the label.
+func (rc renderContext) radioOption(bind, value, label, detail string, isSelected bool) block {
+	height := rowHeight
+	if detail != "" {
+		height = radioDetailRow
+	}
+	return block{height: height, gap: 0, draw: func(y int) []Item {
+		ringY := y + (height-52)/2
+		items := []Item{{Shape: "ellipse", X: gutter, Y: ringY, W: 52, H: 52, Fill: noFill, Border: 4}}
 		if isSelected {
-			items = append(items, Item{Shape: "ellipse", X: gutter + 14, Y: y + 40, W: 24, H: 24, Fill: inkBlack})
+			items = append(items, Item{Shape: "ellipse", X: gutter + 14, Y: ringY + 14, W: 24, H: 24, Fill: inkBlack})
 		}
 		textWidth := contentWidth - 52 - rhythm
-		text := textItem(gutter+52+rhythm, y+24, textWidth, 56, elide(label, textWidth, rowTextSize, familySans, false), rowTextSize, familySans, "start")
+		textX := gutter + 52 + rhythm
+		labelY := y + 24
+		if detail != "" {
+			labelY = y + 12
+		}
+		text := textItem(textX, labelY, textWidth, 56, elide(label, textWidth, rowTextSize, familySans, false), rowTextSize, familySans, "start")
 		text.Bold = isSelected
-		items = append(items, text, separator(y+rowHeight-separatorPx))
+		items = append(items, text)
+		if detail != "" {
+			sub := textItem(textX, labelY+56, textWidth, captionLineH, elide(detail, textWidth, captionSize, familySans, false), captionSize, familySans, "start")
+			sub.Ink = inkMuted
+			items = append(items, sub)
+		}
+		items = append(items, separator(y+height-separatorPx))
 		event := eventLine(map[string]any{"event": "input", "bind": bind, "value": value})
-		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: rowHeight, Fill: noFill, Event: event, Label: label})
+		return append(items, Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: height, Fill: noFill, Event: event, Label: label})
 	}}
 }
 
@@ -395,24 +419,39 @@ func (rc renderContext) button(label, action string, primary, enabled bool, path
 	if len(lines) > 1 {
 		height = buttonTallHt
 	}
+	event, confirmPath := "", ""
+	if hasConfirm {
+		confirmPath = path
+	} else if action != "" {
+		event = actionEvent(action)
+	}
 	return block{height: height, gap: rhythm, draw: func(y int) []Item {
-		box := Item{Shape: "rect", X: gutter, Y: y, W: contentWidth, H: height, Fill: noFill, Border: 3, Label: label}
-		ink := inkBlack
-		if primary {
-			box.Fill, ink = inkBlack, paperFull
-		}
-		if !enabled {
-			// Disabled: outline and label dimmed, no event (no press, taps ignored).
-			box.Fill, box.Ink, ink = noFill, inkDim, inkDim
-		} else if hasConfirm {
-			box.Confirm = path
-		} else if action != "" {
-			box.Event = actionEvent(action)
-		}
-		text := Item{Shape: "text", X: gutter + rhythm, Y: y + (height-len(lines)*bodyLineH)/2, W: contentWidth - 2*rhythm, H: len(lines) * bodyLineH,
-			Lines: lines, Size: bodySize, LineH: bodyLineH, Family: familySans, Bold: true, Align: "center", Ink: ink, Fill: noFill}
-		return []Item{box, text}
+		return buttonItems(buttonLayout{x: gutter, y: y, width: contentWidth, height: height}, lines, primary, enabled, event, confirmPath, label)
 	}}
+}
+
+// buttonLayout is the box of a button.
+type buttonLayout struct{ x, y, width, height int }
+
+// buttonItems draws a button: outline (filled black when primary) and the bold centred label.
+// A disabled button is dimmed and has no event; a confirm path opens that dialog first.
+func buttonItems(box buttonLayout, lines []string, primary, enabled bool, event, confirmPath, label string) []Item {
+	outline := Item{Shape: "rect", X: box.x, Y: box.y, W: box.width, H: box.height, Fill: noFill, Border: 3, Label: label}
+	ink := inkBlack
+	if primary {
+		outline.Fill, ink = inkBlack, paperFull
+	}
+	switch {
+	case !enabled:
+		outline.Fill, outline.Ink, ink = noFill, inkDim, inkDim
+	case confirmPath != "":
+		outline.Confirm = confirmPath
+	default:
+		outline.Event = event
+	}
+	text := Item{Shape: "text", X: box.x + rhythm, Y: box.y + (box.height-len(lines)*bodyLineH)/2, W: box.width - 2*rhythm, H: len(lines) * bodyLineH,
+		Lines: lines, Size: bodySize, LineH: bodyLineH, Family: familySans, Bold: true, Align: "center", Ink: ink, Fill: noFill}
+	return []Item{outline, text}
 }
 
 func (rc renderContext) listBlocks(c uikit.Component) []block {

@@ -38,6 +38,25 @@ private:
     bool isActive;
 };
 
+// A 120 px icon button at the right of an app screen header (ui.json header
+// "actions"): tray-down (import), gear (settings), circular arrow (refresh) or
+// plus (add). Pressed: Nickel's black circle with the icon in white.
+class HeaderIconButton : public PressArea {
+public:
+    enum Icon { ICON_IMPORT, ICON_SETTINGS, ICON_REFRESH, ICON_ADD };
+
+    // False for a name the kit does not define.
+    static bool iconNamed(const QString &name, Icon *icon);
+
+    HeaderIconButton(Icon icon, QWidget *parent);
+
+protected:
+    void paintEvent(QPaintEvent *event);
+
+private:
+    Icon icon;
+};
+
 // An app's outline icon (from its icon file) or, without one, its initial in
 // an outlined square. Reads the icon file once when built.
 class AppMark : public QWidget {

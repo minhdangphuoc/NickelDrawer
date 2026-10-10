@@ -5,11 +5,14 @@ import (
 	"image"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type renderOptions struct {
 	AppDir, OutPath, Screen, Locale, StatePath string
 	Page, Grey                                 int
+	Value                                      *string // --value: the screen value (viewer picture id)
+	Chrome                                     string  // --chrome shown|hidden (viewer)
 	FontSans, FontSerif, FontMono              string
 }
 
@@ -31,8 +34,10 @@ func renderToFile(options renderOptions, stdout, stderr io.Writer) int {
 	for name, value := range overrides {
 		vars[name] = value
 	}
+	setSelected(vars, options.Value)
 	screenID := firstNonEmpty(options.Screen, loaded.doc.Start)
-	rc := renderContext{doc: loaded.doc, locale: options.Locale, vars: vars}
+	rc := renderContext{doc: loaded.doc, locale: options.Locale, vars: vars, value: options.Value,
+		baseDir: stateDir(options.StatePath), chrome: options.Chrome}
 	page, err := layoutScreen(rc, screenID, options.Page-1, Overlay{})
 	if err != nil {
 		fmt.Fprintln(stderr, "ndpreview:", err)
@@ -57,6 +62,22 @@ func renderToFile(options renderOptions, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "wrote %s (%dx%d, screen %s, page %d/%d)\n", options.OutPath, screenWidth, screenHeight, screenID, page.Index+1, page.Count)
 	return exitOK
+}
+
+// stateDir is the folder relative picture paths of the state resolve against.
+func stateDir(statePath string) string {
+	if statePath == "" {
+		return ""
+	}
+	return filepath.Dir(statePath)
+}
+
+// setSelected stores the screen value in the variable "selected", like `appsctl drawer screen
+// --value` does, when the app declares it.
+func setSelected(vars map[string]any, value *string) {
+	if _, declared := vars[selectedVarName]; declared && value != nil {
+		vars[selectedVarName] = *value
+	}
 }
 
 func saveCanvas(path string, canvas *image.Gray) error {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 
@@ -17,6 +17,7 @@ type session struct {
 
 	stateFiles wallpaper.ScreenStateFiles
 	confPath   string
+	flags      commonFlags
 }
 
 func (current *session) say(key string, pairs ...string) {
@@ -69,6 +70,10 @@ func (current *session) setMode(arguments []string) error {
 	mode, err := current.resolveMode(arguments[0])
 	if err != nil {
 		return err
+	}
+	if current.flags.saveOnly {
+		current.say("msg.mode_saved_for_job")
+		return current.service.SaveMode(mode)
 	}
 	report, applied, err := current.service.SetMode(mode)
 	if err != nil {
@@ -146,37 +151,40 @@ func (current *session) resolveRotation(word string) (wallpaper.Rotation, error)
 	return wallpaper.RotationFixed, nil
 }
 
-// screenState is the screen's variables: the service state plus the localized header status.
-type screenState struct {
-	wallpaper.ScreenState
-	Status          string `json:"status"`
-	SleepScreenHint string `json:"sleep_screen_hint"`
-}
-
-// state prints the variables of the app screen as one JSON object. Only the header status is
-// localized here; the last import line was written in the device language by the import run.
-func (current *session) state([]string) error {
-	state, err := current.service.ScreenState(current.stateFiles)
+func (current *session) setCurrent(arguments []string) error {
+	id, err := wallpaper.ParsePictureID(arguments[0])
 	if err != nil {
 		return err
 	}
-	return json.NewEncoder(current.out).Encode(screenState{state, current.headerStatus(state), current.sleepScreenHint(state)})
+	entry, err := current.service.SetCurrent(id)
+	if err == nil {
+		current.say("msg.set_current", "id", pictureLabel(entry), "name", entry.Name)
+	}
+	return err
 }
 
-func (current *session) headerStatus(state wallpaper.ScreenState) string {
+func pictureLabel(entry wallpaper.Entry) string { return fmt.Sprintf("%04d", entry.ID) }
+
+// remove forgets one picture. The screens always ask first and pass --confirm.
+func (current *session) remove(arguments []string) error {
+	id, err := wallpaper.ParsePictureID(arguments[0])
+	if err != nil {
+		return err
+	}
+	if !current.flags.confirm {
+		return i18n.NewError("msg.err_confirm_needed", "id", arguments[0])
+	}
+	report, err := current.service.Remove(id, current.flags.deleteOriginal)
+	if err != nil {
+		return err
+	}
+	key := "msg.removed"
 	switch {
-	case state.Busy:
-		return current.messages.Message("msg.state_working", nil)
-	case state.Count == 0:
-		return current.messages.Message("msg.state_empty", nil)
+	case report.OriginalDeleted:
+		key = "msg.removed_original"
+	case report.OriginalNotFound:
+		key = "msg.removed_original_kept"
 	}
-	return current.messages.Message("msg.state_ready", i18n.Params("count", strconv.Itoa(state.Count)))
-}
-
-// sleepScreenHint is empty when ready, so the screen's notice stays hidden.
-func (current *session) sleepScreenHint(state wallpaper.ScreenState) string {
-	if state.SleepScreenReady {
-		return ""
-	}
-	return current.messages.Message("msg.sleep_screen_hint", nil)
+	current.say(key, "id", pictureLabel(report.Entry), "name", report.Entry.Name)
+	return nil
 }

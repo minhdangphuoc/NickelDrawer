@@ -12,6 +12,7 @@
 #include "nickel_bridge.h"
 #include "nickel_fonts.h"
 #include "page_header.h"
+#include "painted_marks.h"
 #include "screen_canvas.h"
 #include "screen_logic.h"
 #include "status_bar_inset.h"
@@ -65,6 +66,9 @@ ScreenView::ScreenView(const QString &title, QWidget *drawerView)
     // The canvas first, the header after it: a later sibling lies on top.
     canvas = new ScreenCanvas(host, this);
     connect(canvas, SIGNAL(componentTapped(int, QString)), this, SIGNAL(componentTapped(int, QString)));
+    connect(canvas, SIGNAL(tileLongPressed(int, QString, QPoint)), this, SIGNAL(tileLongPressed(int, QString, QPoint)));
+    connect(canvas, SIGNAL(viewerPictureChanged(QString)), this, SIGNAL(viewerPictureChanged(QString)));
+    connect(canvas, SIGNAL(viewerStateChanged()), this, SLOT(showHeader()));
     header = createHeader(title);
     canvas->logTapTarget("constructed");
     placeBelowStatusBar();
@@ -163,20 +167,93 @@ bool ScreenView::eventFilter(QObject *watched, QEvent *event)
 void ScreenView::showScreen(const ScreenModel &next)
 {
     model = next;
+    canvas->showScreen(model); // may call showHeader() through viewerStateChanged()
     showHeader();
-    canvas->showScreen(model);
 }
 
 // Title, status and action text; QLabel repaints only what changed (partial).
+// The viewer's title is its position ("3 / 12") and its status marks the
+// current wallpaper; with the chrome hidden the whole header is hidden.
 void ScreenView::showHeader()
 {
-    header->setTitle(model.title);
+    bool isViewer = canvas->hasViewer();
+    QString title = model.title;
+    QString status = model.status;
+    if (isViewer && canvas->viewerCount() > 0) {
+        title = QStringLiteral("%1 / %2").arg(canvas->viewerPosition()).arg(canvas->viewerCount());
+        status = canvas->isViewerPictureCurrent() ? canvas->viewerCurrentStatus() : QString();
+    }
+    header->setTitle(title);
     statusLabel->ensurePolished(); // the style sheet's font, not the default one
     QFontMetrics metrics(statusLabel->font());
-    statusLabel->setText(metrics.elidedText(model.status, Qt::ElideRight, HEADER_SIDE_WIDTH));
-    statusLabel->setVisible(!model.status.isEmpty());
-    actionButton->setText(model.headerLabel);
-    actionButton->setVisible(!model.headerLabel.isEmpty());
+    statusLabel->setText(metrics.elidedText(status, Qt::ElideRight, HEADER_SIDE_WIDTH));
+    statusLabel->setVisible(!status.isEmpty());
+    bool hasIcons = !model.headerActions.isEmpty();
+    actionButton->setText(hasIcons ? QString() : model.headerLabel);
+    actionButton->setVisible(!hasIcons && !model.headerLabel.isEmpty());
+    showHeaderIcons();
+    header->setVisible(!isViewer || canvas->isChromeShown());
+}
+
+// Up to two painted icon buttons at the right of the row. A button is rebuilt
+// only when the icons differ; the old ones are deleted from the event loop.
+void ScreenView::showHeaderIcons()
+{
+    QStringList names;
+    for (int i = 0; i < model.headerActions.size(); i++) {
+        names << model.headerActions[i].icon;
+    }
+    if (names == shownIconNames) {
+        return;
+    }
+    shownIconNames = names;
+    for (int i = 0; i < iconButtons.size(); i++) {
+        iconButtons[i]->hide();
+        iconButtons[i]->deleteLater();
+    }
+    iconButtons.clear();
+    for (int i = 0; i < names.size(); i++) {
+        HeaderIconButton::Icon icon;
+        if (!HeaderIconButton::iconNamed(names[i], &icon)) {
+            DebugLog::write("screen view: unknown header icon \"%s\" skipped", qPrintable(names[i]));
+            continue;
+        }
+        HeaderIconButton *button = new HeaderIconButton(icon, header);
+        button->setObjectName(QStringLiteral("screenHeaderIcon%1").arg(i));
+        button->setToolTip(model.headerActions[i].label);
+        button->setProperty("actionIndex", i);
+        button->setAcceptsPresses(!isInputBlocked);
+        connect(button, SIGNAL(tapped()), this, SLOT(onHeaderIconTapped()));
+        header->addTrailingWidget(button);
+        button->show();
+        iconButtons.append(button);
+    }
+    DebugLog::write("screen view: %d header icon button(s)", iconButtons.size());
+}
+
+void ScreenView::onHeaderIconTapped()
+{
+    QObject *button = sender();
+    int index = button ? button->property("actionIndex").toInt() : -1;
+    DebugLog::write("screen: header icon %d tapped%s", index, isInputBlocked ? ", ignored while an action is pending" : "");
+    if (!isInputBlocked && index >= 0) {
+        emit headerIconTapped(index);
+    }
+}
+
+QString ScreenView::viewerPictureId() const
+{
+    return canvas->viewerPictureId();
+}
+
+void ScreenView::dropPictures()
+{
+    canvas->dropPictures();
+}
+
+void ScreenView::restoreTileOnNextScreen(const QString &id)
+{
+    canvas->restoreTileOnNextScreen(id);
 }
 
 int ScreenView::currentPage() const
@@ -189,9 +266,9 @@ void ScreenView::restorePageOnNextScreen(int page)
     canvas->restorePageOnNextScreen(page);
 }
 
-const ScreenComponent *ScreenView::component(int index) const
+bool ScreenView::componentAt(int index, ScreenComponent *copy) const
 {
-    return canvas->component(index);
+    return canvas->componentAt(index, copy);
 }
 
 static ScreenComponent *componentIn(ScreenModel *model, int index)
@@ -207,7 +284,7 @@ void ScreenView::showToggleState(int index, bool isOn)
 {
     ScreenModel next = model;
     ScreenComponent *toggle = componentIn(&next, index);
-    if (toggle) {
+    if (toggle && toggle->type == QLatin1String("toggle")) {
         toggle->isOn = isOn;
         showScreen(next);
     }
@@ -217,7 +294,7 @@ void ScreenView::showRadioValue(int index, const QString &value)
 {
     ScreenModel next = model;
     ScreenComponent *radio = componentIn(&next, index);
-    if (radio) {
+    if (radio && radio->type == QLatin1String("radio")) {
         radio->value = value;
         showScreen(next);
     }
@@ -228,6 +305,9 @@ void ScreenView::setInputBlocked(bool isBlocked)
     isInputBlocked = isBlocked;
     header->setBackEnabled(!isBlocked);
     actionButton->setAcceptsPresses(!isBlocked);
+    for (int i = 0; i < iconButtons.size(); i++) {
+        iconButtons[i]->setAcceptsPresses(!isBlocked);
+    }
     canvas->setInputBlocked(isBlocked);
 }
 

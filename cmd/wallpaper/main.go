@@ -29,6 +29,11 @@ type commonFlags struct {
 	versionFile string
 	lastFile    string
 	pidFile     string
+
+	progressFile   string
+	confirm        bool
+	deleteOriginal bool
+	saveOnly       bool
 }
 
 func (common *commonFlags) register(flags *flag.FlagSet) {
@@ -38,6 +43,10 @@ func (common *commonFlags) register(flags *flag.FlagSet) {
 	flags.StringVar(&common.versionFile, "version-file", device.DefaultVersionFile, "Kobo .kobo/version file (device id decides the screen size)")
 	flags.StringVar(&common.lastFile, "last-file", "/tmp/wallpaper-last.txt", "text the last background import printed (state command)")
 	flags.StringVar(&common.pidFile, "pid-file", "/tmp/wallpaper.pid", "pid file of a running background import (state command)")
+	flags.StringVar(&common.progressFile, "progress-file", "/tmp/wallpaper-progress.json", "progress of a running import or re-fit (import, mode, state commands)")
+	flags.BoolVar(&common.confirm, "confirm", false, "remove: the user confirmed")
+	flags.BoolVar(&common.deleteOriginal, "delete-original", false, "remove: also delete the original in Pictures when it is the same file")
+	flags.BoolVar(&common.saveOnly, "save-only", false, "mode: only store the mode, do not re-fit now (a running job re-fits when it ends)")
 }
 
 func (common commonFlags) messages() *i18n.Bundle {
@@ -72,6 +81,9 @@ var commands = map[string]command{
 	"off":      {0, false, (*session).turnOff},
 	"status":   {0, false, (*session).status},
 	"state":    {0, false, (*session).state},
+
+	"set-current": {1, false, (*session).setCurrent},
+	"remove":      {1, false, (*session).remove},
 }
 
 func execute(args []string, out io.Writer) int {
@@ -118,8 +130,10 @@ func runSession(selected command, common commonFlags, messages *i18n.Bundle, out
 			return err
 		}
 	}
+	service := wallpaper.NewService(paths, size, log)
+	service.ProgressFile = common.progressFile
 	return selected.run(&session{
-		service: wallpaper.NewService(paths, size, log), messages: messages, out: out,
-		confPath: common.confPath, stateFiles: wallpaper.ScreenStateFiles{LastOutput: common.lastFile, PidFile: common.pidFile, ConfPath: common.confPath},
+		service: service, messages: messages, out: out, flags: common,
+		confPath: common.confPath, stateFiles: wallpaper.ScreenStateFiles{LastOutput: common.lastFile, PidFile: common.pidFile, ProgressFile: common.progressFile, ConfPath: common.confPath},
 	}, arguments)
 }

@@ -14,6 +14,8 @@ type Service struct {
 	Sources        []string
 	ScreensaverDir string
 	Log            *Logger
+	// ProgressFile is where a running import or re-fit reports progress ("" = none).
+	ProgressFile string
 }
 
 // NewService fills the device defaults.
@@ -30,6 +32,54 @@ func (service *Service) load() (*Library, Config, error) {
 	return library, config, err
 }
 
+// updateConfig changes one setting on a fresh copy of config.json, so a background job that
+// started earlier never overwrites what the user chose meanwhile.
+func (service *Service) updateConfig(change func(*Config)) error {
+	config, err := LoadConfig(service.Paths.Config())
+	if err != nil {
+		return err
+	}
+	change(&config)
+	return SaveConfig(service.Paths.Config(), config)
+}
+
+// applyCurrentSettings applies with the settings as they are on disk now.
+func (service *Service) applyCurrentSettings(library *Library) (ApplyReport, error) {
+	config, err := LoadConfig(service.Paths.Config())
+	if err != nil {
+		return ApplyReport{}, err
+	}
+	return Apply(library, config, service.ScreensaverDir, service.Log)
+}
+
+// importSettled imports with mode, then repeats while the user changed the mode meanwhile, so the
+// stored pictures end up fitted for the mode in config.json.
+func (service *Service) importSettled(library *Library, mode Mode, kind string) (ImportReport, error) {
+	defer clearProgress(service.ProgressFile, service.Log)
+	total, err := service.importWithProgress(library, mode, kind)
+	for err == nil {
+		config, loadErr := LoadConfig(service.Paths.Config())
+		if loadErr != nil || config.Mode == mode {
+			return total, loadErr
+		}
+		mode = config.Mode
+		var report ImportReport
+		report, err = service.importWithProgress(library, mode, ProgressRefit)
+		total = total.plus(report)
+	}
+	return total, err
+}
+
+func (service *Service) importWithProgress(library *Library, mode Mode, kind string) (ImportReport, error) {
+	library.OnProgress = func(done, total int, name string) {
+		progress := Progress{Done: done, Total: total, Name: name, Kind: kind}
+		if err := writeProgress(service.ProgressFile, progress); err != nil {
+			service.Log.Printf("cannot write progress file %s: %v", service.ProgressFile, err)
+		}
+	}
+	return library.Import(service.Sources, service.Size, mode, service.Log)
+}
+
 // ImportAndApply converts new pictures, shows the newest one when rotation is fixed, and applies.
 func (service *Service) ImportAndApply() (ImportReport, ApplyReport, error) {
 	library, config, err := service.load()
@@ -37,21 +87,20 @@ func (service *Service) ImportAndApply() (ImportReport, ApplyReport, error) {
 		return ImportReport{}, ApplyReport{}, err
 	}
 	service.ensurePicturesFolder()
-	report, err := library.Import(service.Sources, service.Size, config.Mode, service.Log)
+	report, err := service.importSettled(library, config.Mode, ProgressImport)
 	if err != nil {
 		return report, ApplyReport{}, err
 	}
-	if report.NewestID != 0 {
-		config.Current = report.NewestID
-	}
-	return service.saveAndApply(library, config, report)
+	return service.finishImport(library, report)
 }
 
-func (service *Service) saveAndApply(library *Library, config Config, report ImportReport) (ImportReport, ApplyReport, error) {
-	if err := SaveConfig(service.Paths.Config(), config); err != nil {
-		return report, ApplyReport{}, err
+func (service *Service) finishImport(library *Library, report ImportReport) (ImportReport, ApplyReport, error) {
+	if report.NewestID != 0 {
+		if err := service.updateConfig(func(config *Config) { config.Current = report.NewestID }); err != nil {
+			return report, ApplyReport{}, err
+		}
 	}
-	applied, err := Apply(library, config, service.ScreensaverDir, service.Log)
+	applied, err := service.applyCurrentSettings(library)
 	return report, applied, err
 }
 
@@ -86,40 +135,46 @@ func (service *Service) Next() (Entry, error) {
 	if !found {
 		return Entry{}, i18n.NewError("msg.err_no_pictures")
 	}
-	config.Current = nextID
-	_, _, err = service.saveAndApply(library, config, ImportReport{})
+	if err := service.updateConfig(func(config *Config) { config.Current = nextID }); err != nil {
+		return Entry{}, err
+	}
+	_, err = service.applyCurrentSettings(library)
 	return entry, err
 }
 
-// SetMode stores the fit mode, re-fits pictures whose originals are still available, and applies.
+// SaveMode only stores the fit mode. A running background job notices the change when it ends
+// and re-fits again; without a job the next import or SetMode applies it.
+func (service *Service) SaveMode(mode Mode) error {
+	return service.updateConfig(func(config *Config) { config.Mode = mode })
+}
+
+// SetMode stores the fit mode at once, re-fits pictures whose originals are still available, and applies.
 func (service *Service) SetMode(mode Mode) (ImportReport, ApplyReport, error) {
-	library, config, err := service.load()
+	if err := service.SaveMode(mode); err != nil {
+		return ImportReport{}, ApplyReport{}, err
+	}
+	library, err := LoadLibrary(service.Paths)
 	if err != nil {
 		return ImportReport{}, ApplyReport{}, err
 	}
-	config.Mode = mode
-	report, err := library.Import(service.Sources, service.Size, mode, service.Log)
-	if err != nil {
+	report, err := service.importSettled(library, mode, ProgressRefit)
+	if err != nil || len(library.Entries) == 0 {
 		return report, ApplyReport{}, err
 	}
-	if len(library.Entries) == 0 {
-		return report, ApplyReport{}, SaveConfig(service.Paths.Config(), config)
-	}
-	return service.saveAndApply(library, config, report)
+	applied, err := service.applyCurrentSettings(library)
+	return report, applied, err
 }
 
 // SetRotation stores fixed or random and applies when there are pictures.
 func (service *Service) SetRotation(rotation Rotation) (ApplyReport, error) {
-	library, config, err := service.load()
-	if err != nil {
+	if err := service.updateConfig(func(config *Config) { config.Rotation = rotation }); err != nil {
 		return ApplyReport{}, err
 	}
-	config.Rotation = rotation
-	if len(library.Entries) == 0 {
-		return ApplyReport{}, SaveConfig(service.Paths.Config(), config)
+	library, err := LoadLibrary(service.Paths)
+	if err != nil || len(library.Entries) == 0 {
+		return ApplyReport{}, err
 	}
-	_, applied, err := service.saveAndApply(library, config, ImportReport{})
-	return applied, err
+	return service.applyCurrentSettings(library)
 }
 
 // TurnOff removes our pictures from the screensaver folder; the library stays.

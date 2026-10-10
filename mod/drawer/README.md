@@ -65,6 +65,9 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `qr_encoder.{h,cc}` | QR byte mode, level M, versions 1–20; checked against segno matrices (Qt-free) |
 | `screen_layout.{h,cc}` | components → drawing primitives and tap targets, one page at a time (port of `cmd/ndpreview`) |
 | `screen_view.{h,cc}` | paints a page, page keys (event filter on the drawer view), taps, full/partial refresh |
+| `picture_loader.{h,cc}` | gallery/viewer pictures: read whole (cap 8 MB) and close, decode from memory scaled to the box |
+| `tile_menu.{h,cc}` | gallery long-press: Nickel popup titled with the tile label, destructive confirm first |
+| `event_queue.{h,cc}` | Qt-free FIFO of radio/toggle events: coalesce by control, drop in-flight duplicates, one at a time |
 | `field_editor.{h,cc}` | `field` editing in Nickel's N3Dialog keyboard; else the caller shows "edit on your phone" |
 | `screen_session.{h,cc}` | one open app screen: load, live re-read, taps → events, pushed screens, back |
 | `../common/press_area.{h,cc}` | tap vs long-press (600 ms) from Nickel's tap gesture, touch or mouse; debounced, every event logged |

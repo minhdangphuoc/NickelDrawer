@@ -37,19 +37,20 @@ Keys starting with `_` at the top level are comments and are ignored (the To-do 
 |---|---|---|---|
 | `title` | yes | text, 40 chars | Title in Nickel's page header (left, next to the back arrow). |
 | `status` | no | text, 40 chars | Plain text at the right of the header. `badge` is accepted as the old name. |
-| `action` | no | object | Header action: `label` (text, 24 chars, no `:`) and exactly one of `push` (screen id) or `action` (app.json action id). |
+| `action` | no | object | Header action (text link): `label` (text, 24 chars, no `:`) and exactly one of `push` (screen id) or `action` (app.json action id). |
+| `actions` | no | array, 1 to 2 | Header icon actions instead of `action` (a screen has one or the other, else `ui.needs_exactly_one`): each `{ icon, label, push \| action }`. `icon` is `import`, `settings`, `refresh` or `add`; `label` (text, 24 chars, no `:`) is the accessible name, not drawn. Exactly one of `push` / `action`. |
 | `body` | no | components | Scrolls page-wise. |
 | `footer` | no | components | Stays at the bottom: put the primary button here. |
 | `dialogs` | no | map id to dialog | `title` (40), `text` (200), `ok` (24, no `:`), optional `cancel` (24) and `action` (runs when `ok` is tapped). The backend opens one with `{"dialog":"id"}`. |
 | `toasts` | no | map id to text (60) | Texts the backend may show with `{"toast":"id"}`. |
 
-The header is part of the screen, not a component: back arrow, `title`, `status`, `action`.
+The header is part of the screen, not a component: back arrow, `title`, `status`, `action` or `actions`.
 
-Rule: **at most one primary button per screen**, counting body, footer and the button of an `empty` component.
+Rule: **at most one primary button per screen**, counting body, footer, the button of an `empty` component, the button of a gallery's `empty` object and the `primary` of a `viewer`.
 
 ### 3.1 Navigation
 
-The view flow is not declared separately: it is the graph of the header `push` links of all screens (`ui.json` and `screens/*.json`). `appsctl validate` checks it:
+The view flow is not declared separately: it is the graph of the `push` links of all screens: the header `action`, the header `actions[]`, a gallery's `on_tap.push` and its `on_long_press[].push` (`ui.json` and `screens/*.json`). `appsctl validate` checks it:
 
 | Rule | Code |
 |---|---|
@@ -96,7 +97,7 @@ A component is one object with one component key; its other keys are properties 
 | `kv` | array of `[key, value]`, 1 to 12; key text (24), value text with bindings (60) | none | none |
 | `row` | label text (60) | `detail` (60), `action` (action id; makes the row tappable) | `action` |
 | `toggle` | label text (60) | `bind` (required), `enabled` | `toggle` |
-| `radio` | label text (60) | `bind` and `options` (both required), `enabled`. `options` is 1 to 8 pairs `[value, label]`; values are ids (`^[a-z0-9][a-z0-9_-]{0,31}$`), unique; label text (40) | `input` |
+| `radio` | label text (60) | `bind` and `options` (both required), `enabled`. `options` is 1 to 8 entries `[value, label]` or `[value, label, sub-line]`; values are ids (`^[a-z0-9][a-z0-9_-]{0,31}$`), unique; label text (40), sub-line text (60, makes the row 128 px) | `input` |
 | `field` | label text (40) | `bind` (required), `keyboard`: `text` / `number` / `url`, `placeholder` (40), `secret` (bool; a warning when `bind` looks like a token or key: use `pair`) | `input` |
 | `bigcode` | binding or literal (16) | `digits`: 3 to 12 | none |
 | `qr` | binding or literal (200) | `caption` (60) | none |
@@ -105,6 +106,8 @@ A component is one object with one component key; its other keys are properties 
 | `notice` | text (200); a notice whose text resolves to empty is hidden, so bind a variable to show it conditionally | `title` (40) | none |
 | `button` | label text (32, no `:`) | `action` (required), `style`: `primary` / `secondary` (default `secondary`), `enabled`, `confirm`, `async` | `action` |
 | `list` | one binding to an array variable | `title` (40), `empty_text` (60), `max` (1 to 200, default 50), `tap` (action id), `menu` (1 to 6 items) | `tap`, `menu` |
+| `gallery` | one binding to an array variable of pictures | `columns`, `rows` (1 to 6, default 4 and 3), `on_tap` (`{push \| action}`, exactly one), `on_long_press` (1 to 6 items `{label (32, no `:`), action \| push \| info: true, confirm}`, exactly one of the three), `pending` (binding or literal, 8: dashed placeholder tiles), `empty` (`{title (40, required), text (120), icon: picture, button (32) with action}`; its button is the primary). At most one per screen | `on_tap`, `on_long_press` (the tile id is the value) |
+| `viewer` | one binding to the same array | `selected` (required, a declared variable that receives the screen value), `current_status` (40), `primary` (required `{label (32), label_current (32), action}`, counts as the primary), `secondary` (`{label (32), action, confirm}`). Must be the only body component and the screen has no footer (`ui.viewer_not_alone`). At most one per screen | `primary`, `secondary` (the shown id is the value) |
 | `empty` | heading text (40) | `text` (120), and together `button` (label, 32) with `action`; the button is a primary button | `action` |
 
 Details:
@@ -112,6 +115,8 @@ Details:
 - `button.confirm` is `{ "text": ..., "ok": ..., "cancel": ..., "title": ... }`. `text` (160) and `ok` (24, no `:`) are required. The host shows the confirm dialog first and sends the event only on OK.
 - `list` items are strings or `[primary, secondary]` arrays. The list keeps the last `max` items. `menu` items are `{ "id", "label", "confirm" }`: `id` is free (no action check) and is sent as `{"event":"menu","list":"name","index":n,"id":"remove"}`.
 - `list.tap` names an app.json action. A tap runs that action and also sends `{"event":"tap","list":"name","index":n,"item":...}` to a running backend.
+- `gallery` and `viewer` items come from the `state` action, not from `ui.json`: `{ id, thumb, image, label, info, badge }` (`id` matches `^[A-Za-z0-9_-]{1,32}$`, `badge` is `current`). `thumb` and `image` are absolute `.png` paths below the app's `data/`; the drawer drops any other path. Looks and behaviour: [ui-kit.md](ui-kit.md) sections 3.19 and 3.20, contract: [wallpaper-gallery.md](wallpaper-gallery.md).
+- A `text` whose text resolves to empty is left out, like a `notice`, so `"$summary"` hides when the variable is empty.
 - `row` is 128 px high (above the 120 px tap target); `kv` and `list` rows are 104 px; see ui-kit.md section 2.
 - `qr` shows the QR code of its value (a URL). `pair` is the phone-pairing block of ui-kit.md section 3.11.
 - `section` is the small-caps label of a group of rows.
@@ -132,8 +137,9 @@ Details:
 | `ui.bad_enum`, `ui.out_of_range`, `ui.too_many_options` | A value outside its allowed set or range. |
 | `ui.bad_binding`, `ui.unknown_var`, `ui.list_not_array` | Binding syntax, an undeclared variable, a list over a non-array. |
 | `ui.unknown_action`, `ui.unknown_screen` | An id that does not exist in app.json or in the screens. |
-| `ui.bad_id`, `ui.duplicate` | A malformed or repeated id. |
+| `ui.bad_id`, `ui.duplicate` | A malformed or repeated id, or a second `gallery` / `viewer` on a screen. |
 | `ui.multiple_primary` | More than one primary button on a screen. |
+| `ui.viewer_not_alone` | A `viewer` shares its screen with another body component or a footer. |
 | `ui.missing_english`, `ui.bad_locale_key`, `ui.missing_locale_key`, `ui.text_empty` | Text problems. |
 | `ui.text_too_long`, `ui.text_has_colon` | E-ink length limit, or `:` in a label. |
 | `ui.flow_no_main`, `ui.flow_start_not_main`, `ui.flow_unreachable`, `ui.flow_too_deep`, `ui.flow_cycle` | Navigation graph rules (section 3.1). |

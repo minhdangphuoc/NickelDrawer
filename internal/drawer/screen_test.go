@@ -74,7 +74,7 @@ func TestScreenResolvesStateBindings(t *testing.T) {
 	config, _ := testConfig(t, stateRunner(
 		`{"status":"busy","auto":true,"mode":"b","pin":"1234","items":["x",["y","2"],"z"],"undeclared":"ignored"}`, ""))
 	writeScreenApp(t, config.AppsDir)
-	reply, err := config.Screen("demo", "")
+	reply, err := config.Screen("demo", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestScreenWithoutStateUsesDefaults(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			config, _ := testConfig(t, runner)
 			writeScreenApp(t, config.AppsDir)
-			reply, err := config.Screen("demo", "")
+			reply, err := config.Screen("demo", "", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -135,7 +135,7 @@ func TestScreenLocaleAndOtherScreens(t *testing.T) {
 	config, _ := testConfig(t, stateRunner(`{"pin":"98"}`, ""))
 	config.Locale = "vi_VN"
 	writeScreenApp(t, config.AppsDir)
-	reply, err := config.Screen("demo", "more")
+	reply, err := config.Screen("demo", "more", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,7 @@ func TestScreenLocaleAndOtherScreens(t *testing.T) {
 	if reply.Title != "More" || code.Text != "98" || code.Digits != 4 {
 		t.Errorf("more screen: %+v", reply)
 	}
-	main, _ := config.Screen("demo", "")
+	main, _ := config.Screen("demo", "", nil)
 	if main.Title != "Thử" {
 		t.Errorf("vi_VN must use locales/vi.json, got %q", main.Title)
 	}
@@ -158,7 +158,7 @@ func TestScreenErrors(t *testing.T) {
 		"host item": {"_refresh", ""},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if _, err := config.Screen(call[0], call[1]); err == nil {
+			if _, err := config.Screen(call[0], call[1], nil); err == nil {
 				t.Error("want an error")
 			}
 		})
@@ -166,7 +166,7 @@ func TestScreenErrors(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(config.AppsDir, "demo", "ui.json"), []byte(`{"kit":2}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := config.Screen("demo", ""); err == nil || !strings.Contains(err.Error(), "invalid_app") {
+	if _, err := config.Screen("demo", "", nil); err == nil || !strings.Contains(err.Error(), "invalid_app") {
 		t.Errorf("an invalid ui.json must be reported: %v", err)
 	}
 }

@@ -62,6 +62,7 @@ type Shape struct {
 	Fields  []Prop
 	Item    *Shape
 	Tuple   []Shape
+	MinLen  int // shortest allowed tuple; 0 means all of Tuple (the tail entries are optional)
 }
 
 // Prop is a named property of an object Shape.
@@ -134,7 +135,8 @@ var menuItemShape = Shape{Kind: KindObject, Fields: []Prop{
 	optionalKey("confirm", boolean),
 }}
 
-var optionShape = Shape{Kind: KindTuple, Tuple: []Shape{{Kind: KindID, MaxLen: 32}, text(40)}}
+// optionShape is [value, label] or [value, label, sub-line].
+var optionShape = Shape{Kind: KindTuple, MinLen: 2, Tuple: []Shape{{Kind: KindID, MaxLen: 32}, text(40), text(60)}}
 
 var kvRowShape = Shape{Kind: KindTuple, Tuple: []Shape{text(24), expr(60)}}
 
@@ -159,6 +161,49 @@ var headerActionShape = Shape{Kind: KindObject, Fields: []Prop{
 	optionalKey("action", actionID),
 }}
 
+// headerIconActionShape is one icon button of the header (ui-kit.md "Header icon actions").
+var headerIconActionShape = Shape{Kind: KindObject, Fields: []Prop{
+	requiredKey("icon", enum(HeaderIcons...)),
+	requiredKey("label", menuText(24)),
+	optionalKey("push", Shape{Kind: KindScreenRef}),
+	optionalKey("action", actionID),
+}}
+
+// galleryTapShape is the on_tap target of a gallery: exactly one of push or action.
+var galleryTapShape = Shape{Kind: KindObject, Fields: []Prop{
+	optionalKey("push", Shape{Kind: KindScreenRef}),
+	optionalKey("action", actionID),
+}}
+
+// galleryMenuItemShape is one long-press menu entry: exactly one of action, push or info.
+var galleryMenuItemShape = Shape{Kind: KindObject, Fields: []Prop{
+	requiredKey("label", menuText(32)),
+	optionalKey("action", actionID),
+	optionalKey("push", Shape{Kind: KindScreenRef}),
+	optionalKey("info", boolean),
+	optionalKey("confirm", confirmShape),
+}}
+
+var galleryEmptyShape = Shape{Kind: KindObject, Fields: []Prop{
+	requiredKey("title", text(40)),
+	optionalKey("text", text(120)),
+	optionalKey("icon", enum("picture")),
+	optionalKey("button", menuText(32)),
+	optionalKey("action", actionID),
+}}
+
+var viewerPrimaryShape = Shape{Kind: KindObject, Fields: []Prop{
+	requiredKey("label", menuText(32)),
+	optionalKey("label_current", menuText(32)),
+	requiredKey("action", actionID),
+}}
+
+var viewerSecondaryShape = Shape{Kind: KindObject, Fields: []Prop{
+	requiredKey("label", menuText(32)),
+	requiredKey("action", actionID),
+	optionalKey("confirm", confirmShape),
+}}
+
 var dialogShape = Shape{Kind: KindObject, Fields: []Prop{
 	requiredKey("title", text(40)),
 	requiredKey("text", text(200)),
@@ -166,6 +211,15 @@ var dialogShape = Shape{Kind: KindObject, Fields: []Prop{
 	optionalKey("cancel", text(24)),
 	optionalKey("action", actionID),
 }}
+
+// HeaderIcons are the icons a header action can show.
+var HeaderIcons = []string{"import", "settings", "refresh", "add"}
+
+// Gallery limits (docs/spec/wallpaper-gallery.md section 3.2).
+const (
+	MaxGalleryMenuItems = 6
+	MaxGridSide         = 6
+)
 
 // Components is the closed set of ui.json v1 components, in documentation order.
 var Components = []ComponentSpec{
@@ -219,6 +273,20 @@ var Components = []ComponentSpec{
 		optionalKey("tap", actionID),
 		optionalKey("menu", Shape{Kind: KindArray, Item: &menuItemShape, Min: 1, Max: 6}),
 	}},
+	{Key: "gallery", Main: varRef, Props: []Prop{
+		optionalKey("columns", Shape{Kind: KindInt, Min: 1, Max: MaxGridSide}),
+		optionalKey("rows", Shape{Kind: KindInt, Min: 1, Max: MaxGridSide}),
+		optionalKey("on_tap", galleryTapShape),
+		optionalKey("on_long_press", Shape{Kind: KindArray, Item: &galleryMenuItemShape, Min: 1, Max: MaxGalleryMenuItems}),
+		optionalKey("pending", expr(8)),
+		optionalKey("empty", galleryEmptyShape),
+	}},
+	{Key: "viewer", Main: varRef, Props: []Prop{
+		requiredKey("selected", varName),
+		optionalKey("current_status", text(40)),
+		requiredKey("primary", viewerPrimaryShape),
+		optionalKey("secondary", viewerSecondaryShape),
+	}},
 	{Key: "empty", Main: text(40), Props: []Prop{
 		optionalKey("text", text(120)),
 		optionalKey("button", menuText(32)),
@@ -232,6 +300,7 @@ var screenProps = []Prop{
 	optionalKey("status", text(40)),
 	optionalKey("badge", text(40)),
 	optionalKey("action", headerActionShape),
+	optionalKey("actions", Shape{Kind: KindArray, Item: &headerIconActionShape, Min: 1, Max: 2}),
 	optionalKey("body", Shape{Kind: KindComponents}),
 	optionalKey("footer", Shape{Kind: KindComponents}),
 	optionalKey("dialogs", Shape{Kind: KindMap, Item: &dialogShape}),

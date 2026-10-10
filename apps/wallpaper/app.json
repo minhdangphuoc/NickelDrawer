@@ -2,9 +2,16 @@
   "schema": 1,
   "id": "wallpaper",
   "name": "Wallpaper",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Use your own pictures as the sleep screen",
-  "storage": { "reads": ["pictures"], "writes": ["screensaver"] },
+  "storage": {
+    "reads": [
+      "pictures"
+    ],
+    "writes": [
+      "screensaver"
+    ]
+  },
   "network": false,
   "actions": [
     {
@@ -14,15 +21,6 @@
       "output": "show",
       "timeout_ms": 9500,
       "rescan": "none"
-    },
-    {
-      "id": "next",
-      "label": "Next picture",
-      "run": "bin/next.sh",
-      "output": "show",
-      "timeout_ms": 5000,
-      "rescan": "none",
-      "menu": false
     },
     {
       "id": "mode",
@@ -66,6 +64,24 @@
       "run": "bin/state.sh",
       "output": "show",
       "timeout_ms": 1000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "set-current",
+      "label": "Set as wallpaper",
+      "run": "bin/set-current.sh",
+      "output": "show",
+      "timeout_ms": 5000,
+      "rescan": "none",
+      "menu": false
+    },
+    {
+      "id": "remove",
+      "label": "Remove picture",
+      "run": "bin/remove.sh",
+      "output": "show",
+      "timeout_ms": 5000,
       "rescan": "none",
       "menu": false
     }

@@ -202,6 +202,8 @@ func (s *server) parseView(r *http.Request, doc *uikit.Document) viewOptions {
 		Toast:   query.Get("toast"),
 		Dialog:  query.Get("dialog"),
 		Confirm: query.Get("confirm"),
+		Value:   query.Get("value"),
+		Chrome:  query.Get("chrome"),
 	}
 	view.Page, _ = strconv.Atoi(query.Get("page"))
 	if query.Get("scale") == "100" {
@@ -230,7 +232,11 @@ func (s *server) handlePage(w http.ResponseWriter, r *http.Request) {
 	}
 	view := s.parseView(r, loaded.doc)
 	vars := s.currentVars(loaded.doc)
-	rc := renderContext{doc: loaded.doc, locale: view.Locale, vars: vars}
+	rc := renderContext{doc: loaded.doc, locale: view.Locale, vars: vars, baseDir: stateDir(s.config.StatePath), chrome: view.Chrome}
+	if view.Value != "" {
+		rc.value = &view.Value
+		setSelected(vars, rc.value)
+	}
 	screen, found := loaded.doc.Screens[view.Screen]
 	if !found {
 		writeErrorPage(w, fmt.Errorf("screen %q does not exist; screens: %s", view.Screen, strings.Join(loaded.doc.ScreenIDs(), ", ")))
@@ -289,6 +295,9 @@ func (rc renderContext) dialogSpec(title, body, ok, cancel, action any) *DialogS
 // confirmDialog builds the dialog of a button with a "confirm" prop, found by its path.
 func (rc renderContext) confirmDialog(screen *uikit.Screen, path string) *DialogSpec {
 	for _, component := range append(append([]uikit.Component{}, screen.Body...), screen.Footer...) {
+		if viewerDialog := rc.viewerConfirmDialog(component, path); viewerDialog != nil {
+			return viewerDialog
+		}
 		confirm, isObject := component.Prop("confirm").(map[string]any)
 		if component.Path != path || !isObject {
 			continue
@@ -297,6 +306,16 @@ func (rc renderContext) confirmDialog(screen *uikit.Screen, path string) *Dialog
 		return rc.dialogSpec(title, confirm["text"], confirm["ok"], confirm["cancel"], component.Prop("action"))
 	}
 	return nil
+}
+
+// viewerConfirmDialog builds the confirm dialog of a viewer's secondary button.
+func (rc renderContext) viewerConfirmDialog(component uikit.Component, path string) *DialogSpec {
+	secondary, hasSecondary := component.Prop("secondary").(map[string]any)
+	confirm, hasConfirm := secondary["confirm"].(map[string]any)
+	if component.Kind != "viewer" || path != component.Path+".secondary" || !hasSecondary || !hasConfirm {
+		return nil
+	}
+	return rc.dialogSpec(firstPresentValue(confirm["title"], secondary["label"]), confirm["text"], confirm["ok"], confirm["cancel"], secondary["action"])
 }
 
 func firstPresentValue(values ...any) any {

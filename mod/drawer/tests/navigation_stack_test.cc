@@ -173,8 +173,54 @@ static void testLongIdIsCut()
     EXPECT_EQ(MAX_ID_BYTES - 1, length);
 }
 
+static Stack openMainScreen()
+{
+    Stack stack = openDrawer();
+    stack.push(LEVEL_APP_SCREEN, "wallpaper", NONE);
+    return stack;
+}
+
+static void testPushKeepsTheValue()
+{
+    Stack stack = openMainScreen();
+    stack.push(LEVEL_SUB_SCREEN, "viewer", state(0, 1), "0003");
+    EXPECT_STREQ("0003", stack.top()->value);
+    EXPECT_STREQ("", stack.at(2)->value);
+}
+
+static void testViewerFollowsThePictureOnScreen()
+{
+    Stack stack = openMainScreen();
+    stack.push(LEVEL_SUB_SCREEN, "viewer", state(0, 1), "0003");
+    EXPECT_EQ(1, stack.setTopValue("0004"));
+    EXPECT_STREQ("0004", stack.top()->value);
+    Entry parent;
+    EXPECT_EQ(1, stack.pop(&parent));
+    EXPECT_STREQ("", parent.value);
+    EXPECT_EQ(1, parent.state.page);
+}
+
+static void testLongValueIsCutAndTerminated()
+{
+    Stack stack = openMainScreen();
+    char longValue[200];
+    for (int i = 0; i < 199; i++) {
+        longValue[i] = 'v';
+    }
+    longValue[199] = '\0';
+    stack.push(LEVEL_SUB_SCREEN, "viewer", NONE, longValue);
+    EXPECT_EQ(MAX_VALUE_BYTES - 1, strlen(stack.top()->value));
+    EXPECT_EQ(1, stack.setTopValue(longValue));
+    EXPECT_EQ(MAX_VALUE_BYTES - 1, strlen(stack.top()->value));
+    Stack empty;
+    EXPECT_EQ(0, empty.setTopValue("x"));
+}
+
 int main()
 {
+    testPushKeepsTheValue();
+    testViewerFollowsThePictureOnScreen();
+    testLongValueIsCutAndTerminated();
     testPushRecordsTheParentState();
     testBackFromAppScreenRestoresDrawerModeAndPage();
     testBackFromSubScreenRestoresParentPage();

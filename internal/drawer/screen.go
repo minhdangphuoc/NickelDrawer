@@ -17,6 +17,7 @@ const (
 	defaultListMax    = 50
 	defaultCodeDigits = 4
 	secretMask        = "•"
+	selectedVarName   = "selected" // receives the screen value (a viewer's picture id)
 )
 
 // ScreenReply is the response of `drawer screen`: one validated ui.json screen with every text
@@ -28,11 +29,14 @@ type ScreenReply struct {
 	Title   string                  `json:"title"`
 	Status  string                  `json:"status"`
 	Action  *HeaderAction           `json:"action,omitempty"`
+	Actions []HeaderIconAction      `json:"actions,omitempty"`
 	Body    []ScreenComponent       `json:"body"`
 	Footer  []ScreenComponent       `json:"footer"`
 	Dialogs map[string]ScreenDialog `json:"dialogs,omitempty"`
 	Toasts  map[string]string       `json:"toasts,omitempty"`
-	Live    bool                    `json:"live"` // the app has a state action: refresh while open
+	Live    bool                    `json:"live"`            // the app has a state action: refresh while open
+	Value   *string                 `json:"value,omitempty"` // echo of --value, the screen's value (a picture id)
+	Stale   bool                    `json:"stale,omitempty"` // the state action failed: keep the previous model
 }
 
 // HeaderAction is the optional link at the right of the header: another screen or an action.
@@ -54,36 +58,48 @@ type ScreenDialog struct {
 // ScreenComponent is one resolved component. Type is the ui.json component key; only the fields
 // of that type are set (docs/spec/drawer-protocol.md lists them per type).
 type ScreenComponent struct {
-	Type        string        `json:"type"`
-	Text        string        `json:"text,omitempty"`
-	Style       string        `json:"style,omitempty"`
-	Align       string        `json:"align,omitempty"`
-	Title       string        `json:"title,omitempty"`
-	Detail      string        `json:"detail,omitempty"`
-	Caption     string        `json:"caption,omitempty"`
-	Action      string        `json:"action,omitempty"`
-	Bind        string        `json:"bind,omitempty"`
-	Value       any           `json:"value,omitempty"`
-	Enabled     *bool         `json:"enabled,omitempty"`
-	Options     [][2]string   `json:"options,omitempty"`
-	Placeholder string        `json:"placeholder,omitempty"`
-	Keyboard    string        `json:"keyboard,omitempty"`
-	Secret      bool          `json:"secret,omitempty"`
-	Digits      int           `json:"digits,omitempty"`
-	Rows        [][2]string   `json:"rows,omitempty"`
-	URL         string        `json:"url,omitempty"`
-	Code        string        `json:"code,omitempty"`
-	Hint        string        `json:"hint,omitempty"`
-	Expires     string        `json:"expires,omitempty"`
-	Label       string        `json:"label,omitempty"`
-	Done        string        `json:"done,omitempty"`
-	Total       string        `json:"total,omitempty"`
-	Confirm     *ScreenDialog `json:"confirm,omitempty"`
-	Async       bool          `json:"async,omitempty"`
-	EmptyText   string        `json:"empty_text,omitempty"`
-	Tap         string        `json:"tap,omitempty"`
-	Items       *[][2]string  `json:"items,omitempty"`
-	Button      string        `json:"button,omitempty"`
+	Type    string      `json:"type"`
+	Text    string      `json:"text,omitempty"`
+	Style   string      `json:"style,omitempty"`
+	Align   string      `json:"align,omitempty"`
+	Title   string      `json:"title,omitempty"`
+	Detail  string      `json:"detail,omitempty"`
+	Caption string      `json:"caption,omitempty"`
+	Action  string      `json:"action,omitempty"`
+	Bind    string      `json:"bind,omitempty"`
+	Value   any         `json:"value,omitempty"`
+	Enabled *bool       `json:"enabled,omitempty"`
+	Options [][2]string `json:"options,omitempty"`
+	// OptionDetails runs parallel to Options and is sent only when an option has a sub-line.
+	OptionDetails []string      `json:"option_details,omitempty"`
+	Placeholder   string        `json:"placeholder,omitempty"`
+	Keyboard      string        `json:"keyboard,omitempty"`
+	Secret        bool          `json:"secret,omitempty"`
+	Digits        int           `json:"digits,omitempty"`
+	Rows          any           `json:"rows,omitempty"` // kv: [][2]string; gallery: the grid row count
+	URL           string        `json:"url,omitempty"`
+	Code          string        `json:"code,omitempty"`
+	Hint          string        `json:"hint,omitempty"`
+	Expires       string        `json:"expires,omitempty"`
+	Label         string        `json:"label,omitempty"`
+	Done          string        `json:"done,omitempty"`
+	Total         string        `json:"total,omitempty"`
+	Confirm       *ScreenDialog `json:"confirm,omitempty"`
+	Async         bool          `json:"async,omitempty"`
+	EmptyText     string        `json:"empty_text,omitempty"`
+	Tap           any           `json:"tap,omitempty"` // list: an action id; gallery: *TileTarget
+	Items         *[][2]string  `json:"items,omitempty"`
+	Button        string        `json:"button,omitempty"`
+
+	// gallery and viewer (screen_gallery.go)
+	Columns       int            `json:"columns,omitempty"`
+	Tiles         any            `json:"tiles,omitempty"` // []GalleryTile or []ViewerTile
+	Pending       *int           `json:"pending,omitempty"`
+	Menu          []TileMenuItem `json:"menu,omitempty"`
+	Empty         *GalleryEmpty  `json:"empty,omitempty"`
+	CurrentStatus string         `json:"current_status,omitempty"`
+	Primary       *ViewerButton  `json:"primary,omitempty"`
+	Secondary     *ViewerButton  `json:"secondary,omitempty"`
 }
 
 // screenContext resolves texts and bindings of one screen.
@@ -92,6 +108,8 @@ type screenContext struct {
 	locale    string
 	vars      map[string]any
 	actionIDs map[string]bool
+	appDir    string  // pictures must lie inside <appDir>/data/
+	value     *string // the screen value (--value), e.g. the picture id a viewer opens on
 }
 
 func (s screenContext) text(raw any) string {
@@ -105,7 +123,9 @@ func (s screenContext) hasAction(id string) bool { return s.actionIDs[id] }
 
 // Screen loads, validates and resolves one screen of an app (the start screen when screenID is
 // empty). Variables come from the app's optional "state" action, else from ui.json "vars".
-func (c Config) Screen(appID, screenID string) (ScreenReply, error) {
+// A non-nil value is passed to the state action as NICKELDRAWER_VALUE and stored in the
+// variable "selected" when the app declares it.
+func (c Config) Screen(appID, screenID string, value *string) (ScreenReply, error) {
 	app, err := c.loadApp(appID)
 	if err != nil {
 		return ScreenReply{}, err
@@ -122,10 +142,32 @@ func (c Config) Screen(appID, screenID string) (ScreenReply, error) {
 		return ScreenReply{}, newError(CodeInvalidApp, "app", appID, "detail", "no screen '"+screenID+"' in ui.json")
 	}
 	_, isLive := findAction(app, stateActionID)
-	context := screenContext{
-		doc: doc, locale: screenLocale(app.Dir, c.Locale), vars: c.screenVars(app, doc), actionIDs: actionIDSet(app),
+	vars, isStale := c.withValue(value).screenVars(app, doc)
+	if value != nil {
+		setSelected(vars, *value)
 	}
-	return context.reply(appID, screen, isLive), nil
+	context := screenContext{
+		doc: doc, locale: screenLocale(app.Dir, c.Locale), vars: vars, actionIDs: actionIDSet(app),
+		appDir: app.Dir, value: value,
+	}
+	reply := context.reply(appID, screen, isLive)
+	reply.Stale = isStale
+	reply.Value = value
+	return reply, nil
+}
+
+// withValue returns a config whose scripts get NICKELDRAWER_VALUE=value (none when nil).
+func (c Config) withValue(value *string) Config {
+	if value != nil {
+		c.ScriptEnv = append(append([]string{}, c.ScriptEnv...), ValueEnvName+"="+*value)
+	}
+	return c
+}
+
+func setSelected(vars map[string]any, value string) {
+	if _, declared := vars[selectedVarName]; declared {
+		vars[selectedVarName] = value
+	}
 }
 
 func loadScreenDocument(app manifest.App) (*uikit.Document, error) {
@@ -180,34 +222,38 @@ func screenLocale(appDir, locale string) string {
 }
 
 // screenVars starts from the declared defaults and overlays the state action's values for
-// declared variables only (a binding can only name a declared variable).
-func (c Config) screenVars(app manifest.App, doc *uikit.Document) map[string]any {
-	vars := make(map[string]any, len(doc.Vars))
+// declared variables only (a binding can only name a declared variable). isStale is true when
+// the app has a state action that failed, so the mod keeps its previous model.
+func (c Config) screenVars(app manifest.App, doc *uikit.Document) (vars map[string]any, isStale bool) {
+	vars = make(map[string]any, len(doc.Vars))
 	for name, value := range doc.Vars {
 		vars[name] = value
 	}
-	for name, value := range c.readState(app) {
+	state, hasState := c.readState(app)
+	for name, value := range state {
 		if _, declared := vars[name]; declared {
 			vars[name] = value
 		}
 	}
-	return vars
+	_, isLive := findAction(app, stateActionID)
+	return vars, isLive && !hasState
 }
 
-// readState runs the optional "state" action with the status budget. A missing, slow, failing
-// or malformed state leaves the defaults.
-func (c Config) readState(app manifest.App) map[string]any {
+// readState runs the optional "state" action with the status budget. A missing action returns
+// no state and true; a slow, failing or malformed state returns false.
+func (c Config) readState(app manifest.App) (state map[string]any, isOK bool) {
 	action, found := findAction(app, stateActionID)
 	if !found {
-		return nil
+		return nil, true
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), c.statusTimeout())
 	defer cancel()
 	output := c.runScript()(ctx, filepath.Join(app.Dir, filepath.FromSlash(action.Run)))
 	if output.Err != nil || output.TimedOut || output.ExitCode != 0 {
-		return nil
+		return nil, false
 	}
-	return parseState(output.Stdout)
+	state = parseState(output.Stdout)
+	return state, state != nil
 }
 
 // parseState reads one JSON object from the state script's stdout.
@@ -228,6 +274,7 @@ func (s screenContext) reply(appID string, screen *uikit.Screen, isLive bool) Sc
 		reply.Action = &HeaderAction{Label: s.text(screen.Action["label"]), Push: stringProp(screen.Action, "push"),
 			Action: stringProp(screen.Action, "action")}
 	}
+	reply.Actions = s.headerIconActions(screen.Actions)
 	reply.Dialogs = s.dialogs(screen.Dialogs)
 	reply.Toasts = s.toasts(screen.Toasts)
 	return reply
@@ -269,8 +316,8 @@ func (s screenContext) components(components []uikit.Component) []ScreenComponen
 	resolved := make([]ScreenComponent, 0, len(components))
 	for _, component := range components {
 		next := s.component(component)
-		if next.Type == "notice" && next.Text == "" {
-			continue // a notice bound to an empty variable is hidden
+		if (next.Type == "notice" || next.Type == "text") && next.Text == "" {
+			continue // a notice or text bound to an empty variable is hidden
 		}
 		resolved = append(resolved, next)
 	}
@@ -283,6 +330,7 @@ func (s screenContext) component(c uikit.Component) ScreenComponent {
 		"kv": s.kvComponent, "row": s.rowComponent, "toggle": s.toggleComponent, "radio": s.radioComponent,
 		"field": s.fieldComponent, "bigcode": s.bigCodeComponent, "qr": s.qrComponent, "pair": s.pairComponent,
 		"steps": s.stepsComponent, "button": s.buttonComponent, "list": s.listComponent, "empty": s.emptyComponent,
+		"gallery": s.galleryComponent, "viewer": s.viewerComponent,
 	}
 	resolved := resolvers[c.Kind](c)
 	resolved.Type = c.Kind
@@ -308,6 +356,9 @@ func (s screenContext) kvComponent(c uikit.Component) ScreenComponent {
 		if pair, isPair := entry.([]any); isPair && len(pair) == 2 {
 			rows = append(rows, [2]string{s.text(pair[0]), s.text(pair[1])})
 		}
+	}
+	if len(rows) == 0 {
+		return ScreenComponent{}
 	}
 	return ScreenComponent{Rows: rows}
 }
@@ -340,13 +391,24 @@ func (s screenContext) radioComponent(c uikit.Component) ScreenComponent {
 	bind := stringProp(c.Props, "bind")
 	raw, _ := c.Prop("options").([]any)
 	options := make([][2]string, 0, len(raw))
+	details := make([]string, 0, len(raw))
+	hasDetail := false
 	for _, entry := range raw {
-		if pair, isPair := entry.([]any); isPair && len(pair) == 2 {
+		if pair, isPair := entry.([]any); isPair && len(pair) >= 2 {
 			value, _ := pair[0].(string)
 			options = append(options, [2]string{value, s.text(pair[1])})
+			detail := ""
+			if len(pair) > 2 {
+				detail = s.text(pair[2])
+			}
+			hasDetail = hasDetail || detail != ""
+			details = append(details, detail)
 		}
 	}
-	return ScreenComponent{Text: s.text(c.Main()), Bind: bind, Value: s.varText(bind), Options: options,
+	if !hasDetail {
+		details = nil
+	}
+	return ScreenComponent{Text: s.text(c.Main()), Bind: bind, Value: s.varText(bind), Options: options, OptionDetails: details,
 		Enabled: s.inputEnabled(c, bind), Action: s.boundAction(bind)}
 }
 
@@ -427,7 +489,7 @@ func (s screenContext) listComponent(c uikit.Component) ScreenComponent {
 		items = append(items, listItemTexts(item))
 	}
 	return ScreenComponent{Bind: bind, Title: s.text(c.Prop("title")), EmptyText: s.text(c.Prop("empty_text")),
-		Tap: stringProp(c.Props, "tap"), Items: &items}
+		Tap: stringOrNil(stringProp(c.Props, "tap")), Items: &items}
 }
 
 // listItemTexts reads a list item: a plain value or [primary, secondary].
@@ -446,4 +508,12 @@ func listItemTexts(item any) [2]string {
 func (s screenContext) emptyComponent(c uikit.Component) ScreenComponent {
 	return ScreenComponent{Text: s.text(c.Main()), Caption: s.text(c.Prop("text")), Button: s.text(c.Prop("button")),
 		Action: stringProp(c.Props, "action")}
+}
+
+// stringOrNil keeps an empty string out of an omitempty interface field.
+func stringOrNil(text string) any {
+	if text == "" {
+		return nil
+	}
+	return text
 }
