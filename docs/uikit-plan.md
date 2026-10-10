@@ -8,17 +8,17 @@ Status: implemented in Batch 3 (design canvas boards K1–K5, 10 Oct 2026); the 
 
 ## 2. Shape (from the research)
 
-- **Home = one grouped list** (UIKitCatalog, Qt gallery, WinUI index): sections by function, one 128 px row per component with a one-line detail, chevron. No search (18 items), no theme toggle (Nickel's dark mode inverts us anyway).
+- **Home = one grouped list** (UIKitCatalog, Qt gallery, WinUI index): sections by function, one 128 px row per component with a one-line detail, chevron. No search (19 items), no theme toggle (Nickel's dark mode inverts us anyway).
 - **Level 1 = one page per component** (Compose Material Catalog collapsed by one level): description → static **states matrix** → one **live sample** → a **readout** of the last event. No code tab: the JSON lives in `screens/<id>.json`, which is the code sample.
 - **Level 2 only for real pushes**: the gallery page pushes the viewer. Dialogs, the popup menu, toasts and the keyboard are overlays, not screens, so they cost no depth.
 - **Header on every page**: `←`, the component name, status "Actions · 1 / 3" (group and position). The pager "‹ 1 / 2 ›" at the bottom turns the page; page keys do the same.
 - **Interaction feedback** is the pressed inversion itself; the readout row confirms the event in text.
 
-Home order is chosen so that **pages break on group boundaries** with the real body height (1111 px per page with a pager): page 1 = Actions, Selection, Text input (1088 px); page 2 = Feedback, Navigation (896 px); page 3 = Containment (704 px).
+Home order is chosen so that **pages break on group boundaries** with the real body height (1111 px per page with a pager): page 1 = Actions, Selection, Text input (1088 px); page 2 = Feedback, Navigation (1024 px); page 3 = Containment (704 px).
 
 ## 3. Home (`main`)
 
-Header: title "UI Kit" / "Bộ giao diện"; status "Kit 1 · 18" ("18 thành phần" would exceed the slot; keep the number). No header action. No footer.
+Header: title "UI Kit" / "Bộ giao diện"; status "19 components" / "19 thành phần". No header action. No footer.
 
 | Page | Section (en / vi) | Row label (en / vi) | Detail (en / vi) | Pushes |
 |---|---|---|---|---|
@@ -34,14 +34,15 @@ Header: title "UI Kit" / "Bộ giao diện"; status "Kit 1 · 18" ("18 thành ph
 | 2 | | Notice / Ghi chú | The only grey box / Hộp xám duy nhất | `notice` |
 | 2 | | Steps / Tiến trình | Text progress, no bar / Tiến trình bằng chữ | `steps` |
 | 2 | | Empty state / Màn trống | Heading, hint, one button / Tiêu đề, gợi ý, một nút | `empty` |
-| 2 | Navigation / Điều hướng | Header and pages / Tiêu đề và trang | Back, status, pager, keys / Quay lại, trạng thái, lật trang | `navigation` |
+| 2 | Navigation / Điều hướng | Header and pages / Tiêu đề và trang | Back, status, keys / Quay lại, trạng thái, phím | `navigation` |
+| 2 | | Pager / Chỉ báo trang | Page number, arrows, keys / Số trang, mũi tên, phím | `pager` |
 | 3 | Containment / Bố cục | Text / Văn bản | Heading, body, caption / Tiêu đề, chữ thường, chú thích | `text` |
 | 3 | | Section and key–value / Mục và khóa–giá trị | Facts in rows / Thông tin theo dòng | `kv` |
 | 3 | | Big code and QR / Mã lớn và QR | Codes you read or scan / Mã để đọc hoặc quét | `code` |
 | 3 | | List / Danh sách | Rows from state, tap, menu / Dòng từ trạng thái, chạm, menu | `list` |
 | 3 | | Gallery and viewer / Thư viện và xem ảnh | Tiles, badge, full view / Ô ảnh, dấu chọn, toàn màn | `gallery` |
 
-18 rows, 6 sections, 3 pages. Row labels are ≤ 24 chars in both languages so the detail column (280 px) keeps one line.
+19 rows, 6 sections, 3 pages. Row labels are ≤ 24 chars in both languages so the detail column (280 px) keeps one line.
 
 ## 4. Component page template (level 1)
 
@@ -190,10 +191,16 @@ Status strings are "Group · n / N"; copy is given as en / vi. Readout and the U
 - Description: "Never a blank page: heading, one hint, one button." / "Không bao giờ để trang trắng: tiêu đề, một gợi ý, một nút."
 - Try it: the page itself is an `empty` ("No books yet" / "Chưa có sách", "Add books on the phone, then sync." / "Thêm sách trên điện thoại rồi đồng bộ.", button "Sync now" / "Đồng bộ" → `echo`). The `empty` button is the page's primary. The readout is on page 2.
 
-### 7.13 Header and pages (`navigation`) — Navigation · 1 / 1
+### 7.13 Header and pages (`navigation`) — Navigation · 1 / 2
 - Description: "Back returns one level; a tab tap clears the stack. Pages turn with the pager or the page keys; dialogs ignore keys." / "Quay lại lùi một cấp; chạm tab xóa cả ngăn xếp. Lật trang bằng thanh trang hoặc phím; hộp thoại bỏ qua phím."
-- Header: status "Navigation · 1 / 1"; text link "Link" / "Liên kết" → `echo`.
+- Header: status "Navigation · 1 / 2"; text link "Link" / "Liên kết" → `echo`.
 - Try it: three `text` body paragraphs and a `kv` of 12 rows so the page runs to 3 pages; the readout on page 1 shows "page" events are not events (nothing is sent on a page turn, by design: caption says so).
+
+### 7.13b Pager (`pager`) — Navigation · 2 / 2
+- Description: "Shows where you are in a long screen: “1 / 3” between two arrows. Turn pages by tapping an arrow or with the page keys." / "Cho biết đang ở đâu trong màn dài: “1 / 3” giữa hai mũi tên. Chạm mũi tên hoặc bấm phím lật trang để chuyển trang."
+- States: a `kv` table (a pager cannot be a `samples` cell, it belongs to the screen): one page = no pager; first page = previous does nothing; last page = next does nothing; pressed arrow = black circle behind it (96 px square around the chevron; the page number never inverts). The arrows are always black, never dimmed (`drawPageBar`, `goToPage` clamps).
+- Try it: four `text` paragraphs and a `kv` of 12 rows so the page runs to 3 pages and the real pager is on screen. No action, no readout (a page turn sends no event).
+- Guidance: use for content that runs past one page; not for choosing between views (use tabs).
 
 ### 7.14 Text (`text`) — Containment · 1 / 5
 - Description: "Heading in Nickel's serif, body and caption in the sans. Text wraps; it never scrolls." / "Tiêu đề bằng serif của Nickel, chữ thường và chú thích bằng sans. Chữ xuống dòng, không cuộn."
@@ -234,14 +241,14 @@ No cycles, every screen reachable, nothing deeper than 2. Dialogs, toasts, the p
 apps/uikit/
   app.json            11 actions (§6), hidden: true, storage reads pictures
   ui.json             kit, start, vars, screens: { main }  (the home)
-  screens/<id>.json   18 component pages + viewer
+  screens/<id>.json   19 component pages + viewer
   locales/en.json, vi.json   ui.* keys (≈ 180), msg.* toasts
   bin/state.sh, echo.sh, confirm.sh, primary.sh, toggle.sh, radio.sh, field.sh,
       dialog.sh, toast.sh, steps.sh, refresh.sh, lib.sh
   preview-state.json  firmware, locale, books, pictures, progress
 ```
 
-Previews: `go run ./cmd/ndpreview render apps/uikit --locale vi --screen <id> --out build/preview/uikit-<id>.png` for every screen; the Makefile target `preview-uikit` renders all 20 in both languages (40 PNGs) so a reviewer can diff them.
+Previews: `go run ./cmd/ndpreview render apps/uikit --locale vi --screen <id> --out build/preview/uikit-<id>.png` for every screen; the Makefile target `preview-uikit` renders all 21 in both languages (42 PNGs) so a reviewer can diff them.
 
 ## 10. Acceptance (device cases, checklist 5b)
 

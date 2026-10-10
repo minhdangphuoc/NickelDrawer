@@ -4,6 +4,10 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- UI Kit 2.1.0: a Pager page ("Chỉ báo trang") that documents the page indicator: when it shows, what the arrows do at the first and last page, the pressed circle, guidance, and a long page so the real pager can be tried. The home now lists 19 components.
+
 ### Fixed
 
 - The pressed pager arrow no longer cuts a white strip into the button below it.

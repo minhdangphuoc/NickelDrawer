@@ -8,7 +8,7 @@ Bộ mẫu cho mọi thành phần của NickelDrawer (`ui.json`, kit 1), dành 
 
 Cấu trúc:
 
-- **Màn chính** là một danh sách chia nhóm, 18 dòng trong 6 nhóm: Thao tác (Nút, Dòng và nút tiêu đề, Menu nhấn giữ), Lựa chọn (Công tắc, Chọn một), Nhập liệu (Ô nhập, Ghép nối điện thoại), Phản hồi (Thông báo nhanh, Hộp thoại, Ghi chú, Tiến trình, Màn trống), Điều hướng (Tiêu đề và trang), Bố cục (Văn bản, Mục và khóa–giá trị, Mã lớn và QR, Danh sách, Thư viện và xem ảnh). Mỗi nhóm nằm trọn trong một trang.
+- **Màn chính** là một danh sách chia nhóm, 19 dòng trong 6 nhóm: Thao tác (Nút, Dòng và nút tiêu đề, Menu nhấn giữ), Lựa chọn (Công tắc, Chọn một), Nhập liệu (Ô nhập, Ghép nối điện thoại), Phản hồi (Thông báo nhanh, Hộp thoại, Ghi chú, Tiến trình, Màn trống), Điều hướng (Tiêu đề và trang, Chỉ báo trang), Bố cục (Văn bản, Mục và khóa–giá trị, Mã lớn và QR, Danh sách, Thư viện và xem ảnh). Mỗi nhóm nằm trọn trong một trang.
 - **Mỗi thành phần một trang**: mô tả, bảng **Trạng thái** (bình thường, đang nhấn, đã chọn, khóa) là ảnh chụp tĩnh, một bản **Thử** dùng được thật, dòng **Sự kiện cuối / Giá trị** cập nhật ngay sau mỗi lần chạm, và mục **Gợi ý** (dùng khi / không dùng khi).
 - **Trình xem ảnh** là màn duy nhất ở cấp 2, mở từ trang Thư viện. Hộp thoại, menu nhấn giữ, thông báo nhanh và bàn phím là lớp phủ, không phải màn hình.
 
@@ -22,7 +22,7 @@ Sample pages for every NickelDrawer component (`ui.json`, kit 1), for developers
 
 Structure:
 
-- **Home** is one grouped list, 18 rows in 6 groups: Actions (Button, Row and header actions, Long-press menu), Selection (Toggle, Radio group), Text input (Field, Phone pairing), Feedback (Toast, Dialog, Notice, Steps, Empty state), Navigation (Header and pages), Containment (Text, Section and key–value, Big code and QR, List, Gallery and viewer). A group never splits across pages.
+- **Home** is one grouped list, 19 rows in 6 groups: Actions (Button, Row and header actions, Long-press menu), Selection (Toggle, Radio group), Text input (Field, Phone pairing), Feedback (Toast, Dialog, Notice, Steps, Empty state), Navigation (Header and pages, Pager), Containment (Text, Section and key–value, Big code and QR, List, Gallery and viewer). A group never splits across pages.
 - **One page per component**: a description, a **States** matrix (normal, pressed, selected, disabled) of static pictures made with the `samples` component, one working **Try it** sample, a **Last event / Value** readout that updates right after each tap, and a **Guidance** section (use for, not for).
 - **The picture viewer** is the only level-2 screen, opened from the Gallery page. Dialogs, the long-press menu, toasts and the keyboard are overlays, not screens.
 

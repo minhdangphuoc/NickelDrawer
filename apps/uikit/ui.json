@@ -110,6 +110,11 @@
           "push": "navigation"
         },
         {
+          "row": "@ui.lbl_pager",
+          "detail": "@ui.det_pager",
+          "push": "pager"
+        },
+        {
           "section": "@ui.grp_containment"
         },
         {

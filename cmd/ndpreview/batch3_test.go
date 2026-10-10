@@ -85,8 +85,8 @@ func TestDisabledSampleDimsEveryInk(t *testing.T) {
 func TestEveryUIKitPageRendersAndStaysBelowDepthTwo(t *testing.T) {
 	for _, locale := range []string{"en", "vi"} {
 		rc := uikitContext(t, locale)
-		if got := len(rc.doc.Screens); got != 20 {
-			t.Fatalf("%d screens, want main + 18 pages + viewer", got)
+		if got := len(rc.doc.Screens); got != 21 {
+			t.Fatalf("%d screens, want main + 19 pages + viewer", got)
 		}
 		for id := range rc.doc.Screens {
 			page, err := layoutScreen(rc, id, 0, Overlay{})
@@ -97,7 +97,7 @@ func TestEveryUIKitPageRendersAndStaysBelowDepthTwo(t *testing.T) {
 	}
 }
 
-func TestUIKitHomeListsEighteenRowsInSixSections(t *testing.T) {
+func TestUIKitHomeListsNineteenRowsInSixSections(t *testing.T) {
 	rc := uikitContext(t, "en")
 	sections, rows := 0, 0
 	for _, component := range rc.doc.Screens["main"].Body {
@@ -111,8 +111,8 @@ func TestUIKitHomeListsEighteenRowsInSixSections(t *testing.T) {
 			}
 		}
 	}
-	if sections != 6 || rows != 18 {
-		t.Errorf("home has %d sections and %d rows, want 6 and 18", sections, rows)
+	if sections != 6 || rows != 19 {
+		t.Errorf("home has %d sections and %d rows, want 6 and 19", sections, rows)
 	}
 }
 

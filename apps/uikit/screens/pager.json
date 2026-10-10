@@ -1,0 +1,110 @@
+{
+  "title": "@ui.lbl_pager",
+  "status": "@ui.pos_pager",
+  "body": [
+    {
+      "text": "@ui.desc_pager"
+    },
+    {
+      "section": "@ui.sec_states"
+    },
+    {
+      "kv": [
+        [
+          "@ui.pg_k1",
+          "@ui.pg_v1"
+        ],
+        [
+          "@ui.pg_k2",
+          "@ui.pg_v2"
+        ],
+        [
+          "@ui.pg_k3",
+          "@ui.pg_v3"
+        ],
+        [
+          "@ui.pg_k4",
+          "@ui.pg_v4"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_try"
+    },
+    {
+      "text": "@ui.pg_p1"
+    },
+    {
+      "text": "@ui.pg_p2"
+    },
+    {
+      "text": "@ui.pg_p3"
+    },
+    {
+      "text": "@ui.pg_p4"
+    },
+    {
+      "kv": [
+        [
+          "@ui.nav_k1",
+          "@ui.nav_v1"
+        ],
+        [
+          "@ui.nav_k2",
+          "@ui.nav_v2"
+        ],
+        [
+          "@ui.nav_k3",
+          "@ui.nav_v3"
+        ],
+        [
+          "@ui.nav_k4",
+          "@ui.nav_v4"
+        ],
+        [
+          "@ui.nav_k5",
+          "@ui.nav_v5"
+        ],
+        [
+          "@ui.nav_k6",
+          "@ui.nav_v6"
+        ],
+        [
+          "@ui.nav_k7",
+          "@ui.nav_v7"
+        ],
+        [
+          "@ui.nav_k8",
+          "@ui.nav_v8"
+        ],
+        [
+          "@ui.nav_k9",
+          "@ui.nav_v9"
+        ],
+        [
+          "@ui.nav_k10",
+          "@ui.nav_v10"
+        ],
+        [
+          "@ui.nav_k11",
+          "@ui.nav_v11"
+        ],
+        [
+          "@ui.nav_k12",
+          "@ui.nav_v12"
+        ]
+      ]
+    },
+    {
+      "section": "@ui.sec_guide"
+    },
+    {
+      "text": "@ui.use_pager",
+      "style": "caption"
+    },
+    {
+      "text": "@ui.not_pager",
+      "style": "caption"
+    }
+  ]
+}
