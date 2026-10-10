@@ -4,6 +4,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [1.0.0-beta.5] - 2026-10-11
+
 ### Changed
 
 - **The release is the drawer only; apps are separate.** `make dist` now writes `dist/onboard` with just the host tool and the Nickel mod (and the drawer zip `koboapps-<version>.zip`), plus one zip per app in `dist/apps/` named `app-<id>-<version>.zip`, each holding only `.adds/apps/<id>/` (no `data/`, previews or READMEs). Apps are installed one by one: see the new `apps/README.md` (English and Vietnamese).
