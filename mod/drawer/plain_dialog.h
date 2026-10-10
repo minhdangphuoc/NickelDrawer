@@ -34,6 +34,11 @@ public:
     // Shows it over the whole screen, the box centred, non-blocking (QDialog::open).
     void present();
 
+    // The largest visible top-level window other than popup (Nickel's main
+    // window) as it looks now; null when there is none. Full-screen popups
+    // paint it under their box.
+    static QPixmap grabPageUnder(const QWidget *popup);
+
 signals:
     // Empty id: dismissed (outside tap, closed by the drawer, or the 120 s timeout).
     void chosen(const QString &id);
@@ -53,7 +58,6 @@ private:
     QWidget *createButton(const DialogChoice &choice);
     QWidget *createMenuRow(const DialogChoice &choice);
     QWidget *createDivider();
-    void captureBackdrop();
 
     QWidget *outsideArea; // under the box, covering the screen
     QWidget *box;

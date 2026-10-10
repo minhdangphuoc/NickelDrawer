@@ -55,6 +55,9 @@ static const Translation TABLE[] = {
     {"Change this from your phone or computer.", "Hãy đổi mục này từ điện thoại hoặc máy tính."},
     {"OK", "OK"},
     {"Couldn't do that. See the app log.", "Không thực hiện được. Xem nhật ký ứng dụng."},
+    {"Tweaks", "Tinh chỉnh"},
+    {"OK", "OK"},
+    {"Not available on this firmware.", "Không dùng được trên firmware này."},
 };
 
 static_assert(sizeof(TABLE) / sizeof(TABLE[0]) == FallbackStrings::KEY_COUNT, "one translation per FallbackStrings::Key");

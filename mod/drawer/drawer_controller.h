@@ -1,7 +1,10 @@
 #ifndef NICKELDRAWER_DRAWER_CONTROLLER_H
 #define NICKELDRAWER_DRAWER_CONTROLLER_H
 
-// Route A: the drawer as a Nickel "More sub-page" controller (navSection 6).
+// A page of the mod as a Nickel controller: route A of the drawer (a "More
+// sub-page", navSection 6) and the Tweaks modal (navSection 0: Nickel hides
+// the tab bar and sets the status bar from the view's properties, as for its
+// own Settings dialogs).
 //
 // AbstractController below mirrors libnickel's class (4.38.x, decompiled on
 // 23828, re/notes/G2-findings.md Q2): vptr, QPointer<QWidget> (+4 d, +8 widget),
@@ -38,7 +41,11 @@ protected:
 // deletion on pop/tab switch/Home also deletes the controller.
 class DrawerController : public QObject, public AbstractController {
 public:
-    explicit DrawerController(QWidget *view);
+    // MainNavSection values Nickel's own controllers return.
+    static const int NAV_SECTION_NONE = 0; // no tab bar (AbstractController's default)
+    static const int NAV_SECTION_MORE = 6; // MoreController/WishlistController::navSection()
+
+    explicit DrawerController(QWidget *view, int navSection = NAV_SECTION_MORE);
     ~DrawerController();
 
     int navSection() const;
@@ -54,6 +61,7 @@ public:
 
 private:
     QPointer<QWidget> preparedView;
+    int section;
 };
 
 #endif

@@ -10,6 +10,7 @@
 #include "drawer_logic.h"
 #include "fallback_strings.h"
 #include "model_parser.h"
+#include "tweaks_parser.h"
 
 static QStringList drawerArguments(const char *command)
 {
@@ -90,6 +91,17 @@ void ModelClient::requestEvent(const QString &appId, const ScreenEvent &event)
     startCall(REQUEST_EVENT, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_RUN_SHOW));
 }
 
+void ModelClient::requestTweaks()
+{
+    startCall(REQUEST_TWEAKS, drawerArguments("tweaks"), DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_TWEAKS));
+}
+
+void ModelClient::requestTweak(const QString &tweakId)
+{
+    startCall(REQUEST_TWEAK, drawerArguments("tweak") << tweakId,
+              DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_TWEAK));
+}
+
 ModelClient::~ModelClient()
 {
     int killed = 0;
@@ -116,10 +128,12 @@ bool ModelClient::isReadOnly(Request request)
     case REQUEST_MODEL:
     case REQUEST_INFO:
     case REQUEST_SCREEN:
+    case REQUEST_TWEAKS:
         return true;
     case REQUEST_RUN:
     case REQUEST_REMOVE:
     case REQUEST_EVENT:
+    case REQUEST_TWEAK:
         break;
     }
     return false;
@@ -152,6 +166,12 @@ void ModelClient::onCallFinished(AppsctlCall *call)
         break;
     case REQUEST_EVENT:
         deliverActionResult(call, false);
+        break;
+    case REQUEST_TWEAKS:
+        deliverTweaks(call);
+        break;
+    case REQUEST_TWEAK:
+        deliverTweak(call);
         break;
     }
     call->deleteLater();
@@ -224,4 +244,37 @@ void ModelClient::deliverScreen(AppsctlCall *call)
     ScreenModel screen;
     bool isLoaded = replyOf(call, &json, &failure) && ModelParser::parseScreen(json, &screen, &failure);
     emit screenLoaded(isLoaded, screen, failure);
+}
+
+void ModelClient::deliverTweaks(AppsctlCall *call)
+{
+    QByteArray json;
+    QString failure;
+    TweaksModel model;
+    if (!replyOf(call, &json, &failure) || !TweaksParser::parseTweaks(json, &model, &failure)) {
+        model.isUsable = false;
+        model.failure = failure;
+    }
+    emit tweaksLoaded(model);
+}
+
+// tweaks.md: a failed tweak exits 2 with {"v":1,"ok":false,"error":"…"}, a
+// sentence for the user; replyOf() would only read the protocol's error object.
+void ModelClient::deliverTweak(AppsctlCall *call)
+{
+    QByteArray json;
+    QString failure;
+    TweakResult result;
+    bool isFailedTweak = call->outcome() == AppsctlCall::OUTCOME_EXITED &&
+                         DrawerLogic::classifyExitCode(call->exitCode()) == DrawerLogic::EXIT_PROTOCOL_ERROR;
+    if (isFailedTweak) {
+        json = call->output();
+    }
+    bool isParsed = (isFailedTweak || replyOf(call, &json, &failure)) &&
+                    TweaksParser::parseTweakResult(json, &result, &failure);
+    if (!isParsed) {
+        result.isOk = false;
+        result.error = failure;
+    }
+    emit tweakApplied(result);
 }

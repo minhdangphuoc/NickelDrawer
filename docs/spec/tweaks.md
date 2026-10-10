@@ -52,10 +52,14 @@ Applies one tweak (toggles flip their current value) and replies:
 | `screensaver` | `<root>/.kobo/screensaver` (on) ⇄ `<root>/.kobo/screensaver.disabled` (off), by rename | Off keeps the pictures, Nickel then shows its own sleep screen. Toggling with neither folder present is an error. |
 | `screenshots` | `Kobo eReader.conf` `[FeatureSettings]` `Screenshots=true/false` | |
 | `auto-usb` | `Kobo eReader.conf` `[DeveloperSettings]` `AutoUsbGadget=true/false` | Same setting NickelMenu's `auto_usb_gadget` toggled. |
-| `legibility` | `Kobo eReader.conf` `[ApplicationPreferences]` `webkitTextRendering=geometricPrecision` (on) / line removed (off) | Toast says a reboot is needed. |
+| `legibility` | `Kobo eReader.conf` `[Reading]` `webkitTextRendering=optimizeLegibility` (on) / line removed (off) | kepub books only; toast says to reopen the book. Keys verified against libnickel 4.38.23828. |
 | `invert-reboot` | `Kobo eReader.conf` `[FeatureSettings]` `InvertScreen=true/false` | Flips, then `nickel: reboot`. |
 | `ip` | `wlan0` address | Read-only. |
 
 `Kobo eReader.conf` is `<root>/.kobo/Kobo/Kobo eReader.conf`. Edits are atomic (temp file in the same folder, then rename), keep every other line, section and comment as they are, and create a missing section or key. `appsctl` never backs up device files itself; the installer and the user do that.
 
 Section and key names are collected in `internal/tweaks/settings.go`. They are the Nickel QSettings names behind the NickelMenu `nickel_setting` items of the same name; verify them on a device before shipping a new firmware.
+
+## Mod side (libnickeldrawer)
+
+The "Tinh chỉnh" row follows "Ứng dụng" in the More tab (icon `.adds/koboapps/icons/tweaks.png`, Nickel's gear when missing). The modal is Nickel's own `N3Dialog` (the Settings sub-page window) pushed as a controller without the tab bar; details, symbols and the fallback overlay in `re/notes/tweaks-modal.md`. `rescan-library` is Nickel's quick rescan (`PlugWorkflowManager::sync`). A `tweak` reply with exit code 2 is read as the `ok:false` document above; an unknown `nickel` value or a missing Nickel function shows a toast instead.

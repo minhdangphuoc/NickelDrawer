@@ -1,10 +1,8 @@
 #include "entry_row.h"
 
 #include <QEvent>
-#include <QPixmap>
 #include <QStringList>
 #include <QTimer>
-#include <QVBoxLayout>
 #include <QWidget>
 
 #include <NickelHook.h>
@@ -13,55 +11,21 @@
 #include "drawer_navigator.h"
 #include "fallback_strings.h"
 #include "model_client.h"
+#include "more_row.h"
 #include "nickel_bridge.h"
 
-static const char *const CONTAINER_LAYOUT_NAME = "moreContainerLayout";
-static const char *const ANCHOR_ROW_NAME = "betaFeaturesButton"; // our row goes right after it
 static const char *const ROW_OBJECT_NAME = "nickelDrawerButton";
 // Our own icon (cmd/iconsgen, 50x50 like Nickel's More icons), installed by the
 // koboapps installer. Nickel's flask is only the fallback: with it the row
 // looked like a copy of "Beta Features".
-static const char *const ROW_ICON_PATH = "/mnt/onboard/.adds/koboapps/icons/apps.png";
-static const char *const FALLBACK_ROW_ICON = ":/images/reading/beta_features.png";
+static const MoreRow::Spec ROW_SPEC = {
+    ROW_OBJECT_NAME,
+    "/mnt/onboard/.adds/koboapps/icons/apps.png",
+    ":/images/reading/beta_features.png",
+    "betaFeaturesButton", // our row goes right after it
+};
 static const int DOT_RIGHT_MARGIN = 72;
-static const char *const TAPPED_SIGNAL_SIGNATURE = "tapped()";
 static const int RUN_FROM_EVENT_LOOP = 0;
-
-static int insertIndexAfterAnchor(QWidget *moreView, QVBoxLayout *layout)
-{
-    QWidget *anchor = moreView->findChild<QWidget *>(QString::fromLatin1(ANCHOR_ROW_NAME));
-    int anchorIndex = anchor ? layout->indexOf(anchor) : -1;
-    if (anchorIndex < 0) {
-        nh_log("entry row: anchor %s not found, appending at the end", ANCHOR_ROW_NAME);
-        return layout->count();
-    }
-    return anchorIndex + 1;
-}
-
-// QPixmap reads the whole file and closes it before returning: nothing stays
-// open on /mnt/onboard (USB mass storage must be able to take it).
-static QPixmap loadRowIcon()
-{
-    QPixmap icon(QString::fromLatin1(ROW_ICON_PATH));
-    if (!icon.isNull()) {
-        DebugLog::write("entry row: icon %s loaded (%dx%d)", ROW_ICON_PATH, icon.width(), icon.height());
-        return icon;
-    }
-    nh_log("entry row: icon %s missing or invalid, using Nickel's %s", ROW_ICON_PATH, FALLBACK_ROW_ICON);
-    icon = QPixmap(QString::fromLatin1(FALLBACK_ROW_ICON));
-    DebugLog::write("entry row: fallback icon %s %s (%dx%d)", FALLBACK_ROW_ICON, icon.isNull() ? "missing" : "loaded",
-                    icon.width(), icon.height());
-    return icon;
-}
-
-// The exact signal EntryRow connects to, checked on the live object.
-static bool hasTappedSignal(QWidget *row)
-{
-    int signalIndex = row->metaObject()->indexOfSignal(TAPPED_SIGNAL_SIGNATURE);
-    DebugLog::write("entry row: %s %s signal index %d", row->metaObject()->className(), TAPPED_SIGNAL_SIGNATURE,
-                    signalIndex);
-    return signalIndex >= 0;
-}
 
 QString entrySummary(const DrawerModel &model, int *updateCount)
 {
@@ -91,29 +55,9 @@ QString entrySummary(const DrawerModel &model, int *updateCount)
 
 void EntryRow::addTo(QWidget *moreView)
 {
-    if (!NickelBridge::hasIconLeftButton()) {
-        nh_log("entry row: IconLeftButton unavailable, no Apps row");
-        return;
-    }
-    QVBoxLayout *layout = moreView->findChild<QVBoxLayout *>(QString::fromLatin1(CONTAINER_LAYOUT_NAME));
-    if (!layout || !layout->parentWidget()) {
-        nh_log("entry row: layout %s not found, no Apps row", CONTAINER_LAYOUT_NAME);
-        return;
-    }
     FallbackStrings::reloadLocale();
-    QWidget *row = NickelBridge::createIconLeftButton(layout->parentWidget());
+    QWidget *row = MoreRow::insert(moreView, ROW_SPEC, FallbackStrings::text(FallbackStrings::APPS_TITLE));
     if (!row) {
-        return;
-    }
-    row->setObjectName(QString::fromLatin1(ROW_OBJECT_NAME));
-    NickelBridge::setIconLeftButtonPixmap(row, loadRowIcon());
-    NickelBridge::setIconLeftButtonText(row, FallbackStrings::text(FallbackStrings::APPS_TITLE));
-    DebugLog::write("entry row: pixmap and text set");
-
-    if (!hasTappedSignal(row)) {
-        nh_log("entry row: %s has no %s signal, removing the row", row->metaObject()->className(),
-               TAPPED_SIGNAL_SIGNATURE);
-        delete row;
         return;
     }
     EntryRow *entry = new EntryRow(row);
@@ -122,12 +66,14 @@ void EntryRow::addTo(QWidget *moreView)
         delete row; // the entry follows through destroyed()
         return;
     }
-    int index = insertIndexAfterAnchor(moreView, layout);
-    layout->insertWidget(index, row);
-    nh_log("entry row: added at index %d", index);
     DebugLog::write("entry row: row %p entry %p, %d children on the row", (void *)row, (void *)entry,
                     row->children().size());
     entry->refreshSummary();
+}
+
+const char *EntryRow::rowObjectName()
+{
+    return ROW_OBJECT_NAME;
 }
 
 EntryRow::EntryRow(QWidget *moreRow)

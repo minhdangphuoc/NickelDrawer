@@ -74,7 +74,9 @@ enum AppsctlCommand {
     COMMAND_RUN_BACKGROUND,
     COMMAND_INFO,
     COMMAND_REMOVE,
-    COMMAND_SCREEN
+    COMMAND_SCREEN,
+    COMMAND_TWEAKS, // docs/spec/tweaks.md: 3 s per call
+    COMMAND_TWEAK
 };
 
 // Hard timeout the mod applies to an appsctl call.

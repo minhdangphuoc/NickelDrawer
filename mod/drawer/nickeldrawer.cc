@@ -9,8 +9,16 @@
 #include "mod_switches.h"
 #include "nickel_bridge.h"
 #include "press_area.h"
+#include "tweaks_row.h"
 
 static const int FAILSAFE_DELAY_SECONDS = 15;
+
+// Our two More-tab rows: Apps, then Tweaks right after it.
+static void addMoreRows(QWidget *moreView)
+{
+    EntryRow::addTo(moreView);
+    TweaksRow::addTo(moreView);
+}
 
 static int initialize()
 {
@@ -24,7 +32,7 @@ static int initialize()
     if (!NickelBridge::activate()) {
         return 0;
     }
-    NickelBridge::setMoreViewCreatedHandler(EntryRow::addTo);
+    NickelBridge::setMoreViewCreatedHandler(addMoreRows);
     PressArea::setTapGestureTypeProvider(NickelBridge::tapGestureType);
     PressArea::setTapPositionProvider(NickelBridge::tapGesturePosition);
     nh_log("active on %s (route %s, app screens %s)", NickelBridge::firmware(),
@@ -34,7 +42,7 @@ static int initialize()
 
 static struct nh_info modInfo = {
     .name = "nickeldrawer",
-    .desc = "NickelDrawer: Apps row in the More tab and a native app drawer",
+    .desc = "NickelDrawer: Apps and Tweaks rows in the More tab, a native app drawer",
     .uninstall_flag = ModSwitches::UNINSTALL_FLAG_PATH,
     .uninstall_xflag = NULL, // g++ 4.9 rejects skipped designated fields
     .failsafe_delay = FAILSAFE_DELAY_SECONDS,

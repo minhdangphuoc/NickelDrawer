@@ -60,6 +60,13 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `drawer_controller.{h,cc}` | ABI mirror of Nickel's `AbstractController` (built with `-frtti`, no `Q_OBJECT`) |
 | `drawer_navigator.{h,cc}` | open/close by route A (push/pop) or route B (pushView/popView + watcher) |
 | `entry_row.{h,cc}` | More-tab row, status summary line and update dot |
+| `more_row.{h,cc}` | builds and inserts one IconLeftButton row in the More tab (Apps and Tweaks rows) |
+| `tweaks_logic.{h,cc}` | Qt-free: `drawer tweaks` / `drawer tweak` JSON replies, 2-column grid math (unit-tested) |
+| `tweaks_model.h`, `tweaks_parser.{h,cc}` | Qt structs of the tweaks replies, built from tweaks_logic |
+| `tweaks_row.{h,cc}` | the "Tweaks" More row after Apps; tap opens the modal |
+| `tweaks_panel.{h,cc}` | modal body: rule, 2-column cells (italic serif label, On/Off or value), page keys |
+| `tweaks_session.{h,cc}` | one open modal: Nickel's N3Dialog as a controller view (else the overlay), confirm, `tweak`, toast, Nickel sleep/reboot/rescan |
+| `tweaks_overlay.{h,cc}` | own modal chrome when Nickel's N3Dialog cannot be used |
 | `screen_model.h` | plain structs of a `drawer screen` reply |
 | `screen_logic.{h,cc}` | pure ndpreview metrics and rules: wrap, elide, pages, component heights (Qt-free) |
 | `qr_encoder.{h,cc}` | QR byte mode, level M, versions 1–20; checked against segno matrices (Qt-free) |
@@ -117,6 +124,8 @@ run removes only one of them).
 | firmware not one of the five 4.38 builds | inert, logged; NickelMenu stays |
 | a libnickel symbol missing | only the feature using it is off: no row (IconLeftButton/hook), toast "not available" (push API), plain Qt dialog (Nickel dialogs), message instead of toast, no Wi-Fi retry, no rescan |
 | `moreContainerLayout` not found | no row, logged |
+| N3Dialog or controller push missing | Tweaks modal in the own overlay (re/notes/tweaks-modal.md) |
+| N3PowerWorkflowManager / rescan missing | the tweak still runs; toast "Not available on this firmware." instead of sleep/reboot/rescan |
 | `AbstractController` offset not 8, or push did not stack the view | page discarded, toast |
 | appsctl missing / slow / crashing / bad JSON / too new | problem row + "Try again" row; the More row just reads "Apps" |
 | `drawer.ini` not writable | logged, list/grid choice not kept |

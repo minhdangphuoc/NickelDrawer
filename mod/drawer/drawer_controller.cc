@@ -7,7 +7,6 @@
 // Values taken from libnickel's own implementations (23828).
 static const int NO_PREFERRED_SIZE = -1;
 static const int NICKEL_DEFAULT_ORIENTATIONS = 5;
-static const int NAV_SECTION_MORE = 6; // MoreController/WishlistController::navSection()
 static const ptrdiff_t NICKEL_CONTROLLER_OFFSET = 8;
 
 static_assert(sizeof(QObject) == 8, "QObject size differs from Nickel's Qt 5.2.1");
@@ -36,11 +35,11 @@ int AbstractController::allowedOrientations() const
 
 int AbstractController::navSection() const
 {
-    return 0;
+    return DrawerController::NAV_SECTION_NONE;
 }
 
-DrawerController::DrawerController(QWidget *view)
-    : QObject(NULL), preparedView(view)
+DrawerController::DrawerController(QWidget *view, int navSection)
+    : QObject(NULL), preparedView(view), section(navSection)
 {
     setObjectName(QStringLiteral("nickelDrawerController"));
 }
@@ -52,7 +51,7 @@ DrawerController::~DrawerController()
 
 int DrawerController::navSection() const
 {
-    return NAV_SECTION_MORE;
+    return section;
 }
 
 void DrawerController::loadView()

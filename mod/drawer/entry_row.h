@@ -25,6 +25,8 @@ public:
     // MoreView-created handler registered with the bridge. Fails soft: logs
     // and leaves the More tab untouched when anything is missing.
     static void addTo(QWidget *moreView);
+    // The row's object name: the Tweaks row goes right after it.
+    static const char *rowObjectName();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event);

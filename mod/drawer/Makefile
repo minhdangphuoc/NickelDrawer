@@ -25,10 +25,13 @@ override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar
                      wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
                      drawer_navigator.cc entry_row.cc screen_logic.cc qr_encoder.cc ../common/nickel_fonts.cc \
                      screen_layout.cc screen_canvas.cc screen_view.cc field_editor.cc screen_session.cc \
-                     navigation_stack.cc navigation.cc event_queue.cc picture_loader.cc tile_menu.cc
+                     navigation_stack.cc navigation.cc event_queue.cc picture_loader.cc tile_menu.cc \
+                     more_row.cc tweaks_logic.cc tweaks_parser.cc tweaks_panel.cc tweaks_overlay.cc tweaks_session.cc \
+                     tweaks_row.cc
 override MOCS     += nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
                      dialogs.h open_popups.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
-                     screen_canvas.h screen_view.h field_editor.h screen_session.h tile_menu.h
+                     screen_canvas.h screen_view.h field_editor.h screen_session.h tile_menu.h \
+                     tweaks_panel.h tweaks_overlay.h tweaks_session.h tweaks_row.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
@@ -40,7 +43,9 @@ endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
-TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue
+TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic
+# Other Qt-free units a test links besides its own (unit=dependency).
+TEST_LINKS  := tweaks_logic=drawer_logic
 TEST_BINARY := tests/unit_test.bin
 TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++
 
@@ -57,7 +62,8 @@ docker-build:
 docker-test:
 	docker run --rm --platform linux/amd64 -v "$(REPO_ROOT):$(REPO_ROOT)" -w "$(CURDIR)" --entrypoint sh \
 		$(NICKELTC_IMAGE) -c 'status=0; for unit in $(TEST_UNITS); do \
-			g++ $(TEST_FLAGS) -o $(TEST_BINARY) tests/$${unit}_test.cc $${unit}.cc && ./$(TEST_BINARY) || status=1; \
+			links=; for link in $(TEST_LINKS); do [ "$${link%%=*}" = "$$unit" ] && links="$$links $${link#*=}.cc"; done; \
+			g++ $(TEST_FLAGS) -o $(TEST_BINARY) tests/$${unit}_test.cc $${unit}.cc $$links && ./$(TEST_BINARY) || status=1; \
 		done; rm -f $(TEST_BINARY); exit $$status'
 
 # Removes intermediate files, including those NickelHook generates inside its vendored folder.

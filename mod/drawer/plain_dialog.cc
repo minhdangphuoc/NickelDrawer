@@ -157,29 +157,27 @@ QWidget *PlainDialog::createDivider()
     return divider;
 }
 
-// The largest visible top-level window (Nickel's main window), as it looks now.
-void PlainDialog::captureBackdrop()
+QPixmap PlainDialog::grabPageUnder(const QWidget *popup)
 {
     QWidget *page = NULL;
     QList<QWidget *> windows = QApplication::topLevelWidgets();
     for (int i = 0; i < windows.size(); i++) {
         QWidget *window = windows[i];
-        if (window == this || !window->isVisible() || window->inherits("QMenu") || window->inherits("QDialog")) {
+        if (window == popup || !window->isVisible() || window->inherits("QMenu") || window->inherits("QDialog")) {
             continue;
         }
         if (!page || window->width() * window->height() > page->width() * page->height()) {
             page = window;
         }
     }
-    if (page) {
-        backdrop = page->grab();
-    }
-    DebugLog::write("plain dialog: backdrop %s", backdrop.isNull() ? "unavailable, white" : "captured");
+    QPixmap backdrop = page ? page->grab() : QPixmap();
+    DebugLog::write("popup backdrop %s", backdrop.isNull() ? "unavailable, white" : "captured");
+    return backdrop;
 }
 
 void PlainDialog::present()
 {
-    captureBackdrop();
+    backdrop = grabPageUnder(this);
     setGeometry(QApplication::desktop()->screenGeometry());
     open();
 }

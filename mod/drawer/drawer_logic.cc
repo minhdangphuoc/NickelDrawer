@@ -18,6 +18,7 @@ static const int SHOW_ACTION_TIMEOUT_MILLISECONDS = 35000;
 static const int INFO_TIMEOUT_MILLISECONDS = 3000;
 // `drawer screen` validates ui.json and runs the app's state script (1 s budget).
 static const int SCREEN_TIMEOUT_MILLISECONDS = 5000;
+static const int TWEAKS_TIMEOUT_MILLISECONDS = 3000; // docs/spec/tweaks.md: 3 s per call
 // Not in the protocol spec: deleting a folder on FAT and regenerating the
 // NickelMenu file can take longer than a model read.
 static const int REMOVE_TIMEOUT_MILLISECONDS = 10000;
@@ -144,6 +145,9 @@ int timeoutMillisecondsFor(AppsctlCommand command)
         return REMOVE_TIMEOUT_MILLISECONDS;
     case COMMAND_SCREEN:
         return SCREEN_TIMEOUT_MILLISECONDS;
+    case COMMAND_TWEAKS:
+    case COMMAND_TWEAK:
+        return TWEAKS_TIMEOUT_MILLISECONDS;
     }
     return MODEL_TIMEOUT_MILLISECONDS;
 }
