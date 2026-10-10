@@ -195,8 +195,8 @@ static void testGridRowsAndCells()
 static void testGridHeightAndRightCells()
 {
     EXPECT_EQ(0, gridHeight(0, 128, 1));
-    EXPECT_EQ(128, gridHeight(2, 128, 1));
-    EXPECT_EQ(5 * 128 + 4, gridHeight(9, 128, 1));
+    EXPECT_EQ(129, gridHeight(2, 128, 1));
+    EXPECT_EQ(5 * 128 + 5, gridHeight(9, 128, 1));
     EXPECT_EQ(1, rowHasRightCell(0, 9));
     EXPECT_EQ(1, rowHasRightCell(3, 9));
     EXPECT_EQ(0, rowHasRightCell(4, 9)); // item 8 alone in the last row

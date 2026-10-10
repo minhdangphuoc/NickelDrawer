@@ -80,11 +80,15 @@ TweakCell::TweakCell(const TweakItem &item, QWidget *parent) : PressArea(parent)
 
 void TweakCell::showValue(const TweakItem &item)
 {
+    // A cell without a value keeps an empty value line, so every label sits at the same height.
+    static const QChar NO_BREAK_SPACE(0x00A0);
     QString text = valueText(item);
+    if (text.isEmpty()) {
+        text = NO_BREAK_SPACE;
+    }
     if (valueLabel->text() != text) {
         valueLabel->setText(text);
     }
-    valueLabel->setVisible(!text.isEmpty());
 }
 
 // ---- Panel ----
@@ -256,9 +260,7 @@ bool TweaksPanel::eventFilter(QObject *watched, QEvent *event)
             if (TweaksLogic::rowHasRightCell(row, cells.size())) {
                 painter.fillRect(left.x + left.width, left.y, DIVIDER_WIDTH, left.height, DIVIDER_COLOR);
             }
-            if (row + 1 < TweaksLogic::rowCount(cells.size())) {
-                painter.fillRect(0, left.y + left.height, grid->width(), DIVIDER_WIDTH, DIVIDER_COLOR);
-            }
+            painter.fillRect(0, left.y + left.height, grid->width(), DIVIDER_WIDTH, DIVIDER_COLOR);
         }
         return true;
     }

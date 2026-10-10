@@ -629,7 +629,7 @@ Rect cellRect(int indexOnPage, int gridWidth, int cellHeight, int dividerWidth)
 int gridHeight(int itemCountOnPage, int cellHeight, int dividerWidth)
 {
     int rows = rowCount(itemCountOnPage);
-    return rows == 0 ? 0 : rows * cellHeight + (rows - 1) * dividerWidth;
+    return rows * (cellHeight + dividerWidth); // every row, the last too, ends with a divider
 }
 
 bool rowHasRightCell(int row, int itemCountOnPage)
