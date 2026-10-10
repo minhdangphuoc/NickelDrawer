@@ -4,7 +4,7 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
-## [1.0.0-beta.1] - unreleased
+## [1.0.0-beta.1] - 2026-10-10
 
 First public beta. Tested on one Libra 2 running 4.38.23828; the other four supported builds are checked statically (symbols) only.
 
