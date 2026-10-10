@@ -10,7 +10,7 @@ Tiếng Việt: [README.vi.md](README.vi.md).
 |---|---|
 | ![The drawer's list view on a Kobo Libra 2](docs/img/device-list.png) | ![The drawer's grid view on a Kobo Libra 2](docs/img/device-grid.png) |
 
-Screenshots from a Kobo Libra 2 set to Vietnamese, cropped to the drawer (Kobo's own status bar and tab bar are left out). The drawer shows your apps as a list (icon, name, live status) or as a grid; the buttons in the header switch between them, refresh the list and open the drawer settings.
+Screenshots from a Kobo Libra 2 set to Vietnamese. The drawer shows your apps as a list (icon, name, live status) or as a grid; the buttons in the header switch between them, refresh the list and open the drawer settings.
 
 ## What you get
 

@@ -8,7 +8,7 @@ Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel)
 |---|---|
 | ![Ngăn ứng dụng dạng danh sách trên Kobo Libra 2](docs/img/device-list.png) | ![Ngăn ứng dụng dạng lưới trên Kobo Libra 2](docs/img/device-grid.png) |
 
-Ảnh chụp từ Kobo Libra 2 (tiếng Việt), chỉ giữ phần Ngăn (bỏ thanh trạng thái và thanh tab của Kobo). Ngăn hiện ứng dụng dạng danh sách (biểu tượng, tên, trạng thái trực tiếp) hoặc dạng lưới; các nút trên tiêu đề chuyển dạng xem, làm mới danh sách và mở cài đặt của Ngăn.
+Ảnh chụp từ Kobo Libra 2 (tiếng Việt). Ngăn hiện ứng dụng dạng danh sách (biểu tượng, tên, trạng thái trực tiếp) hoặc dạng lưới; các nút trên tiêu đề chuyển dạng xem, làm mới danh sách và mở cài đặt của Ngăn.
 
 ## Bạn được gì
 
