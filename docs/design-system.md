@@ -30,7 +30,7 @@ The token file is the source of the numbers. Where the tables below and the "Res
 | `screen.width` / `screen.height` | 1264 / 1680 | The panel. |
 | `inset.statusBar` | 128 | Nickel's status bar overlays the view; every page leaves this margin (Nickel's own `topMargin: 128`; `mod/common/status_bar_inset.h`). |
 | `header.row` | 120 | Nickel `TextHeader`: back arrow target 120 × 120 at the left, title 34 px sans, status / actions at the right. |
-| `header.divider` | 1 | Nickel's own 1 px line, grey level 11 (187). |
+| `header.divider` | 1 | Nickel's own 1 px line, grey level 6 (102, A1). |
 | `gutter` | 72 | Left and right. Same edge as Nickel's header title and divider. |
 | `content.width` | 1120 | 1264 − 2 × 72. Every block spans it. |
 | `body.top` | 273 | 128 + 121 + 24 (one rhythm below the divider). |
@@ -84,7 +84,7 @@ The panel shows 16 levels (0, 17, 34 … 255). A value off that grid is quantise
 | `ink.muted` | 5 | 85 | Captions, row detail, section labels, pager, hints, header status. | Darkest grey that still reads as "secondary" next to black at 300 ppi; keeps roughly 4.5:1 against paper. Never for a word the user must act on. |
 | `ink.dim` | 8 | 136 | Disabled labels and outlines, placeholders, dashed placeholder tiles, the missing-picture glyph. | Reads as "not available" at a glance and is still legible. Only for things that are not currently usable. |
 | `line.row` | 6 | 102 | Row and list dividers (2 px), menu dividers (1 px). | Nickel's own `#666666` separator from `NickelTouchMenu.qss`; lighter than black so rows do not become a table. |
-| `line.header` | 11 | 187 | Header divider (1 px). | Nickel's `#b9b9b6`. |
+| `line.header` | 6 | 102 | Header divider (1 px). | What Nickel's `TextHeader` draws, `#666666` (A1). |
 | `paper.notice` | 14 | 238 | The notice box fill. | The only grey fill under text; light enough that the 40 px black text keeps full contrast. |
 | `paper` | 15 | 255 | Background, pressed text, knob. | |
 
@@ -312,7 +312,7 @@ Names map to constants in `mod/drawer/screen_logic.h` (and `cmd/ndpreview/metric
 | field | `FIELD_HEIGHT` | 120 |
 | pager | `PAGE_BAR_HEIGHT` | 56 |
 | ink / muted / dim (changed) | `INK_BLACK` / `INK_MUTED` / `INK_DIM` | 0 / 85 / 136 |
-| line.row (new) / line.header (new) | `LINE_ROW` / `LINE_HEADER` | 102 / 187 |
+| line.row (new) / line.header (new) | `LINE_ROW` / `LINE_HEADER` | 102 / 102 |
 | paper.notice (changed) / paper | `PAPER_GREY` / `PAPER_WHITE` | 238 / 255 |
 | stroke.rule / button / select | `SEPARATOR` / `BUTTON_BORDER` / `RADIO_RING_BORDER` | 2 / 3 / 4 |
 | switch | `SWITCH_WIDTH` × `SWITCH_HEIGHT`, knob | 96 × 52, 40 (+ radius 26, changed) |

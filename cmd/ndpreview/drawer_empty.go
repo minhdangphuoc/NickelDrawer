@@ -39,7 +39,6 @@ func drawerEmptyPage(chrome drawerChrome, isLoading bool) Page {
 	items = append(items, caption.draw(top)...)
 	top += caption.height + drawerEmptyGap
 	items = append(items, primaryButton(chrome.findApps, top)...)
-	items = append(items, drawerFooterItems(chrome.hint, 1, 1)...)
 	return Page{ScreenID: "drawer-empty", Items: finishPage(items, nil), Count: 1}
 }
 

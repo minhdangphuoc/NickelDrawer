@@ -214,8 +214,8 @@ void DrawerView::setModel(const DrawerModel &model)
     hint = model.hint.isEmpty() ? FallbackStrings::text(FallbackStrings::LONG_PRESS_HINT) : model.hint;
     ScreenLogic::TextRun hintRun = {ScreenLogic::CAPTION_SIZE, ScreenLogic::FAMILY_SANS, false};
     hintLabel->setText(QtTextMeter::elideLine(hint, ScreenLogic::CONTENT_WIDTH, hintRun)); // one measured line
-    hintLabel->setVisible(!hasQt6Notice);
     flatten(model);
+    hintLabel->setVisible(!hasQt6Notice && !items.isEmpty()); // the hint talks about apps; none to press
     rebuildShownIndices();
     updateHostButtons();
     if (isStatusOnlyChange) {

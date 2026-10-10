@@ -104,3 +104,35 @@ Nickel TextHeader (title, arrow press, divider) · More-tab rows (icon, dot, pre
 
 ## Spec questions resolved
 See the "Resolved" section of `docs/design-system.md` (A1–A13).
+
+## Re-validation (2026-10-10)
+
+Re-walk of every ⚠️ and ❌ finding after Batches 1–3 (commit `cf4d7e0`), against the code (`mod/drawer`, `mod/common`, `lib/copperui`, `host/screens`, `apps/*`, locales, `cmd/ndpreview`) and 106 fresh `ndpreview` renders per locale (`sh tools/preview-all.sh`, vi and en: drawer list / grid / empty / loading / warning, Tinh chỉnh, Settings main / about / checking / failed, every app screen and state, all UI Kit pages). Greys were measured on the PNGs: row dividers 102, header divider 1 px 102, section rule 2 px black, notice fill 238; the only off-grid pixels are antialiasing on icons, glyphs and sample pictures. `make check` and `appsctl validate` pass.
+
+The audit kept no per-cell matrix, so the counts below are per finding, not per cell.
+
+| Verdict | Before | Now |
+|---|---|---|
+| ❌ fails | 20 findings (F01–F06, F08–F13, F15–F20, F24, F31) | 0 |
+| ⚠️ partial or risk | 15 findings (F07, F14, F21–F23, F25, F26, F28/29, F30, F33, F36–F38, F40, text wrap) | 0 in code (F38 is Nickel's); 4 low new (N4, N5, N7, N8) |
+| ✅ fixed in code and renders | — | 34 of 35 (all but F38) |
+| Device check still needed | — | 6: F07 diacritic clipping, F16/F17 drawer list view, F18 N3Dialog, F19 painted Tinh chỉnh cells, F28/29 switch images, F38 header link |
+| Accepted deviation (design-system "Resolved") | — | F03 (A1), F14 back disc (A4), F21 (A5), F28/29 (A3), F26 (A8) |
+
+### Fixed during re-validation
+Preview fixtures had fallen behind the host and app code, so the renders showed defects the device does not have:
+- **N1** `tools/preview/settings-state-*.json`: "● 1.0.0" bullet (F25), no `has_update` (Settings showed Check as primary with an update waiting, F26) and the check in progress as a notice instead of `steps` (F40). Now as `internal/drawer/settings_state.go` writes them.
+- **N2** `apps/ghsync/preview-state*.json`: ISO "2026-10-10 08:14" (F25) → `format.datetime` "10/10/2026 08:14"; summary with commas → `msg.state_summary` " · "; trailing period on the failed caption.
+- **N3** `tools/preview-settings.sh`: About has 3 pages, page 3 (credits) was never rendered.
+- **N6** `docs/design-system.md` §2.1, §2.4, §7 still gave `line.header` 187; aligned to A1 (102), as the token file already is.
+
+### Still open (none blocks a device install)
+- **N4** Empty drawer still shows the long-press hint ("Long-press an app for info or remove") though there is no app: `mod/drawer/drawer_view.cc:217`, mirrored in `cmd/ndpreview/drawer_empty.go:42`. Hide the hint while the empty state shows. Needs a mod build and docker test.
+- **N5** LocalSend idle shows the IP row with an empty value where GitHub shows "—": `apps/localsend/bin/state.sh:30`.
+- **N7** Library has no `preview-state*.json`, so its render shows ui.json defaults (blank "Last scan" where the app writes "never"); add fixtures for idle / scanning / duplicates.
+- **N8** UI Kit header status "Kit 1 · 18" is cryptic (`apps/uikit/locales/en.json:264`, `vi.json:264`); e.g. "18 components", within 340 px.
+- **F38** Header text link underlined: Nickel draws it (`mod/drawer/screen_view.cc:32`); device check.
+- Notes, not defects: the pressed primary in the UI Kit button matrix inverts to white with no outline, which is PressArea's `HIGHLIGHT_INVERT` (device check "pressed inversion"); Settings firmware value "4.38.23828 ✓" is a text mark by design (`settings_state.go:125`), A13 covers list rows only.
+
+### Needs the device
+Unchanged from "Device-only checks" above, plus the F16/F17 drawer list view and empty state as Nickel lays them out, and the F19 painted Tinh chỉnh cells. Of these, check first: Vietnamese diacritic clipping (F07) on the 46 px caption line, switch images and BẬT/TẮT alignment, pressed inversion without ghosting, and dark-mode greys.

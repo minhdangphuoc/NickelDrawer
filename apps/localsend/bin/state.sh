@@ -27,7 +27,7 @@ else
     running=false
     status=$(msg "$APP_ID" ui.status_idle)
     pin=""
-    ip=""
+    ip="—" # same placeholder as the other apps when there is no value
     keep_awake=""
 fi
 

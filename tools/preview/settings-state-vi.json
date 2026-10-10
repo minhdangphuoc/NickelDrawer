@@ -3,7 +3,7 @@
   "source": "minhdangphuoc/NickelDrawer",
   "latest": "1.0.0",
   "latest_label": "Bản mới",
-  "latest_value": "● 1.0.0",
+  "latest_value": "1.0.0",
   "notes": "",
   "message": "",
   "apply_label": "Cập nhật lên 1.0.0",
@@ -21,5 +21,9 @@
   "maintainer": "Minh Dang",
   "license": "PolyForm Noncommercial 1.0.0",
   "firmware_range": "4.38.23552 – 4.38.23828",
-  "project_repo": "minhdangphuoc/NickelDrawer"
+  "project_repo": "minhdangphuoc/NickelDrawer",
+  "has_update": true,
+  "step_label": "",
+  "step_done": "",
+  "step_total": ""
 }

@@ -42,6 +42,7 @@ for locale in vi en; do
     render "$locale" main 2 settings-main-p2
     render "$locale" about 1 settings-about
     render "$locale" about 2 settings-about-p2
+    render "$locale" about 3 settings-about-p3
     # What the Updates section says after a check, while one runs, and when one fails.
     render "$locale" main 1 settings-uptodate "$locale-uptodate"
     render "$locale" main 1 settings-checking "$locale-checking"
