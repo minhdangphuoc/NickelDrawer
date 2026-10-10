@@ -507,6 +507,9 @@ func TestEveryUpdateMessageKeyExistsInBothLocales(t *testing.T) {
 		"update.checking", "update.applied_reboot", "update.mod_busy", "update.bad_mod", "update.mod_stage_failed",
 		"update.already_running", "update.no_rollback", "update.rolled_back", "update.running",
 		"update.interrupted", "update.failed", "update.status_never", "update.status_version",
+		"update.no_network", "update.rate_limited", "update.last_up_to_date", "update.last_available",
+		"update.last_failed", "update.reason_no_network", "update.reason_unreachable", "update.reason_rate_limited",
+		"update.reason_bad_signature", "update.reason_no_release_on_channel",
 	}
 	for _, locale := range []string{"en", "vi"} {
 		catalog, err := i18n.LoadCatalog(filepath.Join("..", "..", "host", "locales", locale+".json"))

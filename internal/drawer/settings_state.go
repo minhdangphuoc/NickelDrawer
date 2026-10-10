@@ -65,20 +65,34 @@ func (c Config) updateRepo() string {
 	return config.Repo
 }
 
-// updateMessage shows the last run when it is news: running, failed, or an install that
-// needs a restart. A plain "up to date" needs no line of its own.
+// updateMessage is the one status line of the Updates section: the run in progress, else the
+// newer of the last install result and the last check outcome. Both stay until the next run.
 func (c Config) updateMessage(status update.Status, hasStatus bool) string {
-	if !hasStatus {
-		return ""
+	if hasStatus && status.State == update.StateRunning {
+		return status.Report.Render(c.Bundle)
 	}
+	check, hasCheck := update.ReadLastCheck(c.updateLayout())
+	isInstallNews := hasStatus && status.Job != update.JobCheck && isInstallResult(status)
+	if isInstallNews && (!hasCheck || status.Time > check.Time) {
+		return status.Report.Render(c.Bundle)
+	}
+	if hasCheck {
+		return check.Describe(c.Bundle, c.Version)
+	}
+	return ""
+}
+
+// isInstallResult is true for the outcomes worth showing: a failure, an install (which may
+// ask for a restart) or a rollback. A plain "up to date" from an install run is not news.
+func isInstallResult(status update.Status) bool {
 	switch {
-	case status.State == update.StateRunning, status.State == update.StateFailed:
+	case status.State == update.StateFailed:
+		return true
 	case status.Report.Key == "update.applied", status.Report.Key == "update.applied_reboot",
 		status.Report.Key == "update.rolled_back":
-	default:
-		return ""
+		return true
 	}
-	return status.Report.Render(c.Bundle)
+	return false
 }
 
 func (c Config) addProjectState(state map[string]any) {

@@ -721,7 +721,7 @@ tools/install-to-kobo.sh              # install
 <p>Tap <strong>⚙</strong> in the header of the drawer to open <strong>NickelDrawer settings</strong>. It has four parts:</p>
 <ul>
 <li><strong>Hidden apps</strong>: a switch for every app that is hidden by default (today: <strong>UI Kit</strong>). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.</li>
-<li><strong>Updates</strong>: the installed <strong>Version</strong>, the <strong>New version</strong> (only after a check found one) and the <strong>Source</strong> (the GitHub repository). Buttons <strong>Check</strong> and <strong>Update to <version></strong>.</li>
+<li><strong>Updates</strong>: the installed <strong>Version</strong>, the <strong>New version</strong> (only after a check found one) and the <strong>Source</strong> (the GitHub repository). Buttons <strong>Check</strong> and <strong>Update to <version></strong>, and a status line for the last check or install.</li>
 <li><strong>Debug</strong>: <strong>Write debug log</strong> (see "Send a useful bug report" below). It takes effect after a restart.</li>
 <li><strong>About</strong>: your firmware with ✓ when NickelDrawer supports it or <strong>!</strong> when it does not, and <strong>About the project</strong> (version, a QR code to open the project page on your phone, maintainer, license, credits).</li>
 </ul>
@@ -729,9 +729,9 @@ tools/install-to-kobo.sh              # install
 <p>Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open <code>.adds/koboapps/data/update.json</code> over USB and change <code>"repo"</code> to <code>owner/name</code> (an empty <code>"repo"</code> turns updates off and the Source reads <strong>Off</strong>). The installer never overwrites that file, but it fills in the default when <code>"repo"</code> is empty.</p>
 <ol>
 <li>Open <strong>More</strong> → <strong>Apps</strong> → <strong>⚙</strong>.</li>
-<li>In <strong>Updates</strong>, tap <strong>Check</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the gear gets a black dot, the <strong>New version</strong> row appears with a dot, and the big button reads <strong>Update to <version></strong>.</li>
-<li>Tap <strong>Update to <version></strong>, then <strong>Update</strong> to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.</li>
-<li>If the result says "Restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
+<li>In <strong>Updates</strong>, tap <strong>Check</strong>. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and <strong>Check</strong> is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked at 17:02 · You are on the latest version (1.0.0-beta.1)", "Checked at 17:02 · New version 1.0.0-beta.2 available", or "Could not check at 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the <strong>New version</strong> row appears with a dot, and the big button reads <strong>Update to <version></strong>.</li>
+<li>Tap <strong>Update to <version></strong>, then <strong>Update</strong> to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.</li>
+<li>If the result says "restart the Kobo to finish", restart it (<strong>Tweaks</strong> → <strong>Reboot</strong>).</li>
 </ol>
 <h3 id="what-a-restart-does-after-an-update">What a restart does after an update</h3>
 <p>When a release changes the Kobo mod, the update puts the new mod in <code>.kobo/KoboRoot.tgz</code>. The Kobo installs it during the next restart, the same way as the first install. Apps and the host tool are already updated before the restart.</p>

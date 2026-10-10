@@ -17,6 +17,10 @@ const (
 	StateFailed  = "failed"
 )
 
+// JobCheck tags a status written by `update check`. Statuses of apply and rollback carry no
+// job, so files written before the tag existed still mean "an install".
+const JobCheck = "check"
+
 // Report is a localized result: a message key and its parameters.
 type Report struct {
 	Key    string            `json:"key"`
@@ -35,6 +39,7 @@ func (r Report) Render(bundle *i18n.Bundle) string {
 // Status is what `appsctl update status` shows: the last apply or rollback.
 type Status struct {
 	State  string `json:"state"`
+	Job    string `json:"job,omitempty"`
 	PID    int    `json:"pid,omitempty"`
 	Time   string `json:"time"`
 	Report Report `json:"report"`
@@ -54,7 +59,7 @@ func ReadStatus(layout Layout) (status Status, ok bool, err error) {
 		return Status{}, false, err
 	}
 	if status.State == StateRunning && !isProcessAlive(status.PID) {
-		status = Status{State: StateFailed, Time: status.Time, Report: report("update.interrupted")}
+		status = Status{State: StateFailed, Job: status.Job, Time: status.Time, Report: report("update.interrupted")}
 	}
 	return status, true, nil
 }

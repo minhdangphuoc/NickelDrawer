@@ -497,7 +497,7 @@ NickelDrawer can update its apps, its host tool and its Kobo mod over Wi-Fi. It 
 Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It has four parts:
 
 - **Hidden apps**: a switch for every app that is hidden by default (today: **UI Kit**). Turn it on and the app appears in the drawer when you go back; turn it off to hide it again. Nothing to edit over USB, and the choice survives updates.
-- **Updates**: the installed **Version**, the **New version** (only after a check found one) and the **Source** (the GitHub repository). Buttons **Check** and **Update to <version>**.
+- **Updates**: the installed **Version**, the **New version** (only after a check found one) and the **Source** (the GitHub repository). Buttons **Check** and **Update to <version>**, and a status line for the last check or install.
 - **Debug**: **Write debug log** (see "Send a useful bug report" below). It takes effect after a restart.
 - **About**: your firmware with ✓ when NickelDrawer supports it or **!** when it does not, and **About the project** (version, a QR code to open the project page on your phone, maintainer, license, credits).
 
@@ -506,9 +506,9 @@ Tap **⚙** in the header of the drawer to open **NickelDrawer settings**. It ha
 Updates come from the project's GitHub repository by default; the installer sets this up. If you want a different repository, open `.adds/koboapps/data/update.json` over USB and change `"repo"` to `owner/name` (an empty `"repo"` turns updates off and the Source reads **Off**). The installer never overwrites that file, but it fills in the default when `"repo"` is empty.
 
 1. Open **More** → **Apps** → **⚙**.
-2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. If there is a newer release, the gear gets a black dot, the **New version** row appears with a dot, and the big button reads **Update to <version>**.
-3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Updating..." and then the result.
-4. If the result says "Restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
+2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and **Check** is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked at 17:02 · You are on the latest version (1.0.0-beta.1)", "Checked at 17:02 · New version 1.0.0-beta.2 available", or "Could not check at 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the **New version** row appears with a dot, and the big button reads **Update to <version>**.
+3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.
+4. If the result says "restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
 
 ### What a restart does after an update
 

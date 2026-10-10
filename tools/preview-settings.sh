@@ -22,8 +22,8 @@ cat >"$SCREEN_DIR/app.json" <<'JSON'
 JSON
 
 render() {
-    locale=$1 screen=$2 page=$3 name=$4
-    go run ./cmd/ndpreview render "$SCREEN_DIR" --locale "$locale" --state "tools/preview/settings-state-$locale.json" \
+    locale=$1 screen=$2 page=$3 name=$4 state=${5:-$1}
+    go run ./cmd/ndpreview render "$SCREEN_DIR" --locale "$locale" --state "tools/preview/settings-state-$state.json" \
         --screen "$screen" --page "$page" --font "$FONT" --out "$OUT/$name.png"
 }
 
@@ -33,3 +33,7 @@ render vi about 1 settings-about-vi
 render vi about 2 settings-about-vi-p2
 render en main 1 settings-main-en
 render en about 1 settings-about-en
+# What the Updates section says after a check, while one runs, and when one fails.
+render vi main 1 settings-uptodate-vi vi-uptodate
+render vi main 1 settings-checking-vi vi-checking
+render vi main 1 settings-failed-vi vi-failed

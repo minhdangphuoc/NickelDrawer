@@ -3,8 +3,10 @@ package update
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -126,6 +128,9 @@ func (client *githubClient) get(ctx context.Context, url string, limit int64) ([
 		return nil, 0, err
 	}
 	defer response.Body.Close()
+	if isRateLimited(response) {
+		return nil, 0, i18n.NewError("update.rate_limited")
+	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, limit+1))
 	if err != nil {
 		return nil, 0, i18n.NewError("update.network").WithCause(err)
@@ -174,7 +179,27 @@ func (client *githubClient) open(ctx context.Context, url string) (*http.Respons
 	request.Header.Set("User-Agent", "nickeldrawer-update")
 	response, err := client.http.Do(request)
 	if err != nil {
-		return nil, i18n.NewError("update.network").WithCause(err)
+		return nil, transportError(err)
 	}
 	return response, nil
+}
+
+// transportError tells "no connection at all" (Wi-Fi off, DNS gone) from a server that does
+// not answer, so the settings screen can say which one to fix.
+func transportError(err error) error {
+	var dnsErr *net.DNSError
+	var opErr *net.OpError
+	isOffline := errors.As(err, &dnsErr) || (errors.As(err, &opErr) && opErr.Op == "dial" && !opErr.Timeout())
+	if isOffline {
+		return i18n.NewError("update.no_network").WithCause(err)
+	}
+	return i18n.NewError("update.network").WithCause(err)
+}
+
+// isRateLimited recognises GitHub's two ways to say "too many requests".
+func isRateLimited(response *http.Response) bool {
+	if response.StatusCode == http.StatusTooManyRequests {
+		return true
+	}
+	return response.StatusCode == http.StatusForbidden && response.Header.Get("X-RateLimit-Remaining") == "0"
 }

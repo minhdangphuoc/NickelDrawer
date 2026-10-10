@@ -43,8 +43,8 @@
             ["@ui.source", "$source"]
           ]
         },
+        { "notice": "$message" },
         { "notice": "$notes", "title": "@ui.notes_title" },
-        { "text": "$message", "style": "caption" },
         { "section": "@ui.sec_debug" },
         { "toggle": "@ui.debug", "bind": "debug" },
         { "text": "@ui.debug_hint", "style": "caption" },

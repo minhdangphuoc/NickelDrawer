@@ -62,7 +62,10 @@ func (updater *Updater) Check(ctx context.Context) (result Report, err error) {
 	if err != nil {
 		return Report{}, err
 	}
-	defer func() { updater.finishCheck(previous, hadPrevious, result, err) }()
+	defer func() {
+		updater.recordCheck(result, err)
+		updater.finishCheck(previous, hadPrevious, result, err)
+	}()
 	signed, err := updater.fetchSignedManifest(ctx)
 	if err != nil {
 		return Report{}, err
@@ -430,18 +433,20 @@ func (updater *Updater) beginCheck() (previous Status, hadPrevious bool, err err
 	if err == nil && hadPrevious && previous.State == StateRunning && previous.PID != os.Getpid() {
 		return Status{}, false, i18n.NewError("update.already_running")
 	}
-	return previous, hadPrevious, writeStatus(updater.layout, Status{State: StateRunning, PID: os.Getpid(), Report: report("update.checking")})
+	return previous, hadPrevious, writeStatus(updater.layout, Status{State: StateRunning, Job: JobCheck, PID: os.Getpid(), Report: report("update.checking")})
 }
 
-// finishCheck records a failed check. A successful one restores the earlier status, so
-// "Updated to 1.1.0, restart to finish" is not replaced by "up to date" before the reboot.
+// finishCheck puts the earlier status back, so "Updated to 1.1.0, restart to finish" is not
+// replaced by the outcome of a check (that is in last-check.json). Without an earlier status
+// the check's own outcome becomes the status, tagged so the settings screen skips it.
 func (updater *Updater) finishCheck(previous Status, hadPrevious bool, result Report, err error) {
 	status := previous
 	switch {
+	case hadPrevious:
 	case err != nil:
-		status = Status{State: StateFailed, Report: reportOfError(err)}
-	case !hadPrevious:
-		status = Status{State: StateDone, Report: result}
+		status = Status{State: StateFailed, Job: JobCheck, Report: reportOfError(err)}
+	default:
+		status = Status{State: StateDone, Job: JobCheck, Report: result}
 	}
 	if writeErr := writeStatus(updater.layout, status); writeErr != nil {
 		fmt.Fprintln(os.Stderr, "warning: cannot write update status:", writeErr)

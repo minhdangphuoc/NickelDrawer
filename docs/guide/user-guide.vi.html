@@ -723,7 +723,7 @@ tools/install-to-kobo.sh              # cài
 <p>Bấm <strong>⚙</strong> ở thanh tiêu đề của Ngăn để mở <strong>Cài đặt NickelDrawer</strong>. Màn hình có bốn phần:</p>
 <ul>
 <li><strong>Ứng dụng ẩn</strong>: một công tắc cho mỗi ứng dụng bị ẩn mặc định (hiện nay: <strong>Bộ giao diện</strong>). Bật thì ứng dụng hiện trong Ngăn khi bạn quay lại; tắt để ẩn lại. Không phải sửa tệp nào qua USB, và lựa chọn được giữ khi cập nhật.</li>
-<li><strong>Cập nhật</strong>: <strong>Phiên bản</strong> đang dùng, <strong>Bản mới</strong> (chỉ hiện sau khi kiểm tra thấy bản mới) và <strong>Nguồn</strong> (repo GitHub). Hai nút <strong>Kiểm tra</strong> và <strong>Cập nhật lên <phiên bản></strong>.</li>
+<li><strong>Cập nhật</strong>: <strong>Phiên bản</strong> đang dùng, <strong>Bản mới</strong> (chỉ hiện sau khi kiểm tra thấy bản mới) và <strong>Nguồn</strong> (repo GitHub). Hai nút <strong>Kiểm tra</strong> và <strong>Cập nhật lên <phiên bản></strong>, và một dòng trạng thái cho lần kiểm tra hoặc cài gần nhất.</li>
 <li><strong>Gỡ lỗi</strong>: <strong>Ghi nhật ký gỡ lỗi</strong> (xem "Gửi báo lỗi có ích" bên dưới). Có hiệu lực sau khi khởi động lại.</li>
 <li><strong>Thông tin</strong>: firmware của bạn, kèm ✓ nếu NickelDrawer hỗ trợ hoặc <strong>!</strong> nếu chưa, và <strong>Giới thiệu dự án</strong> (phiên bản, mã QR để mở trang dự án trên điện thoại, người bảo trì, giấy phép, ghi nhận).</li>
 </ul>
@@ -731,9 +731,9 @@ tools/install-to-kobo.sh              # cài
 <p>Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình cài đặt đã thiết lập sẵn. Muốn dùng repo khác, mở <code>.adds/koboapps/data/update.json</code> qua USB và đổi <code>"repo"</code> thành <code>owner/name</code> (<code>"repo"</code> rỗng nghĩa là tắt cập nhật, và mục Nguồn ghi <strong>Tắt</strong>). Trình cài đặt không bao giờ ghi đè tệp này, nhưng sẽ điền repo mặc định nếu <code>"repo"</code> đang rỗng.</p>
 <ol>
 <li>Mở <strong>Thêm</strong> → <strong>Ứng dụng</strong> → <strong>⚙</strong>.</li>
-<li>Ở phần <strong>Cập nhật</strong>, bấm <strong>Kiểm tra</strong>. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Nếu có bản mới hơn, bánh răng có chấm đen, hàng <strong>Bản mới</strong> hiện kèm chấm, và nút lớn ghi <strong>Cập nhật lên <phiên bản></strong>.</li>
-<li>Bấm <strong>Cập nhật lên <phiên bản></strong>, rồi <strong>Cập nhật</strong> để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình hiện "Đang cập nhật..." rồi kết quả.</li>
-<li>Nếu kết quả có câu "Hãy khởi động lại Kobo để hoàn tất.", hãy khởi động lại (<strong>Tinh chỉnh</strong> → <strong>Khởi động lại</strong>).</li>
+<li>Ở phần <strong>Cập nhật</strong>, bấm <strong>Kiểm tra</strong>. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút <strong>Kiểm tra</strong> mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra lúc 17:02 · Bạn đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra lúc 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được lúc 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng <strong>Bản mới</strong> hiện kèm chấm, và nút lớn ghi <strong>Cập nhật lên <phiên bản></strong>.</li>
+<li>Bấm <strong>Cập nhật lên <phiên bản></strong>, rồi <strong>Cập nhật</strong> để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.</li>
+<li>Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (<strong>Tinh chỉnh</strong> → <strong>Khởi động lại</strong>).</li>
 </ol>
 <h3 id="khoi-ong-lai-sau-cap-nhat-lam-gi">Khởi động lại sau cập nhật làm gì</h3>
 <p>Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới vào <code>.kobo/KoboRoot.tgz</code>. Kobo cài nó trong lần khởi động lại kế tiếp, giống hệt lần cài đầu. Ứng dụng và công cụ chủ đã được cập nhật xong trước khi khởi động lại.</p>

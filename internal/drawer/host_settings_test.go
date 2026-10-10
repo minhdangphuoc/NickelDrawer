@@ -202,7 +202,7 @@ func TestButtonsWaitWhileARunIsActive(t *testing.T) {
 	}
 	var message string
 	for _, component := range reply.Body {
-		if component.Type == "text" && strings.Contains(component.Text, "Updating") {
+		if component.Type == "notice" && strings.Contains(component.Text, "Downloading and installing") {
 			message = component.Text
 		}
 	}
