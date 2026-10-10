@@ -4,36 +4,34 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
-### Changed
+## [1.0.0-beta.1] - unreleased
 
-- Apps answer only through the NickelDrawer API: script text never becomes a dialog (toasts and `set` signals only). LocalSend, Library and GitHub sync follow Wallpaper.
-- NickelMenu items are no longer generated (`gen-menu`, `refresh`, `errors` removed). The installer removes the old generated file and switches the NickelMenu tab off.
-
-### Added
-
-- `appsctl drawer tweaks` and `drawer tweak <id>`: backend of the native "Tinh chỉnh" modal ([docs/spec/tweaks.md](docs/spec/tweaks.md)).
-
-## [0.1.0] - unreleased
+First public beta. Tested on one Libra 2 running 4.38.23828; the other four supported builds are checked statically (symbols) only.
 
 ### Added
 
-- App folders with a manifest (`app.json`), per-app locales and a NickelMenu generator; `appsctl validate`, `gen-menu`, `refresh`, `errors`, `msg`.
-- Included apps: LocalSend (receive files from a phone), GitHub sync (pairing from the phone), Wallpaper (your pictures as the sleep screen).
-- Inbox router that sorts received files into Books, Documents, Comics and Pictures.
-- Signed over-the-air updates from GitHub Releases (ed25519), with backup, self-check and rollback; `ndrelease` for maintainers.
-- `ui.json` format, validator, UI kit component registry and JSON schema; `ndpreview` to preview and render screens on a computer.
-- Native drawer host (`libnickeldrawer`) and `appsctl drawer` API, build only; native app screens from `ui.json` behind a flag.
-- `appsctl new` to scaffold an app (optionally with a `ui.json`), and the guide in `docs/APPS.md`.
-- Test mod toolchain and install/uninstall drill (gate G1 passed on a Libra 2 running 4.38.23828).
-- CI for firmware symbol checks and a firmware watcher.
+- **Native drawer** (`libnickeldrawer`, a NickelHook mod): an Apps row in the More tab that opens a list or grid of apps, with Nickel's own fonts, icons, dialogs, header and press feedback. Failsafe (the mod removes itself if Nickel crashes right after boot), an `uninstall` flag, a `disable` kill switch and a firmware check that turns the drawer off on an unknown build or a missing symbol.
+- **Tweaks** (Tinh chỉnh in Vietnamese): a settings-style modal in the More tab for sleep screen, screenshots, auto USB connect, text legibility, IP address, reboot and library rescan ([docs/spec/tweaks.md](docs/spec/tweaks.md)).
+- **UI kit**: `ui.json` screens (lists, toggles, buttons, fields, QR codes, live status, paged lists), validator, JSON schema, nested screens with a native back stack, and `ndpreview` to preview and render screens on a computer.
+- **Apps**, all using only the NickelDrawer API (toasts, confirmations and state signals, never raw script output):
+  - LocalSend: receive files from a phone; the inbox router sorts them into Books, Documents, Comics and Pictures.
+  - GitHub sync: add-only book sync from a private repo, paired from your phone (token never typed on the Kobo).
+  - Wallpaper: a phone-style gallery with a full-screen viewer for your sleep screen pictures; tells you which Nickel setting to enable.
+  - Library: dedupe, language tags and Unicode normalisation.
+- **Developer kit**: `appsctl new` scaffolds an app, `appsctl validate` checks manifests, locales and `ui.json`; guide in [docs/APPS.md](docs/APPS.md), examples in [examples/](examples/README.md).
+- **Signed over-the-air updates** from GitHub Releases (ed25519) with backup, self-check and rollback; `ndrelease` for maintainers. Pre-release versions such as `1.0.0-beta.1` are supported and sort before the final release; only the `beta` channel installs them.
+- **Languages**: English source and Vietnamese, chosen from the device language; a new language is one JSON file ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
+- **CI**: gofmt, vet and tests; installer test against a fake Kobo tree; app validation; mod build, host unit tests and static checks (bridge symbols against the five supported libnickel builds, ARM hard-float, no C++ standard library, vtable typeinfo); weekly firmware watcher. Tags build the unsigned release inputs.
+- Icons come from Nickel's own resources, with [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT) as the fallback.
 
 ### Changed
 
-- NickelMenu stays short (Apps · Refresh list and friends) until the native drawer ships.
-- Wallpaper reads pictures only from `Pictures`.
+- NickelMenu items are no longer generated; the installer removes the old generated file and switches the NickelMenu tab off. NickelMenu stays optional.
 - Mods are built with RTTI so Nickel's `dynamic_cast` cannot crash.
+- Wallpaper reads pictures only from `Pictures` and imports them on first open.
 
 ### Known limits
 
-- The native drawer is not yet validated on a device (gate G2); menu apps are.
-- Firmware 5.x is not supported.
+- Firmware 5.x is not supported; other Kobo models are untested.
+- App screens (`ui.json`) open only when `.adds/nickeldrawer/screens` exists.
+- Right-to-left languages are not supported yet.

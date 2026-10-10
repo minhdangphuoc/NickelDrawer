@@ -19,3 +19,21 @@ Only the outline SVGs we use are vendored in `tabler-icons/svg/`: `adjustments-h
 |---|---|---|---|
 | `github.com/srwiley/oksvg` | https://github.com/srwiley/oksvg | BSD-3-Clause | `cmd/iconsgen` (SVG parsing) |
 | `github.com/srwiley/rasterx` | https://github.com/srwiley/rasterx | BSD-3-Clause | `cmd/iconsgen` (rasterizing) |
+
+## Go modules compiled into the binaries we ship
+
+| Module | License | Shipped in |
+|---|---|---|
+| `golang.org/x/text` | BSD-3-Clause | `appsctl`, `library` |
+| `golang.org/x/crypto/x509roots/fallback` (Mozilla CA roots, so TLS works without a system bundle) | BSD-3-Clause; the root list is MPL-2.0 data | `appsctl`, `ghsync` |
+| Dependencies of `localgo/` (see `localgo/go.mod`: cobra, uuid, yaml.v3, charmbracelet and others) | MIT, BSD, Apache-2.0 (each module's own license) | `localgo` binary of the LocalSend app |
+
+Exact versions are in `go.mod` / `go.sum` and `third_party/localgo/go.sum`.
+
+## Build toolchain (not vendored, not shipped)
+
+| Tool | Upstream | License | Used for |
+|---|---|---|---|
+| NickelTC image `ghcr.io/pgaskin/nickeltc` (pinned by digest in `mod/drawer/Makefile`) | https://github.com/pgaskin/NickelTC | MIT | Cross-compiling the native drawer |
+
+The NickelTC sysroot contains Kobo's Qt build; it stays inside the container and is never copied into the repository or a release.

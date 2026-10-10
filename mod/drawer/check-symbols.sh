@@ -24,6 +24,8 @@ mangled_cache="${NICKELDRAWER_CACHE:-$HOME/.cache/nickeldrawer}/symbols"
 nickeltc_image="ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840"
 allowed_needed="libdl.so.2 libQt5Widgets.so.5 libQt5Gui.so.5 libQt5Core.so.5 libstdc++.so.6 libgcc_s.so.1 libpthread.so.0 libc.so.6 ld-linux-armhf.so.3"
 expected_firmware_count=5
+# CI sets CXXFILT=llvm-cxxfilt-NN so names demangle exactly as in re/symbols/<fw>/exports.txt.
+cxxfilt=${CXXFILT:-c++filt}
 
 failures=0
 fail() {
@@ -54,7 +56,7 @@ check_firmware_exports() {
 		firmware_count=$((firmware_count + 1))
 		mangled_dump="$mangled_cache/$firmware/exports-mangled.txt"
 		for symbol in $symbols; do
-			demangled=$(echo "$symbol" | c++filt)
+			demangled=$(echo "$symbol" | "$cxxfilt")
 			grep -Fxq -- "$demangled" "$exports" || fail "$firmware: $demangled ($symbol) not exported"
 			if [ -f "$mangled_dump" ]; then
 				grep -Fxq -- "$symbol" "$mangled_dump" || fail "$firmware: $symbol missing from $mangled_dump"

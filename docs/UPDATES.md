@@ -10,7 +10,7 @@ NickelDrawer can update its own apps and host tool over Wi-Fi. An update is only
    {"repo": "owner/name", "channel": "stable"}
    ```
 
-   `channel` is `stable` (default) or `beta`. Only `beta` accepts GitHub pre-releases.
+   `channel` is `stable` (default) or `beta`. Only `beta` accepts GitHub pre-releases. Versions follow Semantic Versioning, so `1.0.0-beta.2` is newer than `1.0.0-beta.1` and older than `1.0.0`.
 2. Open the menu and tap **Apps · Check for updates**. It connects Wi-Fi and starts the update in the background (a menu command may run for under 10 seconds only).
 3. Tap **Apps · Update status** a little later to see the result.
 4. The menu is rebuilt by the update. If a new item is missing, tap **Apps · Refresh list**.

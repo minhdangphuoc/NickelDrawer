@@ -133,14 +133,19 @@ func TestCompareVersions(t *testing.T) {
 	cases := []struct {
 		a, b string
 		want int
-	}{{"1.0.0", "1.0.0", 0}, {"1.0.1", "1.0.0", 1}, {"0.9.9", "1.0.0", -1}, {"1.10.0", "1.9.0", 1}}
+	}{{"1.0.0", "1.0.0", 0}, {"1.0.1", "1.0.0", 1}, {"0.9.9", "1.0.0", -1}, {"1.10.0", "1.9.0", 1},
+		{"1.0.0-beta.1", "1.0.0", -1}, {"1.0.0", "1.0.0-rc.1", 1}, {"1.0.0-beta.2", "1.0.0-beta.1", 1},
+		{"1.0.0-beta.11", "1.0.0-beta.2", 1}, {"1.0.0-beta.1", "1.0.0-beta.1", 0}, {"1.0.0-alpha", "1.0.0-beta", -1},
+		{"1.0.0-1", "1.0.0-alpha", -1}, {"1.0.0-beta", "1.0.0-beta.1", -1}, {"0.9.9", "1.0.0-beta.1", -1}}
 	for _, c := range cases {
 		if got, err := CompareVersions(c.a, c.b); err != nil || got != c.want {
 			t.Errorf("CompareVersions(%s,%s) = %d, %v", c.a, c.b, got, err)
 		}
 	}
-	if _, err := CompareVersions("1.0", "1.0.0"); err == nil {
-		t.Error("invalid version accepted")
+	for _, invalid := range []string{"1.0", "1.0.0-", "1.0.0-beta..1", "1.0.0-01", "v1.0.0", "1.0.0+build"} {
+		if _, err := CompareVersions(invalid, "1.0.0"); err == nil {
+			t.Errorf("invalid version %q accepted", invalid)
+		}
 	}
 }
 

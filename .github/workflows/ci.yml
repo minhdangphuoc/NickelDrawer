@@ -1,10 +1,14 @@
-# CI for koboapps. No secrets, no signing (release signing stays on the maintainer's Mac).
+# CI for NickelDrawer. No secrets, no signing (release signing stays on the maintainer's Mac,
+# docs/RELEASING.md). Tags v* build the unsigned release inputs as workflow artifacts only.
+# Actions are pinned by commit SHA; the comment names the version.
 # Kobo binaries are downloaded into $RUNNER_TEMP only, reduced to text symbol dumps and deleted;
 # nothing from Kobo is uploaded as an artifact or cached. See docs/CI.md.
 name: ci
 
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
   schedule:
@@ -18,22 +22,25 @@ jobs:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: go.mod
       - name: Check, build, dist
         run: make check build dist
+      - name: Validate the bundled apps
+        run: build/appsctl-host validate --apps-dir apps
       - name: Installer test (fake Kobo tree)
         run: bash tools/test-install.sh
       - name: Symcheck tests
         run: bash tools/test-symcheck.sh
 
   symcheck:
+    name: mod build and firmware symbol check
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Install llvm
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends llvm unzip
       - name: Dump libnickel exports for the supported builds
@@ -43,6 +50,8 @@ jobs:
         run: |
           set -euo pipefail
           llvm_nm=$(command -v llvm-nm || ls /usr/bin/llvm-nm-* | head -n 1)
+          llvm_cxxfilt=$(command -v llvm-cxxfilt || ls /usr/bin/llvm-cxxfilt-* | head -n 1)
+          echo "LLVM_CXXFILT=$llvm_cxxfilt" >>"$GITHUB_ENV"
           mkdir -p "$WORK_DIR" "$DUMP_DIR"
           # columns: version month url zip_size zip_sha256 libnickel_sha256 build_id verified
           grep -v '^#' re/firmware.lock | grep -v '^version' | while IFS=$'\t' read -r version month url size zip_sha libnickel_sha build_id verified; do
@@ -55,20 +64,65 @@ jobs:
             echo "$libnickel_sha  $nickel" | sha256sum -c -
             mkdir -p "$DUMP_DIR/$version"
             "$llvm_nm" -D --defined-only --format=just-symbols "$nickel" | LC_ALL=C sort -u >"$DUMP_DIR/$version/exports-mangled.txt"
+            # The demangled list (symbol names only, gitignored) is what mod/drawer/check-symbols.sh reads.
+            mkdir -p "re/symbols/$version"
+            "$llvm_cxxfilt" <"$DUMP_DIR/$version/exports-mangled.txt" | LC_ALL=C sort >"re/symbols/$version/exports.txt"
             rm -rf "$WORK_DIR/$version" "$zip_file"
           done
           rm -rf "$WORK_DIR"
       - name: Symcheck
         run: python3 -I tools/symcheck.py --fw-dir "${{ runner.temp }}/kobo-symbols" --no-regenerate
+      - name: Build the drawer mod (pinned NickelTC image)
+        run: make -C mod/drawer docker-build
+      - name: Mod host unit tests
+        run: make -C mod/drawer docker-test
+      - name: Mod static checks (bridge symbols x 5 builds, ARM, no STL, vtable typeinfo)
+        env:
+          CXXFILT: ${{ env.LLVM_CXXFILT }}
+        run: bash mod/drawer/check-symbols.sh
       - name: Delete dumps
         if: always()
-        run: rm -rf "${{ runner.temp }}/kobo-symbols" "${{ runner.temp }}/kobo-fw"
+        run: rm -rf "${{ runner.temp }}/kobo-symbols" "${{ runner.temp }}/kobo-fw" re/symbols/*/exports.txt
+
+  release-inputs:
+    name: unsigned release inputs (tags only)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, symcheck]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: go.mod
+      - name: Read the version from the tag
+        run: |
+          set -euo pipefail
+          version=${GITHUB_REF_NAME#v}
+          echo "$version" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$' ||
+            { echo "tag $GITHUB_REF_NAME is not vMAJOR.MINOR.PATCH[-prerelease]" >&2; exit 1; }
+          echo "RELEASE_VERSION=$version" >>"$GITHUB_ENV"
+      - name: Build apps and host tree
+        run: make check build dist VERSION="$RELEASE_VERSION"
+      - name: Build the drawer mod
+        run: make -C mod/drawer docker-build
+      - name: Collect unsigned files
+        run: |
+          set -euo pipefail
+          mkdir -p release-inputs
+          cp "dist/koboapps-$RELEASE_VERSION.zip" release-inputs/
+          cp build/mod/KoboRoot-nickeldrawer.tgz release-inputs/
+          (cd release-inputs && sha256sum -- * >../SHA256SUMS.txt) && mv SHA256SUMS.txt release-inputs/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-inputs-${{ env.RELEASE_VERSION }}
+          path: release-inputs/
+          if-no-files-found: error
 
   firmware-watch:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Look for a new Libra 2 firmware
         run: |
           set +e

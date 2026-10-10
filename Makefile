@@ -1,6 +1,6 @@
 # koboapps build and packaging. `make check build dist` before tools/install-to-kobo.sh.
 # `make release VERSION=x.y.z` additionally signs dist/ (maintainer only, see docs/UPDATES.md).
-VERSION ?= 0.1.0
+VERSION ?= 1.0.0-beta.1
 ARM_ENV = CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7
 GO_BUILD = go build -trimpath -ldflags='-s -w'
 APPSCTL_LDFLAGS = -s -w -X main.version=$(VERSION)

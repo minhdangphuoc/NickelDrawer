@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	semverPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$`)
+	semverPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?$`)
 	appIDPattern  = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,30}$`)
 	sha256Pattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 	modePattern   = regexp.MustCompile(`^0[0-7]{3}$`)
@@ -180,13 +180,15 @@ func contains(list []string, item string) bool {
 	return false
 }
 
-// ValidVersion reports whether text is MAJOR.MINOR.PATCH.
+// ValidVersion reports whether text is MAJOR.MINOR.PATCH with an optional -prerelease
+// (for example 1.0.0-beta.1).
 func ValidVersion(text string) bool {
 	_, err := parseVersion(text)
 	return err == nil
 }
 
-// CompareVersions returns -1, 0 or 1 as a is older than, equal to or newer than b.
+// CompareVersions returns -1, 0 or 1 as a is older than, equal to or newer than b, using
+// Semantic Versioning precedence: a pre-release is older than its release (1.0.0-beta.1 < 1.0.0).
 func CompareVersions(a, b string) (int, error) {
 	left, err := parseVersion(a)
 	if err != nil {
@@ -196,29 +198,82 @@ func CompareVersions(a, b string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	for i := range left {
-		if left[i] != right[i] {
-			if left[i] < right[i] {
-				return -1, nil
-			}
-			return 1, nil
+	for i := range left.numbers {
+		if left.numbers[i] != right.numbers[i] {
+			return compareNumbers(left.numbers[i], right.numbers[i]), nil
 		}
 	}
-	return 0, nil
+	return comparePrerelease(left.prerelease, right.prerelease), nil
 }
 
-func parseVersion(text string) ([3]uint64, error) {
-	var parts [3]uint64
+type version struct {
+	numbers    [3]uint64
+	prerelease []string
+}
+
+func compareNumbers(a, b uint64) int {
+	if a < b {
+		return -1
+	}
+	return 1
+}
+
+// comparePrerelease follows semver section 11: no pre-release is newest; numeric identifiers
+// compare as numbers and sort below alphanumeric ones; a longer list wins when all else ties.
+func comparePrerelease(a, b []string) int {
+	switch {
+	case len(a) == 0 && len(b) == 0:
+		return 0
+	case len(a) == 0:
+		return 1
+	case len(b) == 0:
+		return -1
+	}
+	for i := 0; i < len(a) && i < len(b); i++ {
+		if order := compareIdentifier(a[i], b[i]); order != 0 {
+			return order
+		}
+	}
+	if len(a) == len(b) {
+		return 0
+	}
+	return compareNumbers(uint64(len(a)), uint64(len(b)))
+}
+
+func compareIdentifier(a, b string) int {
+	if a == b {
+		return 0
+	}
+	left, errLeft := strconv.ParseUint(a, 10, 64)
+	right, errRight := strconv.ParseUint(b, 10, 64)
+	switch {
+	case errLeft == nil && errRight == nil:
+		return compareNumbers(left, right)
+	case errLeft == nil:
+		return -1
+	case errRight == nil:
+		return 1
+	case a < b:
+		return -1
+	}
+	return 1
+}
+
+func parseVersion(text string) (version, error) {
+	var parsed version
 	match := semverPattern.FindStringSubmatch(text)
 	if match == nil {
-		return parts, fmt.Errorf("version %q must look like MAJOR.MINOR.PATCH", text)
+		return parsed, fmt.Errorf("version %q must look like MAJOR.MINOR.PATCH, optionally -prerelease (1.0.0-beta.1)", text)
 	}
-	for i := range parts {
+	for i := range parsed.numbers {
 		number, err := strconv.ParseUint(match[i+1], 10, 32)
 		if err != nil {
-			return parts, fmt.Errorf("version %q has a number that is too large: %w", text, err)
+			return parsed, fmt.Errorf("version %q has a number that is too large: %w", text, err)
 		}
-		parts[i] = number
+		parsed.numbers[i] = number
 	}
-	return parts, nil
+	if match[4] != "" {
+		parsed.prerelease = strings.Split(match[4], ".")
+	}
+	return parsed, nil
 }

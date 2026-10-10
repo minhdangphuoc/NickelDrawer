@@ -26,7 +26,7 @@ func runSign(args []string, stdout, stderr io.Writer) int {
 	flags.SetOutput(stderr)
 	var options signOptions
 	flags.StringVar(&options.distRoot, "dist", "dist/onboard", "dist tree that mirrors the Kobo onboard root")
-	flags.StringVar(&options.version, "version", "", "release version MAJOR.MINOR.PATCH (required)")
+	flags.StringVar(&options.version, "version", "", "release version MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-prerelease (required)")
 	flags.StringVar(&options.outDir, "out", "dist/release", "output folder")
 	flags.StringVar(&options.keyPath, "key", defaultPrivateKeyPath(), "private key file")
 	flags.StringVar(&options.publicPath, "pub", defaultPublicKey, "public key that appsctl embeds; the private key must match it")
@@ -43,7 +43,7 @@ func runSign(args []string, stdout, stderr io.Writer) int {
 
 func sign(options signOptions) error {
 	if !release.ValidVersion(options.version) {
-		return fmt.Errorf("--version %q must look like MAJOR.MINOR.PATCH", options.version)
+		return fmt.Errorf("--version %q must look like MAJOR.MINOR.PATCH or 1.0.0-beta.1", options.version)
 	}
 	privateKey, err := loadPrivateKey(options.keyPath)
 	if err != nil {
