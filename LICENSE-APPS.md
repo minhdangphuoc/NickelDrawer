@@ -1,6 +1,6 @@
 # App developer exception
 
-NickelDrawer is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). This file is an additional permission from the NickelDrawer authors (the licensor). It widens what you may do; it never narrows the main license. It does not apply to the apps in this repository's `apps/` folder, which stay under the main license.
+NickelDrawer is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). This file is an additional permission from Minh Dang, the licensor of NickelDrawer. It widens what you may do; it never narrows the main license. It does not apply to the apps in this repository's `apps/` folder, which stay under the main license.
 
 ## 1. Your app is yours
 
