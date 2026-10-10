@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Shared by the wallpaper action scripts. Source it; do not execute.
 # Fast commands run in the foreground; picture conversion can take longer than NickelMenu's
 # 10 s limit on the Kobo's CPU, so it runs detached and Status shows the result.

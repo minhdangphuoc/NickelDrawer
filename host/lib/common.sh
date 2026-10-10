@@ -1,3 +1,5 @@
+# shellcheck shell=sh
+# shellcheck disable=SC2034  # variables used by the scripts that source this file
 # Shared helpers for koboapps app scripts. Source it; do not execute.
 # Installed on the Kobo at /mnt/onboard/.adds/koboapps/lib/common.sh
 

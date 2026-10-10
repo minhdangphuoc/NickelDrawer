@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Staging of a NickelHook mod archive as .kobo/KoboRoot.tgz. Sourced by tools/device-session.sh and
 # tools/install-to-kobo.sh so the safety check lives in one place. The caller defines
 # fail() and STAGED_TGZ (<kobo>/.kobo/KoboRoot.tgz).

@@ -9,7 +9,7 @@ DIST_ONBOARD = dist/onboard
 HOST_DIR = $(DIST_ONBOARD)/.adds/koboapps
 APPS_DIR = $(DIST_ONBOARD)/.adds/apps
 
-.PHONY: check build dist release sync-embedded schema golden-test shellcheck clean
+.PHONY: check build dist release sync-embedded schema golden-test shellcheck shellcheck-docker clean
 
 # go:embed cannot reach outside a package folder, so two source files are mirrored into the
 # packages that embed them; tests fail if a mirror is stale. cmp first keeps mtimes stable.
@@ -39,8 +39,12 @@ shellcheck:
 	@if command -v shellcheck >/dev/null 2>&1; then \
 		shellcheck -x -S warning $(SHELL_SOURCES) && echo "shellcheck: ok"; \
 	else \
-		echo "shellcheck not installed: skipped (brew install shellcheck)"; \
+		echo "shellcheck not installed: skipped (brew install shellcheck, or make shellcheck-docker)"; \
 	fi
+
+# The same check as CI, through the pinned image, for machines without shellcheck.
+shellcheck-docker:
+	docker run --rm -v "$$PWD":/mnt -w /mnt koalaman/shellcheck:v0.10.0 -x -S warning $(SHELL_SOURCES) && echo "shellcheck: ok"
 
 build: sync-embedded
 	mkdir -p build

@@ -1,3 +1,5 @@
+# shellcheck shell=sh
+# shellcheck disable=SC2034  # variables used by the scripts that source this file
 # Shared by the UI Kit action scripts. Source it; do not execute.
 #
 # Test overrides (all optional; the defaults are the real Kobo paths):
@@ -8,6 +10,7 @@
 #   UIKIT_APPSCTL, UIKIT_APPS_DIR  appsctl binary and the folder with the app folders
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=../../../host/lib/common.sh
 . "${UIKIT_COMMON:-/mnt/onboard/.adds/koboapps/lib/common.sh}"
 
 APP_ID=uikit

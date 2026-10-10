@@ -25,7 +25,8 @@ requireKobo() {
 }
 
 backupDeviceState() {
-    local target=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
+    local target
+    target=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
     mkdir -p "$target"
     local source
     for source in "$KOBO_ROOT/.adds/nickeldrawer" "$KOBO_ROOT/.adds/nm"; do
@@ -106,7 +107,8 @@ commandFlags() {
 commandLog() {
     local log=$FLAG_DIR/debug.log
     [ -f "$log" ] || fail "no debug.log in $FLAG_DIR (was the debug flag set and the Kobo rebooted?)"
-    local target=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
+    local target
+    target=$BACKUP_ROOT/$(date +%Y-%m-%d-%H%M%S)
     mkdir -p "$target"
     # The mod rotates a full log to debug.log.1; keep it ahead of the current one.
     if [ -f "$log.1" ]; then

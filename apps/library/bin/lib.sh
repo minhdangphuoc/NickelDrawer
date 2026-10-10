@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Shared by the library action scripts. Source it; do not execute.
 # Scanning hashes and opens many books, which can take a long time on the Kobo's CPU, so those
 # commands run detached and the screen shows the progress.

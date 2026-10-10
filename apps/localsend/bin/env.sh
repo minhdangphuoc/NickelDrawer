@@ -1,3 +1,5 @@
+# shellcheck shell=sh
+# shellcheck disable=SC2034  # variables used by the scripts that source this file
 # Shared settings for the LocalSend scripts. Source it; do not execute.
 . /mnt/onboard/.adds/koboapps/lib/common.sh
 

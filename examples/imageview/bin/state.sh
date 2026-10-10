@@ -8,6 +8,7 @@ made=0
 skipped=0
 failed=0
 if [ -f "$RESULT_FILE" ]; then
+    # shellcheck source=/dev/null  # written by the worker at run time
     . "$RESULT_FILE"
 fi
 albums=$(find "$ALBUMS_DIR" -maxdepth 1 -type f -name '*.cbz' 2>/dev/null | wc -l | tr -d ' ')

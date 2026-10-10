@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Shared by the To-do action scripts. Source it; do not execute.
 #
 # Test overrides (all optional; the defaults are the real Kobo paths):
@@ -7,6 +8,7 @@
 #   TODO_APPS_DIR  folder containing app folders (default: appsctl's own default)
 
 APP_DIR=$(cd "$(dirname "$0")/.." && pwd)
+# shellcheck source=../../../host/lib/common.sh
 . "${TODO_COMMON:-/mnt/onboard/.adds/koboapps/lib/common.sh}"
 
 APP_ID=todo
