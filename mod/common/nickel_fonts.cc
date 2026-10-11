@@ -23,6 +23,7 @@ static const char *const GENERIC_NAMES[] = {"serif", "sans-serif", "sans serif",
 
 static const ushort CAPITAL_U_HORN_ACUTE = 0x1EE8;  // 'Ứ'
 static const ushort SMALL_U_DOT_BELOW = 0x1EE5;     // 'ụ'
+static const ushort RIGHTWARDS_ARROW = 0x2192;      // '→' of "1.0.1 → 1.0.2"; without it the drawer shows "->"
 static const int SELF_CHECK_PIXEL_SIZE = 32;
 
 static const int ROLE_COUNT = 3;
@@ -125,8 +126,10 @@ static void selfCheck(const char *roleName, const QString &name, const char *ori
     QFontMetrics metrics(probe);
     bool hasCapital = metrics.inFont(QChar(CAPITAL_U_HORN_ACUTE));
     bool hasSmall = metrics.inFont(QChar(SMALL_U_DOT_BELOW));
-    DebugLog::write("fonts: %s \"%s\" (%s), Vietnamese U+1EE8 %s, U+1EE5 %s", roleName, qPrintable(name), origin,
-                    hasCapital ? "ok" : "missing", hasSmall ? "ok" : "missing");
+    bool hasArrow = metrics.inFont(QChar(RIGHTWARDS_ARROW));
+    DebugLog::write("fonts: %s \"%s\" (%s), Vietnamese U+1EE8 %s, U+1EE5 %s, arrow U+2192 %s", roleName,
+                    qPrintable(name), origin, hasCapital ? "ok" : "missing", hasSmall ? "ok" : "missing",
+                    hasArrow ? "ok" : "missing");
     if (!hasCapital || !hasSmall) {
         DebugLog::write("fonts: WARNING %s font \"%s\" lacks Vietnamese glyphs; install kobo-tieng-viet or check "
                         "the font files",

@@ -18,6 +18,9 @@ NickelFonts::Role roleFor(TextFit::Family family);
 // The font a run is painted with.
 QFont fontFor(const TextFit::TextRun &run);
 
+// Whether the font of run draws the code point itself (no fallback font). Cached per run.
+bool hasGlyph(const TextFit::TextRun &run, uint codePoint);
+
 // Valid for the life of the process; fonts are resolved on first use.
 const TextFit::TextMeter &meter();
 

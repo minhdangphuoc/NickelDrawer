@@ -50,9 +50,10 @@ for locale in vi en; do
     render "$locale" main 1 settings-uptodate "state-$locale-uptodate"
     render "$locale" main 1 settings-checking "state-$locale-checking"
     render "$locale" main 1 settings-failed "state-$locale-failed"
-    # The App updates screen: updates waiting, all current, a job running, a job that failed.
+    # The App updates screen: updates waiting, one update beside installed apps, all current, a job running, a job that failed.
     render "$locale" apps 1 settings-apps "apps-state-$locale"
     render "$locale" apps 2 settings-apps-p2 "apps-state-$locale"
+    render "$locale" apps 1 settings-apps-one "apps-state-$locale-one"
     render "$locale" apps 1 settings-apps-uptodate "apps-state-$locale-uptodate"
     render "$locale" apps 1 settings-apps-working "apps-state-$locale-working"
     render "$locale" apps 1 settings-apps-failed "apps-state-$locale-failed"

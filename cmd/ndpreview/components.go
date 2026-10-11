@@ -205,9 +205,11 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 	detail := rc.text(c.Prop("detail"))
 	event := actionEventFor(map[string]any{"action": c.Prop("action"), "push": c.Prop("push")})
 	confirmPath := ""
-	if c.Prop("confirm") != nil {
+	if c.Prop("confirm") != nil && c.Path != "" {
 		confirmPath, event = c.Path, "" // the question comes first; OK sends the action
 	}
+	// A row built from state (the App updates list) has no ui.json path for its question: the
+	// preview taps straight to the action, but the row keeps its chevron like on the device.
 	isSubline := rowDetailIsSubline(detail)
 	return block{height: tapRowHeight, gap: rhythm, isTapRow: true, draw: func(y int) []Item {
 		textWidth := contentWidth - rowTapTextInset
@@ -243,7 +245,8 @@ func (rc renderContext) rowBlock(c uikit.Component) block {
 // a value that fits the right-hand column (row.detailWidth) stays there, right-aligned; a longer
 // one goes under the label as a muted caption, like a radio sub-line, so it is never cut short.
 func rowDetailIsSubline(detail string) bool {
-	return detail != "" && textMeter.width(detail, regular(rowTextSize, familySans)) > rowDetailWidth
+	face := regular(rowTextSize, familySans)
+	return detail != "" && textMeter.width(drawableText(detail, face), face) > rowDetailWidth
 }
 
 func (rc renderContext) toggleBlock(c uikit.Component) block {

@@ -41,17 +41,18 @@ static HostTexts hostTexts()
     return texts;
 }
 
-static int qtAlignment(PaintItem::Align align)
+// Left edge of a line textWidth wide aligned in the box [left, left + boxWidth).
+static int alignedLeft(PaintItem::Align align, int left, int boxWidth, int textWidth)
 {
     switch (align) {
     case PaintItem::ALIGN_CENTER:
-        return Qt::AlignHCenter;
+        return left + (boxWidth - textWidth) / 2;
     case PaintItem::ALIGN_END:
-        return Qt::AlignRight;
+        return left + boxWidth - textWidth;
     case PaintItem::ALIGN_START:
         break;
     }
-    return Qt::AlignLeft;
+    return left;
 }
 
 static const char *targetName(TapTarget::Kind kind)
@@ -568,9 +569,11 @@ static void paintEllipse(QPainter *painter, const PaintItem &item)
     painter->restore();
 }
 
-// Lines are vertically centred in their line height. The layout already measured
-// them with this font (text_meter.h); a line that is still wider, because the
-// font changed after the layout, is elided rather than clipped mid-glyph.
+// Each line sits on the baseline of its line box (screen_logic.h textBaseline), taken from this
+// font's own ascent and descent: a glyph Qt draws from a taller fallback font cannot push the
+// line down out of its row, as AlignVCenter on the shaped line would. The layout already
+// measured the lines with this font (text_meter.h); a line that is still wider, because the font
+// changed after the layout, is elided rather than clipped mid-glyph.
 static void paintText(QPainter *painter, const PaintItem &item)
 {
     painter->save();
@@ -580,12 +583,14 @@ static void paintText(QPainter *painter, const PaintItem &item)
     painter->setPen(grey(item.ink));
     painter->setClipRect(item.rect);
     QFontMetrics metrics(font);
-    int flags = qtAlignment(item.align) | Qt::AlignVCenter | Qt::TextSingleLine;
     for (int i = 0; i < item.lines.size(); i++) {
-        QRect lineRect(item.rect.x(), item.rect.y() + i * item.lineHeight, item.rect.width(), item.lineHeight);
+        int lineTop = item.rect.y() + i * item.lineHeight;
         const QString &line = item.lines[i];
-        bool isTooWide = metrics.width(line) > lineRect.width();
-        painter->drawText(lineRect, flags, isTooWide ? metrics.elidedText(line, Qt::ElideRight, lineRect.width()) : line);
+        bool isTooWide = metrics.width(line) > item.rect.width();
+        QString shown = isTooWide ? metrics.elidedText(line, Qt::ElideRight, item.rect.width()) : line;
+        int left = alignedLeft(item.align, item.rect.x(), item.rect.width(), metrics.width(shown));
+        int baseline = textBaseline(lineTop, item.lineHeight, metrics.ascent(), metrics.descent());
+        painter->drawText(QPoint(left, baseline), shown);
     }
     painter->restore();
 }

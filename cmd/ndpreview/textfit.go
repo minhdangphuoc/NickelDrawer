@@ -41,13 +41,37 @@ type textMeasurer interface {
 // textMeter measures every layout decision; main sets it to the real fonts (useFonts).
 var textMeter textMeasurer = estimatedMeter{}
 
+// glyphChecker is a textMeasurer that knows which code points its font draws itself.
+type glyphChecker interface {
+	hasGlyph(r rune, face textFace) bool
+}
+
+const (
+	rightwardsArrow = "→" // "1.0.1 → 1.0.2" on the App updates screen
+	asciiArrow      = "->"
+)
+
+// drawableText is text as the font can draw it: "→" becomes "->" when the font has no arrow, so
+// it is never measured or drawn as a missing glyph (mirrored by the mod's drawableUtf8 and
+// ScreenLogic::replaceArrows).
+func drawableText(text string, face textFace) string {
+	if !strings.Contains(text, rightwardsArrow) {
+		return text
+	}
+	checker, canCheck := textMeter.(glyphChecker)
+	if !canCheck || checker.hasGlyph([]rune(rightwardsArrow)[0], face) {
+		return text
+	}
+	return strings.ReplaceAll(text, rightwardsArrow, asciiArrow)
+}
+
 func fits(text string, limit int, face textFace) bool {
 	return textMeter.width(text, face) <= limit
 }
 
 func wrapText(text string, limit int, face textFace) []string {
 	var lines []string
-	for _, paragraph := range strings.Split(text, "\n") {
+	for _, paragraph := range strings.Split(drawableText(text, face), "\n") {
 		lines = append(lines, wrapParagraph(paragraph, limit, face)...)
 	}
 	return lines
@@ -126,6 +150,7 @@ func wrapLimited(text string, limit int, face textFace, maxLines int) []string {
 
 // elide shortens text to one line: in the middle for file names, at the end otherwise.
 func elide(text string, limit int, face textFace, isMiddle bool) string {
+	text = drawableText(text, face)
 	if fits(text, limit, face) {
 		return text
 	}

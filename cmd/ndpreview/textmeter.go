@@ -21,6 +21,16 @@ func (f *fontSet) width(text string, face textFace) int {
 	return width
 }
 
+// hasGlyph reports whether the font of face draws r itself (not the missing-glyph box).
+func (f *fontSet) hasGlyph(r rune, face textFace) bool {
+	fontFace, err := f.face(face.family, face.size)
+	if err != nil {
+		return true // the estimate has every glyph
+	}
+	_, ok := fontFace.GlyphAdvance(r)
+	return ok
+}
+
 // useFonts makes layout measure with fonts; without a usable font it keeps the estimate, which
 // is told to the user because lines then break where the real glyphs will not.
 func useFonts(fonts *fontSet, stderr io.Writer) {

@@ -65,6 +65,11 @@ QFont fontFor(const TextFit::TextRun &run)
     return NickelFonts::font(roleFor(run.family), run.size, run.isBold);
 }
 
+bool hasGlyph(const TextFit::TextRun &run, uint codePoint)
+{
+    return metricsFor(run).inFont(QChar(codePoint));
+}
+
 const TextFit::TextMeter &meter()
 {
     static const TextFit::TextMeter qtMeter = {measureWithQt, 0};

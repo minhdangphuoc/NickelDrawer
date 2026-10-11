@@ -1,0 +1,51 @@
+{
+  "apps_caption": "1 update",
+  "apps_status": "1 update",
+  "apps_checked": "Checked 10/10/2026 17:02",
+  "apps_message": "",
+  "apps_step_label": "",
+  "apps_step_done": "",
+  "apps_step_total": "",
+  "apps_step_detail": "",
+  "apps_update_all_label": "Update all (1)",
+  "has_app_updates": true,
+  "can_apps_update": true,
+  "can_apps_check": true,
+  "apps_rows": [
+    {
+      "kind": "section",
+      "text": "Updates available"
+    },
+    {
+      "kind": "row",
+      "text": "To-do",
+      "detail": "1.0.1 → 1.0.2",
+      "action": "app_update_todo",
+      "confirm": {
+        "title": "Update To-do?",
+        "text": "To version 1.0.2. The app's data and settings are kept. No restart needed.",
+        "ok": "Update",
+        "cancel": "Cancel"
+      }
+    },
+    {
+      "kind": "section",
+      "text": "Installed"
+    },
+    {
+      "kind": "kv",
+      "key": "Wallpaper",
+      "value": "0.3.0"
+    },
+    {
+      "kind": "kv",
+      "key": "Library",
+      "value": "1.0.1"
+    },
+    {
+      "kind": "kv",
+      "key": "GitHub sync",
+      "value": "1.0.0"
+    }
+  ]
+}

@@ -52,6 +52,39 @@ bool rowDetailIsSubline(int measuredDetailWidth)
     return measuredDetailWidth > tokens::ROW_DETAIL_WIDTH;
 }
 
+int textBaseline(int lineTop, int lineHeight, int ascent, int descent)
+{
+    return lineTop + (lineHeight - (ascent + descent)) / 2 + ascent;
+}
+
+static const char ARROW_UTF8[] = "\xE2\x86\x92"; // U+2192 →
+static const char ARROW_ASCII[] = "->";
+
+int replaceArrows(const char *utf8, char *out, int outSize)
+{
+    if (!out || outSize <= 0) {
+        return 0;
+    }
+    int used = 0;
+    int replaced = 0;
+    const int arrowBytes = sizeof(ARROW_UTF8) - 1;
+    const int asciiBytes = sizeof(ARROW_ASCII) - 1;
+    for (const char *at = utf8 ? utf8 : ""; *at && used < outSize - 1;) {
+        if (strncmp(at, ARROW_UTF8, arrowBytes) == 0 && used + asciiBytes <= outSize - 1) {
+            memcpy(out + used, ARROW_ASCII, asciiBytes);
+            used += asciiBytes;
+            at += arrowBytes;
+            replaced++;
+        } else if (strncmp(at, ARROW_UTF8, arrowBytes) == 0) {
+            break; // no room for the whole replacement
+        } else {
+            out[used++] = *at++;
+        }
+    }
+    out[used] = '\0';
+    return replaced;
+}
+
 int firstKeptItem(int itemCount, int max)
 {
     if (max <= 0 || itemCount <= max) {

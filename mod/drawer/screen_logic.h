@@ -124,6 +124,18 @@ int lineHeight(TextStyle style);
 // cut short. Mirrored by cmd/ndpreview rowDetailIsSubline.
 bool rowDetailIsSubline(int measuredDetailWidth);
 
+// Baseline of a text line drawn in the line box [lineTop, lineTop + lineHeight): the font's own
+// ascent + descent centred in the box. Qt's AlignVCenter centres the shaped line instead, which
+// grows when a glyph comes from a taller fallback font and pushes the text down out of its row;
+// a fixed baseline keeps every line of a row on the row. Mirrored by cmd/ndpreview drawText.
+int textBaseline(int lineTop, int lineHeight, int ascent, int descent);
+
+// The arrow of "1.0.1 → 1.0.2" (U+2192). A font without it would measure and draw it with a
+// fallback font; the layout then shows the ASCII "->" instead (cmd/ndpreview drawableText).
+// Writes utf8 with every arrow replaced into out (NUL-terminated, truncated to outSize; the
+// input length + 1 bytes is enough) and returns the number of arrows replaced.
+int replaceArrows(const char *utf8, char *out, int outSize);
+
 // Index of the first list item shown when a list keeps only the last max items.
 int firstKeptItem(int itemCount, int max);
 

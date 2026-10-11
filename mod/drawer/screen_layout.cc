@@ -6,6 +6,7 @@
 #include "copperui/divider.h"
 #include "copperui/list_row.h"
 #include "copperui/pager.h"
+#include "debug_log.h"
 #include "qr_encoder.h"
 #include "row_menu_logic.h"
 #include "screen_logic.h"
@@ -30,10 +31,26 @@ static const int CHEVRON_SIDE = tokens::ICON_CHEVRON;
 
 // ---- Text helpers (Qt strings over the UTF-8 rules of screen_logic) ----
 
+static const uint RIGHTWARDS_ARROW = 0x2192;
+
+// The text as the font can draw it: "→" becomes "->" when the font has no arrow, so it is never
+// measured or drawn with a fallback font (screen_logic.h replaceArrows).
+static QByteArray drawableUtf8(const QString &text, int size, Family family, bool isBold)
+{
+    QByteArray utf8 = text.toUtf8();
+    TextRun run = {size, family, isBold};
+    if (!text.contains(QChar(RIGHTWARDS_ARROW)) || QtTextMeter::hasGlyph(run, RIGHTWARDS_ARROW)) {
+        return utf8;
+    }
+    QVector<char> out(utf8.size() + 1);
+    replaceArrows(utf8.constData(), out.data(), out.size());
+    return QByteArray(out.constData());
+}
+
 // Paragraphs wrap freely (maxLines 0); a button label keeps BUTTON_MAX_LINES lines and elides the rest.
 static int widthOf(const QString &text, int size, Family family, bool isBold = false)
 {
-    QByteArray utf8 = text.toUtf8();
+    QByteArray utf8 = drawableUtf8(text, size, family, isBold);
     TextMeter meter = QtTextMeter::meter();
     TextRun run = {size, family, isBold};
     return meter.measure(meter.context, utf8.constData(), utf8.size(), run);
@@ -41,7 +58,7 @@ static int widthOf(const QString &text, int size, Family family, bool isBold = f
 
 static QStringList wrap(const QString &text, int width, int size, Family family, bool isBold = false, int maxLines = 0)
 {
-    QByteArray utf8 = text.toUtf8();
+    QByteArray utf8 = drawableUtf8(text, size, family, isBold);
     QVector<char> out(utf8.size() * 2 + 16);
     TextRun run = {size, family, isBold};
     int count = wrapText(utf8.constData(), width, run, QtTextMeter::meter(), maxLines, out.data(), out.size());
@@ -51,7 +68,7 @@ static QStringList wrap(const QString &text, int width, int size, Family family,
 // One line for a fixed-size control: the text, or its measured prefix and "…".
 static QString elided(const QString &text, int width, int size, Family family, bool isMiddle, bool isBold = false)
 {
-    QByteArray utf8 = text.toUtf8();
+    QByteArray utf8 = drawableUtf8(text, size, family, isBold);
     QVector<char> out(utf8.size() + 16);
     TextRun run = {size, family, isBold};
     elideText(utf8.constData(), width, run, QtTextMeter::meter(), isMiddle, out.data(), out.size());
@@ -467,6 +484,19 @@ void ScreenLayout::addGalleryEmptyBlocks(int component, QList<LayoutBlock> *bloc
     }
 }
 
+// The rule of screen_logic.h rowDetailIsSubline on the measured detail; the device log tells
+// when a detail moved under its label, with the widths that decided it.
+static bool isRowDetailSubline(const QString &label, const QString &detail)
+{
+    int measured = widthOf(detail, ROW_TEXT_SIZE, FAMILY_SANS);
+    bool isSubline = rowDetailIsSubline(measured);
+    if (isSubline) {
+        DebugLog::write("screen: row \"%s\" detail \"%s\" is %d px, wider than its %d px column: shown under the label",
+                        qPrintable(label), qPrintable(detail), measured, ROW_DETAIL_WIDTH);
+    }
+    return isSubline;
+}
+
 void ScreenLayout::addComponentBlocks(int index, QList<LayoutBlock> *blocks) const
 {
     addBlocksOf(components[index], index, blocks);
@@ -490,7 +520,7 @@ void ScreenLayout::addBlocksOf(const ScreenComponent &c, int index, QList<Layout
         bool isPendingRow = isTappable && c.isPending && !c.isAsync; // A9: label replaced, no target, no chevron
         row.primary = isPendingRow ? hostTexts.pending : c.text;
         row.secondary = isPendingRow ? QString() : c.detail;
-        row.hasSubline = rowDetailIsSubline(widthOf(row.secondary, ROW_TEXT_SIZE, FAMILY_SANS));
+        row.hasSubline = isRowDetailSubline(row.primary, row.secondary);
         row.isTappable = isTappable && !isPendingRow;
         blocks->append(row);
     } else if (type == QLatin1String("toggle")) {

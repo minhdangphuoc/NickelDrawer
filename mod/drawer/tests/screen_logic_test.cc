@@ -3,6 +3,8 @@
 // device breaks and elides exactly like the Mac preview.
 // Run: make -C mod/drawer docker-test
 
+#include <string.h>
+
 #include "../screen_logic.h"
 #include "../../common/test_expect.h"
 
@@ -218,6 +220,55 @@ static void testListAndValues()
     EXPECT_EQ(false, looksLikeFileName("192.168.1.2:53317"));
     EXPECT_EQ(false, looksLikeFileName("two words."));
     EXPECT_EQ(false, looksLikeFileName(0));
+}
+
+// The App updates screen with one update and installed apps (Settings › Updates › Apps): the
+// update's "1.0.1 → 1.0.2" and every version keep the right-hand column, and the decision is the
+// row's own, so a long detail elsewhere moves only that row under its label.
+static int rowWidth(const char *utf8)
+{
+    TextRun run = {ROW_TEXT_SIZE, FAMILY_SANS, false};
+    return fakeWidth(0, utf8, (int)strlen(utf8), run);
+}
+
+static void testAppUpdateRowsStayOnOneLine()
+{
+    const char *const details[] = {"1.0.1 \xE2\x86\x92 1.0.2", "0.3.0 \xE2\x86\x92 0.4.0", "0.3.0", "1.0.0", "1.0.2"};
+    for (unsigned i = 0; i < sizeof(details) / sizeof(details[0]); i++) {
+        EXPECT_EQ(false, rowDetailIsSubline(rowWidth(details[i])));
+    }
+    const char *longDetail = "Needs firmware 4.38 or newer, Wi-Fi on, and a restart afterwards";
+    EXPECT_EQ(true, rowDetailIsSubline(rowWidth(longDetail)));
+    EXPECT_EQ(false, rowDetailIsSubline(rowWidth(details[0]))); // no state carried between rows
+}
+
+static void testTextBaselineKeepsTheLineInItsBox()
+{
+    const int top = 100;
+    // Regular label and bold value of a kv row: both inside the 56 px line box, same baseline give
+    // or take the rounding of their own metrics.
+    int label = textBaseline(top, ROW_LABEL_HEIGHT, 34, 9);
+    int value = textBaseline(top, ROW_LABEL_HEIGHT, 35, 10);
+    EXPECT_EQ(true, label - 34 >= top && label + 9 <= top + ROW_LABEL_HEIGHT);
+    EXPECT_EQ(true, value - 35 >= top && value + 10 <= top + ROW_LABEL_HEIGHT);
+    EXPECT_EQ(true, value - label <= 1 && label - value <= 1);
+    EXPECT_EQ(top + (ROW_LABEL_HEIGHT - 43) / 2 + 34, label); // ndpreview drawText
+}
+
+static void testReplaceArrows()
+{
+    char out[64];
+    EXPECT_EQ(1, replaceArrows("1.0.1 \xE2\x86\x92 1.0.2", out, sizeof(out)));
+    EXPECT_STREQ("1.0.1 -> 1.0.2", out);
+    EXPECT_EQ(0, replaceArrows("Vi\xE1\xBB\x87" "c c\xE1\xBA\xA7n l\xC3\xA0m", out, sizeof(out)));
+    EXPECT_STREQ("Vi\xE1\xBB\x87" "c c\xE1\xBA\xA7n l\xC3\xA0m", out);
+    EXPECT_EQ(2, replaceArrows("\xE2\x86\x92" "a\xE2\x86\x92", out, sizeof(out)));
+    EXPECT_STREQ("->a->", out);
+    EXPECT_EQ(0, replaceArrows(0, out, sizeof(out)));
+    EXPECT_STREQ("", out);
+    char small[4];
+    replaceArrows("ab\xE2\x86\x92", small, sizeof(small)); // no room for "->": stops before it
+    EXPECT_STREQ("ab", small);
 }
 
 static void testQrPlacement()
@@ -573,5 +624,8 @@ int main()
     testComponentSizes();
     testListAndValues();
     testQrPlacement();
+    testAppUpdateRowsStayOnOneLine();
+    testTextBaselineKeepsTheLineInItsBox();
+    testReplaceArrows();
     return finishTests("screen_logic");
 }

@@ -1,0 +1,51 @@
+{
+  "apps_caption": "1 bản mới",
+  "apps_status": "1 bản mới",
+  "apps_checked": "Đã kiểm tra lúc 10/10/2026 17:02",
+  "apps_message": "",
+  "apps_step_label": "",
+  "apps_step_done": "",
+  "apps_step_total": "",
+  "apps_step_detail": "",
+  "apps_update_all_label": "Cập nhật tất cả (1)",
+  "has_app_updates": true,
+  "can_apps_update": true,
+  "can_apps_check": true,
+  "apps_rows": [
+    {
+      "kind": "section",
+      "text": "Có bản mới"
+    },
+    {
+      "kind": "row",
+      "text": "Việc cần làm",
+      "detail": "1.0.1 → 1.0.2",
+      "action": "app_update_todo",
+      "confirm": {
+        "title": "Cập nhật Việc cần làm?",
+        "text": "Lên bản 1.0.2. Dữ liệu và cài đặt của ứng dụng được giữ. Không cần khởi động lại.",
+        "ok": "Cập nhật",
+        "cancel": "Hủy"
+      }
+    },
+    {
+      "kind": "section",
+      "text": "Đã cài"
+    },
+    {
+      "kind": "kv",
+      "key": "Hình nền",
+      "value": "0.3.0"
+    },
+    {
+      "kind": "kv",
+      "key": "Thư viện",
+      "value": "1.0.1"
+    },
+    {
+      "kind": "kv",
+      "key": "Đồng bộ GitHub",
+      "value": "1.0.0"
+    }
+  ]
+}
