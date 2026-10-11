@@ -421,13 +421,44 @@ check "a zip holding a symbolic link is refused" test "$linkStatus" -ne 0
 check "...and nothing of it is installed" test ! -e "$ADDS/apps/linky"
 
 echo "--- the optional helper stays out of the drawer"
-# helpers/statusbar-screenshot is a separate extra: nothing of it may ship in dist/ or live in the
-# drawer's own sources, locales or tweaks. Names: its mod, its icon, its flag folder, its old ping property.
-helperPattern='statusbar-screenshot|statusbarshot|screenshot-64|nhScreenshotButton|helpers/screenshot'
-check "dist/ has no file named after the helper" test -z "$(find "$REPO_ROOT/dist" \( -iname '*statusbarshot*' -o -iname '*screenshot-64*' \) 2>/dev/null)"
-check "dist/ has no mention of the helper" test -z "$(grep -rlaE "$helperPattern" "$REPO_ROOT/dist" 2>/dev/null)"
-check "the drawer's sources, locales and tweaks have no mention of the helper" \
-    test -z "$(grep -rlaE "$helperPattern" "$REPO_ROOT/internal/tweaks" "$REPO_ROOT/mod/drawer" "$REPO_ROOT/host" "$REPO_ROOT/cmd/appsctl/embedded" 2>/dev/null)"
+# The Extras helper (helpers/extras: status-bar screenshot button and the Tweaks panel) is a separate,
+# optional mod. NickelDrawer must install and run without it, so none of what the drawer ships or is built
+# from may carry tweaks code, texts or a reference to the helper. Each row: tree, then what it must not mention.
+# The CopperUI token files keep the shared panel tokens and are left out on purpose.
+tweakNames='[Tt]weak|TWEAK|Tinh ch(ỉ|i)nh'
+helperNames='Extras|libextras|nh\.extras|extras-tweaks|statusbar-screenshot|statusbarshot|screenshot-64|screenshot-off|nhScreenshotButton|helpers/(extras|screenshot)'
+forbidden="$tweakNames|$helperNames"
+shippedTrees=(
+    "$REPO_ROOT/dist/onboard"
+    "$REPO_ROOT/host"
+    "$REPO_ROOT/mod/drawer"
+    "$REPO_ROOT/cmd/appsctl"
+    "$REPO_ROOT/internal"
+    "$REPO_ROOT/apps"
+    "$REPO_ROOT/spec"
+    "$REPO_ROOT/docs/spec"
+)
+for tree in "${shippedTrees[@]}"; do
+    [ -d "$tree" ] || continue
+    check "${tree#"$REPO_ROOT"/} has no tweaks or helper names" \
+        test -z "$(grep -rlaE "$forbidden" --exclude-dir=copperui --exclude=tonemarks_test.go "$tree" 2>/dev/null)"
+done
+drawerDocs=(ARCHITECTURE.md APPS.md COMPATIBILITY.md TRANSLATING.md UPDATES.md RELEASING.md)
+for doc in "${drawerDocs[@]}"; do
+    [ -f "$REPO_ROOT/docs/$doc" ] || continue
+    check "docs/$doc has no tweaks or helper names" test -z "$(grep -aE "$forbidden" "$REPO_ROOT/docs/$doc")"
+done
+# The guides may point at helpers/README.md once (the user asked for exactly that) and say nothing else.
+for guide in index user-guide.en user-guide.vi developer-guide; do
+    [ -f "$REPO_ROOT/docs/guide/$guide.md" ] || continue
+    check "docs/guide/$guide.md only points at helpers/README.md" \
+        test -z "$(grep -aE "$forbidden" "$REPO_ROOT/docs/guide/$guide.md" | grep -avF 'helpers/README.md')"
+done
+check "dist/ has no file named after the helper" \
+    test -z "$(find "$REPO_ROOT/dist" \( -iname '*statusbarshot*' -o -iname '*extras*' -o -iname '*screenshot-64*' \) 2>/dev/null)"
+check "dist/ has no helper library in any archive" \
+    test -z "$(for archive in "$REPO_ROOT"/build/mod/*.tgz; do [ -f "$archive" ] && tar tzf "$archive" | grep -iE 'extras|statusbarshot'; done)"
+check "a drawer-only install creates no helper folder" test ! -e "$ADDS/helpers"
 
 if [ "$failures" -ne 0 ]; then
     echo "$failures check(s) failed"

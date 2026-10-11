@@ -41,7 +41,7 @@ unzip -l dist/koboapps-1.0.0-beta.1.zip | grep -Ei '\.so|\.tgz|sqlite' || echo c
 
 The `KoboRoot` must list exactly `usr/local/Kobo/imageformats/libnickeldrawer.so`.
 
-On the device you own, before you publish anything you tell other people to install: run the failsafe and uninstall drill with this exact build (plan gate G1 and `docs/testing/final-checklist.md`), then one normal boot, the Apps row, the Tweaks panel and one app.
+On the device you own, before you publish anything you tell other people to install: run the failsafe and uninstall drill with this exact build (plan gate G1 and `docs/testing/final-checklist.md`), then one normal boot, the Apps row and one app.
 
 ## 2. Release commit
 
@@ -51,7 +51,7 @@ git add -A
 git status --short                                     # check the staged list once more
 git diff --cached --name-only | grep -Ei '^(backups|local|downloads|build|dist)/|\.(so|tgz|sqlite)$' && echo STOP || echo staged-list-ok
 git commit -m "chore: release 1.0.0-beta.1" \
-  -m "Version 1.0.0-beta.1: native drawer, Tweaks, UI kit, apps, signed updates, English and Vietnamese. Release inputs are built unsigned in CI and signed locally."
+  -m "Version 1.0.0-beta.1: native drawer, UI kit, apps, signed updates, English and Vietnamese. Release inputs are built unsigned in CI and signed locally."
 ```
 
 ## 3. Create the repository and push (no secrets are needed)
@@ -128,7 +128,7 @@ Then on the device you control (it must run a build with the embedded release ke
 
 Post only after step 6 passes. Keep it short, say it is a beta, say what is tested, link the README. Suggested text:
 
-> **NickelDrawer 1.0.0-beta.1.** An app drawer for Kobo e-readers on the stock firmware: an Apps row and a Tweaks panel in the More tab, plus LocalSend, GitHub book sync, a sleep-screen gallery and a library tool. Kobo Libra 2, firmware 4.38 (23828, 23697, 23684, 23648, 23552). Tested on one device on 4.38.23828; the others are symbol-checked only. It has a failsafe and a one-file uninstall; read the Safety section first. MIT, signed updates, English and Vietnamese. https://github.com/OWNER/NickelDrawer/releases/tag/v1.0.0-beta.1
+> **NickelDrawer 1.0.0-beta.1.** An app drawer for Kobo e-readers on the stock firmware: an Apps row in the More tab, plus LocalSend, GitHub book sync, a sleep-screen gallery and a library tool. Kobo Libra 2, firmware 4.38 (23828, 23697, 23684, 23648, 23552). Tested on one device on 4.38.23828; the others are symbol-checked only. It has a failsafe and a one-file uninstall; read the Safety section first. MIT, signed updates, English and Vietnamese. https://github.com/OWNER/NickelDrawer/releases/tag/v1.0.0-beta.1
 
 Places: the repository's Discussions (enable with `gh repo edit "$GH_USER/NickelDrawer" --enable-discussions`), the MobileRead Kobo forum, the Vietnamese Kobo communities you use.
 

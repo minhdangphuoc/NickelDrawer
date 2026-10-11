@@ -8,9 +8,9 @@ class QRect;
 
 // The icons of both mods. We never draw icons ourselves: each one is Nickel's
 // own image from its Qt resources (re/notes/system-icons.md), else a Tabler
-// Icons PNG (MIT) that koboapps installs in ICON_DIRECTORY, else none, and the
-// control shows its text label or is hidden. Shared by mod/drawer-proto and
-// mod/drawer.
+// Icons PNG (MIT) that the mod's installer puts in the icon directory the mod
+// sets with setIconDirectory(), else none, and the control shows its text
+// label or is hidden. Shared by every mod (each compiles its own copy).
 namespace SystemIcon {
 
 enum Id {
@@ -19,7 +19,7 @@ enum Id {
     REFRESH,     // header "refresh"
     ADD,         // header "add"
     BACK,        // page header back, full-view back
-    CLOSE,       // tweaks overlay ✕
+    CLOSE,       // dialog close ✕
     CHECK_BADGE, // gallery: the current picture's badge (white check on the black disc)
     VIEW_LIST,   // drawer header list toggle
     VIEW_GRID,   // drawer header grid toggle
@@ -44,8 +44,9 @@ struct Icon {
     bool isNull() const { return normal.isNull(); }
 };
 
-// Generic Tabler PNGs, "<ICON_DIRECTORY>/<name>-<64|96>.png".
-extern const char *const ICON_DIRECTORY;
+// Where the generic Tabler PNGs "<directory>/<name>-<64|96>.png" live; call once from init().
+// Without a directory only Nickel's own images are used. The string is copied.
+void setIconDirectory(const char *directory);
 
 // Loaded on first use (Nickel's resources are registered by then) and kept;
 // the source and size of each icon are logged once. QPixmap reads a file

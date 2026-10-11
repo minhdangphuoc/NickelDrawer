@@ -23,6 +23,8 @@ static const MoreRow::Spec ROW_SPEC = {
     "/mnt/onboard/.adds/koboapps/icons/apps.png",
     "betaFeaturesButton", // our row goes right after it
 };
+static const MoreRow::NickelApi ROW_API = {NickelBridge::hasIconLeftButton, NickelBridge::createIconLeftButton,
+                                           NickelBridge::setIconLeftButtonPixmap, NickelBridge::setIconLeftButtonText};
 static const int DOT_RIGHT_MARGIN = 72;
 static const int RUN_FROM_EVENT_LOOP = 0;
 
@@ -55,7 +57,7 @@ QString entrySummary(const DrawerModel &model, int *updateCount)
 void EntryRow::addTo(QWidget *moreView)
 {
     FallbackStrings::reloadLocale();
-    QWidget *row = MoreRow::insert(moreView, ROW_SPEC, FallbackStrings::text(FallbackStrings::APPS_TITLE));
+    QWidget *row = MoreRow::insert(moreView, ROW_API, ROW_SPEC, FallbackStrings::text(FallbackStrings::APPS_TITLE));
     if (!row) {
         return;
     }
@@ -68,11 +70,6 @@ void EntryRow::addTo(QWidget *moreView)
     DebugLog::write("entry row: row %p entry %p, %d children on the row", (void *)row, (void *)entry,
                     row->children().size());
     entry->refreshSummary();
-}
-
-const char *EntryRow::rowObjectName()
-{
-    return ROW_OBJECT_NAME;
 }
 
 EntryRow::EntryRow(QWidget *moreRow)

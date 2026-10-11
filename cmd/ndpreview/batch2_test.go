@@ -614,8 +614,8 @@ func TestDrawerGridRowsFitThePageArea(t *testing.T) {
 
 func TestTweaksModalIsCentredAndRendersBothLocales(t *testing.T) {
 	for _, locale := range []string{"en", "vi"} {
-		cells := sampleTweaks[locale]
-		page := tweaksPage(cells, chromeFor(locale).tweaksTitle, locale, 0)
+		cells := sampleTweaks(locale)
+		page := tweaksPage(cells, extrasCatalog(locale)["tweaks.title"], locale, 0)
 		box := page.Items[len(nickelChromeItems())]
 		if box.W != dialogWidth || box.Border != dialogBorder || box.X != (screenWidth-dialogWidth)/2 || box.Y != (screenHeight-box.H)/2 {
 			t.Errorf("%s: box %+v is not the centred dialog box", locale, box)
@@ -627,16 +627,16 @@ func TestTweaksModalIsCentredAndRendersBothLocales(t *testing.T) {
 			t.Errorf("%s: %d pages", locale, page.Count)
 		}
 	}
-	if len(sampleTweaks["en"]) != len(sampleTweaks["vi"]) {
+	if len(sampleTweaks("en")) != len(sampleTweaks("vi")) {
 		t.Error("both locales need the same sample tweaks")
 	}
 }
 
 func TestTweaksCaptionStacksUnderTheLabelAndKeepsTheSwitch(t *testing.T) {
 	for _, locale := range []string{"en", "vi"} {
-		cell := sampleTweaks[locale][1]
+		cell := sampleTweaks(locale)[1]
 		if cell.caption == "" || cell.kind != tweakToggle {
-			t.Fatalf("%s: sample 1 should be the captioned Screenshots toggle: %+v", locale, cell)
+			t.Fatalf("%s: sample 1 should be the captioned screenshot button toggle: %+v", locale, cell)
 		}
 		items := tweaksCellItems(cell, 0, 0, 516, locale)
 		var label, caption Item
@@ -668,7 +668,7 @@ func TestDrawerCommandsWritePNGs(t *testing.T) {
 	}{
 		{"drawer-list", func(a []string, o, e *bytes.Buffer) int { return runDrawerList(a, o, e) }},
 		{"drawer-grid", func(a []string, o, e *bytes.Buffer) int { return runDrawerGrid(a, o, e) }},
-		{"tweaks", func(a []string, o, e *bytes.Buffer) int { return runTweaks(a, o, e) }},
+		{"extras-tweaks", func(a []string, o, e *bytes.Buffer) int { return runExtrasTweaks(a, o, e) }},
 	} {
 		out := filepath.Join(dir, command.name+".png")
 		var stdout, stderr bytes.Buffer

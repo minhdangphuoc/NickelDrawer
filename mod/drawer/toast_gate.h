@@ -9,10 +9,9 @@ namespace ToastGate {
 
 // Keys of toasts that belong to no app.
 static const char HOST_KEY[] = "_drawer";
-static const char TWEAKS_KEY[] = "_tweaks";
 
 void show(const QString &appKey, const QString &text);
-// Host toasts (HOST_KEY, TWEAKS_KEY).
+// Host toasts (HOST_KEY).
 void show(const char *hostKey, const QString &text);
 
 } // namespace ToastGate

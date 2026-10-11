@@ -44,7 +44,7 @@ The Gallery page's pictures are small PNG files (up to 1 MB each, at most 6) cop
 
 The pages are generated-looking but hand-editable JSON: `ui.json` is the home, `screens/<id>.json` one page each (the viewer included); texts are `@ui.*` keys in `locales/`. An app has at most 12 actions, so the plain events (button, row, header link or icon, list tap, menu item, gallery long-press, viewer button) share `echo`, which tells the readout what happened from the environment (`NICKELDRAWER_LIST` set: menu; `NICKELDRAWER_VALUE` set: tap; neither: action). Switches, the radio group and the fields run the action named like their variable (`sampleenabled`, `autorescan`, `shownote`, `refreshmode`, `searchtext`, `pagenumber`); the Steps page runs a fake three-step job.
 
-Preview without a device (every page, both languages, plus the drawer and Tweaks):
+Preview without a device (every page, both languages, plus the drawer):
 
 ```sh
 sh tools/preview-all.sh

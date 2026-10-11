@@ -22,20 +22,20 @@ override VERSION := 1.0.0-beta.1
 include $(NICKELHOOK_DIR)/NickelHook.mk
 
 override LIBRARY  := $(LIBRARY_NAME)
-override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc ../common/device_gate.cc mod_switches.cc drawer_logic.cc ../common/locale_chain.cc fallback_strings.cc \
-                     model_parser.cc appsctl_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc ../common/system_icon.cc \
+override SOURCES  += nickeldrawer.cc ../common/debug_log.cc ../common/status_bar_inset.cc nickel_bridge.cc ../common/device_gate.cc mod_switches.cc drawer_logic.cc ../common/paging.cc ../common/locale_chain.cc fallback_strings.cc \
+                     model_parser.cc ../common/tool_call.cc model_client.cc view_settings.cc ../common/press_area.cc ../common/page_header.cc ../common/system_icon.cc \
                      painted_marks.cc item_widgets.cc drawer_surfaces.cc drawer_view.cc plain_dialog.cc dialogs.cc open_popups.cc \
-                     wifi_connector.cc action_runner.cc drawer_session.cc drawer_controller.cc \
-                     drawer_navigator.cc entry_row.cc screen_logic.cc text_meter.cc qr_encoder.cc ../common/nickel_fonts.cc \
+                     wifi_connector.cc action_runner.cc drawer_session.cc ../common/page_controller.cc \
+                     drawer_navigator.cc entry_row.cc screen_logic.cc ../common/text_fit.cc ../common/text_meter.cc qr_encoder.cc ../common/nickel_fonts.cc \
                      screen_layout.cc screen_canvas.cc screen_view.cc field_editor.cc screen_session.cc \
                      navigation_stack.cc navigation.cc event_queue.cc picture_loader.cc tile_menu.cc \
-                     more_row.cc tweaks_logic.cc tweaks_parser.cc tweaks_panel.cc tweaks_overlay.cc tweaks_session.cc \
-                     tweaks_row.cc row_menu_logic.cc host_requests.cc host_request_runner.cc toast_limiter.cc toast_gate.cc qt6_notice.cc \
+                     ../common/more_row.cc \
+                     row_menu_logic.cc host_requests.cc host_request_runner.cc toast_limiter.cc toast_gate.cc qt6_notice.cc \
                      wake_rotation.cc
-override MOCS     += host_request_runner.h nickel_bridge.h appsctl_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
+override MOCS     += host_request_runner.h nickel_bridge.h ../common/tool_call.h model_client.h ../common/press_area.h ../common/page_header.h drawer_view.h plain_dialog.h \
                      dialogs.h open_popups.h wifi_connector.h action_runner.h drawer_session.h drawer_navigator.h entry_row.h \
                      drawer_surfaces.h screen_canvas.h screen_view.h field_editor.h screen_session.h tile_menu.h \
-                     tweaks_panel.h tweaks_overlay.h tweaks_session.h tweaks_row.h wake_rotation.h
+                     wake_rotation.h
 override PKGCONF  += Qt5Widgets
 override CFLAGS   += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden
 override CXXFLAGS += -Wall -Wextra -Werror -Wno-missing-field-initializers -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions -frtti
@@ -50,9 +50,9 @@ endif
 
 # --- on the host ---
 # Each Qt-free unit and its test: tests/<unit>_test.cc + <unit>.cc.
-TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue tweaks_logic row_menu_logic toast_limiter host_requests device_gate
+TEST_UNITS  := drawer_logic screen_logic qr_encoder navigation_stack event_queue row_menu_logic toast_limiter host_requests device_gate
 # Other Qt-free units a test links besides its own (unit=dependency).
-TEST_LINKS  := drawer_logic=../common/locale_chain tweaks_logic=drawer_logic tweaks_logic=../common/locale_chain screen_logic=$(COPPERUI_DIR)/src/pack
+TEST_LINKS  := drawer_logic=../common/locale_chain drawer_logic=../common/paging screen_logic=$(COPPERUI_DIR)/src/pack screen_logic=../common/text_fit
 TEST_BINARY := tests/unit_test.bin
 TEST_FLAGS  := -std=c++11 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -nostdinc++ -I$(COPPERUI_INCLUDE) -I../common
 

@@ -5,7 +5,7 @@
 
 #include "debug_log.h"
 
-#include "drawer_controller.h"
+#include "page_controller.h"
 #include "drawer_session.h"
 #include "drawer_view.h"
 #include "fallback_strings.h"
@@ -114,7 +114,7 @@ bool DrawerNavigator::hasRouteApi() const
 
 void DrawerNavigator::openWithController()
 {
-    controller = new DrawerController(view);
+    controller = new PageController(view);
     if (!controller->hasNickelLayout()) {
         DebugLog::write("navigator: route A: unexpected AbstractController offset, not pushing");
         delete controller;

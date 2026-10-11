@@ -40,6 +40,7 @@ func TestVietnameseLocalesUseTheNewToneMarkStyle(t *testing.T) {
 	patterns := []string{
 		"../../apps/*/locales/vi.json",
 		"../../host/locales/vi.json",
+		"../../helpers/extras/locales/vi.json",
 		"../../host/screens/*/locales/vi.json",
 		"../../examples/*/locales/vi.json",
 		"../../mod/drawer/fallback_strings.cc",

@@ -182,10 +182,6 @@ Order for the mod: perform `wifi` requests first, then `rescan`. The existing `r
 
 Removes an app folder (without `--confirm` it fails with `need_confirm`; a symlink, `..`, a host id or anything resolving outside the apps root is refused with `remove_refused`; an app with a broken manifest can be removed; never `data/` of other apps, never host items), returns `{"v":1,"ok":true,"text":"…"}`. The mod always shows a confirm dialog first.
 
-## `appsctl drawer tweaks` and `appsctl drawer tweak <id>`
-
-The backend of the "Tinh chỉnh" modal; see [tweaks.md](tweaks.md).
-
 ## Settings screen (host item `_settings`)
 
 `_settings` is a built-in item with its own screens, loaded from `<koboapps>/screens/settings/` (a `ui.json` and `locales/` laid out like an app folder, validated like any screen). `drawer screen _settings [--screen about]`, `drawer event _settings <action> --screen main [--value v]` and `drawer run _settings <action>` work like for apps. Screens: `main` (the settings) and `about` (one level below `main`: project name, version, QR of the project URL, maintainer, license, supported firmware, credits). Everything about the project (name, repo, maintainer, license, supported firmware) comes from `<koboapps>/config/project.json`; the version is the running `appsctl --version`.

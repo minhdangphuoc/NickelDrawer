@@ -3,6 +3,7 @@
 
 #include "copperui/tokens.h"
 #include "locale_chain.h"
+#include "paging.h"
 
 // Pure decision logic of the drawer: no Qt, no libnickel, no C++ standard
 // library, so tests/drawer_logic_test.cc builds it with the host compiler.
@@ -57,25 +58,20 @@ int itemsPerPage(ViewMode mode, int gridRows, int listRows = LIST_ROWS_PER_PAGE)
 // LIST_ROWS_PER_PAGE: a notice under the header (the Qt6 warning) takes room from the page area.
 int listRowsThatFit(int availableHeight);
 
-// At least 1, so an empty drawer still shows "1 / 1".
-int pageCount(int itemCount, int perPage);
-
-int clampPage(int page, int itemCount, int perPage);
-int firstIndexOnPage(int page, int perPage);
-int itemCountOnPage(int page, int itemCount, int perPage);
+// Page arithmetic and page keys are shared with the other mods (common/paging.h).
+using Paging::pageCount;
+using Paging::clampPage;
+using Paging::firstIndexOnPage;
+using Paging::itemCountOnPage;
+using Paging::PageKey;
+using Paging::PAGE_KEY_NONE;
+using Paging::PAGE_KEY_PREVIOUS;
+using Paging::PAGE_KEY_NEXT;
+using Paging::pageKeyFor;
+using Paging::pageAfterKey;
 
 // Page that keeps the item at itemIndex visible after a view switch.
 int pageContainingItem(int itemIndex, int perPage);
-
-enum PageKey { PAGE_KEY_NONE, PAGE_KEY_PREVIOUS, PAGE_KEY_NEXT };
-
-// Qt key code to paging direction. Nickel's TactileButtonFilter already turned
-// the page buttons into arrows with the swap setting applied:
-// Left/Up = previous, Right/Down = next (re/notes/G2-findings.md Q3).
-PageKey pageKeyFor(int qtKey);
-
-// Target page for a key, or the current page when at an edge.
-int pageAfterKey(int currentPage, PageKey key, int itemCount, int perPage);
 
 // True when this item opens a new section on the page, so the view draws the
 // section label above it.
@@ -128,9 +124,7 @@ enum AppsctlCommand {
     COMMAND_RUN_BACKGROUND,
     COMMAND_INFO,
     COMMAND_REMOVE,
-    COMMAND_SCREEN,
-    COMMAND_TWEAKS, // docs/spec/tweaks.md: 3 s per call
-    COMMAND_TWEAK
+    COMMAND_SCREEN
 };
 
 // Hard timeout the mod applies to an appsctl call.

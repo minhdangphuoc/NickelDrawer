@@ -8,6 +8,9 @@ namespace ModSwitches {
 
 // NickelHook deletes the mod (and this flag) when it exists at boot.
 static const char UNINSTALL_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/uninstall";
+// Opt-in step log: the flag is read once at boot, lines go to the log file (common/debug_log.h).
+static const char DEBUG_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/debug";
+static const char DEBUG_LOG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/debug.log";
 // Kill switch: the mod loads but the bridge stays inert (no row, no hooks run).
 static const char DISABLE_FLAG_PATH[] = "/mnt/onboard/.adds/nickeldrawer/disable";
 // Opens the drawer with pushView/popView (route B) instead of the controller push.

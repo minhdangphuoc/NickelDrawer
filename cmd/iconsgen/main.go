@@ -108,7 +108,33 @@ func render(repo string, entry icon) (*image.NRGBA, error) {
 	parsed.Draw(rasterx.NewDasher(entry.size, entry.size, scanner), 1)
 	result := image.NewNRGBA(premultiplied.Bounds())
 	draw.Draw(result, result.Bounds(), premultiplied, image.Point{}, draw.Src)
+	if canvas := entry.outputSize(); canvas != entry.size {
+		return centredOnCanvas(result, canvas), nil
+	}
 	return result, nil
+}
+
+// centredOnCanvas puts the glyph's ink bounding box in the middle of a transparent square.
+func centredOnCanvas(glyph *image.NRGBA, canvas int) *image.NRGBA {
+	ink := inkBounds(glyph)
+	target := image.NewNRGBA(image.Rect(0, 0, canvas, canvas))
+	offset := image.Pt((canvas-ink.Dx())/2-ink.Min.X, (canvas-ink.Dy())/2-ink.Min.Y)
+	draw.Draw(target, glyph.Bounds().Add(offset), glyph, image.Point{}, draw.Src)
+	return target
+}
+
+// inkBounds is the box of the pixels that are at least half opaque.
+func inkBounds(glyph *image.NRGBA) image.Rectangle {
+	bounds := image.Rectangle{Min: glyph.Bounds().Max, Max: glyph.Bounds().Min}
+	for y := glyph.Bounds().Min.Y; y < glyph.Bounds().Max.Y; y++ {
+		for x := glyph.Bounds().Min.X; x < glyph.Bounds().Max.X; x++ {
+			if glyph.NRGBAAt(x, y).A < 128 {
+				continue
+			}
+			bounds = bounds.Union(image.Rect(x, y, x+1, y+1))
+		}
+	}
+	return bounds
 }
 
 // writeSheet lays every icon out on a white grid so a person can eyeball the set.
@@ -122,7 +148,8 @@ func writeSheet(repo, sheetPath string) error {
 		if err != nil {
 			return err
 		}
-		origin := image.Pt(index%columns*cell+(cell-entry.size)/2, index/columns*cell+(cell-entry.size)/2)
+		side := entry.outputSize()
+		origin := image.Pt(index%columns*cell+(cell-side)/2, index/columns*cell+(cell-side)/2)
 		draw.Draw(sheet, rendered.Bounds().Add(origin), rendered, image.Point{}, draw.Over)
 	}
 	if err := os.MkdirAll(filepath.Dir(sheetPath), 0o755); err != nil {

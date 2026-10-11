@@ -1,6 +1,6 @@
 # NickelDrawer (Tiếng Việt)
 
-Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm hàng **Ứng dụng** và bảng **Tinh chỉnh** vào tab **Thêm**, giúp các ứng dụng nhỏ có giao diện giống Kobo. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
+Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel). NickelDrawer thêm hàng **Ứng dụng** vào tab **Thêm**, giúp các ứng dụng nhỏ có giao diện giống Kobo. Không cần tài khoản đám mây và không gửi dữ liệu đi đâu nếu bạn không bật tính năng cần mạng.
 
 **Trạng thái: 1.0.0 beta** ([bản phát hành](../../releases)). Mới thử trên một máy và một bản firmware (xem [Firmware hỗ trợ](#firmware-hỗ-trợ)). Đọc [An toàn](#an-toàn) trước khi cài. Bản tiếng Anh: [README.md](README.md). Hướng dẫn chi tiết: [user-guide.vi.html](docs/guide/user-guide.vi.html) ([.md](docs/guide/user-guide.vi.md)).
 
@@ -13,7 +13,6 @@ Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel)
 ## Bạn được gì
 
 - **Ngăn ứng dụng gốc.** Hàng Ứng dụng trong tab Thêm mở danh sách hoặc lưới ứng dụng, dùng phông, biểu tượng và hộp thoại của chính Nickel.
-- **Tinh chỉnh.** Bảng giống phần cài đặt: màn hình ngủ, chụp màn hình, tự kết nối USB, chữ rõ nét, địa chỉ IP, khởi động lại và quét lại thư viện.
 - **Ứng dụng là thư mục.** Chép một thư mục có tệp mô tả và vài tập lệnh vào `.adds/apps/` là nó hiện ra. Không cần C++ ([docs/APPS.md](docs/APPS.md)).
 - **Màn hình ứng dụng gốc.** Ứng dụng mô tả danh sách, nút gạt, nút bấm, mã QR và trạng thái trực tiếp trong tệp `ui.json`; Ngăn vẽ ra.
 - **Cập nhật có chữ ký.** Ngăn (công cụ chủ và mod) cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
@@ -137,9 +136,9 @@ Tùy chọn, tách riêng khỏi ngăn. Chỉ cài thứ bạn cần.
 
 [apps/README.vi.md](apps/README.vi.md): LocalSend, GitHub, Thư viện, Hình nền và Việc cần làm (cùng UI Kit chỉ dành cho nhà phát triển). Mỗi ứng dụng là một tệp zip riêng trong bản phát hành, được cài, cập nhật và gỡ từng cái; ngăn và các bản cập nhật của nó không bao giờ đụng vào chúng.
 
-### Nút chụp màn hình trên thanh trạng thái
+### Extras (nút chụp màn hình và Tinh chỉnh)
 
-[helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md): một mod nhỏ riêng, thêm nút chụp màn hình vào thanh trạng thái phía trên của Kobo. Chạm để lưu màn hình thành `screen_NNN.png` ở thư mục gốc của ổ Kobo. Để tắt nút, tạo một tệp rỗng `.adds/helpers/screenshot/off` trên Kobo qua USB (xóa tệp để bật lại; `install.sh --off` / `--on` làm việc này). Dựng và cài từ mã nguồn; không có tệp phát hành.
+[helpers/README.md](helpers/README.md): một mod nhỏ riêng, thêm nút chụp màn hình vào thanh trạng thái phía trên của Kobo và bảng **Tinh chỉnh** vào tab Thêm (màn hình chờ, tự kết nối USB, chữ rõ nét, địa chỉ IP, khởi động lại, quét lại thư viện). Dùng được dù có NickelDrawer hay không. Dựng và cài từ mã nguồn; không có tệp phát hành. Cách cài và gỡ nằm trong README đó.
 
 <a id="giao-dien-tieng-viet"></a>
 

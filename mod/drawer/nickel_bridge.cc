@@ -56,10 +56,7 @@ static QWidget *(*N3DialogFactory_getDialog)(QWidget *content, bool hasKeyboard)
 static void (*N3Dialog_setTitle)(QWidget *dialog, QString const &title);
 static QWidget *(*N3Dialog_keyboardFrame)(QWidget *dialog);
 static void (*N3Dialog_showKeyboard)(QWidget *dialog);
-static void (*N3Dialog_setLargeTitleLayoutVisible)(QWidget *dialog, bool isVisible);
 static void *(*N3PowerWorkflowManager_sharedInstance)();
-static void (*N3PowerWorkflowManager_requestSleep)(void *manager);
-static void (*N3PowerWorkflowManager_reboot)(void *manager);
 // KeyboardScript is an enum passed in a register; 0 is what NickelHardcover passes.
 static QObject *(*KeyboardFrame_createKeyboard)(QWidget *frame, int keyboardScript, QLocale const &locale);
 static void (*KeyboardReceiver_construct)(void *receiver, QLineEdit *lineEdit, bool unknown);
@@ -116,7 +113,6 @@ static const bool MENU_ITEM_CHECKABLE = false;
 static const bool MENU_ITEM_ITALIC = true; // NickelMenu's arguments; Nickel's QSS decides the look
 static const int DEFAULT_KEYBOARD_SCRIPT = 0;
 static const bool WITH_KEYBOARD = true;
-static const bool WITHOUT_PAGE_MENU = false; // N3Dialog's bool: GoToPageMenuController on its "pages" label
 // NickelMenu's "autoconnect" arguments: shows Nickel's connect UI when needed.
 static const bool CONNECT_WIRELESS_FIRST_ARGUMENT = true;
 static const bool CONNECT_WIRELESS_SECOND_ARGUMENT = false;
@@ -195,12 +191,8 @@ struct nh_dlsym symbolTable[] = {
     NICKEL_SYMBOL("_ZN8N3Dialog8setTitleERK7QString", N3Dialog_setTitle, "field keyboard"),
     NICKEL_SYMBOL("_ZN8N3Dialog13keyboardFrameEv", N3Dialog_keyboardFrame, "field keyboard"),
     NICKEL_SYMBOL("_ZN8N3Dialog12showKeyboardEv", N3Dialog_showKeyboard, "field keyboard"),
-    NICKEL_SYMBOL("_ZN8N3Dialog26setLargeTitleLayoutVisibleEb", N3Dialog_setLargeTitleLayoutVisible,
-                  "tweaks modal title"),
     NICKEL_SYMBOL("_ZN22N3PowerWorkflowManager14sharedInstanceEv", N3PowerWorkflowManager_sharedInstance,
-                  "sleep/reboot"),
-    NICKEL_SYMBOL("_ZN22N3PowerWorkflowManager12requestSleepEv", N3PowerWorkflowManager_requestSleep, "sleep"),
-    NICKEL_SYMBOL("_ZN22N3PowerWorkflowManager6rebootEv", N3PowerWorkflowManager_reboot, "reboot"),
+                  "wake watcher"),
     NICKEL_SYMBOL("_ZN13KeyboardFrame14createKeyboardE14KeyboardScriptRK7QLocale", KeyboardFrame_createKeyboard,
                   "field keyboard"),
     NICKEL_SYMBOL("_ZN16KeyboardReceiverC1EP9QLineEditb", KeyboardReceiver_construct, "field keyboard"),
@@ -758,57 +750,7 @@ void closeKeyboardDialog(QWidget *dialog)
     popView(dialog);
 }
 
-// ---- Settings-style modal ----
-
-bool hasSettingsDialog()
-{
-    return isBridgeActive && N3DialogFactory_getDialog && N3Dialog_setTitle;
-}
-
-QWidget *createSettingsDialog(QWidget *content, const QString &title)
-{
-    if (!hasSettingsDialog() || !content) {
-        nh_log("bridge: N3Dialog unavailable");
-        return NULL;
-    }
-    QWidget *dialog = N3DialogFactory_getDialog(content, WITHOUT_PAGE_MENU);
-    if (!dialog) {
-        nh_log("bridge: N3DialogFactory::getDialog returned null");
-        return NULL;
-    }
-    N3Dialog_setTitle(dialog, title);
-    // The constructor leaves the large title empty; hide its row too when we can.
-    if (N3Dialog_setLargeTitleLayoutVisible) {
-        N3Dialog_setLargeTitleLayoutVisible(dialog, false);
-    }
-    DebugLog::write("bridge: settings dialog %p (%s)", static_cast<void *>(dialog), dialog->metaObject()->className());
-    return dialog;
-}
-
 // ---- Power ----
-
-bool hasPowerAction(PowerAction action)
-{
-    bool hasManager = isBridgeActive && N3PowerWorkflowManager_sharedInstance;
-    return hasManager && (action == POWER_SLEEP ? N3PowerWorkflowManager_requestSleep != NULL
-                                                : N3PowerWorkflowManager_reboot != NULL);
-}
-
-bool runPowerAction(PowerAction action)
-{
-    void *manager = hasPowerAction(action) ? N3PowerWorkflowManager_sharedInstance() : NULL;
-    if (!manager) {
-        nh_log("bridge: power action %s unavailable", action == POWER_SLEEP ? "sleep" : "reboot");
-        return false;
-    }
-    nh_log("bridge: power action %s", action == POWER_SLEEP ? "sleep" : "reboot");
-    if (action == POWER_SLEEP) {
-        N3PowerWorkflowManager_requestSleep(manager);
-    } else {
-        N3PowerWorkflowManager_reboot(manager);
-    }
-    return true;
-}
 
 QObject *powerWorkflowManager()
 {

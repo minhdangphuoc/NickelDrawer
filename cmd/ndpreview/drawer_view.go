@@ -33,21 +33,21 @@ type drawerItem struct {
 
 // drawerChrome are the drawer's own texts (host/locales mod.* keys) for the previews.
 type drawerChrome struct {
-	title, hint, section, tweaksTitle string
-	loading, emptyTitle, emptyHint    string
-	findApps, problemsSection         string
-	qt6Notice                         string
-	problemName, problemStatus        string
-	statuses                          []string
+	title, hint, section           string
+	loading, emptyTitle, emptyHint string
+	findApps, problemsSection      string
+	qt6Notice                      string
+	problemName, problemStatus     string
+	statuses                       []string
 }
 
 var drawerChromes = map[string]drawerChrome{
-	"en": {title: "Apps", hint: "Long-press an app for info or remove", section: "Installed", tweaksTitle: "Tweaks",
+	"en": {title: "Apps", hint: "Long-press an app for info or remove", section: "Installed",
 		loading: "Loading…", emptyTitle: "No apps yet", emptyHint: "Copy an app folder to .adds/apps, then tap Find apps",
 		findApps: "Find apps", problemsSection: "Problems", qt6Notice: "Kobo is offering update 5.x — NickelDrawer will stop working",
 		problemName: "broken-app", problemStatus: "Cannot open the app: ui.json is not valid JSON at line 12",
 		statuses: []string{"Receiving", "Last sync 14:20", "", "1 update", "3 tasks", ""}},
-	"vi": {title: "Ứng dụng", hint: "Nhấn giữ một ứng dụng để xem thông tin hoặc gỡ", section: "Đã cài", tweaksTitle: "Tinh chỉnh",
+	"vi": {title: "Ứng dụng", hint: "Nhấn giữ một ứng dụng để xem thông tin hoặc gỡ", section: "Đã cài",
 		loading: "Đang tải…", emptyTitle: "Chưa có ứng dụng", emptyHint: "Chép thư mục ứng dụng vào .adds/apps rồi chạm Tìm ứng dụng",
 		findApps: "Tìm ứng dụng", problemsSection: "Sự cố", qt6Notice: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động",
 		problemName: "ung-dung-loi", problemStatus: "Không mở được ứng dụng: ui.json không phải JSON hợp lệ ở dòng 12",

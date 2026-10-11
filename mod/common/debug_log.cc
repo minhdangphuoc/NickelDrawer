@@ -15,9 +15,11 @@
 static const off_t MAX_LOG_BYTES = 256 * 1024;
 static const size_t MAX_LINE_BYTES = 512;
 static const size_t MAX_MOD_NAME_BYTES = 24;
+static const size_t MAX_PATH_BYTES = 256;
 
 static bool isLogEnabled = false;
-static char logModName[MAX_MOD_NAME_BYTES] = "nickeldrawer";
+static char logModName[MAX_MOD_NAME_BYTES] = "mod";
+static char logPath[MAX_PATH_BYTES] = "";
 
 // "2026-10-09 14:03:07.123 nddrawer: " into out; returns its length.
 static int formatLinePrefix(char *out, size_t outSize)
@@ -41,24 +43,24 @@ static int formatLinePrefix(char *out, size_t outSize)
 static int openForAppend(size_t lineBytes)
 {
     struct stat info;
-    bool isFull = stat(DebugLog::LOG_PATH, &info) == 0 && info.st_size + (off_t)lineBytes > MAX_LOG_BYTES;
+    bool isFull = stat(logPath, &info) == 0 && info.st_size + (off_t)lineBytes > MAX_LOG_BYTES;
     if (isFull) {
-        char previousPath[256];
-        snprintf(previousPath, sizeof(previousPath), "%s.1", DebugLog::LOG_PATH);
-        rename(DebugLog::LOG_PATH, previousPath);
+        char previousPath[MAX_PATH_BYTES + 4];
+        snprintf(previousPath, sizeof(previousPath), "%s.1", logPath);
+        rename(logPath, previousPath);
     }
-    return open(DebugLog::LOG_PATH, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0644);
+    return open(logPath, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0644);
 }
 
 static void appendToFile(const char *line, size_t lineBytes)
 {
     int file = openForAppend(lineBytes);
     if (file < 0) {
-        nh_log("debug log: cannot open %s: %s (debug lines go to syslog only)", DebugLog::LOG_PATH, strerror(errno));
+        nh_log("debug log: cannot open %s: %s (debug lines go to syslog only)", logPath, strerror(errno));
         return;
     }
     if (::write(file, line, lineBytes) != (ssize_t)lineBytes) {
-        nh_log("debug log: short write to %s: %s", DebugLog::LOG_PATH, strerror(errno));
+        nh_log("debug log: short write to %s: %s", logPath, strerror(errno));
     }
     fsync(file); // the next step may crash Nickel; the line must be on disk first
     close(file); // never keep files open on /mnt/onboard
@@ -66,12 +68,13 @@ static void appendToFile(const char *line, size_t lineBytes)
 
 namespace DebugLog {
 
-void enableIfFlagged(const char *modName)
+void enableIfFlagged(const char *modName, const char *flagPath, const char *logFilePath)
 {
     snprintf(logModName, sizeof(logModName), "%s", modName);
-    isLogEnabled = access(FLAG_PATH, F_OK) == 0;
+    snprintf(logPath, sizeof(logPath), "%s", logFilePath);
+    isLogEnabled = access(flagPath, F_OK) == 0;
     if (isLogEnabled) {
-        nh_log("debug log on: %s", LOG_PATH);
+        nh_log("debug log on: %s", logPath);
     }
 }
 

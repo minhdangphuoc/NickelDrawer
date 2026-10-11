@@ -6,11 +6,10 @@
 
 #include "drawer_model.h"
 #include "screen_model.h"
-#include "tweaks_model.h"
 
-class AppsctlCall;
+class ToolCall;
 
-// Talks to appsctl (`drawer model|run|info|remove|screen|event|tweaks|tweak`) asynchronously and turns
+// Talks to appsctl (`drawer model|run|info|remove|screen|event`) asynchronously and turns
 // every outcome into a parsed reply. Failures (missing binary, timeout, crash,
 // bad JSON, exit 2) become localized fallback text; nothing blocks.
 class ModelClient : public QObject {
@@ -18,7 +17,7 @@ class ModelClient : public QObject {
 public:
     explicit ModelClient(QObject *parent);
     // Ends with its session (tab tap, Home, back): pending reads are killed,
-    // pending actions finish in the background (AppsctlCall::detach).
+    // pending actions finish in the background (ToolCall::detach).
     ~ModelClient();
 
     void requestModel();
@@ -31,9 +30,6 @@ public:
     void requestScreen(const QString &appId, const QString &screenId, const QString &value = QString());
     // A tap on an app screen; the reply arrives as actionFinished().
     void requestEvent(const QString &appId, const ScreenEvent &event);
-    // The Tweaks modal (docs/spec/tweaks.md).
-    void requestTweaks();
-    void requestTweak(const QString &tweakId);
 
 signals:
     // Always emitted; on failure the model holds one problem row.
@@ -45,27 +41,21 @@ signals:
     void removeFinished(const ActionResult &result);
     // On failure: isLoaded false and failure = the reason (already localized).
     void screenLoaded(bool isLoaded, const ScreenModel &screen, const QString &failure);
-    // Always emitted; on failure isUsable is false and failure says why.
-    void tweaksLoaded(const TweaksModel &model);
-    // Always emitted; on failure isOk is false and error says why.
-    void tweakApplied(const TweakResult &result);
 
 private slots:
-    void onCallFinished(AppsctlCall *call);
+    void onCallFinished(ToolCall *call);
 
 private:
-    enum Request { REQUEST_MODEL, REQUEST_RUN, REQUEST_INFO, REQUEST_REMOVE, REQUEST_SCREEN, REQUEST_EVENT, REQUEST_TWEAKS, REQUEST_TWEAK };
+    enum Request { REQUEST_MODEL, REQUEST_RUN, REQUEST_INFO, REQUEST_REMOVE, REQUEST_SCREEN, REQUEST_EVENT };
 
     static bool isReadOnly(Request request);
     void startCall(Request request, const QStringList &arguments, int timeoutMilliseconds);
     // The JSON reply of a call that exited 0, or false and the failure text.
-    bool replyOf(AppsctlCall *call, QByteArray *json, QString *failure);
-    void deliverModel(AppsctlCall *call);
-    void deliverActionResult(AppsctlCall *call, bool isRemove);
-    void deliverInfo(AppsctlCall *call);
-    void deliverScreen(AppsctlCall *call);
-    void deliverTweaks(AppsctlCall *call);
-    void deliverTweak(AppsctlCall *call);
+    bool replyOf(ToolCall *call, QByteArray *json, QString *failure);
+    void deliverModel(ToolCall *call);
+    void deliverActionResult(ToolCall *call, bool isRemove);
+    void deliverInfo(ToolCall *call);
+    void deliverScreen(ToolCall *call);
 };
 
 #endif

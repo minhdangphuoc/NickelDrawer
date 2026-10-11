@@ -1,6 +1,6 @@
 # NickelDrawer documentation
 
-NickelDrawer adds an **Apps** drawer and a **Tweaks** window to the More tab of a Kobo e-reader running Kobo's own software, with small apps that look like the rest of the Kobo. It is an independent project, not made by or affiliated with Rakuten Kobo.
+NickelDrawer adds an **Apps** drawer to the More tab of a Kobo e-reader running Kobo's own software, with small apps that look like the rest of the Kobo. It is an independent project, not made by or affiliated with Rakuten Kobo.
 
 **Status: beta.** Supported on the Kobo Libra 2 with five 4.38 firmware builds; tried on one device so far. Each guide says what has run on a real device.
 
@@ -33,7 +33,6 @@ The exact formats and contracts. When a guide and a spec disagree, the spec wins
 | [ui-kit.md](../spec/ui-kit.md) | How each component looks, sizes, screen patterns |
 | [drawer-protocol.md](../spec/drawer-protocol.md) | The JSON protocol between the Kobo mod and `appsctl` |
 | [app-updates.md](../spec/app-updates.md) | Over-the-air app updates: formats, keys, verification (planned for 1.1) |
-| [tweaks.md](../spec/tweaks.md) | The Tweaks window and the settings it changes |
 | [inbox.md](../spec/inbox.md) | How received files are checked and sorted |
 | [ghsync-pairing.md](../spec/ghsync-pairing.md) | Phone pairing and token safety for GitHub sync |
 | [library.md](../spec/library.md) | The Library app |

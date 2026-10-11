@@ -4,6 +4,19 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [1.0.0-beta.7] - 2026-10-11
+
+### Changed
+
+- **The Tweaks panel moved out of NickelDrawer** into a separate, optional helper, Extras (`helpers/extras`, see `helpers/README.md`). NickelDrawer no longer adds a Tweaks row to the More tab, and `appsctl drawer tweaks` and `drawer tweak` are gone along with the `tweak.*` texts in the host locales. NickelDrawer and Extras install, work and uninstall independently, each with its own More-tab row, flags and failsafe.
+- Extras merges the status-bar screenshot button (before: `helpers/statusbar-screenshot`) with the Tweaks panel. The panel's "Screenshots / With the power button" cell is replaced by "Screenshot button / In the status bar", which shows or hides the button at once (flag file `.adds/helpers/extras/screenshot-off`).
+- The screenshot button follows Nickel's own status-bar icons: it no longer has a fixed size (it sat higher than the other icons), it copies the brightness icon's size policy and alignment, and its glyph is rendered at the exact on-screen size with a matching stroke. It logs both geometries with the `debug` flag.
+
+### Removed
+
+- The old status-bar helper (`libstatusbarshot.so`, `.adds/helpers/screenshot`); the Extras installer removes it in the same run.
+- The power-button `Screenshots` tweak.
+
 ## [1.0.0-beta.6] - 2026-10-11
 
 ### Added

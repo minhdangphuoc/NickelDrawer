@@ -24,7 +24,7 @@ Toolchain: the pinned NickelTC image (`mod/TOOLCHAIN.md`). The KoboRoot installs
 ```
 nickeldrawer.cc ── init(): flags + model/firmware check ──► nickel_bridge (the ONLY libnickel user)
                                                           │  MoreView ctor hook ─► entry_row
-entry_row ── tap ─► drawer_navigator ── route A ─► drawer_controller (AbstractController, navSection 6)
+entry_row ── tap ─► drawer_navigator ── route A ─► page_controller (AbstractController, navSection 6)
                           │            └ route B ─► pushView/popView + stack watcher
                           └─ creates drawer_view + drawer_session
 drawer_session ── model_client (appsctl via QProcess, async) ─► model_parser (QJsonDocument)
@@ -43,9 +43,9 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `nickel_bridge.{h,cc}` | hook/dlsym tables, model, screen and firmware checks, fail-soft wrappers for every libnickel call, e-ink full-refresh helper |
 | `../common/device_gate.{h,cc}` | pure rules: supported model ids (mirror of `supported_models` in `host/config/project.json`), screen size check, `.kobo/version` field parsing |
 | `mod_switches.{h,cc}` | flag-file paths and the boot-time switch values |
-| `drawer_logic.{h,cc}` | pure rules: paging math, key mapping, refresh policy, protocol version, exit codes, timeouts, Wi-Fi retry, locale |
+| `drawer_logic.{h,cc}` | pure rules: paging math and key mapping (shared `../common/paging`), refresh policy, protocol version, exit codes, timeouts, Wi-Fi retry, locale |
 | `fallback_strings.{h,cc}` | the drawer's own strings: the `mod.*` keys of `.adds/koboapps/locales/<locale>.json` (exact locale, language, en), with a compiled en/vi table as the last resort; reads `CurrentLocale` from `Kobo eReader.conf` (read-only) |
-| `text_meter.{h,cc}` | `QFontMetrics` of Nickel's families behind the `TextMeter` that `screen_logic` measures with |
+| `../common/text_meter.{h,cc}`, `../common/text_fit.{h,cc}` | `QFontMetrics` of Nickel's families behind the `TextMeter` that the shared wrap/elide rule (`text_fit`) measures with |
 | `drawer_model.h` | plain structs of the protocol replies |
 | `model_parser.{h,cc}` | JSON → structs, version check, problem rows |
 | `appsctl_call.{h,cc}` | one `appsctl` QProcess run with a hard timeout, working dir `/` |
@@ -61,16 +61,10 @@ screen_layout (port of cmd/ndpreview) over screen_logic + qr_encoder: Qt-free, u
 | `host_requests.{h,cc}`, `host_request_runner.{h,cc}` | reply `requests` + manifest `rescan` → one plan (Qt-free, tested): Wi-Fi first (ask, connect; skipped when online), then one rescan (full covers quick; full falls back to quick when its symbols are missing); never remembered. Run/event replies and `drawer screen` replies both go through it |
 | `action_runner.{h,cc}` | tap → first action; `needs_wifi` → ask, connect, retry once; result; requests; long-press menu (Info, actions, Remove; at most 8 entries, extra actions and `menu:false` ones left out and logged) |
 | `drawer_session.{h,cc}` | one open drawer: model → view, view taps → runner |
-| `drawer_controller.{h,cc}` | ABI mirror of Nickel's `AbstractController` (built with `-frtti`, no `Q_OBJECT`) |
+| `../common/page_controller.{h,cc}` | ABI mirror of Nickel's `AbstractController` (built with `-frtti`, no `Q_OBJECT`), compiled into each mod |
 | `drawer_navigator.{h,cc}` | open/close by route A (push/pop) or route B (pushView/popView + watcher) |
 | `entry_row.{h,cc}` | More-tab row, status summary line and update dot (items with a badge, or the model's `update_available`) |
-| `more_row.{h,cc}` | builds and inserts one IconLeftButton row in the More tab (Apps and Tweaks rows) |
-| `tweaks_logic.{h,cc}` | Qt-free: `drawer tweaks` / `drawer tweak` JSON replies, 2-column grid math (unit-tested) |
-| `tweaks_model.h`, `tweaks_parser.{h,cc}` | Qt structs of the tweaks replies, built from tweaks_logic |
-| `tweaks_row.{h,cc}` | the "Tweaks" More row after Apps; tap opens the modal |
-| `tweaks_panel.{h,cc}` | modal body: 1 px rule, 2-column grid of painted cells (sans label wrapped to 2 lines and elided; toggle = Nickel's switch image + state word; info = label + caption value), page label, page keys. Cell geometry: `tweaks_logic.h` |
-| `tweaks_session.{h,cc}` | one open modal: Nickel's N3Dialog as a controller view (else the overlay), confirm, `tweak`, toast, Nickel sleep/reboot/rescan |
-| `tweaks_overlay.{h,cc}` | own modal chrome when Nickel's N3Dialog cannot be used |
+| `../common/more_row.{h,cc}` | builds and inserts one IconLeftButton row in the More tab (the Apps row) |
 | `wake_rotation.{h,cc}` | random wallpaper: on `N3PowerWorkflowManager::resumedFromSleep()`, if the Wallpaper app's `data/rotate-on-wake` exists, starts `wallpaper next` detached (docs/spec/wallpaper.md "Random rotation") |
 | `screen_model.h` | plain structs of a `drawer screen` reply |
 | `screen_logic.{h,cc}` | pure ndpreview metrics and rules: wrap, elide, pages, component heights (Qt-free) |
@@ -152,8 +146,6 @@ run removes only one of them).
 | Kobo offers 5.x (`AvailableQt6Upgrade` in `Kobo eReader.conf` is set and differs from `SkippedQt6UpgradeUrl`) | a bold notice row under the drawer header: "Kobo is offering update 5.x — NickelDrawer will stop working" (vi: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động"), taking the hint line's room. Config keys, not `IOUtil::isQt6UpgradePending` (23828 only, needs a `Device`) |
 | a non-critical libnickel symbol missing | only the feature using it is off: no row (IconLeftButton/hook), toast "not available" (push API), plain Qt dialog (Nickel dialogs), message instead of toast, no Wi-Fi retry, no rescan |
 | `moreContainerLayout` not found | no row, logged |
-| N3Dialog or controller push missing | Tweaks modal in the own overlay (re/notes/tweaks-modal.md) |
-| N3PowerWorkflowManager / rescan missing | the tweak still runs; toast "Not available on this firmware." instead of sleep/reboot/rescan |
 | N3PowerWorkflowManager or its `resumedFromSleep()` signal missing | logged; random wallpaper keeps the current picture (no change on wake) |
 | `AbstractController` offset not 8, or push did not stack the view | page discarded, toast |
 | appsctl missing / slow / crashing / bad JSON / too new | problem row + "Try again" row; the More row just reads "Apps" |

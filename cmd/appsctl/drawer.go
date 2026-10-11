@@ -80,8 +80,6 @@ func runDrawer(args []string, stdout, stderr io.Writer) int {
 		"remove": drawerRemove,
 		"screen": drawerScreen,
 		"event":  drawerEvent,
-		"tweaks": drawerTweaks,
-		"tweak":  drawerTweak,
 	}
 	handler, found := subcommands[args[0]]
 	if !found {
@@ -239,9 +237,6 @@ type drawerErrorField struct {
 
 // writeDrawerFailure prints the protocol error document; the exit code tells the mod to read it.
 func writeDrawerFailure(stdout io.Writer, bundle *i18n.Bundle, err error) int {
-	if writeTweakFailure(stdout, err) {
-		return exitFailure
-	}
 	var drawerErr *drawer.Error
 	if !errors.As(err, &drawerErr) {
 		drawerErr = &drawer.Error{Code: drawer.CodeIO, Params: map[string]string{"detail": err.Error()}}

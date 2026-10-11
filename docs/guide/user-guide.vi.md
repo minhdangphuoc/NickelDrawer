@@ -6,10 +6,11 @@ Chữ **in đậm** là đúng chữ bạn thấy trên Kobo để tiếng Việ
 
 ## NickelDrawer là gì (và không phải là gì)
 
-NickelDrawer thêm hai hàng vào tab **Thêm** của Kobo:
+NickelDrawer thêm một hàng vào tab **Thêm** của Kobo:
 
 - **Ứng dụng** mở Ngăn Ứng Dụng: danh sách (hoặc lưới) các công cụ nhỏ, trông giống phần còn lại của Kobo.
-- **Tinh chỉnh** mở một cửa sổ kiểu Cài đặt với các công tắc hay dùng (màn hình chờ, chụp màn hình, tự kết nối USB, chữ rõ nét) và vài thao tác (ngủ, khởi động lại, quét lại thư viện).
+
+Nút chụp màn hình và cửa sổ Tinh chỉnh là một mod riêng, tùy chọn: xem [helpers/README.md](../../helpers/README.md).
 
 Các ứng dụng đi kèm:
 
@@ -102,7 +103,7 @@ Sạc Kobo **từ 50 % trở lên**. Việc cài sẽ khởi động lại máy;
 | Hệ thống Kobo (`/usr/local/Kobo/imageformats/`) | Một tệp: mod NickelDrawer, do chính Kobo cài từ `KoboRoot.tgz` khi khởi động lại. |
 | `.adds/nickeldrawer/` | Thư mục cho các tệp công tắc, xem [An toàn và gỡ cài đặt](#s-an-toan-va-go-cai-at). |
 
-Ngoài ra không có gì thay đổi cho đến khi bạn dùng một ứng dụng hay một tinh chỉnh. Mỗi ứng dụng chỉ ghi vào thư mục của nó (ví dụ LocalSend ghi vào `Books`, `Documents`, `Comics` và `Pictures`). Tinh chỉnh chỉ đổi cài đặt Kobo khi bạn bấm vào.
+Ngoài ra không có gì thay đổi cho đến khi bạn dùng một ứng dụng. Mỗi ứng dụng chỉ ghi vào thư mục của nó (ví dụ LocalSend ghi vào `Books`, `Documents`, `Comics` và `Pictures`).
 
 NickelDrawer không cần NickelMenu và chạy được cùng nó. Nó cũng chạy cùng kobo-tieng-viet (phông và bản sửa tiếng Việt cho Kobo).
 
@@ -131,7 +132,7 @@ Các bước:
 7. Ngắt kết nối Kobo an toàn (macOS: nút eject trong Finder; Windows: "Tháo phần cứng an toàn"). Rồi rút cáp.
 8. Kobo báo đang cập nhật và tự khởi động lại, mất một đến hai phút. Nếu máy không tự khởi động lại, hãy khởi động lại bằng nút nguồn.
 9. Khi Kobo hiện **Trang chủ**, đợi khoảng 20 giây rồi mới làm gì khác. Trong 15 giây đầu sau khi khởi động, tắt máy sẽ gỡ mod ra (đó là lưới an toàn, xem [An toàn và gỡ cài đặt](#s-an-toan-va-go-cai-at)).
-10. Bấm **Thêm**. Bạn sẽ thấy hai hàng mới: **Ứng dụng** và **Tinh chỉnh**.
+10. Bấm **Thêm**. Bạn sẽ thấy một hàng mới: **Ứng dụng**.
 
 Nếu không thấy hai hàng đó, xem [Xử lý sự cố](#s-xu-ly-su-co).
 
@@ -350,7 +351,7 @@ Kobo chỉ hiện ảnh của NickelDrawer khi màn hình ngủ đang ở kiểu
 2. Bật **Hiển thị sách đang đọc**.
 3. Bật **Hiển thị bìa sách toàn màn hình**.
 4. Mở một cuốn sách bất kỳ một lần, để Kobo có "sách đang đọc".
-5. Trong **Thêm** → **Tinh chỉnh**, để **Màn hình chờ** ở **Bật**.
+5. Để nguyên thư mục `.kobo/screensaver`: đừng đổi tên hay xóa nó.
 
 Ứng dụng Hình nền nhắc bạn khi một trong hai cài đặt đang tắt ("Màn hình chờ chưa bật · Xem Tùy chọn").
 
@@ -427,7 +428,7 @@ Nó không bao giờ đụng đến cơ sở dữ liệu thư viện của Kobo.
 
 1. Bấm **Sửa ngôn ngữ**, rồi **Sửa**.
 2. Mỗi sách tiếng Việt bị gắn sai ngôn ngữ được chép vào thư mục sao lưu của ứng dụng, rồi chỉ ngôn ngữ của nó được đặt lại là tiếng Việt. Tệp mới được kiểm trước khi thay tệp cũ.
-3. Mở lại sách để thấy cách ngắt dòng mới. Nếu Kobo vẫn dùng ngôn ngữ cũ, quét lại thư viện (**Tinh chỉnh** → **Quét lại thư viện**).
+3. Mở lại sách để thấy cách ngắt dòng mới. Nếu Kobo vẫn dùng ngôn ngữ cũ, quét lại thư viện (cắm Kobo vào máy tính rồi ngắt kết nối).
 
 ### Sửa tên (NFC)
 
@@ -480,28 +481,6 @@ Danh sách được lưu ở `.adds/apps/todo/data/todo.json`. Nếu tệp đó 
 
 *Đã thử trên máy:* chưa. Việc gõ bằng bàn phím Kobo trong màn hình ứng dụng chưa được thử trên máy; nếu bàn phím không hiện, ô nhập sẽ báo "Hãy đổi mục này từ điện thoại hoặc máy tính."
 
-## Tinh chỉnh
-
-Mở **Thêm** → **Tinh chỉnh**. Một cửa sổ giống Cài đặt của Kobo hiện ra, chia hai cột. Đóng bằng **✕** hoặc chạm ra ngoài. Dùng nút lật trang nếu có hơn một trang.
-
-| Tinh chỉnh | Làm gì | Khi nào có tác dụng |
-|---|---|---|
-| **Màn hình chờ** (Bật/Tắt) | Tắt thì giấu thư mục ảnh màn hình ngủ, Kobo hiện màn hình ngủ bình thường. Ảnh vẫn được giữ. Phải Bật thì Hình nền mới hiện. | Lần ngủ tới. |
-| **Chụp màn hình** (Bật/Tắt) | Cài đặt chụp màn hình ẩn của Kobo. | Chưa xác nhận trên máy. Nếu không thấy thay đổi, hãy khởi động lại. |
-| **Tự kết nối USB** (Bật/Tắt) | Khi bật, Kobo kết nối với máy tính mà không hỏi **Kết nối**. | Chưa xác nhận trên máy. Nếu không thấy thay đổi, hãy khởi động lại. |
-| **Chữ rõ nét** (Bật/Tắt) | Khoảng cách chữ và chữ ghép đẹp hơn. **Chỉ với sách KEPUB** (sách mua từ Kobo hoặc đã chuyển sang KEPUB); EPUB thường và PDF không đổi. | Đóng sách rồi mở lại. |
-| **Địa chỉ IP** | Hiện địa chỉ Wi-Fi của Kobo, hoặc "Không có Wi‑Fi". Chạm vào không làm gì. | — |
-| **Đảo màu và khởi động lại** | Đảo đen và trắng trên cả màn hình rồi khởi động lại. Chạy lần nữa để trả lại. Có hỏi trước. | Sau khi khởi động lại. |
-| **Ngủ** | Cho Kobo ngủ ngay. | Ngay. |
-| **Khởi động lại** | Khởi động lại Kobo. Có hỏi trước. | Ngay. |
-| **Quét lại thư viện** | Nhờ Kobo tìm sách mới hoặc sách đã đổi. | Ngay. |
-
-Công tắc đổi ngay và có thông báo xác nhận, ví dụ "Đã bật Chụp màn hình".
-
-Các công tắc ghi vào tệp cài đặt của chính Kobo (`.kobo/Kobo/Kobo eReader.conf`); **Màn hình chờ** đổi tên thư mục `.kobo/screensaver`. Chúng giữ nguyên như bạn để sau khi gỡ NickelDrawer, nên hãy đặt lại trước nếu muốn.
-
-*Đã thử trên máy:* chưa.
-
 ## Cập nhật
 
 NickelDrawer có thể tự cập nhật, tức là công cụ chủ và mod Kobo, qua Wi-Fi. Ứng dụng của dự án cập nhật riêng, từng cái một (xem [Ứng dụng: cập nhật và cài](#ung-dung-cap-nhat-va-cai)); ứng dụng từ nguồn khác thì cập nhật bằng cách cài tệp zip mới của nó (xem [Cài ứng dụng](#cai-ung-dung)). Nó chỉ cài bản phát hành có chữ ký số của người duy trì dự án. Không có gì được kiểm hay tải nếu bạn không bấm nút.
@@ -523,7 +502,7 @@ Mặc định bản cập nhật lấy từ repo GitHub của dự án; trình c
 1. Mở **Thêm** → **Ứng dụng** → **⚙**.
 2. Ở phần **Cập nhật**, bấm **Kiểm tra**. Kobo bật Wi-Fi nếu cần rồi kiểm tra. Chưa có gì được cài. Trong lúc kiểm tra, màn hình ghi "Đang kiểm tra cập nhật…" và nút **Kiểm tra** mờ; màn hình tự làm mới. Xong thì có một dòng kết quả, giữ đến lần kiểm tra sau: "Đã kiểm tra 09/10/2026 17:02 · Đang dùng bản mới nhất (1.0.0-beta.1)", "Đã kiểm tra 09/10/2026 17:02 · Có bản mới 1.0.0-beta.2", hoặc "Không kiểm tra được 09/10/2026 17:02: chưa có Wi-Fi" (lý do khác: không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Nếu có bản mới hơn, bánh răng có chấm đen, hàng **Bản mới** hiện ra, và nút lớn ghi **Cập nhật lên <phiên bản>** (kèm nút **Kiểm tra** bên cạnh). Khi không có gì để cài, **Kiểm tra** là nút lớn. Lúc đang kiểm tra hay cài, màn hình hiện tiến trình bằng chữ ("Đang kiểm tra cập nhật…") và các nút mờ đi.
 3. Bấm **Cập nhật lên <phiên bản>**, rồi **Cập nhật** để xác nhận. Giữ Wi-Fi bật cho đến khi xong. Màn hình ghi "Đang tải và cài…" rồi "Đã cài 1.0.0-beta.2 — khởi động lại để hoàn tất" hoặc lý do thất bại.
-4. Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (**Tinh chỉnh** → **Khởi động lại**).
+4. Nếu kết quả có câu "khởi động lại để hoàn tất", hãy khởi động lại (giữ nút nguồn rồi bật lại Kobo).
 
 ### Ứng dụng: cập nhật và cài
 
@@ -558,14 +537,14 @@ Khi bản phát hành có mod Kobo mới, việc cập nhật đặt mod mới v
 
 NickelDrawer dùng ngôn ngữ của Kobo (**Cài đặt** → **Ngôn ngữ và từ điển** †). Đổi ngôn ngữ của Kobo, rồi mở lại Ngăn. Nếu ngôn ngữ của bạn chưa có bản dịch, chữ tiếng Anh được dùng. Kobo đặt tiếng Bồ Đào Nha (Brazil) sẽ tìm `pt_BR`, rồi `pt`, rồi tiếng Anh.
 
-Dự án duy trì tiếng Anh và tiếng Việt. Ở ngôn ngữ khác, vài chữ do chính mod Kobo vẽ (hàng **Ứng dụng** và **Tinh chỉnh**, một số thông báo lỗi, thông báo "chưa hỗ trợ") vẫn là tiếng Anh.
+Dự án duy trì tiếng Anh và tiếng Việt. Ở ngôn ngữ khác, vài chữ do chính mod Kobo vẽ (hàng **Ứng dụng**, một số thông báo lỗi, thông báo "chưa hỗ trợ") vẫn là tiếng Anh.
 
 ### Thêm một ngôn ngữ
 
 Không cần lập trình, chỉ cần trình soạn thảo văn bản. Mỗi bản dịch là một tệp nhỏ gồm các dòng `"khóa": "chữ"`.
 
 1. Chép `en.json` thành `<mã>.json` (ví dụ `fr.json`) trong từng thư mục sau:
-    - `.adds/koboapps/locales/` (Ngăn, Tinh chỉnh, cập nhật, cài đặt),
+    - `.adds/koboapps/locales/` (Ngăn, cập nhật, cài đặt),
     - `.adds/koboapps/screens/settings/locales/` (màn hình Cài đặt và Giới thiệu),
     - `.adds/apps/<ứng dụng>/locales/` cho mỗi ứng dụng.
 
@@ -582,7 +561,7 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 
 | Hiện tượng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
-| Không có hàng **Ứng dụng** hay **Tinh chỉnh** trong **Thêm**. | Mod chưa được cài, đang bị tắt, hoặc không hỗ trợ firmware của bạn. | Kiểm `.kobo/KoboRoot.tgz` đã biến mất (Kobo xóa nó sau khi cài). Kiểm `.adds/nickeldrawer/` không có tệp `disable`. Kiểm phiên bản firmware. Chép lại `KoboRoot.tgz` và khởi động lại. |
+| Không có hàng **Ứng dụng** trong **Thêm**. | Mod chưa được cài, đang bị tắt, hoặc không hỗ trợ firmware của bạn. | Kiểm `.kobo/KoboRoot.tgz` đã biến mất (Kobo xóa nó sau khi cài). Kiểm `.adds/nickeldrawer/` không có tệp `disable`. Kiểm phiên bản firmware. Chép lại `KoboRoot.tgz` và khởi động lại. |
 | Thông báo "NickelDrawer chưa hỗ trợ máy này". | Máy Kobo của bạn không có màn 1264×1680 mà Ngăn được dàn trang theo (chỉ Libra 2, Libra H2O và Libra Colour có). | Không có gì hỏng; Kobo vẫn chạy bình thường. Ngăn tự tắt trên mẫu máy này. Xem docs/COMPATIBILITY.md. |
 | Thông báo "NickelDrawer chưa hỗ trợ firmware này". | Firmware không thuộc năm bản được hỗ trợ, thường do Kobo tự cập nhật. | Không có gì hỏng; Kobo vẫn chạy bình thường. Đợi bản NickelDrawer hỗ trợ bản firmware của bạn. |
 | Một dòng dưới tiêu đề Ngăn: "Kobo đang mời cập nhật 5.x — NickelDrawer sẽ ngừng hoạt động". | Kobo đang mời lên firmware 5.x. | Từ chối lời mời trên Kobo nếu bạn muốn giữ NickelDrawer. |
@@ -591,13 +570,12 @@ Muốn gửi bản dịch cho dự án, xem [docs/TRANSLATING.md](../TRANSLATING
 | Ứng dụng báo "Không thành công. Xem data/log.txt." | Ứng dụng gặp lỗi. | Đọc `.adds/apps/<ứng dụng>/data/log.txt` qua USB. Mấy dòng cuối cho biết cái gì hỏng. |
 | Ứng dụng mở ra màn hình "Không mở được ứng dụng" với **Quay lại** và **Thử lại**. | Tệp của ứng dụng thiếu hoặc hỏng. | Chép lại thư mục của ứng dụng đó từ tệp zip phát hành, rồi **Làm mới danh sách**. |
 | Ứng dụng mới không hiện. | Ngăn chưa tải lại, hoặc tệp của ứng dụng sai. | Bấm nút làm mới trên thanh tiêu đề. Ứng dụng hỏng được liệt kê ở mục **SỰ CỐ** kèm lý do. |
-| Ảnh Hình nền không hiện khi máy ngủ. | Một cài đặt Kobo đang tắt, chưa có sách đang đọc, hoặc **Màn hình chờ** đang tắt. | Bật **Hiển thị sách đang đọc** và **Hiển thị bìa sách toàn màn hình** (**Cài đặt** → **Tiết kiệm pin và riêng tư**). Mở một cuốn sách bất kỳ. Bật **Tinh chỉnh** → **Màn hình chờ**. Đặt một ảnh làm hình nền. |
+| Ảnh Hình nền không hiện khi máy ngủ. | Một cài đặt Kobo đang tắt, chưa có sách đang đọc, hoặc thư mục `.kobo/screensaver` đã bị đổi tên. | Bật **Hiển thị sách đang đọc** và **Hiển thị bìa sách toàn màn hình** (**Cài đặt** → **Tiết kiệm pin và riêng tư**). Mở một cuốn sách bất kỳ. Kiểm thư mục `.kobo/screensaver` còn đó. Đặt một ảnh làm hình nền. |
 | LocalSend trên điện thoại không thấy Kobo. | Khác Wi-Fi, mạng khách chặn các máy thấy nhau, việc nhận đã dừng, hoặc Kobo đã ngủ. | Cho cả hai dùng cùng Wi-Fi nhà (không dùng mạng khách). Mở LocalSend trên Kobo, kiểm nó báo **Đang nhận**. Đánh thức Kobo. Nếu LocalSend trên điện thoại cho gửi theo địa chỉ, dùng IP hiện trên Kobo. |
 | Ghép nối GitHub báo lỗi. | Xem thông báo. | Xem [Thông báo khi ghép nối và đồng bộ](#s-thong-bao-khi-ghep-noi-va-ong-bo). |
 | Trang ghép nối không mở được trên điện thoại. | Khác Wi-Fi, hoặc phiên ghép nối đã đóng. | Dùng cùng Wi-Fi. Kiểm Kobo vẫn hiện mã. Bắt đầu ghép nối lại. |
 | "Chưa có Wi-Fi. Kết nối rồi thử lại." | Wi-Fi tắt hoặc chưa kết nối. | Bật Wi-Fi ở thanh trạng thái của Kobo rồi thử lại. |
 | Ô nhập báo "Hãy đổi mục này từ điện thoại hoặc máy tính." | Không gõ được trên Kobo ở bản firmware này, hoặc bạn đã tắt bàn phím. | Xóa tệp `.adds/nickeldrawer/no-keyboard` nếu bạn đã tạo. |
-| Màu màn hình bị đảo và cứ giữ như vậy. | Đã dùng **Đảo màu và khởi động lại**. | Chạy lại **Tinh chỉnh** → **Đảo màu và khởi động lại**. |
 | Kobo bị treo. | Phần mềm Kobo gặp lỗi. | Giữ nút nguồn khoảng 15 giây cho đến khi màn hình đổi, thả ra, rồi bấm lại để bật. |
 | Kobo khởi động đi khởi động lại sau khi cài. | Mod bị lỗi khi khởi động. | Tắt Kobo trong 15 giây đầu sau khi máy lên (xem [Lưới an toàn](#s-luoi-an-toan-failsafe)). Không được thì tạo tệp công tắc `uninstall` qua USB. |
 
@@ -654,9 +632,9 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
 
 **Bằng tay:**
 
-1. Trước tiên: trong **Tinh chỉnh**, đặt **Màn hình chờ**, **Chụp màn hình**, **Tự kết nối USB** và **Chữ rõ nét** theo ý bạn muốn giữ. Nếu đã dùng Thư viện, khôi phục những sách đã bỏ vào thùng rác mà bạn muốn giữ.
+1. Trước tiên: nếu đã dùng Thư viện, khôi phục những sách đã bỏ vào thùng rác mà bạn muốn giữ.
 2. Cắm USB. Tạo tệp rỗng `.adds/nickeldrawer/uninstall`.
-3. Ngắt kết nối và khởi động lại Kobo. Mod bị gỡ, **Ứng dụng** và **Tinh chỉnh** biến khỏi **Thêm**.
+3. Ngắt kết nối và khởi động lại Kobo. Mod bị gỡ, **Ứng dụng** biến khỏi **Thêm**.
 4. Cắm lại và xóa các thư mục `.adds/koboapps` và `.adds/apps` (và `.adds/nickeldrawer` nếu muốn).
 5. Xóa các ảnh tên `nd-wallpaper-*.png` trong `.kobo/screensaver`, nếu không Kobo vẫn hiện chúng khi ngủ.
 
@@ -670,7 +648,6 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
 | Tệp đã nhận nhưng chưa được xếp | `.adds/koboapps/inbox/` (chỉ khi có) |
 | Dữ liệu ứng dụng, trừ khi bạn xóa hoặc dùng `--purge` | `.adds/apps/<ứng dụng>/data/` (token GitHub, thư viện Hình nền, bản sao lưu và thùng rác của Thư viện) |
 | Ảnh màn hình ngủ | `.kobo/screensaver/nd-wallpaper-*.png` |
-| Cài đặt Kobo đã đổi trong **Tinh chỉnh** | `.kobo/Kobo/Kobo eReader.conf`, và `.kobo/screensaver.disabled` nếu **Màn hình chờ** đang tắt |
 | Bản sao lưu của tập lệnh cài | `backups/` trên máy tính |
 
 ## Quyền riêng tư
@@ -680,7 +657,7 @@ Nó sao lưu trước, gỡ các ứng dụng và công cụ chủ, giữ lại 
   - LocalSend nghe trên Wi-Fi của bạn khi đang nhận, và dừng khi bạn bấm dừng hoặc sau 15 phút không có tệp.
   - Ghép nối GitHub mở một trang nhỏ trên Wi-Fi của bạn tối đa 10 phút. Đồng bộ chỉ nói chuyện với GitHub.
   - Cập nhật chỉ nói chuyện với GitHub khi bạn bấm **Kiểm tra** hoặc **Cập nhật lên <phiên bản>**.
-  - Hình nền, Thư viện, Việc cần làm và Tinh chỉnh không bao giờ dùng mạng.
+  - Hình nền, Thư viện, Việc cần làm không bao giờ dùng mạng.
 - **Token GitHub** chỉ được lưu trên Kobo, ở `.adds/apps/ghsync/data/token`. Nó không bao giờ hiện trên màn hình, trong nhật ký hay trong trạng thái ứng dụng. Nhưng bộ nhớ của Kobo không khóa được từng tệp: ai cắm Kobo của bạn vào máy tính cũng đọc được tệp đó. Vì vậy token nên là loại fine-grained, chỉ cho một repo và chỉ đọc. Nếu mất Kobo, hãy thu hồi token trên GitHub.
 - **Mã PIN LocalSend** được lưu ở `.adds/apps/localsend/data/pin.txt`, cũng đọc được theo cách đó.
 - Nhật ký nằm trên Kobo. Không có gì được tải lên.
@@ -801,7 +778,6 @@ Tên của Kobo (các màn hình NickelDrawer làm việc cùng) và tên của 
 | Kết nối | Connect | Nút Kobo hiện khi bạn cắm USB. |
 | Ứng dụng | Apps | Hàng của NickelDrawer trong Thêm, và tiêu đề của Ngăn. |
 | Ngăn Ứng Dụng | App drawer | Trang danh sách ứng dụng. |
-| Tinh chỉnh | Tweaks | Cửa sổ cài đặt của NickelDrawer trong Thêm. |
 | ĐÃ CÀI / HỆ THỐNG | INSTALLED / SYSTEM | Các mục trong Ngăn. |
 | Làm mới | Refresh | Nút trên thanh tiêu đề để tải lại Ngăn. |
 | Cài đặt (⚙) | Settings | Bánh răng ở thanh tiêu đề Ngăn: ứng dụng ẩn, cập nhật, gỡ lỗi, giới thiệu. |

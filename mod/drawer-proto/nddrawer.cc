@@ -7,6 +7,7 @@
 #include <NickelHook.h>
 
 #include "debug_log.h"
+#include "system_icon.h"
 #include "device_state.h"
 #include "nickel_api.h"
 #include "press_area.h"
@@ -42,7 +43,8 @@ static void decidePrototypeC()
 
 static int initialize()
 {
-    DebugLog::enableIfFlagged("nddrawer");
+    SystemIcon::setIconDirectory("/mnt/onboard/.adds/koboapps/icons/ui");
+    DebugLog::enableIfFlagged("nddrawer", "/mnt/onboard/.adds/nickeldrawer/debug", "/mnt/onboard/.adds/nickeldrawer/debug.log");
     char firmware[32];
     DeviceState::readFirmware(firmware, sizeof(firmware));
     if (!DeviceState::isSupportedFirmware(firmware)) {

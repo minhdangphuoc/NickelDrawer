@@ -191,8 +191,6 @@ static void testProtocol()
     EXPECT_EQ(3000, timeoutMillisecondsFor(COMMAND_RUN_BACKGROUND));
     EXPECT_EQ(true, timeoutMillisecondsFor(COMMAND_RUN_SHOW) > 30000);
     EXPECT_EQ(5000, timeoutMillisecondsFor(COMMAND_SCREEN));
-    EXPECT_EQ(3000, timeoutMillisecondsFor(COMMAND_TWEAKS));
-    EXPECT_EQ(3000, timeoutMillisecondsFor(COMMAND_TWEAK));
     EXPECT_EQ(true, isHostItemId("_refresh"));
     EXPECT_EQ(false, isHostItemId("localsend"));
     EXPECT_EQ(false, isHostItemId(""));

@@ -2,6 +2,8 @@
 
 Every UI surface inside the app drawer checked against `docs/design-system.md`: 64 surfaces × 12 criteria (type, spacing, greys, dividers, targets, states, icon source, content style, i18n, text fit, refresh, navigation). Evidence: code references, 79 ndpreview renders and 425 label strings measured with real Avenir Next / Georgia metrics.
 
+Historical note (2026-10-11): findings that name the settings-style modal ("Tinh chỉnh", F19 and related file names) concern a window that has since moved out of the drawer into a separate project; its sources are no longer under `mod/drawer`. The findings stay as written.
+
 | Verdict | Cells |
 |---|---|
 | ✅ conforms | 401 |

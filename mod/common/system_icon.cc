@@ -1,5 +1,7 @@
 #include "system_icon.h"
 
+#include <stdio.h>
+
 #include <QImage>
 #include <QPainter>
 #include <QRect>
@@ -9,15 +11,16 @@
 
 namespace SystemIcon {
 
-const char *const ICON_DIRECTORY = "/mnt/onboard/.adds/koboapps/icons/ui";
-
 namespace {
+
+const int MAX_DIRECTORY_BYTES = 256;
+char iconDirectory[MAX_DIRECTORY_BYTES] = "";
 
 struct Spec {
     const char *name;        // for the log
     const char *nickelPath;  // NULL: Nickel has no fitting icon
     const char *nickelPressedPath;
-    const char *tablerName;  // file "<tablerName>-<tablerSize>.png" in ICON_DIRECTORY
+    const char *tablerName;  // file "<tablerName>-<tablerSize>.png" in the icon directory
     int tablerSize;          // the installed size closest to Nickel's (56-70 px on the Libra 2 class)
 };
 
@@ -80,12 +83,16 @@ bool loadNickel(const Spec &spec, Icon *loaded)
 
 bool loadTabler(const Spec &spec, Icon *loaded)
 {
+    if (!iconDirectory[0]) {
+        DebugLog::write("icon %s: no icon directory set, no Tabler fallback", spec.name);
+        return false;
+    }
     QString path = QString::fromLatin1("%1/%2-%3.png")
-                       .arg(QString::fromLatin1(ICON_DIRECTORY), QString::fromLatin1(spec.tablerName))
+                       .arg(QString::fromLatin1(iconDirectory), QString::fromLatin1(spec.tablerName))
                        .arg(spec.tablerSize);
     loaded->normal = QPixmap(path);
     if (loaded->normal.isNull()) {
-        DebugLog::write("icon %s: %s missing or unreadable (reinstall koboapps)", spec.name, qPrintable(path));
+        DebugLog::write("icon %s: %s missing or unreadable (reinstall the mod)", spec.name, qPrintable(path));
         return false;
     }
     loaded->source = SOURCE_TABLER;
@@ -105,6 +112,11 @@ Icon load(const Spec &spec)
 }
 
 } // namespace
+
+void setIconDirectory(const char *directory)
+{
+    snprintf(iconDirectory, sizeof(iconDirectory), "%s", directory);
+}
 
 const Icon &icon(Id id)
 {

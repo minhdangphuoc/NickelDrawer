@@ -124,20 +124,7 @@ QWidget *openKeyboardDialog(QWidget *content, QLineEdit *lineEdit, const QString
 // Pops the dialog from the window stack (hides it and deletes it later).
 void closeKeyboardDialog(QWidget *dialog);
 
-// ---- Settings-style modal (the Tweaks modal) ----
-// Nickel's N3Dialog, the window of Settings' sub-pages (Ui_N3Dialog: small
-// centred title, close button top-right, Georgia large title, content), with
-// content as its child, the large title hidden. Not shown or pushed: the
-// caller pushes it as a controller view. NULL (logged) when missing.
-// Its closeTapped() signal is the close button.
-bool hasSettingsDialog();
-QWidget *createSettingsDialog(QWidget *content, const QString &title);
-
-// ---- Power (N3PowerWorkflowManager, as NickelMenu's power:sleep/reboot) ----
-enum PowerAction { POWER_SLEEP, POWER_REBOOT };
-bool hasPowerAction(PowerAction action);
-// false (logged) when the symbols are missing.
-bool runPowerAction(PowerAction action);
+// ---- Power (N3PowerWorkflowManager) ----
 // Nickel's N3PowerWorkflowManager (a QObject; its resumedFromSleep() signal is
 // connected by name), or NULL (logged).
 QObject *powerWorkflowManager();

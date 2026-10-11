@@ -82,7 +82,7 @@ The app screens are drawn for the Libra 2 panel: `SCREEN_WIDTH` 1264 and `SCREEN
 1. **Model.** At boot the mod reads the device id, the last field of `.kobo/version` (the same line it reads the firmware build from). Its last three digits name the model; only 384 (Libra H2O), 388 (Libra 2) and 390 (Libra Colour) pass. The list is `supported_models` in `host/config/project.json`, mirrored in `mod/common/device_gate.cc` and kept equal by a test.
 2. **Screen.** When the More tab is first built, the mod asks Nickel's Qt for the screen size and accepts only 1264×1680 (or 1680×1264 rotated). This catches a model whose real panel differs from the spec sheet.
 
-A refused model gets the same treatment as an unknown firmware: no Apps or Tweaks rows, one toast "NickelDrawer does not support this model yet" (vi: "NickelDrawer chưa hỗ trợ máy này"), a log line with the device id. The firmware build check still runs too; both must pass. Why the device id and not other sources: [re/notes/device-detection.md](../re/notes/device-detection.md). To rehearse it on a supported Kobo, create the flag `.adds/nickeldrawer/test-unknown-model` and reboot (checklist case FI-13); delete it to go back to normal.
+A refused model gets the same treatment as an unknown firmware: no Apps row, one toast "NickelDrawer does not support this model yet" (vi: "NickelDrawer chưa hỗ trợ máy này"), a log line with the device id. The firmware build check still runs too; both must pass. Why the device id and not other sources: [re/notes/device-detection.md](../re/notes/device-detection.md). To rehearse it on a supported Kobo, create the flag `.adds/nickeldrawer/test-unknown-model` and reboot (checklist case FI-13); delete it to go back to normal.
 
 ### Why 🟡 is not a promise
 

@@ -61,7 +61,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 }
 </style>
 <div class="shell">
-  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#0-viec-a-at-khong-lam-lai">0. Việc đã đạt, không làm lại</a><a href="#1-chuan-bi-tren-mac-khoang-5-phut-chua-cam-may">1. Chuẩn bị trên Mac (khoảng 5 phút, chưa cắm máy)</a><a href="#2-cam-may-lan-1-cai-u1-khoang-6-phut">2. Cắm máy lần 1: cài (U1, khoảng 6 phút)</a><a href="#3-ngan-ung-dung-va-tinh-chinh-khong-can-usb-khoang-18-phut">3. Ngăn Ứng Dụng và Tinh chỉnh (không cần USB, khoảng 18 phút)</a><a href="#4-localsend-va-cam-usb-lan-2-khoang-12-phut">4. LocalSend và cắm USB lần 2 (khoảng 12 phút)</a><a href="#4b-github-khoang-15-phut">4b. GitHub (khoảng 15 phút)</a><a href="#5-hinh-nen-thu-vien-giao-dien-khoang-20-phut">5. Hình nền, Thư viện, giao diện (khoảng 20 phút)</a><a href="#5b-viec-can-lam-va-bo-giao-dien-khoang-15-phut">5b. Việc cần làm và Bộ giao diện (khoảng 15 phút)</a><a href="#6-ba-hanh-ong-cuoi-cua-tinh-chinh-khoang-8-phut">6. Ba hành động cuối của Tinh chỉnh (khoảng 8 phút)</a><a href="#7-co-y-lam-hong-cuoi-buoi-moi-buoc-co-cach-khoi-phuc">7. Cố ý làm hỏng (cuối buổi, mỗi bước có cách khôi phục)</a><a href="#8-o-s-criteria">8. Đo S-criteria</a><a href="#9-ghi-chu-nguoi-ieu-phoi-va-nguoi-dung">9. Ghi chú (người điều phối và người dùng)</a><a href="#10-ky-xac-nhan-mau-910-cong-g3-g4-g5">10. Ký xác nhận (mẫu §9.10, cổng G3, G4, G5)</a></nav>
+  <nav class="toc" aria-label="Sections"><span class="lbl">Sections</span><a href="#0-viec-a-at-khong-lam-lai">0. Việc đã đạt, không làm lại</a><a href="#1-chuan-bi-tren-mac-khoang-5-phut-chua-cam-may">1. Chuẩn bị trên Mac (khoảng 5 phút, chưa cắm máy)</a><a href="#2-cam-may-lan-1-cai-u1-khoang-6-phut">2. Cắm máy lần 1: cài (U1, khoảng 6 phút)</a><a href="#3-ngan-ung-dung-khong-can-usb-khoang-12-phut">3. Ngăn Ứng Dụng (không cần USB, khoảng 12 phút)</a><a href="#4-localsend-va-cam-usb-lan-2-khoang-12-phut">4. LocalSend và cắm USB lần 2 (khoảng 12 phút)</a><a href="#4b-github-khoang-15-phut">4b. GitHub (khoảng 15 phút)</a><a href="#5-hinh-nen-thu-vien-giao-dien-khoang-20-phut">5. Hình nền, Thư viện, giao diện (khoảng 20 phút)</a><a href="#5b-viec-can-lam-va-bo-giao-dien-khoang-15-phut">5b. Việc cần làm và Bộ giao diện (khoảng 15 phút)</a><a href="#6-ngu-va-khoi-ong-lai-khoang-8-phut">6. Ngủ và khởi động lại (khoảng 8 phút)</a><a href="#7-co-y-lam-hong-cuoi-buoi-moi-buoc-co-cach-khoi-phuc">7. Cố ý làm hỏng (cuối buổi, mỗi bước có cách khôi phục)</a><a href="#8-o-s-criteria">8. Đo S-criteria</a><a href="#9-ghi-chu-nguoi-ieu-phoi-va-nguoi-dung">9. Ghi chú (người điều phối và người dùng)</a><a href="#10-ky-xac-nhan-mau-910-cong-g3-g4-g5">10. Ký xác nhận (mẫu §9.10, cổng G3, G4, G5)</a></nav>
   <main>
     <header class="top">
       <span class="eyebrow">Kobo Libra 2 · native app drawer · detailed plan v3</span>
@@ -79,7 +79,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <p>Một buổi duy nhất, khoảng 90 phút cho phần chính (mục 1 đến 6, kể cả GitHub ở mục 4b và Việc cần làm cùng Bộ giao diện ở mục 5b) và khoảng 15 phút cho phần cố ý làm hỏng (mục 7). Buổi này thay các phiên T4, T5, T6, T7 của kế hoạch (<code>docs/plan-detailed.md</code> §5.1) và qua ba cổng G3, G4, G5 cùng lúc. Không có bài thử ngâm 72 giờ (<code>docs/DECISIONS.md</code>, 2026-10-10): thay vào đó nhật ký <code>debug.log</code> luôn bật để lỗi chạy lâu vẫn lộ ra.</p>
 <p>Máy: Kobo Libra 2, firmware 4.38.23828. Chỉ người dùng chạm vào máy. Phần "Mac" do người bảo trì làm qua USB bằng <code>tools/device-session.sh</code>; không bao giờ <code>cd</code> vào <code>/Volumes/KOBOeReader</code>.</p>
 <p>Cách đọc bảng: mỗi dòng là một ca. Tick một ô: <code>☐ Đạt</code> hoặc <code>☐ Lỗi</code>. Cột "Log" là dòng trong <code>.adds/nickeldrawer/debug.log</code> chứng minh ca đó (người bảo trì đọc sau mỗi lần cắm USB bằng <code>tools/device-session.sh log</code>). Dòng ghi "(syslog)" không nằm trong <code>debug.log</code> (chỉ có ở nhật ký hệ thống), nên ca đó chỉ xét bằng mắt.</p>
-<p>Quy ước tên: Thêm = tab "Thêm" (More); Tinh chỉnh và Ứng dụng là hai hàng trong tab Thêm; Hình nền, LocalSend, Thư viện là tên ứng dụng trong Ngăn Ứng Dụng.</p>
+<p>Quy ước tên: Thêm = tab "Thêm" (More); Ứng dụng là một hàng trong tab Thêm; Hình nền, LocalSend, Thư viện là tên ứng dụng trong Ngăn Ứng Dụng.</p>
 <h2 id="0-viec-a-at-khong-lam-lai">0. Việc đã đạt, không làm lại</h2>
 <div class="tbl"><table>
 <thead>
@@ -143,7 +143,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>DRW-06 (thư mục ứng dụng trống), DRW-10 (ngủ khi Ngăn mở)</td>
 <td>gộp / bỏ</td>
-<td>DRW-06 bỏ (cần gỡ hết ứng dụng); DRW-10 thử trong TWK-10.</td>
+<td>DRW-06 bỏ (cần gỡ hết ứng dụng); DRW-10 thử trong SLP-01.</td>
 </tr>
 <tr>
 <td>KIT-06, KIT-07, KIT-08</td>
@@ -167,7 +167,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <li>☐ <code>make check build dist</code> xanh, và <code>tools/test-install.sh</code> xanh.</li>
 <li>☐ <code>build/mod/KoboRoot-nickeldrawer.tgz</code> mới hơn mọi tệp trong <code>mod/</code>; nếu không, build lại mod rồi chạy lại bước trên.</li>
 <li>☐ Pin Kobo từ 50 % trở lên: <strong><em>_ %. Wi-Fi nhà bật. Điện thoại có LocalSend, cùng Wi-Fi. Ghi giờ bắt đầu: </em></strong>_</li>
-<li>☐ Ghi trạng thái ban đầu của bốn công tắc Tinh chỉnh để trả lại cuối buổi: Màn hình chờ <strong><em>_ · Chụp màn hình </em></strong><em> · Tự kết nối USB <strong><em>_ · Chữ rõ nét </em></strong></em> (xem trong <code>Kobo eReader.conf</code> qua USB, hoặc ghi ở TWK-01).</li>
+<li>☐ Ghi trạng thái ban đầu của thư mục <code>.kobo/screensaver</code> (có hay không) để trả lại cuối buổi: ____ (xem qua USB).</li>
 <li>☐ Chuẩn bị 13 ảnh PNG/JPEG (đủ 2 trang lưới: 12 + 1; có thể dùng <code>go run ./tools/wallpaper-samples</code> và nhân bản). Chưa chép vào máy.</li>
 <li>☐ Chuẩn bị 2 sách thử: bản sao một EPUB tiếng Việt của bạn gắn ngôn ngữ <code>en</code> (hoặc không gắn), và một bản sao y hệt tệp đó (cùng nội dung, tên khác). Tên thư mục thử: <code>Books/ndtest/</code>. Không dùng sách riêng tư trong repo.</li>
 <li>☐ Chuẩn bị ba thư mục ứng dụng giả <code>ndtest-bad-ui</code>, <code>ndtest-big</code>, <code>ndtest-many</code> (xem DRW-07 và FI-02). Chỉ để ngoài repo, trong <code>local/</code>.</li>
@@ -220,7 +220,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tbody>
 </table></div>
 <p>Nếu máy không lên: cứ để Nickel tự khởi động lại; tắt nguồn một lần trong 15 giây đầu sau khi mod nạp để NickelHook bỏ mod ở lần khởi động sau. Hoặc cắm USB, người bảo trì <code>flags uninstall</code>, khởi động lại. Dừng buổi và gửi <code>debug.log</code>.</p>
-<h2 id="3-ngan-ung-dung-va-tinh-chinh-khong-can-usb-khoang-18-phut">3. Ngăn Ứng Dụng và Tinh chỉnh (không cần USB, khoảng 18 phút)</h2>
+<h2 id="3-ngan-ung-dung-khong-can-usb-khoang-12-phut">3. Ngăn Ứng Dụng (không cần USB, khoảng 12 phút)</h2>
 <p>Nhớ ghi giờ khi thử DRW-02 (S1).</p>
 <div class="tbl"><table>
 <thead>
@@ -237,7 +237,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>DRW-01</td>
 <td>Bấm tab Thêm. Nhìn các hàng</td>
-<td>Có hàng "Ứng dụng" (dòng trạng thái nhỏ, biểu tượng gốc của Nickel) và hàng "Tinh chỉnh" (biểu tượng bánh răng của Nickel), nằm cùng kiểu với các hàng Thêm khác</td>
+<td>Có hàng "Ứng dụng" (dòng trạng thái nhỏ, biểu tượng gốc của Nickel) nằm cùng kiểu với các hàng Thêm khác</td>
 <td><code>bridge: MoreView constructed</code>, <code>more row: Nickel icon ... (WxH)</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -327,78 +327,6 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <td>Có Wi-Fi. Trong ⚙ bấm "Kiểm tra" (Cập nhật). Chờ vài giây rồi nhìn lại màn (mở lại nếu cần)</td>
 <td>Toast "Đang kiểm tra cập nhật." rồi mục Cập nhật ghi "Đang kiểm tra cập nhật…" (nút Kiểm tra mờ, màn tự làm mới, không cần mở lại). Xong luôn có một dòng kết quả kèm giờ, giữ đến lần kiểm tra sau: đã mới nhất thì "Đã kiểm tra lúc HH:MM · Bạn đang dùng bản mới nhất (<số>)"; có bản mới thì "… · Có bản mới <số>"; lỗi thì "Không kiểm tra được lúc HH:MM: <lý do>" (chưa có Wi-Fi, không kết nối được GitHub, GitHub đang giới hạn, chữ ký sai, kênh này chưa có bản phát hành). Chưa có bản phát hành: không có dòng "Bản mới", nút lớn vẫn "Cập nhật" và mờ; có bản mới hơn: bánh răng có chấm đen, hàng "Bản mới" kèm ●, nút "Cập nhật lên <số>" sáng, bấm hiện hộp xác nhận "Cài bản <số>? …" (chọn Hủy để không cài trên buổi này). Tắt Wi-Fi rồi Kiểm tra: máy hỏi bật Wi-Fi; nếu từ chối hoặc không kết nối được thì dòng kết quả ghi lý do, không để trống</td>
 <td><code>screen: tap on button N, action "check"</code>, (syslog) <code>update check</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-01</td>
-<td>Bấm Thêm, bấm hàng "Tinh chỉnh". Ghi lại các công tắc đang Bật hay Tắt</td>
-<td>Cửa sổ kiểu Cài đặt của Kobo: tiêu đề nhỏ ở giữa, nút ✕, tiêu đề lớn có chân, các hàng chữ nghiêng có đường kẻ, danh sách 2 cột. Có: Màn hình chờ, Chụp màn hình, Tự kết nối USB, Chữ rõ nét, Địa chỉ IP, Đảo màu và khởi động lại, Ngủ, Khởi động lại, Quét lại thư viện. Ba hành động Ngủ, Khởi động lại, Đảo màu và khởi động lại nằm cuối. Công tắc hiện Bật/Tắt</td>
-<td><code>tweaks: Nickel N3Dialog ... pushed</code>, <code>tweaks panel: 9 tweak(s), N page(s)</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-02</td>
-<td>Bấm "Chụp màn hình"</td>
-<td>Đổi Bật/Tắt ngay, hiện toast "Đã bật Chụp màn hình" (hoặc "Đã tắt …"); không hộp thoại văn bản. Bấm lại để trả về như cũ</td>
-<td><code>tweaks panel: tap on "screenshots"</code>, <code>tweaks: "screenshots" applied</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-03</td>
-<td>Bấm "Tự kết nối USB" để đổi, ghi trạng thái</td>
-<td>Đổi Bật/Tắt, có toast. Để nguyên cho đến khi người bảo trì kiểm trên Mac ở mục 4, rồi trả lại</td>
-<td><code>tweaks panel: tap on "auto-usb"</code>, <code>tweaks: "auto-usb" applied</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-04</td>
-<td>Bấm "Chữ rõ nét"</td>
-<td>Đổi Bật/Tắt; toast nói "Mở lại sách để áp dụng". Trả lại như cũ ở cuối</td>
-<td><code>tweaks panel: tap on "legibility"</code>, <code>tweaks: "legibility" applied</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-05</td>
-<td>Bấm "Màn hình chờ" (tắt), rồi bấm lại (bật)</td>
-<td>Mỗi lần đổi ngay kèm toast. Cuối cùng để <strong>Bật</strong> (Hình nền cần bật). Mac kiểm: thư mục <code>.kobo/screensaver</code> đổi tên thành <code>.kobo/screensaver.disabled</code> khi Tắt và về lại khi Bật; ảnh không mất</td>
-<td><code>tweaks panel: tap on "screensaver"</code>, <code>tweaks: "screensaver" applied</code> ×2</td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-06</td>
-<td>Xem hàng "Địa chỉ IP". Bấm vào nó</td>
-<td>Hiện địa chỉ IP của Wi-Fi (hoặc "Không có Wi‑Fi"). Bấm không làm gì</td>
-<td><code>tweaks panel: tap on "ip"</code> (không có dòng <code>applied</code>)</td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-07</td>
-<td>Bấm "Quét lại thư viện"</td>
-<td>Toast "Đang quét thư viện". Máy quét nhanh, không treo, không hộp thoại</td>
-<td><code>tweaks: "library-rescan" applied</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-08</td>
-<td>Bấm "Khởi động lại" rồi chọn <strong>Hủy</strong>. Làm tương tự với "Đảo màu và khởi động lại"</td>
-<td>Có hộp xác nhận ("Khởi động lại ngay?", "Đảo màu màn hình và khởi động lại ngay?"). Hủy thì không có gì xảy ra</td>
-<td><code>tweaks: "reboot" cancelled</code>, <code>tweaks: "invert-reboot" cancelled</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-09</td>
-<td>Nếu cửa sổ có hơn 1 trang: lật bằng phím chuyển trang. Bấm ✕. Mở lại, bấm ra ngoài khung</td>
-<td>Phím lật trang đổi trang; ✕ và bấm ngoài đều đóng; Thêm hiện lại bình thường</td>
-<td><code>tweaks panel: page 1 -&gt; 2</code>, <code>tweaks: closing, pop controller</code>, <code>tweaks: modal destroyed</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
@@ -495,7 +423,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <p>Người điều phối (U2, khoảng 6 phút), máy đã nối USB:</p>
 <ol>
 <li><code>tools/device-session.sh log</code> và lưu bản log. Đọc các ca ở mục 3 và 4.</li>
-<li>Kiểm <code>Kobo eReader.conf</code> và thư mục theo các ca TWK-02..05 (ghi vào cột Ghi chú cuối file).</li>
+<li>Kiểm thư mục <code>.kobo/screensaver</code> còn nguyên (Hình nền cần nó).</li>
 <li>SAFE-06: chạy lại <code>tools/install-to-kobo.sh</code> (cùng bản) để thử cài đè; kiểm Hình nền/LocalSend vẫn còn dữ liệu.</li>
 <li>Chép 13 ảnh vào <code>Pictures/</code>; chép 2 sách thử vào <code>Books/ndtest/</code>; chép <strong>một sách bất kỳ</strong> (SAFE-04) vào <code>Books/</code>; chép 3 thư mục ứng dụng giả vào <code>.adds/apps/</code>: <code>ndtest-bad-ui</code> (ui.json bị cắt cụt, ngoài ra một màn có thành phần lạ và một biến <code>$undefined</code>), <code>ndtest-big</code> (biểu tượng 5 MB và <code>app.json</code> 1 MB), <code>ndtest-many</code> (20 thư mục app rỗng dạng hợp lệ). Không sửa gì khác.</li>
 <li><code>tools/device-session.sh clean</code>, <code>eject</code>. Người dùng bấm Rút USB. <strong>Không khởi động lại.</strong></li>
@@ -825,7 +753,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>KIT-02</td>
-<td>So cạnh Cài đặt › Đọc sách (hoặc Cài đặt gốc) với Tinh chỉnh và Hình nền › Tùy chọn. Cho điểm (S11)</td>
+<td>So cạnh Cài đặt › Đọc sách (hoặc Cài đặt gốc) với Hình nền › Tùy chọn. Cho điểm (S11)</td>
 <td>Chiều cao hàng, đường kẻ, độ đậm chữ giống nhau. Điểm của bạn: ___ / 5 (cần từ 4)</td>
 <td>—</td>
 <td>☐</td>
@@ -848,7 +776,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tbody>
 <tr>
 <td>KIT-11 (và DRW-08)</td>
-<td>Bật chế độ tối (Dark Mode ở menu đọc sách hoặc Cài đặt). Mở Ngăn, LocalSend, Hình nền (lưới và trình xem), Thư viện, Tinh chỉnh</td>
+<td>Bật chế độ tối (Dark Mode ở menu đọc sách hoặc Cài đặt). Mở Ngăn, LocalSend, Hình nền (lưới và trình xem), Thư viện</td>
 <td>Mọi thứ đảo màu đúng; biểu tượng đổi theo; không hộp trắng; ảnh trong lưới vẫn đúng (ảnh không đảo)</td>
 <td><code>icon ...</code> không báo thiếu</td>
 <td>☐</td>
@@ -856,7 +784,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tr>
 <tr>
 <td>KIT-12 (và DRW-09)</td>
-<td>Đổi cỡ chữ nhỏ nhất, rồi lớn nhất. Mở Ngăn, Tinh chỉnh, Thư viện, Hình nền &gt; Tùy chọn</td>
+<td>Đổi cỡ chữ nhỏ nhất, rồi lớn nhất. Mở Ngăn, Thư viện, Hình nền &gt; Tùy chọn</td>
 <td>Bố cục co giãn, không bị cắt chữ; vùng chạm đủ lớn (khoảng 120 px).</td>
 <td><code>screen: ... tap target(s)</code></td>
 <td>☐</td>
@@ -1009,8 +937,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </tbody>
 </table></div>
 <p>Các ca KIT-* còn lại làm trên Bộ giao diện khi tiện: KIT-02 (so với Cài đặt), KIT-11 (chế độ tối) và KIT-12 (cỡ chữ) có thể làm với ba màn của nó (Màn chính, Thêm thành phần, Thư viện ảnh) thay cho, hoặc thêm vào, các màn ở mục 5. Cuối buổi tắt lại công tắc Bộ giao diện trong ⚙ (SET-02).</p>
-<h2 id="6-ba-hanh-ong-cuoi-cua-tinh-chinh-khoang-8-phut">6. Ba hành động cuối của Tinh chỉnh (khoảng 8 phút)</h2>
-<p>Làm theo đúng thứ tự này. Trả công tắc về như cũ trước (TWK-02..05 đã xong). Cho Hình nền một ảnh đang dùng và một sách đang đọc.</p>
+<h2 id="6-ngu-va-khoi-ong-lai-khoang-8-phut">6. Ngủ và khởi động lại (khoảng 8 phút)</h2>
+<p>Làm theo đúng thứ tự này. Cho Hình nền một ảnh đang dùng và một sách đang đọc.</p>
 <div class="tbl"><table>
 <thead>
 <tr>
@@ -1024,16 +952,16 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 </thead>
 <tbody>
 <tr>
-<td>TWK-10</td>
-<td>Mở Ngăn (hoặc một màn ứng dụng). Mở Tinh chỉnh, bấm "Ngủ". Chờ 1 phút, bấm nút nguồn để đánh thức</td>
-<td>Toast "Đang vào chế độ ngủ"; máy ngủ. <strong>Màn hình ngủ hiện ảnh Hình nền toàn màn hình</strong> (WP-09). Đánh thức: về đúng màn hình trước đó, không vệt (DRW-10, FI-10). Nếu không thấy ảnh: kiểm "Hiển thị sách đang đọc" và "Hiển thị bìa sách toàn màn hình" ở Cài đặt › Tiết kiệm pin và riêng tư</td>
-<td><code>tweaks: "sleep" applied</code>, <code>bridge: power action sleep</code></td>
+<td>SLP-01</td>
+<td>Mở Ngăn (hoặc một màn ứng dụng). Bấm nút nguồn để máy ngủ. Chờ 1 phút, bấm nút nguồn để đánh thức</td>
+<td>Máy ngủ. <strong>Màn hình ngủ hiện ảnh Hình nền toàn màn hình</strong> (WP-09). Đánh thức: về đúng màn hình trước đó, không vệt (DRW-10, FI-10). Nếu không thấy ảnh: kiểm "Hiển thị sách đang đọc" và "Hiển thị bìa sách toàn màn hình" ở Cài đặt › Tiết kiệm pin và riêng tư</td>
+<td><code>wake rotation: ...</code> (nếu bật xoay ảnh)</td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>WP-09</td>
-<td>Ngay sau TWK-10, xem lại ảnh ngủ</td>
+<td>Ngay sau SLP-01, xem lại ảnh ngủ</td>
 <td>Ảnh đặt ở WP-05 hiện toàn màn hình, đúng chế độ Lấp đầy/Vừa khung đã chọn</td>
 <td>(xem màn hình)</td>
 <td>☐</td>
@@ -1048,24 +976,15 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <td>☐</td>
 </tr>
 <tr>
-<td>TWK-11</td>
-<td>Mở Tinh chỉnh, bấm "Khởi động lại", <strong>OK</strong></td>
-<td>Toast "Đang khởi động lại", rồi máy khởi động. Sau khi lên: các công tắc còn đúng cài đặt cuối, Hình nền còn dữ liệu, Tinh chỉnh mở lại bình thường</td>
-<td><code>tweaks: "reboot" confirmed</code>, <code>tweaks: "reboot" applied</code>, <code>bridge: power action reboot</code></td>
-<td>☐</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>TWK-12</td>
-<td>Mở Tinh chỉnh, bấm "Đảo màu và khởi động lại", OK. Sau khi lên, mở lại và chạy <strong>một lần nữa</strong> để trả lại</td>
-<td>Máy khởi động với màu bị đảo ngược; lần chạy thứ hai trả lại bình thường. Không kẹt ở màu đảo</td>
-<td><code>tweaks: "invert-reboot" confirmed</code>, <code>tweaks: "invert-reboot" applied</code> ×2</td>
+<td>REB-01</td>
+<td>Khởi động lại máy bằng cách bạn quen (giữ nút nguồn, tắt, bật lại). Sau khi lên, mở Thêm và Ngăn</td>
+<td>Hàng Ứng dụng vẫn có; Hình nền còn dữ liệu; Ngăn mở bình thường</td>
+<td><code>bridge: MoreView constructed</code></td>
 <td>☐</td>
 <td>☐</td>
 </tr>
 </tbody>
 </table></div>
-<p>Nếu kẹt ở màu đảo: cắm USB, người bảo trì đặt <code>InvertScreen=false</code> trong <code>Kobo eReader.conf</code> (sau khi sao lưu), khởi động lại.</p>
 <h2 id="7-co-y-lam-hong-cuoi-buoi-moi-buoc-co-cach-khoi-phuc">7. Cố ý làm hỏng (cuối buổi, mỗi bước có cách khôi phục)</h2>
 <p>Từ bước này Ngăn có thể mất tạm; không sao. Làm lần lượt. Mỗi bước: người bảo trì cắm USB, làm xong rồi <code>eject</code>.</p>
 <div class="tbl"><table>
@@ -1082,8 +1001,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tbody>
 <tr>
 <td>FI-01</td>
-<td>Người bảo trì (U3): đổi tên <code>.adds/koboapps/bin/appsctl</code> thành <code>appsctl.off</code>, <code>eject</code>. Người dùng: mở Ngăn, bấm Tinh chỉnh</td>
-<td>Nickel <strong>không sập</strong>. Ngăn trống hoặc báo lỗi ngắn, Tinh chỉnh báo toast "không dùng được" thay vì cửa sổ rỗng; ✕/← vẫn đóng được</td>
+<td>Người bảo trì (U3): đổi tên <code>.adds/koboapps/bin/appsctl</code> thành <code>appsctl.off</code>, <code>eject</code>. Người dùng: mở Ngăn</td>
+<td>Nickel <strong>không sập</strong>. Ngăn trống hoặc báo lỗi ngắn thay vì màn hình rỗng; ←/tab vẫn đóng được</td>
 <td><code>tweaks: list unavailable: ...</code>; (syslog) <code>appsctl failed to start: ...</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -1106,7 +1025,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>FI-03</td>
 <td>Người bảo trì (U4): trả <code>appsctl</code>; <code>flags debug screens disable</code>; <code>eject</code>. Người dùng: khởi động lại (nút nguồn) và mở Thêm</td>
-<td>Mod tải nhưng <strong>im lặng</strong>: Thêm chỉ có các hàng gốc, <strong>không</strong> hàng Ứng dụng, <strong>không</strong> Tinh chỉnh; không toast lúc khởi động; mọi chức năng của Nickel bình thường. Lệnh khôi phục hoạt động</td>
+<td>Mod tải nhưng <strong>im lặng</strong>: Thêm chỉ có các hàng gốc, <strong>không</strong> hàng Ứng dụng; không toast lúc khởi động; mọi chức năng của Nickel bình thường. Lệnh khôi phục hoạt động</td>
 <td>(syslog) <code>kill switch ... present, staying inert</code>; trong <code>debug.log</code> không có <code>entry row:</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -1114,7 +1033,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>FI-04 (tùy chọn)</td>
 <td>Người bảo trì (U5): xóa cờ <code>disable</code> (<code>flags debug screens</code>), <strong>sao lưu</strong> <code>.kobo/version</code>, sửa trường firmware (trường thứ 3) thành <code>4.99.99999</code> trên bản chép rồi ghi lại, <code>eject</code>. Người dùng: khởi động lại, mở Thêm</td>
-<td>Bản firmware lạ: mod tắt ngăn, hàng Ứng dụng/Tinh chỉnh không có, Nickel bình thường</td>
+<td>Bản firmware lạ: mod tắt ngăn, hàng Ứng dụng không có, Nickel bình thường</td>
 <td>(syslog) <code>bridge: firmware 4.99.99999 not in the tested list, drawer disabled</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -1122,7 +1041,7 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tr>
 <td>FI-13</td>
 <td>Người bảo trì (U5b): <strong>khôi phục <code>.kobo/version</code></strong> nếu đã làm FI-04; <code>flags debug screens test-unknown-model</code>; <code>eject</code>. Người dùng: khởi động lại, mở Thêm, chờ 5 giây</td>
-<td>Mẫu máy "lạ": Thêm chỉ có các hàng gốc, <strong>không</strong> hàng Ứng dụng/Tinh chỉnh; đúng <strong>một</strong> toast "NickelDrawer chưa hỗ trợ máy này" (en: "NickelDrawer does not support this model yet") vài giây sau khi mở Thêm; Nickel bình thường. Cờ được gỡ ở bước SAFE-03</td>
+<td>Mẫu máy "lạ": Thêm chỉ có các hàng gốc, <strong>không</strong> hàng Ứng dụng; đúng <strong>một</strong> toast "NickelDrawer chưa hỗ trợ máy này" (en: "NickelDrawer does not support this model yet") vài giây sau khi mở Thêm; Nickel bình thường. Cờ được gỡ ở bước SAFE-03</td>
 <td><code>bridge: test flag /mnt/onboard/.adds/nickeldrawer/test-unknown-model present, device 00000000-0000-0000-0000-000000000388 treated as unsupported, drawer disabled (no More rows)</code>; (syslog) <code>bridge: telling the user the drawer is disabled</code></td>
 <td>☐</td>
 <td>☐</td>
@@ -1213,8 +1132,8 @@ blockquote { margin: 0 0 14px; padding: 10px 16px; border-left: 3px solid var(--
 <tbody>
 <tr>
 <td><strong>G3</strong> (Ngăn)</td>
-<td>DRW-01..05, 07, 12, 13, 14 đạt; TWK-01..12 đạt; NAV-01..03 đạt; S1 đạt; S8 đạt (LS-07); mô phỏng firmware lạ/mẫu máy lạ/cờ <code>disable</code> an toàn (FI-03, FI-04 hoặc FW-03 tĩnh, FI-13); SAFE-03/04/06 đạt; S4 không đo (bỏ ngâm)</td>
-<td>DRW-<em>, TWK-</em>, NAV-<em>, ICO-01, API-01, SAFE-</em>, FI-03/04/13</td>
+<td>DRW-01..05, 07, 12, 13, 14 đạt; SLP-01, REB-01 đạt; NAV-01..03 đạt; S1 đạt; S8 đạt (LS-07); mô phỏng firmware lạ/mẫu máy lạ/cờ <code>disable</code> an toàn (FI-03, FI-04 hoặc FW-03 tĩnh, FI-13); SAFE-03/04/06 đạt; S4 không đo (bỏ ngâm)</td>
+<td>DRW-<em>, SLP-</em>, REB-<em>, NAV-</em>, ICO-01, API-01, SAFE-*, FI-03/04/13</td>
 <td>☐ Đạt ☐ Lỗi</td>
 <td>☐ go ☐ no-go</td>
 <td>____</td>

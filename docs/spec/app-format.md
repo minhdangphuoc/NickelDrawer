@@ -32,7 +32,7 @@ Host files (not an app, not scanned):
 
 ## icon.png
 
-Optional `icon.png` next to `app.json`: 96x96 px, black outline strokes on a transparent background. The drawer loads it with `QPixmap` and draws it at 96 px on a tile and, in the 152 px list row, at 64 px: it uses an optional `icon-64.png` beside `icon.png` 1:1 (the shipped apps have one, made by `cmd/iconsgen`), else it scales `icon.png` smoothly; SVG is not supported. Pick an icon from [Tabler Icons](https://tabler.io/icons) (MIT, outline style) or ship your own PNG; we never draw icons ourselves. Shipped icons are rasterized from the vendored Tabler SVGs in `third_party/tabler-icons/svg/` by `go run ./cmd/iconsgen -repo .` (add the SVG there, add a row to `cmd/iconsgen/icons.go`), and a test fails when a committed PNG is stale. Host item icons live in `.adds/koboapps/icons/` (`refresh.png`, `updates.png`); generic UI icons in `.adds/koboapps/icons/ui/<name>-<64|96>.png`. `apps.png` there is the "Apps" row icon in Nickel's More tab: 50x50 px with ~2 px strokes, the size of Nickel's own More icons; without it the row shows its title only (Nickel has no apps icon). The Tweaks row uses Nickel's own Settings gear (`:/images/reading/settings_gear.png`), else `ui/adjustments-horizontal-64.png`.
+Optional `icon.png` next to `app.json`: 96x96 px, black outline strokes on a transparent background. The drawer loads it with `QPixmap` and draws it at 96 px on a tile and, in the 152 px list row, at 64 px: it uses an optional `icon-64.png` beside `icon.png` 1:1 (the shipped apps have one, made by `cmd/iconsgen`), else it scales `icon.png` smoothly; SVG is not supported. Pick an icon from [Tabler Icons](https://tabler.io/icons) (MIT, outline style) or ship your own PNG; we never draw icons ourselves. Shipped icons are rasterized from the vendored Tabler SVGs in `third_party/tabler-icons/svg/` by `go run ./cmd/iconsgen -repo .` (add the SVG there, add a row to `cmd/iconsgen/icons.go`), and a test fails when a committed PNG is stale. Host item icons live in `.adds/koboapps/icons/` (`refresh.png`, `updates.png`); generic UI icons in `.adds/koboapps/icons/ui/<name>-<64|96>.png`. `apps.png` there is the "Apps" row icon in Nickel's More tab: 50x50 px with ~2 px strokes, the size of Nickel's own More icons; without it the row shows its title only (Nickel has no apps icon).
 
 ## app.json
 
@@ -135,7 +135,7 @@ Unknown top-level or action fields are ignored with a warning (forward compatibi
 - Same length and `:` rules as the English fields apply to translated labels.
 - Locale resolution: read `CurrentLocale` from `/mnt/onboard/.kobo/Kobo/Kobo eReader.conf`; try the exact file (`pt_BR.json`), then the language (`pt.json`), then English. Missing keys fall back key by key.
 - Scripts print messages with `appsctl msg --app <id> <key> [name=value ...]`, never literal text.
-- Host strings (drawer, tweak and update texts, `appsctl` output) live in `/mnt/onboard/.adds/koboapps/locales/<lang>.json`. `appsctl` also embeds `en.json`, so a missing or broken `locales/` folder shows English text, never raw keys. Host scripts print them with `appsctl host-msg <key> [name=value ...]`.
+- Host strings (drawer and update texts, `appsctl` output) live in `/mnt/onboard/.adds/koboapps/locales/<lang>.json`. `appsctl` also embeds `en.json`, so a missing or broken `locales/` folder shows English text, never raw keys. Host scripts print them with `appsctl host-msg <key> [name=value ...]`.
 - `appsctl msg`, `host-msg` and `drawer` take `--locale CODE` (override), `--conf FILE` (default `Kobo eReader.conf`) and `--koboapps-dir DIR` (host `locales/` lives there).
 - `appsctl validate` checks locale files: valid JSON, keys known to English (unknown keys warn), same placeholders, translated name/label length and `:` rules.
 - `appsctl msg` prints the key and exits 0 when a string is missing, so a script never fails over a translation.
@@ -143,7 +143,7 @@ Unknown top-level or action fields are ignored with a warning (forward compatibi
 
 ## NickelMenu (retired)
 
-NickelDrawer no longer generates NickelMenu items for apps: `appsctl gen-menu`, `refresh` and `errors` are gone and nothing writes `.adds/nm/koboapps`. Apps are reached only through the drawer and its API ([drawer-protocol.md](drawer-protocol.md)). `tools/install-to-kobo.sh` removes the old generated file (after backing up `.adds/nm`) and sets `experimental:menu_main_15505_enabled:0` in the user's `.adds/nm` config so NickelMenu's nav-bar tab is off. Reader-menu items such as Dark Mode are not touched; device tweaks now live in the native "Tinh chỉnh" modal ([tweaks.md](tweaks.md)).
+NickelDrawer no longer generates NickelMenu items for apps: `appsctl gen-menu`, `refresh` and `errors` are gone and nothing writes `.adds/nm/koboapps`. Apps are reached only through the drawer and its API ([drawer-protocol.md](drawer-protocol.md)). `tools/install-to-kobo.sh` removes the old generated file (after backing up `.adds/nm`) and sets `experimental:menu_main_15505_enabled:0` in the user's `.adds/nm` config so NickelMenu's nav-bar tab is off. Reader-menu items such as Dark Mode are not touched.
 
 ## Script contract
 

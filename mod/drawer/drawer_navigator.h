@@ -4,12 +4,12 @@
 #include <QObject>
 #include <QPointer>
 
-class DrawerController;
+class PageController;
 class DrawerView;
 class QStackedWidget;
 
 // Opens and closes the drawer page (re/notes/G2-findings.md Q2):
-//   route A (default): push a DrawerController (navSection 6) with
+//   route A (default): push a PageController (navSection 6) with
 //      MainWindowController::push; back = pop. Nickel owns the lifecycle
 //      (the controller becomes a child of the view).
 //   route B (flag .adds/nickeldrawer/pushview): pushView/popView the bare
@@ -47,7 +47,7 @@ private:
     void discardUnpushedView();
 
     QPointer<DrawerView> view;
-    QPointer<DrawerController> controller;
+    QPointer<PageController> controller;
     QPointer<QStackedWidget> watchedStack;
 };
 

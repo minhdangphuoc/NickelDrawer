@@ -36,7 +36,7 @@ commands:
   drawer-grid  headless PNG of the drawer's grid view with sample apps
   drawer-list  headless PNG of the drawer's list view with sample apps (--problems, --qt6)
   drawer-empty headless PNG of the drawer's empty state (--loading for the Loading state)
-  tweaks       headless PNG of the "Tweaks" modal
+  extras-tweaks headless PNG of the Extras helper's "Tweaks" modal
           --out FILE (required)  --apps DIR (icons)  --locale en|vi  --count N  --installed (real apps of --apps)  --font FILE  --icons DIR
 
 Every command lays out in the real page area (1264x1426 below Nickel's 128 px status bar, a 126 px
@@ -70,8 +70,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return runDrawerList(args[1:], stdout, stderr)
 	case "drawer-empty":
 		return runDrawerEmpty(args[1:], stdout, stderr)
-	case "tweaks":
-		return runTweaks(args[1:], stdout, stderr)
+	case "extras-tweaks":
+		return runExtrasTweaks(args[1:], stdout, stderr)
 	case "-h", "--help", "help":
 		fmt.Fprint(stdout, usage)
 		return exitOK

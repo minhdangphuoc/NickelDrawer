@@ -2,7 +2,7 @@
 # `make release VERSION=x.y.z` additionally signs dist/ (maintainer only, see docs/UPDATES.md).
 # `make release-app APP=<id> SEQUENCE=N` signs the app catalog for one app release (docs/RELEASING.md).
 # `make dist` writes the drawer (dist/onboard, dist/koboapps-<v>.zip) and one zip per app (dist/apps).
-VERSION ?= 1.0.0-beta.6
+VERSION ?= 1.0.0-beta.7
 ARM_ENV = CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7
 GO_BUILD = go build -trimpath -ldflags='-s -w'
 APPSCTL_LDFLAGS = -s -w -X main.version=$(VERSION)
@@ -42,7 +42,7 @@ check: sync-embedded
 	@$(MAKE) --no-print-directory shellcheck
 
 # shellcheck is optional: without it the check says so and moves on.
-SHELL_SOURCES = tools/*.sh helpers/statusbar-screenshot/*.sh tools/lib/*.sh host/bin/*.sh host/lib/common.sh apps/*/bin/*.sh examples/*/bin/*.sh
+SHELL_SOURCES = tools/*.sh helpers/extras/*.sh tools/lib/*.sh host/bin/*.sh host/lib/common.sh apps/*/bin/*.sh examples/*/bin/*.sh
 shellcheck:
 	@if command -v shellcheck >/dev/null 2>&1; then \
 		shellcheck -x -S warning $(SHELL_SOURCES) && echo "shellcheck: ok"; \
@@ -61,6 +61,9 @@ build: sync-embedded
 	$(ARM_ENV) $(GO_BUILD) -o build/wallpaper-linux-armv7 ./cmd/wallpaper
 	$(ARM_ENV) $(GO_BUILD) -o build/library-linux-armv7 ./cmd/library
 	$(ARM_ENV) $(GO_BUILD) -o build/todo-linux-armv7 ./cmd/todo
+	mkdir -p build/helpers
+	$(ARM_ENV) $(GO_BUILD) -o build/helpers/extras-tweaks-linux-armv7 ./helpers/extras/cmd/extras-tweaks
+	go build -o build/extras-tweaks-host ./helpers/extras/cmd/extras-tweaks
 	cd third_party/localgo && $(ARM_ENV) $(GO_BUILD) -o ../../build/localgo-linux-armv7 ./cmd/localgo
 	go build -ldflags='-X main.version=$(VERSION)' -o build/appsctl-host ./cmd/appsctl
 	go build -o build/ndrelease-host ./cmd/ndrelease

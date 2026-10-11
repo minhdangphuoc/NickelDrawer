@@ -5,12 +5,12 @@
 #include <NickelHook.h>
 
 #include "debug_log.h"
-
-#include "appsctl_call.h"
 #include "drawer_logic.h"
 #include "fallback_strings.h"
 #include "model_parser.h"
-#include "tweaks_parser.h"
+#include "tool_call.h"
+
+static const char *const APPSCTL_PATH = "/mnt/onboard/.adds/koboapps/bin/appsctl";
 
 static QStringList drawerArguments(const char *command)
 {
@@ -19,15 +19,15 @@ static QStringList drawerArguments(const char *command)
     return arguments;
 }
 
-static QString outcomeFailure(AppsctlCall::Outcome outcome)
+static QString outcomeFailure(ToolCall::Outcome outcome)
 {
     switch (outcome) {
-    case AppsctlCall::OUTCOME_NOT_STARTED:
+    case ToolCall::OUTCOME_NOT_STARTED:
         return FallbackStrings::text(FallbackStrings::APPSCTL_MISSING);
-    case AppsctlCall::OUTCOME_TIMED_OUT:
+    case ToolCall::OUTCOME_TIMED_OUT:
         return FallbackStrings::text(FallbackStrings::APPSCTL_TIMEOUT);
-    case AppsctlCall::OUTCOME_CRASHED:
-    case AppsctlCall::OUTCOME_EXITED:
+    case ToolCall::OUTCOME_CRASHED:
+    case ToolCall::OUTCOME_EXITED:
         break;
     }
     return FallbackStrings::text(FallbackStrings::APPSCTL_FAILED);
@@ -95,22 +95,11 @@ void ModelClient::requestEvent(const QString &appId, const ScreenEvent &event)
     startCall(REQUEST_EVENT, arguments, DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_RUN_SHOW));
 }
 
-void ModelClient::requestTweaks()
-{
-    startCall(REQUEST_TWEAKS, drawerArguments("tweaks"), DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_TWEAKS));
-}
-
-void ModelClient::requestTweak(const QString &tweakId)
-{
-    startCall(REQUEST_TWEAK, drawerArguments("tweak") << tweakId,
-              DrawerLogic::timeoutMillisecondsFor(DrawerLogic::COMMAND_TWEAK));
-}
-
 ModelClient::~ModelClient()
 {
     int killed = 0;
     int detached = 0;
-    QList<AppsctlCall *> calls = findChildren<AppsctlCall *>(QString(), Qt::FindDirectChildrenOnly);
+    QList<ToolCall *> calls = findChildren<ToolCall *>(QString(), Qt::FindDirectChildrenOnly);
     for (int i = 0; i < calls.size(); i++) {
         if (!calls[i]->isRunning()) {
             continue;
@@ -132,12 +121,10 @@ bool ModelClient::isReadOnly(Request request)
     case REQUEST_MODEL:
     case REQUEST_INFO:
     case REQUEST_SCREEN:
-    case REQUEST_TWEAKS:
         return true;
     case REQUEST_RUN:
     case REQUEST_REMOVE:
     case REQUEST_EVENT:
-    case REQUEST_TWEAK:
         break;
     }
     return false;
@@ -145,12 +132,12 @@ bool ModelClient::isReadOnly(Request request)
 
 void ModelClient::startCall(Request request, const QStringList &arguments, int timeoutMilliseconds)
 {
-    AppsctlCall *call = new AppsctlCall(request, arguments, timeoutMilliseconds, this);
-    connect(call, SIGNAL(finished(AppsctlCall *)), this, SLOT(onCallFinished(AppsctlCall *)));
+    ToolCall *call = new ToolCall(QString::fromLatin1(APPSCTL_PATH), request, arguments, timeoutMilliseconds, this);
+    connect(call, SIGNAL(finished(ToolCall *)), this, SLOT(onCallFinished(ToolCall *)));
     call->start();
 }
 
-void ModelClient::onCallFinished(AppsctlCall *call)
+void ModelClient::onCallFinished(ToolCall *call)
 {
     switch (static_cast<Request>(call->tag())) {
     case REQUEST_MODEL:
@@ -171,19 +158,13 @@ void ModelClient::onCallFinished(AppsctlCall *call)
     case REQUEST_EVENT:
         deliverActionResult(call, false);
         break;
-    case REQUEST_TWEAKS:
-        deliverTweaks(call);
-        break;
-    case REQUEST_TWEAK:
-        deliverTweak(call);
-        break;
     }
     call->deleteLater();
 }
 
-bool ModelClient::replyOf(AppsctlCall *call, QByteArray *json, QString *failure)
+bool ModelClient::replyOf(ToolCall *call, QByteArray *json, QString *failure)
 {
-    if (call->outcome() != AppsctlCall::OUTCOME_EXITED) {
+    if (call->outcome() != ToolCall::OUTCOME_EXITED) {
         *failure = outcomeFailure(call->outcome());
         return false;
     }
@@ -205,7 +186,7 @@ bool ModelClient::replyOf(AppsctlCall *call, QByteArray *json, QString *failure)
     return false;
 }
 
-void ModelClient::deliverModel(AppsctlCall *call)
+void ModelClient::deliverModel(ToolCall *call)
 {
     QByteArray json;
     QString failure;
@@ -216,7 +197,7 @@ void ModelClient::deliverModel(AppsctlCall *call)
     emit modelLoaded(model);
 }
 
-void ModelClient::deliverActionResult(AppsctlCall *call, bool isRemove)
+void ModelClient::deliverActionResult(ToolCall *call, bool isRemove)
 {
     QByteArray json;
     QString failure;
@@ -231,7 +212,7 @@ void ModelClient::deliverActionResult(AppsctlCall *call, bool isRemove)
     }
 }
 
-void ModelClient::deliverInfo(AppsctlCall *call)
+void ModelClient::deliverInfo(ToolCall *call)
 {
     QByteArray json;
     QString failure;
@@ -240,44 +221,11 @@ void ModelClient::deliverInfo(AppsctlCall *call)
     emit infoLoaded(isLoaded, info, failure);
 }
 
-void ModelClient::deliverScreen(AppsctlCall *call)
+void ModelClient::deliverScreen(ToolCall *call)
 {
     QByteArray json;
     QString failure;
     ScreenModel screen;
     bool isLoaded = replyOf(call, &json, &failure) && ModelParser::parseScreen(json, &screen, &failure);
     emit screenLoaded(isLoaded, screen, failure);
-}
-
-void ModelClient::deliverTweaks(AppsctlCall *call)
-{
-    QByteArray json;
-    QString failure;
-    TweaksModel model;
-    if (!replyOf(call, &json, &failure) || !TweaksParser::parseTweaks(json, &model, &failure)) {
-        model.isUsable = false;
-        model.failure = failure;
-    }
-    emit tweaksLoaded(model);
-}
-
-// tweaks.md: a failed tweak exits 2 with {"v":1,"ok":false,"error":"…"}, a
-// sentence for the user; replyOf() would only read the protocol's error object.
-void ModelClient::deliverTweak(AppsctlCall *call)
-{
-    QByteArray json;
-    QString failure;
-    TweakResult result;
-    bool isFailedTweak = call->outcome() == AppsctlCall::OUTCOME_EXITED &&
-                         DrawerLogic::classifyExitCode(call->exitCode()) == DrawerLogic::EXIT_PROTOCOL_ERROR;
-    if (isFailedTweak) {
-        json = call->output();
-    }
-    bool isParsed = (isFailedTweak || replyOf(call, &json, &failure)) &&
-                    TweaksParser::parseTweakResult(json, &result, &failure);
-    if (!isParsed) {
-        result.isOk = false;
-        result.error = failure;
-    }
-    emit tweakApplied(result);
 }

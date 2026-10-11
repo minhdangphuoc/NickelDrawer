@@ -80,8 +80,9 @@ func TestIconsAreBlackStrokesOnTransparent(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if rendered.Bounds().Dx() != entry.size || rendered.Bounds().Dy() != entry.size {
-				t.Fatalf("size = %v, want %dx%d", rendered.Bounds(), entry.size, entry.size)
+			side := entry.outputSize()
+			if rendered.Bounds().Dx() != side || rendered.Bounds().Dy() != side {
+				t.Fatalf("size = %v, want %dx%d", rendered.Bounds(), side, side)
 			}
 			inked := 0
 			for offset := 0; offset < len(rendered.Pix); offset += 4 {
@@ -93,7 +94,7 @@ func TestIconsAreBlackStrokesOnTransparent(t *testing.T) {
 					t.Fatal("found a non-black pixel")
 				}
 			}
-			if inked < entry.size*entry.size/60 || inked > entry.size*entry.size/2 {
+			if inked < side*side/60 || inked > side*side/2 {
 				t.Fatalf("%d inked pixels: icon looks empty or filled", inked)
 			}
 		})
@@ -126,4 +127,43 @@ func TestAppsRowIconIsNickelMoreSize(t *testing.T) {
 	if config.Width != 50 || config.Height != 50 {
 		t.Fatalf("apps.png is %dx%d, want 50x50 like Nickel's More icons", config.Width, config.Height)
 	}
+}
+
+// The status-bar button is drawn 1:1 beside Nickel's brightness icon: same 80 px canvas, a glyph
+// about 44 px across (55 %), centred, with a 3 px stroke (measured from Nickel's resources).
+func TestStatusBarButtonMatchesNickelsIconGeometry(t *testing.T) {
+	file, err := os.Open(filepath.Join(repoRoot, "helpers/extras/icons/screenshot.png"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	decoded, err := png.Decode(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Bounds().Dx() != 80 || decoded.Bounds().Dy() != 80 {
+		t.Fatalf("screenshot.png is %v, want 80x80 like Nickel's status-bar icons", decoded.Bounds())
+	}
+	rendered, err := render(repoRoot, icons[indexOfIcon(t, "helpers/extras/icons/screenshot.png")])
+	if err != nil {
+		t.Fatal(err)
+	}
+	ink := inkBounds(rendered)
+	if ink.Dx() < 42 || ink.Dx() > 46 || ink.Dy() < 42 || ink.Dy() > 46 {
+		t.Errorf("ink is %dx%d px, want about 44 (55%% of 80)", ink.Dx(), ink.Dy())
+	}
+	if centreX, centreY := ink.Min.X+ink.Max.X, ink.Min.Y+ink.Max.Y; centreX < 79 || centreX > 81 || centreY < 79 || centreY > 81 {
+		t.Errorf("ink box %v is not centred on the canvas", ink)
+	}
+}
+
+func indexOfIcon(t *testing.T, path string) int {
+	t.Helper()
+	for index, entry := range icons {
+		if entry.path == path {
+			return index
+		}
+	}
+	t.Fatalf("no icon %s", path)
+	return -1
 }

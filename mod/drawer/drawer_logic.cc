@@ -6,12 +6,6 @@
 
 namespace DrawerLogic {
 
-// Qt::Key values (Qt 5.2 qnamespace.h); repeated here so this file stays Qt-free.
-static const int QT_KEY_LEFT = 0x01000012;
-static const int QT_KEY_UP = 0x01000013;
-static const int QT_KEY_RIGHT = 0x01000014;
-static const int QT_KEY_DOWN = 0x01000015;
-
 static const int MODEL_TIMEOUT_MILLISECONDS = 3000;
 static const int ACTION_START_TIMEOUT_MILLISECONDS = 3000;
 // appsctl caps kind "show" scripts at 30 s and then replies ok:false itself;
@@ -20,7 +14,6 @@ static const int SHOW_ACTION_TIMEOUT_MILLISECONDS = 35000;
 static const int INFO_TIMEOUT_MILLISECONDS = 3000;
 // `drawer screen` validates ui.json and runs the app's state script (1 s budget).
 static const int SCREEN_TIMEOUT_MILLISECONDS = 5000;
-static const int TWEAKS_TIMEOUT_MILLISECONDS = 3000; // docs/spec/tweaks.md: 3 s per call
 // Not in the protocol spec: deleting a folder on FAT and regenerating the
 // NickelMenu file can take longer than a model read.
 static const int REMOVE_TIMEOUT_MILLISECONDS = 10000;
@@ -109,60 +102,12 @@ bool emptyStateShowsButton(bool hasModel, bool hasRefreshItem)
     return hasModel && hasRefreshItem;
 }
 
-int pageCount(int itemCount, int perPage)
-{
-    if (itemCount <= 0 || perPage <= 0) {
-        return 1;
-    }
-    return (itemCount + perPage - 1) / perPage;
-}
-
-int clampPage(int page, int itemCount, int perPage)
-{
-    int lastPage = pageCount(itemCount, perPage) - 1;
-    if (page < 0) {
-        return 0;
-    }
-    return page > lastPage ? lastPage : page;
-}
-
-int firstIndexOnPage(int page, int perPage)
-{
-    return page * perPage;
-}
-
-int itemCountOnPage(int page, int itemCount, int perPage)
-{
-    int remaining = itemCount - firstIndexOnPage(page, perPage);
-    if (remaining <= 0) {
-        return 0;
-    }
-    return remaining < perPage ? remaining : perPage;
-}
-
 int pageContainingItem(int itemIndex, int perPage)
 {
     if (itemIndex <= 0 || perPage <= 0) {
         return 0;
     }
     return itemIndex / perPage;
-}
-
-PageKey pageKeyFor(int qtKey)
-{
-    if (qtKey == QT_KEY_LEFT || qtKey == QT_KEY_UP) {
-        return PAGE_KEY_PREVIOUS;
-    }
-    if (qtKey == QT_KEY_RIGHT || qtKey == QT_KEY_DOWN) {
-        return PAGE_KEY_NEXT;
-    }
-    return PAGE_KEY_NONE;
-}
-
-int pageAfterKey(int currentPage, PageKey key, int itemCount, int perPage)
-{
-    int step = key == PAGE_KEY_NEXT ? 1 : (key == PAGE_KEY_PREVIOUS ? -1 : 0);
-    return clampPage(currentPage + step, itemCount, perPage);
 }
 
 bool startsSectionOnPage(int indexOnPage, int sectionOfItem, int sectionOfPreviousItem)
@@ -223,9 +168,6 @@ int timeoutMillisecondsFor(AppsctlCommand command)
         return REMOVE_TIMEOUT_MILLISECONDS;
     case COMMAND_SCREEN:
         return SCREEN_TIMEOUT_MILLISECONDS;
-    case COMMAND_TWEAKS:
-    case COMMAND_TWEAK:
-        return TWEAKS_TIMEOUT_MILLISECONDS;
     }
     return MODEL_TIMEOUT_MILLISECONDS;
 }

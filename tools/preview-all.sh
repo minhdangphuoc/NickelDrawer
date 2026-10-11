@@ -1,6 +1,6 @@
 #!/bin/sh
 # Renders every app screen, the host settings screens, the drawer list and grid views and the
-# Tweaks modal with ndpreview, in English and Vietnamese, into build/preview/<locale>/ (gitignored).
+# Extras helper Tweaks modal with ndpreview, in English and Vietnamese, into build/preview/<locale>/ (gitignored).
 #   tools/preview-all.sh [locale ...]        # default: en vi
 # Each app screen is rendered for every state file apps/<app>/preview-state*.json (English runs use
 # the preview-state*.en.json sibling automatically) and every page of a long screen. Needs a
@@ -63,7 +63,7 @@ for locale in $LOCALES; do
     $NDPREVIEW drawer-empty --locale "$locale" --font "$FONT" --out "$OUT/$locale/drawer-empty.png"
     $NDPREVIEW drawer-empty --locale "$locale" --loading --font "$FONT" --out "$OUT/$locale/drawer-loading.png"
     $NDPREVIEW drawer-grid --locale "$locale" --font "$FONT" --out "$OUT/$locale/drawer-grid.png"
-    $NDPREVIEW tweaks --locale "$locale" --font "$FONT" --out "$OUT/$locale/tweaks.png"
+    $NDPREVIEW extras-tweaks --locale "$locale" --font "$FONT" --out "$OUT/$locale/extras-tweaks.png"
 done
 NDPREVIEW="$PWD/$NDPREVIEW" OUT="$OUT" PER_LOCALE=1 FONT="$FONT" sh tools/preview-settings.sh >/dev/null
 echo "previews in $OUT/<locale>/"

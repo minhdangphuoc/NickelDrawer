@@ -162,7 +162,7 @@ localgo builds the hook by replacing `%f` (path), `%n` (file name), `%a` (sender
 
 | Component | Code | Spec |
 |---|---|---|
-| App registry, validation, i18n, msg, tweaks | `cmd/appsctl`, `internal/manifest`, `internal/tweaks`, `internal/i18n` | spec/app-format.md |
+| App registry, validation, i18n, msg | `cmd/appsctl`, `internal/manifest`, `internal/i18n` | spec/app-format.md |
 | Device info | `internal/device` | |
 | Storage layout + safe I/O | `internal/storage` | this document §3 |
 | Inbox router | `internal/inbox` + `appsctl inbox` (route, sort, status, purge), rules in `host/config/routing.json` | this document §4, spec/inbox.md |

@@ -16,6 +16,7 @@
 #include "open_popups.h"
 #include "picture_loader.h"
 #include "system_icon.h"
+#include "screen_logic.h"
 #include "text_meter.h"
 
 using namespace ScreenLogic;

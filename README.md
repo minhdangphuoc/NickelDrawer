@@ -1,6 +1,6 @@
 # NickelDrawer
 
-An app drawer for Kobo e-readers that run the stock firmware (Nickel). It adds an **Apps** row and a **Tweaks** panel to the More tab, and gives small apps a native Kobo look. It works without a cloud account and sends nothing anywhere unless you start a feature that needs the network.
+An app drawer for Kobo e-readers that run the stock firmware (Nickel). It adds an **Apps** row to the More tab, and gives small apps a native Kobo look. It works without a cloud account and sends nothing anywhere unless you start a feature that needs the network.
 
 **Status: 1.0.0 beta** ([releases](../../releases)). Verified on one device and one firmware build (see [Supported firmware](#supported-firmware)). Read [Safety](#safety) before you install.
 
@@ -15,7 +15,6 @@ Screenshots from a Kobo Libra 2 set to Vietnamese. The drawer shows your apps as
 ## What you get
 
 - **A native drawer.** An Apps row in Nickel's More tab opens a list or grid of your apps. It uses Nickel's own fonts, icons and dialogs.
-- **Tweaks.** A settings-style panel for sleep screen, screenshots, auto USB connect, text legibility, IP address, reboot and library rescan.
 - **Apps are folders.** Copy a folder with a manifest and a few scripts to `.adds/apps/` and it appears. No C++ needed ([docs/APPS.md](docs/APPS.md)).
 - **Native app screens.** Apps describe lists, toggles, buttons, QR codes and live status in a `ui.json` file; the drawer draws them.
 - **Signed updates.** The drawer (host tool and mod) updates over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
@@ -138,4 +137,4 @@ Optional, separate from the drawer. Install only what you want.
 
 - **Apps** ([apps/README.md](apps/README.md)): LocalSend, GitHub sync, Library, Wallpaper and To-do (plus the developer-only UI Kit). Each is its own zip in the release and is installed, updated and removed one by one; the drawer and its updates never touch them.
 
-- **Status-bar screenshot button** ([helpers/statusbar-screenshot](helpers/statusbar-screenshot/README.md)): a small separate mod that adds a screenshot button to Kobo's top status bar. A tap saves the screen as `screen_NNN.png` at the root of the Kobo drive. To turn it off, create an empty file `.adds/helpers/screenshot/off` on the Kobo over USB (delete it to turn it back on; `install.sh --off` / `--on` does this). Built and installed from the source; there is no release file (it is not part of NickelDrawer's releases).
+- **Extras** ([helpers/README.md](helpers/README.md)): a small separate mod with a screenshot button in Kobo's top status bar and a **Tweaks** panel in the More tab (sleep screen, auto USB connect, text legibility, IP address, reboot, library rescan). It works with or without NickelDrawer. Built and installed from the source; there is no release file (it is not part of NickelDrawer's releases). Install and uninstall steps are in that README.

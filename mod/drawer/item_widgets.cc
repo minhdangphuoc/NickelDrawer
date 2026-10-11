@@ -9,6 +9,7 @@
 #include "nickel_fonts.h"
 #include "painted_marks.h"
 #include "system_icon.h"
+#include "screen_logic.h"
 #include "text_meter.h"
 
 // Sizes in device pixels: the CopperUI tokens (docs/copperui-tokens.md).

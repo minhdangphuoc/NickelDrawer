@@ -1,8 +1,8 @@
 #ifndef NICKELDRAWER_DEVICE_GATE_H
 #define NICKELDRAWER_DEVICE_GATE_H
 
-// Which Kobo models the mods may run on (shared by mod/drawer and
-// the mods under helpers/, each compiling its own copy). The layout is
+// Which Kobo models the mods may run on (shared by the mods, each
+// compiling its own copy). The layout is
 // fixed to the tested Libra 2 screen (copperui tokens), so only models with the
 // same 1264x1680 panel pass. The model comes from the device id, the last field of
 // .kobo/version (re/notes/device-detection.md); the live screen size is

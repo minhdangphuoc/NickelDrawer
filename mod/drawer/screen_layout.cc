@@ -8,6 +8,7 @@
 #include "copperui/pager.h"
 #include "qr_encoder.h"
 #include "row_menu_logic.h"
+#include "screen_logic.h"
 #include "text_meter.h"
 
 using namespace ScreenLogic;

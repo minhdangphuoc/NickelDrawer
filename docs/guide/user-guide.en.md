@@ -6,10 +6,11 @@ Names in **bold** are what you see on a Kobo set to English. A name marked † h
 
 ## What NickelDrawer is (and is not)
 
-NickelDrawer adds two rows to the **More** tab of your Kobo:
+NickelDrawer adds a row to the **More** tab of your Kobo:
 
 - **Apps** opens an app drawer: a list (or grid) of small tools that look like the rest of your Kobo.
-- **Tweaks** opens a settings-style window with useful switches (sleep screen, screenshots, auto USB connect, text legibility) and actions (sleep, restart, rescan library).
+
+A screenshot button and a window of Kobo tweaks are a separate optional mod: see [helpers/README.md](../../helpers/README.md).
 
 The apps that come with it:
 
@@ -100,7 +101,7 @@ Charge the Kobo to **50 % or more**. An install restarts the Kobo; a flat batter
 | Kobo system (`/usr/local/Kobo/imageformats/`) | One file, the NickelDrawer mod, installed by the Kobo itself from `KoboRoot.tgz` at restart. |
 | `.adds/nickeldrawer/` | A folder for the switch files described in [Safety and uninstall](#safety-and-uninstall). |
 
-Nothing else changes until you use an app or a tweak. Each app writes only to its own folders (for example LocalSend writes to `Books`, `Documents`, `Comics` and `Pictures`). Tweaks change Kobo settings only when you tap them.
+Nothing else changes until you use an app. Each app writes only to its own folders (for example LocalSend writes to `Books`, `Documents`, `Comics` and `Pictures`).
 
 NickelDrawer does not need NickelMenu and works next to it.
 
@@ -129,7 +130,7 @@ Steps:
 7. Eject the Kobo safely (macOS: the eject button in Finder; Windows: "Safely remove hardware"). Then unplug the cable.
 8. The Kobo shows that it is updating and restarts. This takes a minute or two. If it does not restart by itself, restart it from the power menu.
 9. When the Kobo shows **Home**, wait about 20 seconds before you do anything else. In the first 15 seconds after a start, turning the Kobo off removes the mod again (this is the safety net; see [Safety and uninstall](#safety-and-uninstall)).
-10. Tap **More**. You should see two new rows: **Apps** and **Tweaks**.
+10. Tap **More**. You should see a new row: **Apps**.
 
 If the rows are not there, see [Troubleshooting](#troubleshooting).
 
@@ -344,7 +345,7 @@ Kobo shows a picture from NickelDrawer only on its **full-screen book cover** sl
 2. Turn on **Show current read**.
 3. Turn on **Show book cover full screen**.
 4. Open any book once, so the Kobo has a "current read".
-5. In **More** → **Tweaks**, keep **Sleep screen** on.
+5. Leave the folder `.kobo/screensaver` where it is: do not rename or delete it.
 
 The Wallpaper app reminds you when either setting is off ("Sleep screen off · See Options").
 
@@ -421,7 +422,7 @@ It never touches the Kobo's library database. Every change backs up the book fir
 
 1. Tap **Fix language**, then **Fix**.
 2. Each Vietnamese book with a wrong language is copied to the app's backup folder, then only its language is set to Vietnamese. The new file is checked before it replaces the old one.
-3. Open the book again to see the new hyphenation. If the Kobo still uses the old language, rescan the library (**Tweaks** → **Rescan library**).
+3. Open the book again to see the new hyphenation. If the Kobo still uses the old language, rescan the library (connect the Kobo to a computer and eject it).
 
 ### Fix names (NFC)
 
@@ -474,28 +475,6 @@ Your list is kept in `.adds/apps/todo/data/todo.json`. If that file is ever dama
 
 *Tried on a device:* not yet. Typing with Kobo's keyboard inside an app screen has not been tried on a device yet; if the keyboard does not open, the box shows "Change this from your phone or computer."
 
-## Tweaks
-
-Open **More** → **Tweaks**. A window like Kobo's own Settings opens, with two columns. Close it with **✕** or by tapping outside it. Use the page-turn buttons if it has more than one page.
-
-| Tweak | What it does | When it takes effect |
-|---|---|---|
-| **Sleep screen** (On/Off) | Off hides the sleep-screen pictures folder, so Kobo shows its normal sleep screen. Your pictures are kept. Must be On for Wallpaper. | Next time the Kobo sleeps. |
-| **Screenshots** (On/Off) | Kobo's hidden screenshot setting. | Not yet confirmed on a device. If nothing changes, restart. |
-| **Auto USB connect** (On/Off) | When on, the Kobo connects to a computer without asking **Connect**. | Not yet confirmed on a device. If nothing changes, restart. |
-| **Text legibility** (On/Off) | Better letter spacing and ligatures. **KEPUB books only** (books bought from Kobo or converted to KEPUB); plain EPUB and PDF do not change. | Close and reopen the book. |
-| **IP address** | Shows the Kobo's Wi-Fi address, or "No Wi‑Fi". Tapping does nothing. | — |
-| **Invert and reboot** | Swaps black and white on the whole screen and restarts. Run it again to switch back. Asks first. | After the restart. |
-| **Sleep** | Puts the Kobo to sleep now. | At once. |
-| **Reboot** | Restarts the Kobo. Asks first. | At once. |
-| **Rescan library** | Asks Kobo to look for new or changed books. | At once. |
-
-A switch flips at once and a message confirms it, for example "Screenshots on".
-
-The switches write to the Kobo's own settings file (`.kobo/Kobo/Kobo eReader.conf`); **Sleep screen** renames the `.kobo/screensaver` folder. They stay as you left them after you remove NickelDrawer, so set them back first if you want.
-
-*Tried on a device:* not yet.
-
 ## Updates
 
 NickelDrawer can update itself, meaning its host tool and its Kobo mod, over Wi-Fi. The project's own apps update separately, one by one (see [Apps: update and install](#apps-update-and-install)); apps from other sources are updated by installing their newer zip (see [Install apps](#install-apps)). It only installs a release that carries the maintainer's digital signature. Nothing is checked or downloaded unless you tap a button.
@@ -517,7 +496,7 @@ Updates come from the project's GitHub repository by default; the installer sets
 1. Open **More** → **Apps** → **⚙**.
 2. In **Updates**, tap **Check**. The Kobo turns on Wi-Fi if needed and checks. Nothing is installed. While it runs the screen says "Checking for updates…" and **Check** is dimmed; the screen refreshes itself. When it ends, one result line stays until the next check: "Checked 09/10/2026 17:02 · Up to date (1.0.0-beta.1)", "Checked 09/10/2026 17:02 · New version 1.0.0-beta.2 available", or "Could not check 09/10/2026 17:02: no Wi-Fi" (other reasons: cannot reach GitHub, GitHub is limiting requests, bad signature, no release on this channel). If there is a newer release, the gear gets a black dot, the **New version** row appears, and the big button reads **Update to <version>** (with **Check** beside it). With nothing to install, **Check** is the big button. While a check or an install runs, the screen shows its progress as text ("Checking for updates…") and the buttons are dimmed.
 3. Tap **Update to <version>**, then **Update** to confirm. Keep Wi-Fi on until it ends. The screen shows "Downloading and installing…" and then "Installed 1.0.0-beta.2 — restart the Kobo to finish" or the reason it failed.
-4. If the result says "restart the Kobo to finish", restart it (**Tweaks** → **Reboot**).
+4. If the result says "restart the Kobo to finish", restart it (hold the power button, then start the Kobo again).
 
 ### Apps: update and install
 
@@ -552,14 +531,14 @@ When a release changes the Kobo mod, the update puts the new mod in `.kobo/KoboR
 
 NickelDrawer uses the language of your Kobo (**Settings** → **Language and dictionaries** †). Change the Kobo's language, then open the drawer again. If a translation is missing for your language, English is shown. A Kobo set to Brazilian Portuguese looks for `pt_BR`, then `pt`, then English.
 
-English and Vietnamese are maintained by the project. In other languages, a few texts that the Kobo mod draws itself (the **Apps** and **Tweaks** rows, some error messages, the "not supported" message) stay in English.
+English and Vietnamese are maintained by the project. In other languages, a few texts that the Kobo mod draws itself (the **Apps** row, some error messages, the "not supported" message) stay in English.
 
 ### Add a language
 
 You need no programming, only a text editor. Each translation is a small file of `"key": "text"` lines.
 
 1. Copy `en.json` to `<code>.json` (for example `fr.json`) in each of these folders:
-    - `.adds/koboapps/locales/` (drawer, tweaks, updates, settings),
+    - `.adds/koboapps/locales/` (drawer, updates, settings),
     - `.adds/koboapps/screens/settings/locales/` (the settings and About screens),
     - `.adds/apps/<app>/locales/` for each app.
 
@@ -574,7 +553,7 @@ To share your translation, see [docs/TRANSLATING.md](../TRANSLATING.md). Right-t
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| No **Apps** or **Tweaks** row in **More**. | The mod is not installed, is switched off, or does not support your firmware. | Check that `.kobo/KoboRoot.tgz` is gone (the Kobo deletes it after installing). Check that `.adds/nickeldrawer/` has no `disable` file. Check your firmware version. Copy `KoboRoot.tgz` again and restart. |
+| No **Apps** row in **More**. | The mod is not installed, is switched off, or does not support your firmware. | Check that `.kobo/KoboRoot.tgz` is gone (the Kobo deletes it after installing). Check that `.adds/nickeldrawer/` has no `disable` file. Check your firmware version. Copy `KoboRoot.tgz` again and restart. |
 | Message "NickelDrawer does not support this model yet". | Your Kobo is not a model with the 1264×1680 screen the drawer is laid out for (only Libra 2, Libra H2O and Libra Colour are). | Nothing is broken; the Kobo works as normal. The drawer stays off on this model. See docs/COMPATIBILITY.md. |
 | Message "NickelDrawer does not support this firmware yet". | Your firmware is not one of the five supported builds, often after Kobo updated itself. | Nothing is broken; the Kobo works as normal. Wait for a NickelDrawer release that supports your build. |
 | A line under the drawer title: "Kobo is offering update 5.x — NickelDrawer will stop working". | Kobo offers firmware 5.x. | Decline the offer on the Kobo if you want to keep NickelDrawer. |
@@ -583,13 +562,12 @@ To share your translation, see [docs/TRANSLATING.md](../TRANSLATING.md). Right-t
 | An app shows "That did not work. See data/log.txt." | The app hit a problem. | Read `.adds/apps/<app>/data/log.txt` over USB. The last lines say what broke. |
 | An app opens a screen with "Can't open the app", **Back** and **Try again**. | The app's files are incomplete or damaged. | Copy that app's folder from the release zip again, then tap the refresh button in the header. |
 | A new app does not appear. | The drawer has not reloaded, or the app's files are wrong. | Tap the refresh button in the header. A broken app is listed under **PROBLEMS** with the reason. |
-| Wallpaper picture does not appear on the sleep screen. | A Kobo setting is off, there is no current book, or **Sleep screen** is off. | Turn on **Show current read** and **Show book cover full screen** (**Settings** → **Energy saving and privacy**). Open any book once. Turn **Tweaks** → **Sleep screen** on. Set a picture as wallpaper. |
+| Wallpaper picture does not appear on the sleep screen. | A Kobo setting is off, there is no current book, or the folder `.kobo/screensaver` was renamed. | Turn on **Show current read** and **Show book cover full screen** (**Settings** → **Energy saving and privacy**). Open any book once. Check that the folder `.kobo/screensaver` exists. Set a picture as wallpaper. |
 | LocalSend on the phone does not find the Kobo. | Different Wi-Fi, a guest network that hides devices from each other, receiving stopped, or the Kobo fell asleep. | Put both on the same home Wi-Fi (not a guest network). Open LocalSend on the Kobo and check it says **Receiving**. Wake the Kobo. If your phone's LocalSend can send to an address, use the IP shown on the Kobo. |
 | GitHub pairing shows an error. | See the message. | See [Pairing and sync messages](#pairing-and-sync-messages). |
 | The pairing page does not open on the phone. | Different Wi-Fi, or pairing closed. | Use the same Wi-Fi. Check the Kobo still shows the code. Start pairing again. |
 | "No Wi-Fi. Connect, then try again." | Wi-Fi is off or not connected. | Turn on Wi-Fi in the Kobo's status bar, then try again. |
 | A text box says "Change this from your phone or computer." | Text entry on the Kobo is not available on this firmware or is switched off. | Remove the file `.adds/nickeldrawer/no-keyboard` if you created it. |
-| The screen colours are inverted and stay that way. | **Invert and reboot** was used. | Run **Tweaks** → **Invert and reboot** again. |
 | The Kobo freezes. | Something went wrong in Kobo's software. | Hold the power button for about 15 seconds until the screen changes, release, then press it again to start. |
 | The Kobo restarts again and again after an install. | The mod crashes at start. | Turn the Kobo off within 15 seconds after it starts (see [Safety net](#the-safety-net-failsafe)). If that does not help, create the `uninstall` switch over USB. |
 
@@ -640,9 +618,9 @@ It backs up first, removes the apps and the host tool, keeps any received files 
 
 **By hand:**
 
-1. Before you start: in **Tweaks**, set **Sleep screen**, **Screenshots**, **Auto USB connect** and **Text legibility** as you want them to stay. If you used Library, restore any trashed books you want back.
+1. Before you start: if you used Library, restore any trashed books you want back.
 2. Connect over USB. Create the empty file `.adds/nickeldrawer/uninstall`.
-3. Eject and restart the Kobo. The mod is removed, and **Apps** and **Tweaks** disappear from **More**.
+3. Eject and restart the Kobo. The mod is removed, and **Apps** disappears from **More**.
 4. Connect again and delete the folders `.adds/koboapps` and `.adds/apps` (and `.adds/nickeldrawer` if you like).
 5. Delete the pictures named `nd-wallpaper-*.png` in `.kobo/screensaver`, or the Kobo keeps showing them on the sleep screen.
 
@@ -656,7 +634,6 @@ It backs up first, removes the apps and the host tool, keeps any received files 
 | Files received but not yet sorted | `.adds/koboapps/inbox/` (only if there are any) |
 | App data, unless you delete it or use `--purge` | `.adds/apps/<app>/data/` (GitHub token, Wallpaper library, Library backups and trash) |
 | Sleep-screen pictures | `.kobo/screensaver/nd-wallpaper-*.png` |
-| Kobo settings changed in **Tweaks** | `.kobo/Kobo/Kobo eReader.conf`, and `.kobo/screensaver.disabled` if **Sleep screen** was off |
 | The installer's backups | `backups/` on your computer |
 
 ## Privacy
@@ -666,7 +643,7 @@ It backs up first, removes the apps and the host tool, keeps any received files 
   - LocalSend listens on your Wi-Fi while it is receiving, and stops when you tap stop or after 15 minutes without a file.
   - GitHub pairing opens a small page on your Wi-Fi for up to 10 minutes. Sync talks to GitHub only.
   - Updates talk to GitHub only when you tap **Check** or **Update to <version>**.
-  - Wallpaper, Library, To-do and Tweaks never use the network.
+  - Wallpaper, Library, To-do never use the network.
 - **Your GitHub token** is stored only on the Kobo, in `.adds/apps/ghsync/data/token`. It never appears on the screen, in logs or in the app's status. But the Kobo's storage cannot protect single files: anyone who connects your Kobo to a computer can read that file. That is why the token should be fine-grained, limited to one repository and read-only. Revoke it on GitHub if you lose the Kobo.
 - **The LocalSend PIN** is stored in `.adds/apps/localsend/data/pin.txt`, readable the same way.
 - Logs stay on the Kobo. Nothing is uploaded.
@@ -717,7 +694,6 @@ Kobo's own names (the screens NickelDrawer works with) and NickelDrawer's names,
 | Language and dictionaries † | Ngôn ngữ và từ điển † | Settings page for the Kobo's language. |
 | Connect | Kết nối | Button the Kobo shows when you plug in USB. |
 | Apps | Ứng dụng | NickelDrawer's row in More, and the drawer's title. |
-| Tweaks | Tinh chỉnh | NickelDrawer's settings window in More. |
 | INSTALLED / SYSTEM | ĐÃ CÀI / HỆ THỐNG | Sections of the drawer. |
 | Refresh | Làm mới | Header button that reloads the drawer. |
 | Settings (⚙) | Cài đặt | The gear in the drawer header: hidden apps, updates, debug, about. |

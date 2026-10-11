@@ -9,22 +9,23 @@
 #include "mod_switches.h"
 #include "nickel_bridge.h"
 #include "press_area.h"
-#include "tweaks_row.h"
+#include "system_icon.h"
 #include "wake_rotation.h"
 
 static const int FAILSAFE_DELAY_SECONDS = 15;
+static const char ICON_DIRECTORY[] = "/mnt/onboard/.adds/koboapps/icons/ui";
 
-// Our two More-tab rows: Apps, then Tweaks right after it.
+// Our More-tab row (Apps) and the wake-rotation watcher.
 static void addMoreRows(QWidget *moreView)
 {
     EntryRow::addTo(moreView);
-    TweaksRow::addTo(moreView);
     WakeRotation::install();
 }
 
 static int initialize()
 {
-    DebugLog::enableIfFlagged("nickeldrawer");
+    DebugLog::enableIfFlagged("nickeldrawer", ModSwitches::DEBUG_FLAG_PATH, ModSwitches::DEBUG_LOG_PATH);
+    SystemIcon::setIconDirectory(ICON_DIRECTORY);
     ModSwitches::readAtBoot();
     if (ModSwitches::isKillSwitchOn()) {
         // Hooks stay installed but pass straight through to Nickel.
@@ -45,7 +46,7 @@ static int initialize()
 
 static struct nh_info modInfo = {
     .name = "nickeldrawer",
-    .desc = "NickelDrawer: Apps and Tweaks rows in the More tab, a native app drawer",
+    .desc = "NickelDrawer: Apps row in the More tab, a native app drawer",
     .uninstall_flag = ModSwitches::UNINSTALL_FLAG_PATH,
     .uninstall_xflag = NULL, // g++ 4.9 rejects skipped designated fields
     .failsafe_delay = FAILSAFE_DELAY_SECONDS,
