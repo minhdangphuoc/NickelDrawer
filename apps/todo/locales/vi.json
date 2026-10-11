@@ -18,7 +18,7 @@
   "msg.recovered": "Danh sách đã lưu bị hỏng và đã được cất riêng. Danh sách bắt đầu lại từ trống.",
   "msg.toggled": "Đã cập nhật việc.",
   "ui.title": "Việc cần làm",
-  "ui.counts": "Còn $open · xong $done",
+  "ui.counts": "$open việc còn lại · $done đã xong",
   "ui.new_task": "Việc mới",
   "ui.new_task_hint": "Gõ rồi xác nhận",
   "ui.tasks": "Danh sách",

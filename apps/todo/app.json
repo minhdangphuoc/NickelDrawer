@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "todo",
   "name": "To-do",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A small to-do list that stays on your Kobo",
   "storage": {
     "reads": [],

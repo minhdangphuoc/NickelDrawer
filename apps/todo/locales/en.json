@@ -11,7 +11,7 @@
   "msg.recovered": "The saved list was damaged and set aside. The list starts empty.",
   "msg.toggled": "Task updated.",
   "ui.title": "To-do",
-  "ui.counts": "$open open · $done done",
+  "ui.counts": "$open to do · $done done",
   "ui.new_task": "New task",
   "ui.new_task_hint": "Type and confirm",
   "ui.tasks": "Tasks",
