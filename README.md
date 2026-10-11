@@ -12,13 +12,50 @@ Tiếng Việt: [README.vi.md](README.vi.md).
 
 Screenshots from a Kobo Libra 2 set to Vietnamese. The drawer shows your apps as a list (icon, name, live status) or as a grid; the buttons in the header switch between them, refresh the list and open the drawer settings.
 
-## What you get
+> **Built on [NickelHook](https://github.com/pgaskin/NickelHook).** Patrick Gaskin's NickelHook is what makes a safe Nickel mod possible at all: it loads our library into Nickel, resolves every libnickel symbol by name instead of by address, and brings the 15-second failsafe and the `uninstall` flag that let you back out of a bad build without a computer. NickelDrawer, and the optional extras mod, are NickelHook plugins. Thank you, pgaskin, for NickelHook, [NickelMenu](https://github.com/pgaskin/NickelMenu) and [NickelTC](https://github.com/pgaskin/NickelTC), and for years of documenting how Nickel works.
 
-- **A native drawer.** An Apps row in Nickel's More tab opens a list or grid of your apps. It uses Nickel's own fonts, icons and dialogs.
-- **Apps are folders.** Copy a folder with a manifest and a few scripts to `.adds/apps/` and it appears. No C++ needed ([docs/APPS.md](docs/APPS.md)).
-- **Native app screens.** Apps describe lists, toggles, buttons, QR codes and live status in a `ui.json` file; the drawer draws them.
-- **Signed updates.** The drawer (host tool and mod) updates over Wi-Fi from GitHub Releases. Only releases signed with the maintainer's ed25519 key are applied, with backup, self-check and rollback ([docs/UPDATES.md](docs/UPDATES.md)).
-- **Any language.** English is the source; Vietnamese ships first. The language follows the Kobo's own setting ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
+## Features
+
+### The drawer
+
+- **An Apps row in the More tab** that opens your apps as a **list** (icon, name, live status line) or a **grid** of icons. The choice is remembered.
+- **Native look.** Nickel's own header, fonts, icons, dialogs, toasts and keyboard; pages instead of scrolling, turned with the ‹ › pager or the page keys.
+- **Long-press an app** for its info (version, storage, folder) or to remove it, with a confirmation.
+- **Refresh** in the header rescans `.adds/apps/` at once.
+- **Drawer settings** (the gear): show hidden apps, check for and install updates, debug log, firmware check, and a project page with a QR code.
+
+### Apps
+
+- **An app is a folder** with `app.json`, a few scripts and optional `ui.json` screens: no C++ and no rebuild of the drawer.
+- **Native app screens** described in `ui.json`: lists, rows, toggles, radio choices, text fields with Nickel's keyboard, buttons, notices, progress steps, QR codes, galleries and a picture viewer, all drawn by the drawer in the CopperUI style.
+- **A small, safe protocol.** Apps talk to the drawer only through JSON events (state, toast, confirm, rescan, Wi-Fi); they never draw their own dialogs.
+- **Background jobs** with live progress, and requests for a library rescan or Wi-Fi when the user starts something that needs it.
+- **Ready-made apps** to install one by one: GitHub sync, Library, LocalSend, To-do and Wallpaper (list at the end of this page).
+
+### Updates
+
+- **Drawer updates over Wi-Fi** from GitHub Releases: check, install, restart. Signed with ed25519; the device verifies the signature, every file's checksum and size, keeps a backup and rolls back if the self-check fails.
+- **App updates over Wi-Fi**, separate from the drawer: **Settings › Updates › Apps** lists updates, installed apps and apps you have not installed yet. Update one or all, or install a new one. Each app's `data/` is moved into the new copy before the swap, so a power cut cannot lose it.
+- **Nothing runs in the background.** The network is used only when you tap Check or start a feature that needs it. No telemetry.
+
+### Safety
+
+- Every libnickel symbol is checked at load time; an unknown firmware, an unsupported model or a missing symbol turns the drawer off with one message instead of crashing Nickel.
+- Failsafe and uninstall switches from NickelHook, plus a kill switch (`disable`).
+- No Kobo binaries or Kobo assets in the repository or in a release.
+
+### For developers
+
+- **`appsctl new`** scaffolds an app; **`appsctl validate`** checks its manifest, screens and translations against the design rules.
+- **`ndpreview`** renders any screen at the Kobo's exact size on your computer, live in a browser or as a PNG.
+- **CopperUI** (`lib/copperui/`): the design system the drawer draws with: one token file for sizes, greys and type, generated into C++ and Go, plus a small Qt Widgets library.
+- **The UI Kit app**, a catalogue of every component with sample content (hidden by default).
+- **Your app, your license**: apps that use only the public interfaces may use any license, commercial included ([LICENSE-APPS.md](LICENSE-APPS.md)).
+- Guides: [developer guide](docs/guide/developer-guide.md), [publishing apps](docs/guide/publishing-apps.md), formats in [docs/spec/](docs/spec/), examples in [examples/](examples/README.md).
+
+### Any language
+
+English is the source; Vietnamese is maintained here. The language follows the Kobo's own setting, and a new language is one JSON file per app and one for the host, no code change ([docs/TRANSLATING.md](docs/TRANSLATING.md)). Right-to-left languages are not supported yet.
 
 ## Supported firmware
 
@@ -47,7 +84,7 @@ You need a Kobo Libra 2 on one of the builds above, a computer, a USB cable and 
 3. Copy `KoboRoot-nickeldrawer.tgz` to `.kobo/KoboRoot.tgz` on the drive (rename it while copying).
 4. Eject the Kobo from the computer. It installs the drawer and reboots. After the boot, the More tab has an **Apps** row.
 
-The drawer is empty at first. **Apps are separate from the drawer:** each is its own `app-<id>-<version>.zip` in the release, installed one by one; see [apps/README.md](apps/README.md). A drawer install or update never adds, changes or removes an app.
+The drawer is empty at first. **Apps are separate from the drawer:** install them from the Kobo itself in **Apps › gear › Updates › Apps** (Wi-Fi), or copy them over USB as described in [apps/README.md](apps/README.md). A drawer install or update never adds, changes or removes an app.
 
 On macOS or Linux with a checkout of this repository there is a safer installer that backs up everything it replaces to `backups/<date-time>/` and never touches `data/` folders:
 
@@ -110,12 +147,6 @@ go run ./cmd/ndpreview serve my-app           # preview ui.json at Kobo size on 
 
 The guide is [docs/APPS.md](docs/APPS.md); the formats are in [docs/spec/](docs/spec/); worked examples are in [examples/](examples/README.md).
 
-## Languages
-
-English and Vietnamese are maintained here. A new language is one JSON file per app and one for the host, no code change. See [docs/TRANSLATING.md](docs/TRANSLATING.md). Right-to-left languages are not supported yet.
-
-Tiếng Việt: xem [README.vi.md](README.vi.md).
-
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE): free for personal use, study, hobby projects and non-profit organisations; **no commercial use**. Forks and changes are welcome under the same terms. NickelDrawer is source-available, not OSI open source. Third-party code keeps its own license, listed in [third_party/README.md](third_party/README.md).
@@ -124,7 +155,8 @@ Tiếng Việt: xem [README.vi.md](README.vi.md).
 
 ## Credits
 
-- [NickelHook](https://github.com/pgaskin/NickelHook) and [NickelMenu](https://github.com/pgaskin/NickelMenu) by Patrick Gaskin (MIT): the hook framework the native drawer is built on, and the menu it coexists with.
+- **[NickelHook](https://github.com/pgaskin/NickelHook)** by Patrick Gaskin (MIT): the hook framework both mods are built on, with its symbol checks, failsafe and uninstall flag. Without it there would be no safe way to put a drawer inside Nickel.
+- [NickelMenu](https://github.com/pgaskin/NickelMenu) by Patrick Gaskin (MIT): the menu NickelDrawer coexists with, and the reference for many of the Nickel calls used here.
 - [NickelTC](https://github.com/pgaskin/NickelTC): the cross toolchain, and the wider Kobo reverse-engineering community for the knowledge of how Nickel works.
 - [localgo](https://github.com/bethropolis/localgo) (MIT): the LocalSend protocol implementation.
 - [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT): fallback icons when Nickel's own are not available.
@@ -135,6 +167,19 @@ NickelDrawer is an independent project. It is not made by, affiliated with or en
 
 Optional, separate from the drawer. Install only what you want.
 
-- **Apps** ([apps/README.md](apps/README.md)): LocalSend, GitHub sync, Library, Wallpaper and To-do (plus the developer-only UI Kit). Each is its own zip in the release and is installed, updated and removed one by one; the drawer and its updates never touch them.
+### Apps
 
-- **Extras** ([helpers/README.md](helpers/README.md)): a small separate mod with a screenshot button in Kobo's top status bar and a **Tweaks** panel in the More tab (sleep screen, auto USB connect, text legibility, IP address, reboot, library rescan). It works with or without NickelDrawer. Built and installed from the source; there is no release file (it is not part of NickelDrawer's releases). Install and uninstall steps are in that README.
+Each is its own zip in the release; install, update and remove them one by one ([apps/README.md](apps/README.md)).
+
+| App | What it does |
+|---|---|
+| [GitHub](apps/ghsync/README.md) | Sync books from a private GitHub repo, paired from your phone (add-only, never deletes) |
+| [Library](apps/library/README.md) | Fix the language of Vietnamese books, normalise names, find duplicate books |
+| [LocalSend](apps/localsend/README.md) | Receive books and files from your phone, sorted into Books, Documents, Comics and Pictures |
+| [To-do](apps/todo/README.md) | A small to-do list that stays on your Kobo |
+| [Wallpaper](apps/wallpaper/README.md) | Use your own pictures as the sleep screen, fixed or random |
+| [UI Kit](apps/uikit/README.md) | Every component with sample content, for developers (hidden by default) |
+
+### Extras
+
+[helpers/README.md](helpers/README.md): a small separate NickelHook mod with a screenshot button in Kobo's top status bar and a **Tweaks** panel in the More tab (sleep screen, auto USB connect, text legibility, IP address, reboot, library rescan). It works with or without NickelDrawer. Built and installed from the source; there is no release file (it is not part of NickelDrawer's releases). Install and uninstall steps are in that README.

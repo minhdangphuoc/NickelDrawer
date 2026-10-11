@@ -10,13 +10,50 @@ Ngăn ứng dụng cho máy đọc sách Kobo chạy phần mềm gốc (Nickel)
 
 Ảnh chụp từ Kobo Libra 2 (tiếng Việt). Ngăn hiện ứng dụng dạng danh sách (biểu tượng, tên, trạng thái trực tiếp) hoặc dạng lưới; các nút trên tiêu đề chuyển dạng xem, làm mới danh sách và mở cài đặt của Ngăn.
 
-## Bạn được gì
+> **Xây trên [NickelHook](https://github.com/pgaskin/NickelHook).** NickelHook của Patrick Gaskin là thứ khiến một mod Nickel an toàn trở nên khả thi: nó nạp thư viện của chúng tôi vào Nickel, tìm mọi hàm của libnickel theo tên thay vì theo địa chỉ, và có sẵn failsafe 15 giây cùng tệp cờ `uninstall` để bạn rút lui khỏi một bản dựng hỏng mà không cần máy tính. NickelDrawer và mod Extras tùy chọn đều là plugin của NickelHook. Cảm ơn pgaskin vì NickelHook, [NickelMenu](https://github.com/pgaskin/NickelMenu), [NickelTC](https://github.com/pgaskin/NickelTC) và nhiều năm ghi chép cách Nickel hoạt động.
 
-- **Ngăn ứng dụng gốc.** Hàng Ứng dụng trong tab Thêm mở danh sách hoặc lưới ứng dụng, dùng phông, biểu tượng và hộp thoại của chính Nickel.
-- **Ứng dụng là thư mục.** Chép một thư mục có tệp mô tả và vài tập lệnh vào `.adds/apps/` là nó hiện ra. Không cần C++ ([docs/APPS.md](docs/APPS.md)).
-- **Màn hình ứng dụng gốc.** Ứng dụng mô tả danh sách, nút gạt, nút bấm, mã QR và trạng thái trực tiếp trong tệp `ui.json`; Ngăn vẽ ra.
-- **Cập nhật có chữ ký.** Ngăn (công cụ chủ và mod) cập nhật qua Wi-Fi từ GitHub Releases. Chỉ bản phát hành ký bằng khóa ed25519 của người duy trì mới được áp dụng, có sao lưu, tự kiểm tra và hoàn lại ([docs/UPDATES.md](docs/UPDATES.md)).
-- **Mọi ngôn ngữ.** Tiếng Anh là bản gốc; tiếng Việt có sẵn đầu tiên. Ngôn ngữ theo cài đặt của chính Kobo ([docs/TRANSLATING.md](docs/TRANSLATING.md)).
+## Tính năng
+
+### Ngăn ứng dụng
+
+- **Hàng Ứng dụng trong tab Thêm** mở ứng dụng của bạn dạng **danh sách** (biểu tượng, tên, dòng trạng thái trực tiếp) hoặc **lưới** biểu tượng. Lựa chọn được ghi nhớ.
+- **Giao diện gốc.** Tiêu đề, phông, biểu tượng, hộp thoại, thông báo và bàn phím của chính Nickel; chia trang thay vì cuộn, lật bằng ‹ › hoặc phím lật trang.
+- **Nhấn giữ một ứng dụng** để xem thông tin (phiên bản, dung lượng, thư mục) hoặc gỡ, có hỏi xác nhận.
+- **Làm mới** trên tiêu đề quét lại `.adds/apps/` ngay.
+- **Cài đặt của Ngăn** (bánh răng): hiện ứng dụng ẩn, kiểm tra và cài bản cập nhật, nhật ký gỡ lỗi, kiểm tra firmware, trang giới thiệu dự án có mã QR.
+
+### Ứng dụng
+
+- **Một ứng dụng là một thư mục** gồm `app.json`, vài tập lệnh và màn hình `ui.json` tùy chọn: không cần C++, không phải dựng lại Ngăn.
+- **Màn hình ứng dụng gốc** mô tả trong `ui.json`: danh sách, hàng, công tắc, lựa chọn, ô nhập với bàn phím Nickel, nút, ghi chú, các bước tiến trình, mã QR, thư viện ảnh và trình xem ảnh, tất cả do Ngăn vẽ theo phong cách CopperUI.
+- **Giao thức nhỏ và an toàn.** Ứng dụng chỉ nói chuyện với Ngăn qua sự kiện JSON (trạng thái, thông báo, xác nhận, quét lại, Wi-Fi); không tự vẽ hộp thoại.
+- **Việc chạy nền** có tiến trình trực tiếp, và yêu cầu quét lại thư viện hoặc bật Wi-Fi khi người dùng bắt đầu việc cần đến.
+- **Ứng dụng có sẵn** để cài từng cái: GitHub, Thư viện, LocalSend, Việc cần làm và Hình nền (danh sách ở cuối trang).
+
+### Cập nhật
+
+- **Cập nhật Ngăn qua Wi-Fi** từ GitHub Releases: kiểm tra, cài, khởi động lại. Ký bằng ed25519; máy kiểm chữ ký, kiểm tổng và kích thước từng tệp, giữ bản sao lưu và hoàn lại nếu tự kiểm tra thất bại.
+- **Cập nhật ứng dụng qua Wi-Fi**, tách khỏi Ngăn: **Cài đặt › Cập nhật › Ứng dụng** liệt kê bản mới, ứng dụng đã cài và ứng dụng chưa cài. Cập nhật một hay tất cả, hoặc cài ứng dụng mới. Thư mục `data/` của ứng dụng được chuyển sang bản mới trước khi thay, nên mất điện giữa chừng cũng không mất dữ liệu.
+- **Không có gì chạy ngầm.** Chỉ dùng mạng khi bạn chạm Kiểm tra hoặc bắt đầu tính năng cần mạng. Không thu thập dữ liệu.
+
+### An toàn
+
+- Mọi hàm của libnickel được kiểm khi nạp; firmware lạ, máy chưa hỗ trợ hay thiếu hàm sẽ tắt Ngăn với một thông báo thay vì làm treo Nickel.
+- Failsafe và tệp cờ gỡ cài của NickelHook, cộng thêm công tắc tắt (`disable`).
+- Không có tệp nhị phân hay tài nguyên của Kobo trong kho mã và bản phát hành.
+
+### Cho nhà phát triển
+
+- **`appsctl new`** tạo khung ứng dụng; **`appsctl validate`** kiểm tệp mô tả, màn hình và bản dịch theo quy tắc thiết kế.
+- **`ndpreview`** vẽ mọi màn hình đúng kích thước Kobo trên máy tính, xem trực tiếp trong trình duyệt hoặc xuất PNG.
+- **CopperUI** (`lib/copperui/`): hệ thống thiết kế Ngăn dùng để vẽ: một tệp token cho kích thước, mức xám và chữ, sinh ra cho C++ và Go, kèm một thư viện Qt Widgets nhỏ.
+- **Ứng dụng UI Kit**, danh mục mọi thành phần kèm nội dung mẫu (mặc định ẩn).
+- **Ứng dụng của bạn, giấy phép của bạn**: ứng dụng chỉ dùng giao diện công khai được chọn mọi giấy phép, kể cả thương mại ([LICENSE-APPS.md](LICENSE-APPS.md)).
+- Hướng dẫn: [hướng dẫn nhà phát triển](docs/guide/developer-guide.md), [phát hành ứng dụng](docs/guide/publishing-apps.vi.md), định dạng trong [docs/spec/](docs/spec/), ví dụ trong [examples/](examples/README.md).
+
+### Mọi ngôn ngữ
+
+Tiếng Anh là bản gốc; tiếng Việt do dự án duy trì. Ngôn ngữ theo cài đặt của chính Kobo; thêm ngôn ngữ mới chỉ cần một tệp JSON cho mỗi ứng dụng và một cho phần chủ, không sửa mã ([docs/TRANSLATING.md](docs/TRANSLATING.md)). Chưa hỗ trợ ngôn ngữ viết từ phải sang trái.
 
 ## Firmware hỗ trợ
 
@@ -45,7 +82,7 @@ Bạn cần Kobo Libra 2 chạy một trong các bản trên, một máy tính, 
 3. Chép `KoboRoot-nickeldrawer.tgz` vào `.kobo/KoboRoot.tgz` trên ổ (đổi tên khi chép).
 4. Ngắt kết nối (eject) Kobo khỏi máy tính. Máy tự cài ngăn và khởi động lại. Sau khi lên, tab Thêm có hàng **Ứng dụng**.
 
-Lúc đầu ngăn còn trống. **Ứng dụng tách riêng khỏi ngăn:** mỗi ứng dụng là một tệp `app-<id>-<phiên bản>.zip` trong bản phát hành, cài từng cái; xem [apps/README.vi.md](apps/README.vi.md). Cài hay cập nhật ngăn không bao giờ thêm, đổi hay xóa ứng dụng nào.
+Lúc đầu ngăn còn trống. **Ứng dụng tách riêng khỏi ngăn:** cài ngay trên Kobo ở **Ứng dụng › bánh răng › Cập nhật › Ứng dụng** (cần Wi-Fi), hoặc chép qua USB như trong [apps/README.vi.md](apps/README.vi.md). Cài hay cập nhật ngăn không bao giờ thêm, đổi hay xóa ứng dụng nào.
 
 Trên macOS hoặc Linux, với bản checkout của kho mã này có tập lệnh cài an toàn hơn: nó sao lưu mọi thứ nó thay vào `backups/<ngày-giờ>/` và không bao giờ đụng vào thư mục `data/`:
 
@@ -108,10 +145,6 @@ go run ./cmd/ndpreview serve my-app           # xem trước ui.json ở cỡ Ko
 
 Hướng dẫn: [docs/APPS.md](docs/APPS.md); định dạng trong [docs/spec/](docs/spec/); ví dụ trong [examples/](examples/README.md).
 
-## Ngôn ngữ
-
-Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới chỉ cần một tệp JSON cho mỗi ứng dụng và một cho phần chủ, không phải sửa mã. Xem [docs/TRANSLATING.md](docs/TRANSLATING.md). Chưa hỗ trợ ngôn ngữ viết từ phải sang trái.
-
 ## Giấy phép
 
 [PolyForm Noncommercial 1.0.0](LICENSE): miễn phí cho cá nhân, học tập, sở thích và tổ chức phi lợi nhuận; **không dùng cho mục đích thương mại**. Có thể fork và sửa theo cùng điều khoản. NickelDrawer là mã nguồn có thể xem (source-available), không phải mã nguồn mở theo chuẩn OSI. Mã của bên thứ ba giữ giấy phép riêng, liệt kê ở [third_party/README.md](third_party/README.md).
@@ -120,7 +153,8 @@ Tiếng Anh và tiếng Việt do dự án duy trì. Thêm ngôn ngữ mới ch�
 
 ## Ghi công
 
-- [NickelHook](https://github.com/pgaskin/NickelHook) và [NickelMenu](https://github.com/pgaskin/NickelMenu) của Patrick Gaskin (MIT): khung hook mà ngăn gốc dùng, và menu chạy chung với nó.
+- **[NickelHook](https://github.com/pgaskin/NickelHook)** của Patrick Gaskin (MIT): khung hook mà cả hai mod dựa vào, với phần kiểm hàm, failsafe và tệp cờ gỡ cài. Không có nó thì không có cách an toàn nào để đặt một ngăn ứng dụng vào trong Nickel.
+- [NickelMenu](https://github.com/pgaskin/NickelMenu) của Patrick Gaskin (MIT): menu chạy chung với NickelDrawer, và là tài liệu tham khảo cho nhiều lệnh Nickel dùng ở đây.
 - [NickelTC](https://github.com/pgaskin/NickelTC): bộ biên dịch chéo, và cộng đồng nghiên cứu ngược Kobo với hiểu biết về cách Nickel hoạt động.
 - [localgo](https://github.com/bethropolis/localgo) (MIT): phần cài giao thức LocalSend.
 - [Tabler Icons](https://github.com/tabler/tabler-icons) (MIT): biểu tượng dự phòng khi không có biểu tượng của Nickel.
@@ -134,7 +168,16 @@ Tùy chọn, tách riêng khỏi ngăn. Chỉ cài thứ bạn cần.
 
 ### Ứng dụng
 
-[apps/README.vi.md](apps/README.vi.md): LocalSend, GitHub, Thư viện, Hình nền và Việc cần làm (cùng UI Kit chỉ dành cho nhà phát triển). Mỗi ứng dụng là một tệp zip riêng trong bản phát hành, được cài, cập nhật và gỡ từng cái; ngăn và các bản cập nhật của nó không bao giờ đụng vào chúng.
+Mỗi ứng dụng là một tệp zip riêng trong bản phát hành; cài, cập nhật và gỡ từng cái ([apps/README.vi.md](apps/README.vi.md)).
+
+| Ứng dụng | Làm gì |
+|---|---|
+| [GitHub](apps/ghsync/README.md) | Đồng bộ sách từ repo GitHub riêng, ghép nối bằng điện thoại (chỉ thêm, không xóa) |
+| [Thư viện](apps/library/README.md) | Sửa ngôn ngữ sách tiếng Việt, chuẩn hóa tên, tìm sách trùng |
+| [LocalSend](apps/localsend/README.md) | Nhận sách và tệp từ điện thoại, xếp vào Books, Documents, Comics và Pictures |
+| [Việc cần làm](apps/todo/README.md) | Danh sách việc cần làm nằm gọn trong máy Kobo |
+| [Hình nền](apps/wallpaper/README.md) | Dùng ảnh của bạn làm màn hình chờ, cố định hoặc ngẫu nhiên |
+| [UI Kit](apps/uikit/README.md) | Mọi thành phần kèm nội dung mẫu, cho nhà phát triển (mặc định ẩn) |
 
 ### Extras (nút chụp màn hình và Tinh chỉnh)
 

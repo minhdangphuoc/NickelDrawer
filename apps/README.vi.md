@@ -12,7 +12,7 @@ English: [README.md](README.md).
 | [Thư viện](library/README.md) | `apps/library/` | Sửa ngôn ngữ sách tiếng Việt và tìm sách trùng | 0.2.0 | không |
 | [LocalSend](localsend/README.md) | `apps/localsend/` | Nhận sách và tệp từ điện thoại qua LocalSend | 1.2.0 | không |
 | [Việc cần làm](todo/README.md) | `apps/todo/` | Danh sách việc cần làm nằm gọn trong máy Kobo | 1.0.3 | không |
-| [UI Kit](uikit/README.md) | `apps/uikit/` | Every NickelDrawer component with sample content, for developers and testers | 2.1.0 | có (chỉ cho nhà phát triển) |
+| [UI Kit](uikit/README.md) | `apps/uikit/` | Mọi thành phần của NickelDrawer kèm nội dung mẫu, cho nhà phát triển và người thử | 2.1.0 | có (chỉ cho nhà phát triển) |
 | [Hình nền](wallpaper/README.md) | `apps/wallpaper/` | Dùng ảnh của bạn làm màn hình chờ | 0.3.0 | không |
 
 Ứng dụng ẩn không hiện trong ngăn cho đến khi bạn bật nó trong cài đặt của ngăn (biểu tượng bánh răng ở tiêu đề). UI Kit là bản mẫu mọi thành phần giao diện, dành cho nhà phát triển và người thử.
