@@ -4,15 +4,12 @@
   "hasdone": true,
   "newitem": "",
   "notice": "",
-  "items": [
-    [
-      "Mua sữa và bánh mì",
-      ""
-    ],
-    [
-      "Gọi điện cho cô Mai",
-      ""
-    ],
+  "open_items": [
+    "Mua sữa và bánh mì",
+    "Gọi điện cho cô Mai",
+    "Đọc chương 5 Truyện Kiều"
+  ],
+  "done_items": [
     [
       "Trả sách thư viện",
       "✓"
@@ -20,10 +17,6 @@
     [
       "Đặt vé tàu về Huế",
       "✓"
-    ],
-    [
-      "Đọc chương 5 Truyện Kiều",
-      ""
     ]
   ]
 }

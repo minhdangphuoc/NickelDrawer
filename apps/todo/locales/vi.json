@@ -18,10 +18,9 @@
   "msg.recovered": "Danh sách đã lưu bị hỏng và đã được cất riêng. Danh sách bắt đầu lại từ trống.",
   "msg.toggled": "Đã cập nhật việc.",
   "ui.title": "Việc cần làm",
-  "ui.counts": "$open việc còn lại · $done đã xong",
+  "ui.counts": "$open việc · $done xong",
   "ui.new_task": "Việc mới",
   "ui.new_task_hint": "Gõ rồi xác nhận",
-  "ui.tasks": "Danh sách",
   "ui.empty": "Chưa có việc nào",
   "ui.delete": "Xóa…",
   "ui.clear_done": "Xóa việc đã xong",
@@ -39,5 +38,11 @@
   "ui.toast_recovered": "Danh sách hỏng: bắt đầu lại từ trống",
   "ui.toast_failed": "Không thực hiện được. Xem data/log.txt.",
   "actions.remove.confirm": "Xóa việc này?",
-  "actions.clear-done.confirm": "Xóa mọi việc đã xong?"
+  "actions.clear-done.confirm": "Xóa mọi việc đã xong?",
+  "ui.sec_open": "Cần làm",
+  "ui.sec_done": "Đã xong",
+  "ui.empty_done": "Chưa xong việc nào",
+  "ui.add": "Thêm việc",
+  "ui.add_title": "Thêm việc",
+  "ui.add_note": "Thêm xong thì chạm Quay lại"
 }

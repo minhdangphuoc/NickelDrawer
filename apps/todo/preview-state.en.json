@@ -4,15 +4,12 @@
   "hasdone": true,
   "newitem": "",
   "notice": "",
-  "items": [
-    [
-      "Buy milk and bread",
-      ""
-    ],
-    [
-      "Call Aunt Mai",
-      ""
-    ],
+  "open_items": [
+    "Buy milk and bread",
+    "Call Aunt Mai",
+    "Read chapter 5 of Moby Dick"
+  ],
+  "done_items": [
     [
       "Return library books",
       "✓"
@@ -20,10 +17,6 @@
     [
       "Book a train ticket home",
       "✓"
-    ],
-    [
-      "Read chapter 5 of Moby Dick",
-      ""
     ]
   ]
 }

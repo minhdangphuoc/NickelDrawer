@@ -4,5 +4,6 @@
   "hasdone": false,
   "newitem": "",
   "notice": "",
-  "items": []
+  "open_items": [],
+  "done_items": []
 }

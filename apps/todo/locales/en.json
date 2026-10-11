@@ -14,7 +14,6 @@
   "ui.counts": "$open to do · $done done",
   "ui.new_task": "New task",
   "ui.new_task_hint": "Type and confirm",
-  "ui.tasks": "Tasks",
   "ui.empty": "Nothing to do yet",
   "ui.delete": "Delete…",
   "ui.clear_done": "Clear done tasks",
@@ -30,5 +29,11 @@
   "ui.toast_full": "List full: delete a task first",
   "ui.toast_missing": "Task not found",
   "ui.toast_recovered": "List was damaged: started empty",
-  "ui.toast_failed": "That did not work. See data/log.txt."
+  "ui.toast_failed": "That did not work. See data/log.txt.",
+  "ui.sec_open": "To do",
+  "ui.sec_done": "Done",
+  "ui.empty_done": "Nothing done yet",
+  "ui.add": "Add task",
+  "ui.add_title": "New task",
+  "ui.add_note": "Tap Back when you are done adding"
 }

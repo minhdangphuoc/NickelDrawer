@@ -162,7 +162,7 @@ func TestStateJSONHasRowsCountsAndNotice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := `{"open":"1","done":"1","hasdone":true,"newitem":"","notice":"","items":[["say \"hi\" \\ there",""],["xong","✓"]]}`
+	want := `{"open":"1","done":"1","hasdone":true,"newitem":"","notice":"","open_items":["say \"hi\" \\ there"],"done_items":[["xong","✓"]]}`
 	if string(encoded) != want {
 		t.Fatalf("got %s\nwant %s", encoded, want)
 	}

@@ -7,7 +7,8 @@
     "hasdone": false,
     "newitem": "",
     "notice": "",
-    "items": []
+    "open_items": [],
+    "done_items": []
   },
   "screens": {
     "main": {
@@ -15,18 +16,26 @@
       "status": "@ui.counts",
       "body": [
         {
-          "field": "@ui.new_task",
-          "bind": "newitem",
-          "placeholder": "@ui.new_task_hint",
-          "keyboard": "text"
-        },
-        {
           "notice": "$notice"
         },
         {
-          "list": "$items",
-          "title": "@ui.tasks",
+          "list": "$open_items",
+          "title": "@ui.sec_open",
           "empty_text": "@ui.empty",
+          "max": 200,
+          "tap": "toggle",
+          "menu": [
+            {
+              "id": "remove",
+              "label": "@ui.delete",
+              "confirm": true
+            }
+          ]
+        },
+        {
+          "list": "$done_items",
+          "title": "@ui.sec_done",
+          "empty_text": "@ui.empty_done",
           "max": 200,
           "tap": "toggle",
           "menu": [
@@ -49,6 +58,40 @@
             "ok": "@ui.clear_ok",
             "cancel": "@ui.cancel"
           }
+        }
+      ],
+      "toasts": {
+        "added": "@ui.toast_added",
+        "removed": "@ui.toast_removed",
+        "cleared": "@ui.toast_cleared",
+        "nothing_done": "@ui.toast_nothing_done",
+        "empty": "@ui.toast_empty",
+        "duplicate": "@ui.toast_duplicate",
+        "full": "@ui.toast_full",
+        "missing": "@ui.toast_missing",
+        "recovered": "@ui.toast_recovered",
+        "failed": "@ui.toast_failed"
+      },
+      "actions": [
+        {
+          "icon": "add",
+          "label": "@ui.add",
+          "push": "add"
+        }
+      ]
+    },
+    "add": {
+      "title": "@ui.add_title",
+      "body": [
+        {
+          "field": "@ui.new_task",
+          "bind": "newitem",
+          "placeholder": "@ui.new_task_hint",
+          "keyboard": "text"
+        },
+        {
+          "text": "@ui.add_note",
+          "style": "caption"
         }
       ],
       "toasts": {

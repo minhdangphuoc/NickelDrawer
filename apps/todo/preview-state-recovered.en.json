@@ -4,5 +4,6 @@
   "hasdone": false,
   "newitem": "",
   "notice": "The saved list was damaged and set aside. The list starts empty.",
-  "items": []
+  "open_items": [],
+  "done_items": []
 }
