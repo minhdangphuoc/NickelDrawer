@@ -2,7 +2,7 @@
 # `make release VERSION=x.y.z` additionally signs dist/ (maintainer only, see docs/UPDATES.md).
 # `make release-app APP=<id> SEQUENCE=N` signs the app catalog for one app release (docs/RELEASING.md).
 # `make dist` writes the drawer (dist/onboard, dist/koboapps-<v>.zip) and one zip per app (dist/apps).
-VERSION ?= 1.0.0-beta.7
+VERSION ?= 1.0.0-beta.8
 ARM_ENV = CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7
 GO_BUILD = go build -trimpath -ldflags='-s -w'
 APPSCTL_LDFLAGS = -s -w -X main.version=$(VERSION)

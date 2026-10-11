@@ -4,6 +4,8 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+## [1.0.0-beta.8] - 2026-10-11
+
 ### Added
 
 - **Checklist lists.** A `list` with `"style": "checklist"` shows a box at the left of every row: empty for an open item, ticked for a done one (`[text, "✓"]`; the mark is no longer drawn at the right). Tapping still runs the list's `tap`. The boxes are Tabler `square` and `square-check` at 64 px (new `icon.checkbox` token, `host/icons/ui/square-*.png`). The validator checks the style value and that default items can carry a done mark (`ui.checklist_items`). `ndpreview` mirrors it.
