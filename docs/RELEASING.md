@@ -74,6 +74,12 @@ Each app is released on its own, without a drawer release. The device installs a
    make release-app APP=todo SEQUENCE=8
    ```
    This runs `check build dist`, signs a catalog of every app zip in `dist/apps`, and writes `dist/apps-release/`: `apps.json`, `apps.json.sig` and `app-todo-<version>.zip` (with `APP=all` every zip). Then `ndrelease verify-apps` checks the signature and every zip against the catalog. Use `build/ndrelease-host verify-apps --dir dist/apps-release --apps-dir dist/apps` to run it again by hand.
+3b. **Use the published zip for every app whose version you did not bump.** `make dist` rebuilds every app, and after a change to shared Go code an app's zip differs byte for byte from the one already published under the same version; a catalog signed over the rebuilt zip would make installs of that app fail the checksum. Before signing, download the published zips over the rebuilt ones, then sign without rebuilding:
+   ```sh
+   gh release download <id>-v<version> -p 'app-<id>-<version>.zip' -D dist/apps --clobber   # for each unchanged app
+   build/ndrelease-host sign-apps --apps-dir dist/apps --sequence N --only <changed-id>
+   build/ndrelease-host verify-apps --dir dist/apps-release --apps-dir dist/apps
+   ```
 4. Check that the tag of every catalog entry exists, except the one you are about to create:
    ```sh
    for tag in $(grep '"tag"' dist/apps-release/apps.json | sed 's/.*: "\(.*\)".*/\1/'); do
