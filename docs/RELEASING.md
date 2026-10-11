@@ -54,7 +54,7 @@ The ed25519 private key lives only at `~/.config/nickeldrawer/release-ed25519.ke
 
 Each app is released on its own, without a drawer release. The device installs and updates apps from a signed catalog; the design is in [spec/app-updates.md](spec/app-updates.md) and the user side in [UPDATES.md](UPDATES.md).
 
-- Every app release is a GitHub release in this repo with the tag `<id>-v<version>` (for example `todo-v1.0.2`) holding one file, `app-<id>-<version>.zip`. Create it with `--latest=false` so it never becomes the repo's "latest" release.
+- Every app release is a GitHub release in this repo with the tag `<id>-v<version>` (for example `todo-v1.0.2`) holding one file, `app-<id>-<version>.zip`. Create it with `--prerelease --latest=false`: while every drawer release is a beta, GitHub would otherwise mark the newest app release as the repo's "Latest" (the device ignores both flags).
 - The catalog `apps.json` + `apps.json.sig` lives on one fixed release tagged `apps`. Its assets are replaced on every app release. The device downloads it from `https://github.com/<repo>/releases/download/apps/apps.json`.
 - The same private key signs drawer releases and the catalog (the catalog over `nickeldrawer-apps-v1\n` + the bytes).
 
@@ -83,24 +83,23 @@ Each app is released on its own, without a drawer release. The device installs a
 5. Create the app's release with its zip, then replace the catalog (zip and new release first, `apps.json.sig` and `apps.json` last):
    ```sh
    gh release create todo-v1.0.2 dist/apps-release/app-todo-1.0.2.zip \
-     --title "To-do 1.0.2" --notes "To-do 1.0.2" --latest=false
+     --title "To-do 1.0.2" --notes "To-do 1.0.2" --prerelease --latest=false
    gh release upload apps dist/apps-release/apps.json.sig dist/apps-release/apps.json --clobber
    ```
-   For a beta of the app use `--prerelease` as well; the device does not look at the flag.
 6. Check on a device you control: **Settings > Updates > Apps > Check** shows the new version; update it; its `data/` is still there.
 
 ### First time only: create the `apps` release
 
-Do this after the drawer beta of rule 1 is published and, ideally, installed on your test device. `--latest=false` keeps the release from becoming "latest"; `--prerelease` is not needed.
+Do this after the drawer beta of rule 1 is published and, ideally, installed on your test device. `--prerelease --latest=false` keeps it from becoming the repo's "Latest" release.
 
 ```sh
 make release-app APP=all SEQUENCE=1
 for tag in $(sed -n 's/.*"tag": "\(.*\)".*/\1/p' dist/apps-release/apps.json); do
   zip="dist/apps-release/app-$(echo "$tag" | sed 's/-v\([0-9]\)/-\1/').zip"      # todo-v1.0.2 -> app-todo-1.0.2.zip
-  gh release create "$tag" "$zip" --title "$tag" --notes "$tag" --latest=false
+  gh release create "$tag" "$zip" --title "$tag" --notes "$tag" --prerelease --latest=false
 done
 gh release create apps dist/apps-release/apps.json.sig dist/apps-release/apps.json \
-  --title "App catalog" --notes "Signed app catalog read by NickelDrawer. Do not edit." --latest=false
+  --title "App catalog" --notes "Signed app catalog read by NickelDrawer. Do not edit." --prerelease --latest=false
 ```
 
 If a release was created by mistake with the wrong asset, `gh release upload <tag> <file> --clobber` replaces the asset, and `gh release delete <tag> --cleanup-tag` removes the release.
