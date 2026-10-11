@@ -5,9 +5,12 @@
 # 2. Every libnickel symbol the bridge hooks, dlsyms or connects as a signal is exported by all five
 #    firmware builds (re/symbols/<fw>/exports.txt, demangled; plus
 #    ~/.cache/nickeldrawer/symbols/<fw>/exports-mangled.txt when present).
-# 3. Every symbol the bridge hooks has a PLT (R_ARM_JUMP_SLOT) relocation in libnickel on all five
-#    builds (needs the firmware cache ~/.cache/nickeldrawer/fw; skipped with a notice without it),
-#    and no other mod in the repo hooks the same symbol: NickelHook's nh_dlhook returns the original
+# 3. Against the real libnickel of every cached build (~/.cache/nickeldrawer/fw; skipped with a
+#    notice without it), as NickelHook resolves them on the device (mod/common/check-nickel-bindings.sh):
+#    each hooked symbol is a defined FUNC with GLOBAL binding and an R_ARM_JUMP_SLOT relocation
+#    (nh_dlhook refuses WEAK symbols such as Ui_MoreView::setupUi, which a name-only "exported" and
+#    "has a jump slot" check let through), and each dlsym'd symbol is defined and not LOCAL.
+#    And no other mod in the repo hooks the same symbol: NickelHook's nh_dlhook returns the original
 #    through dlsym, so a second hook on one symbol silently drops the first.
 # 4. The library is ARM, hard-float, needs only the expected libraries, imports nothing from the C++
 #    standard library beyond the ABI runtime, exports both hook targets, carries its own NickelHook
@@ -29,8 +32,6 @@ mangled_cache="${NICKELDRAWER_CACHE:-$HOME/.cache/nickeldrawer}/symbols"
 nickeltc_image="ghcr.io/pgaskin/nickeltc@sha256:3296eb400d270cfd26f5773ab09625d4469f85680b3a191951dfb78d8ade7840"
 allowed_needed="libdl.so.2 libQt5Widgets.so.5 libQt5Gui.so.5 libQt5Core.so.5 libstdc++.so.6 libgcc_s.so.1 libpthread.so.0 libc.so.6 ld-linux-armhf.so.3"
 expected_firmware_count=5
-firmware_cache="${NICKELDRAWER_CACHE:-$HOME/.cache/nickeldrawer}/fw"
-libnickel_path=root/usr/local/Kobo/libnickel.so.1.0.0
 # The bridges of the repo's other mods whose hook tables must stay disjoint from ours.
 other_bridges="$repo_root/mod/drawer/nickel_bridge.cc"
 plugin_key=nh.extras
@@ -102,24 +103,9 @@ nickeltc() {
 	docker run --rm --platform linux/amd64 -v "$repo_root/build/$build_subfolder:/o:ro" --entrypoint sh "$nickeltc_image" -c "$1"
 }
 
-# Each hooked symbol needs a jump-slot relocation in libnickel: that is what nh_dlhook patches.
-check_hooks_have_plt_slots() {
-	if [ ! -d "$firmware_cache" ] || ! command -v docker >/dev/null 2>&1; then
-		echo "plt: skipped (no firmware cache at $firmware_cache or no docker; run re/scripts/fetch-fw.sh)"
-		return
-	fi
-	checked=0
-	for firmware_dir in "$firmware_cache"/*/; do
-		firmware=$(basename "$firmware_dir")
-		[ -f "$firmware_dir$libnickel_path" ] || continue
-		slots=$(docker run --rm --platform linux/amd64 -v "$firmware_cache:/fw:ro" --entrypoint sh "$nickeltc_image" \
-			-c "readelf -rW /fw/$firmware/$libnickel_path | grep JUMP_SLOT" || true)
-		for symbol in $(hook_symbols_of "$bridge"); do
-			echo "$slots" | grep -q " $symbol\$" || fail "$firmware: no PLT slot for $symbol (nh_hook cannot patch it)"
-		done
-		checked=$((checked + 1))
-	done
-	echo "plt: hook symbols have jump slots on $checked build(s)"
+# What nh_dlhook and dlsym need of each symbol, checked in the real libnickel of every cached build.
+check_nickel_bindings() {
+	"$repo_root/mod/common/check-nickel-bindings.sh" "$bridge" || fail "libnickel bindings (see FAIL lines above)"
 }
 
 check_plugin_key() {
@@ -200,7 +186,7 @@ check_vtable_typeinfo() {
 check_bridge_is_only_symbol_user
 check_firmware_exports
 check_hooks_are_not_shared
-check_hooks_have_plt_slots
+check_nickel_bindings
 if [ -f "$library" ]; then
 	check_plugin_key
 	check_independent_of_the_drawer

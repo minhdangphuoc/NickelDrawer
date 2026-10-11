@@ -33,6 +33,7 @@ const (
 const (
 	IDScreensaver      = "screensaver"
 	IDScreenshotButton = "screenshot-button"
+	IDScreenshots      = "screenshots" // the old power-button setting; listed only while it is on
 	IDAutoUSB          = "auto-usb"
 	IDLegibility       = "legibility"
 	IDIP               = "ip"
@@ -114,11 +115,15 @@ type tweak struct {
 	apply    func(Config) (Result, error)
 	confirm  bool
 	caption  bool // a "tweak.<id>.caption" text sits under the label
+	// isListed hides the item when it returns false; nil means always listed.
+	isListed func(*confFile) bool
 }
 
 var registry = []tweak{
 	{id: IDScreensaver, kind: KindToggle, read: readScreensaver, apply: Config.toggleScreensaver},
 	{id: IDScreenshotButton, kind: KindToggle, caption: true, read: readScreenshotButton, apply: Config.toggleScreenshotButton},
+	{id: IDScreenshots, kind: KindToggle, caption: true, isListed: screenshotsSetting.read,
+		read: readBoolean(screenshotsSetting), apply: toggleBoolean(IDScreenshots, screenshotsSetting)},
 	{id: IDAutoUSB, kind: KindToggle, read: readBoolean(autoUsbSetting), apply: toggleBoolean(IDAutoUSB, autoUsbSetting)},
 	{id: IDLegibility, kind: KindToggle, read: readLegibility, apply: Config.toggleLegibility},
 	{id: IDIP, kind: KindInfo, read: readIP},
@@ -137,7 +142,9 @@ func (c Config) List() Listing {
 	}
 	items := make([]Item, 0, len(registry))
 	for _, entry := range registry {
-		items = append(items, c.item(entry, conf))
+		if entry.isListed == nil || entry.isListed(conf) {
+			items = append(items, c.item(entry, conf))
+		}
 	}
 	return Listing{V: ProtocolVersion, Items: items}
 }

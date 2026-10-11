@@ -6,10 +6,13 @@
 #    is exported by all five firmware builds (re/symbols/<fw>/exports.txt,
 #    demangled; plus ~/.cache/nickeldrawer/symbols/<fw>/exports-mangled.txt
 #    when present).
-# 3. The library is ARM, hard-float, needs only the expected libraries,
+# 3. Against the real libnickel of every cached build (skipped without the cache): each hooked
+#    symbol is a defined FUNC, GLOBAL, with a jump slot (what nh_dlhook patches), each dlsym'd
+#    symbol defined and not LOCAL (mod/common/check-nickel-bindings.sh).
+# 4. The library is ARM, hard-float, needs only the expected libraries,
 #    imports nothing from the C++ standard library beyond the ABI runtime,
 #    and the KoboRoot installs exactly the library.
-# 4. Every vtable has typeinfo (mod/common/check-vtable-typeinfo.sh).
+# 5. Every vtable has typeinfo (mod/common/check-vtable-typeinfo.sh).
 # Prints every failure; exits non-zero when any check failed.
 set -eu
 
@@ -118,6 +121,7 @@ check_koboroot() {
 
 check_bridge_is_only_symbol_user
 check_firmware_exports
+"$repo_root/mod/common/check-nickel-bindings.sh" "$bridge" || fail "libnickel bindings (see FAIL lines above)"
 # Every vtable must carry typeinfo: Nickel __dynamic_casts the mod's objects.
 check_vtable_typeinfo() {
 	[ -f "$library" ] || return 0 # check_binary already reported it

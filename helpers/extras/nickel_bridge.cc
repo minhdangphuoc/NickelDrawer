@@ -13,6 +13,7 @@
 
 #include "debug_log.h"
 #include "device_gate.h"
+#include "first_show_filter.h"
 #include "helper_flags.h"
 #include "helper_strings.h"
 
@@ -57,7 +58,6 @@ static int *TapGestureRecognizer_gestureType;
 static QPoint (*TapGesture_position)(const QGesture *gesture);
 // Originals returned by the PLT hooks.
 static void (*StatusBarView_construct_original)(void *statusBar, QWidget *parent);
-static void (*Ui_MoreView_setupUi_original)(void *ui, QWidget *moreView);
 }
 
 // Signals connected by name (old-style SIGNAL(), no dlsym); check-symbols.sh verifies them too.
@@ -93,7 +93,12 @@ static char firmwareVersion[32] = "unknown";
 static char deviceId[64] = "unknown";
 static void *screenshotMaker = NULL;
 static NickelBridge::WidgetHandler statusBarBuiltHandler = NULL;
-static NickelBridge::WidgetHandler moreViewSetupHandler = NULL;
+static NickelBridge::WidgetHandler moreViewShownHandler = NULL;
+// The More tab's widget, matched by class name on its first Show (FirstShowFilter), not hooked:
+// NickelDrawer hooks MoreView::MoreView, and Ui_MoreView::setupUi is a WEAK symbol that nh_dlhook
+// refuses (helpers/extras/docs/tweaks.md "Reaching the More tab").
+static const char *const MORE_VIEW_CLASS_NAME = "MoreView";
+static void onMoreViewShown(QWidget *moreView);
 
 // ---- NickelHook tables ----
 
@@ -105,12 +110,6 @@ struct nh_hook hookTable[] = {
      .lib = "libnickel.so.1.0.0",
      .out = nh_symoutptr(StatusBarView_construct_original),
      .desc = "StatusBarView::StatusBarView(QWidget*) (screenshot button)",
-     .optional = true},
-    {.sym = "_ZN11Ui_MoreView7setupUiEP7QWidget",
-     .sym_new = "extras_Ui_MoreView_setupUi",
-     .lib = "libnickel.so.1.0.0",
-     .out = nh_symoutptr(Ui_MoreView_setupUi_original),
-     .desc = "Ui_MoreView::setupUi(QWidget*) (Tweaks row)",
      .optional = true},
     {0},
 };
@@ -204,9 +203,6 @@ static const char *missingButtonSymbol()
 // power, rescan, the large-title hide and the tap point degrade one by one. NULL: all present.
 static const char *missingTweaksSymbol()
 {
-    if (!Ui_MoreView_setupUi_original) {
-        return "Ui_MoreView::setupUi(QWidget*)";
-    }
     if (!IconLeftButton_construct || !IconLeftButton_setPixmap || !IconLeftButton_setText) {
         return "IconLeftButton";
     }
@@ -331,9 +327,10 @@ void setStatusBarBuiltHandler(WidgetHandler handler)
     statusBarBuiltHandler = handler;
 }
 
-void setMoreViewSetupHandler(WidgetHandler handler)
+void setMoreViewShownHandler(WidgetHandler handler)
 {
-    moreViewSetupHandler = handler;
+    moreViewShownHandler = handler;
+    FirstShowFilter::watch(MORE_VIEW_CLASS_NAME, onMoreViewShown);
 }
 
 // ---- Status-bar button ----
@@ -639,16 +636,15 @@ extern "C" __attribute__((visibility("default"))) void extras_StatusBarView_cons
     scheduleDisabledNotice();
 }
 
-// NickelHook PLT hook target for Ui_MoreView::setupUi(QWidget*), called by the MoreView constructor
-// (which NickelDrawer hooks; one hook per symbol). Always calls the original first; the layout exists
-// when it returns, so the row can be added now.
-extern "C" __attribute__((visibility("default"))) void extras_Ui_MoreView_setupUi(void *ui, QWidget *moreView)
+// FirstShowFilter's handler for MoreView: once per instance, on its first Show. The constructor has
+// finished (so NickelDrawer's row, added by its constructor hook, is already there) and nothing is
+// painted yet, so the row is laid out before the tab first draws.
+static void onMoreViewShown(QWidget *moreView)
 {
-    Ui_MoreView_setupUi_original(ui, moreView);
-    DebugLog::write("bridge: Ui_MoreView::setupUi done for %p", static_cast<void *>(moreView));
+    DebugLog::write("bridge: MoreView %p shown", static_cast<void *>(moreView));
     checkScreenSizeOnce();
-    if (isTweaksOn && moreViewSetupHandler) {
-        moreViewSetupHandler(moreView);
+    if (isTweaksOn && moreViewShownHandler) {
+        moreViewShownHandler(moreView);
     }
     scheduleDisabledNotice();
 }

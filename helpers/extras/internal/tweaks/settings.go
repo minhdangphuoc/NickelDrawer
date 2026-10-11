@@ -5,6 +5,7 @@ package tweaks
 const (
 	featureSection   = "FeatureSettings"
 	invertScreenKey  = "InvertScreen"
+	screenshotsKey   = "Screenshots"
 	developerSection = "DeveloperSettings"
 	autoUsbKey       = "AutoUsbGadget"
 	readingSection   = "Reading"
@@ -26,6 +27,8 @@ type booleanSetting struct {
 var (
 	autoUsbSetting = booleanSetting{developerSection, autoUsbKey}
 	invertSetting  = booleanSetting{featureSection, invertScreenKey}
+	// Nickel's own power-button screenshots; on, the power button no longer puts the Kobo to sleep.
+	screenshotsSetting = booleanSetting{featureSection, screenshotsKey}
 )
 
 func (setting booleanSetting) read(conf *confFile) bool {

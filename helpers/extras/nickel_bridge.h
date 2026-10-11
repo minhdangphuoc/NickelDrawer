@@ -7,15 +7,17 @@
 //
 // Two features, each switched on only when every symbol it needs resolved:
 //   button  the status-bar screenshot button (hook StatusBarView, StatusBarIcon, ScreenshotMaker);
-//   tweaks  the Tweaks row in the More tab and its panel (hook Ui_MoreView::setupUi, IconLeftButton,
+//   tweaks  the Tweaks row in the More tab and its panel (MoreView's first Show, IconLeftButton,
 //           N3Dialog, controller push, tap gestures).
 // Fail soft: every symbol is optional. While a feature is off its hook only calls Nickel's original
 // and every wrapper below does nothing. One toast says so, a few seconds after the first hook runs.
 //
 // One hook per Nickel symbol: NickelHook's nh_dlhook returns the original through dlsym, not the
 // previous GOT entry, so a second mod hooking a symbol silently unhooks the first. NickelDrawer
-// hooks MoreView::MoreView(QWidget*); this helper hooks Ui_MoreView::setupUi(QWidget*), which that
-// constructor calls, and StatusBarView::StatusBarView(QWidget*), which nothing else hooks.
+// hooks MoreView::MoreView(QWidget*). This helper hooks only StatusBarView::StatusBarView(QWidget*),
+// which nothing else hooks, and reaches the More tab without a hook: an application event filter
+// (FirstShowFilter) catches each MoreView's first Show. Ui_MoreView::setupUi(QWidget*) cannot serve:
+// it is a WEAK symbol and nh_dlhook only patches GLOBAL ones (mod/common/check-nickel-bindings.sh).
 
 #include <QObject>
 #include <QPixmap>
@@ -44,10 +46,11 @@ bool activate();
 bool isButtonActive();
 bool isTweaksActive();
 
-// Called after the original constructor / setupUi, on the GUI thread, while the feature is on.
+// On the GUI thread, while the feature is on: after StatusBarView's original constructor, and on
+// each MoreView's first Show (once per instance; setting the handler starts watching).
 typedef void (*WidgetHandler)(QWidget *widget);
 void setStatusBarBuiltHandler(WidgetHandler handler);
-void setMoreViewSetupHandler(WidgetHandler handler);
+void setMoreViewShownHandler(WidgetHandler handler);
 
 // ---- Status-bar button ----
 // A Nickel StatusBarIcon (a TouchLabel), or NULL (logged). Not shown or laid out yet.

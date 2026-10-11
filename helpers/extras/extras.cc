@@ -31,7 +31,7 @@ static int initialize()
         NickelBridge::setStatusBarBuiltHandler(ScreenshotButton::attachTo);
     }
     if (NickelBridge::isTweaksActive()) {
-        NickelBridge::setMoreViewSetupHandler(TweaksRow::addTo);
+        NickelBridge::setMoreViewShownHandler(TweaksRow::addTo);
         PressArea::setTapGestureTypeProvider(NickelBridge::tapGestureType);
         PressArea::setTapPositionProvider(NickelBridge::tapGesturePosition);
     }

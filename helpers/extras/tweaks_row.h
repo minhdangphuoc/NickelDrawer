@@ -11,7 +11,8 @@
 class TweaksRow : public QObject {
     Q_OBJECT
 public:
-    // Handler of the Ui_MoreView::setupUi hook. Fails soft: logs and adds nothing when anything is
+    // Handler of MoreView's first Show (NickelBridge::setMoreViewShownHandler). Fails soft: logs and
+    // adds nothing when anything is
     // missing; the rest of the More tab is unaffected.
     static void addTo(QWidget *moreView);
 

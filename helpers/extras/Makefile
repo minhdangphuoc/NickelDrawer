@@ -34,7 +34,7 @@ override LIBRARY  := $(LIBRARY_NAME)
 override SOURCES  += extras.cc nickel_bridge.cc helper_flags.cc helper_strings.cc icon_pixmaps.cc icon_metrics.cc \
                      capture_check.cc screenshot_button.cc \
                      tweaks_logic.cc tweaks_parser.cc tweaks_client.cc tweaks_panel.cc tweaks_session.cc \
-                     tweaks_row.cc confirm_question.cc \
+                     tweaks_row.cc confirm_question.cc first_show_filter.cc \
                      $(addprefix $(COMMON_DIR)/,$(addsuffix .cc,$(COMMON_SOURCES)))
 override MOCS     += nickel_bridge.h screenshot_button.h tweaks_client.h tweaks_panel.h tweaks_session.h \
                      tweaks_row.h confirm_question.h $(addprefix $(COMMON_DIR)/,$(addsuffix .h,$(COMMON_MOCS)))

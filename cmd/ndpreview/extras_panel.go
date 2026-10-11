@@ -59,6 +59,9 @@ var sampleTweakSpecs = []struct {
 }{
 	{id: "screensaver", kind: tweakToggle, isOn: true},
 	{id: "screenshot-button", kind: tweakToggle, isOn: true, hasCaption: true},
+	// Listed on a real device only while Kobo's power-button Screenshots setting is on, so the
+	// panel has an odd cell count when it shows (a lone cell in the last row).
+	{id: "screenshots", kind: tweakToggle, isOn: true, hasCaption: true},
 	{id: "auto-usb", kind: tweakToggle},
 	{id: "legibility", kind: tweakToggle},
 	{id: "ip", kind: tweakInfo, infoSample: "192.168.1.5"},

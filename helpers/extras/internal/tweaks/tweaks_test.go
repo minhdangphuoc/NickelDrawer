@@ -32,6 +32,7 @@ func newFixture(t *testing.T, conf string) fixture {
 		"tweak.err.no_screensaver":      "No folder {folder}.",
 		"tweak.screenshot-button.label": "Screenshot button", "tweak.legibility.label": "Legibility",
 		"tweak.screenshot-button.caption": "In the status bar",
+		"tweak.screenshots.label":         "Screenshots", "tweak.screenshots.caption": "With the power button",
 	}
 	return fixture{
 		root: root, confPath: confPath,
@@ -382,5 +383,49 @@ func TestOnlyTheScreenshotButtonCarriesACaption(t *testing.T) {
 	encoded, _ := json.Marshal(Item{ID: "sleep", Label: "Sleep", Kind: KindAction})
 	if strings.Contains(string(encoded), "caption") {
 		t.Fatalf("an item without caption must not print the field: %s", encoded)
+	}
+}
+
+func listedIDs(config Config) []string {
+	var ids []string
+	for _, item := range config.List().Items {
+		ids = append(ids, item.ID)
+	}
+	return ids
+}
+
+func TestPowerButtonScreenshotsIsHiddenWhenOffOrMissing(t *testing.T) {
+	for name, conf := range map[string]string{
+		"no conf":     "",
+		"no key":      "[FeatureSettings]\nInvertScreen=false\n",
+		"key false":   "[FeatureSettings]\nScreenshots=false\n",
+		"other value": "[FeatureSettings]\nScreenshots=maybe\n",
+	} {
+		if ids := listedIDs(newFixture(t, conf).config); strings.Contains(strings.Join(ids, ","), IDScreenshots) {
+			t.Errorf("%s: %s listed in %v", name, IDScreenshots, ids)
+		}
+	}
+}
+
+func TestPowerButtonScreenshotsIsListedWhileOnAndTurnsOffForGood(t *testing.T) {
+	fix := newFixture(t, "[FeatureSettings]\nScreenshots=true\nInvertScreen=false\n")
+	var found Item
+	for _, item := range fix.config.List().Items {
+		if item.ID == IDScreenshots {
+			found = item
+		}
+	}
+	if found.Label != "Screenshots" || found.Caption != "With the power button" || found.Kind != KindToggle || found.Value != true {
+		t.Fatalf("listed item = %+v", found)
+	}
+	off := mustApply(t, fix.config, IDScreenshots)
+	if off.Value == nil || *off.Value || off.Toast != "Screenshots off" {
+		t.Fatalf("off result = %+v", off)
+	}
+	if want := "[FeatureSettings]\nScreenshots=false\nInvertScreen=false\n"; fix.conf(t) != want {
+		t.Fatalf("conf = %q, want %q", fix.conf(t), want)
+	}
+	if ids := listedIDs(fix.config); strings.Contains(strings.Join(ids, ","), IDScreenshots) {
+		t.Fatalf("still listed after turning off: %v", ids)
 	}
 }

@@ -258,9 +258,9 @@ Two NickelHook mods side by side (confirmed from `third_party/NickelHook`):
   version of this note said a second mod hooking the same symbol would chain to the first through its `.out`. It does
   not: `nh_dlhook` returns the original function from `dlsym(handle, symname)`, not the value found in the GOT, so the
   second mod overwrites the first mod's slot and the first hook is silently dropped. Therefore **one hook per symbol
-  across mods**: the drawer hooks `_ZN8MoreViewC1EP7QWidget`; Extras hooks `_ZN13StatusBarViewC1EP7QWidget` and, for its
-  More-tab row, `_ZN11Ui_MoreView7setupUiEP7QWidget` (called from the MoreView constructor; `R_ARM_JUMP_SLOT` present
-  in all five builds). NickelMenu, NickelDBus and NickelHardcover do not hook `StatusBarView` (known-mods matrix;
+  across mods**: the drawer hooks `_ZN8MoreViewC1EP7QWidget`; Extras hooks only `_ZN13StatusBarViewC1EP7QWidget`; its
+  More-tab row needs no hook (an application event filter on `MoreView`'s first Show). `_ZN11Ui_MoreView7setupUiEP7QWidget`
+  has a jump slot but is WEAK, and `nh_dlhook` only patches GLOBAL symbols (docs/tweaks.md, "Reaching the More tab"). NickelMenu, NickelDBus and NickelHardcover do not hook `StatusBarView` (known-mods matrix;
   NickelMenu only dlsyms `StatusBarController::home` / `MainNavController::home`).
 - **Exported hook target names** (`sym_new`) are looked up with `dlsym(self, …)`, so they are per library. Still use a
   unique prefix: `extras_StatusBarView_construct`.

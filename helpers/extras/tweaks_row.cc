@@ -15,14 +15,23 @@ static const char *const ROW_OBJECT_NAME = "extrasTweaksButton";
 // "adjustments-horizontal" icon the installer puts in the helper folder when it is missing.
 static const char *const NICKEL_ROW_ICON = ":/images/reading/settings_gear.png";
 static const char OWN_ROW_ICON[] = "/mnt/onboard/.adds/helpers/extras/icons/tweaks.png"; // = HelperFlags::ICONS_DIRECTORY + file
-// The row follows Beta Features, as NickelDrawer's row does; each mod inserts its own.
-static const char *const ANCHOR_NAME = "betaFeaturesButton";
+// The row follows NickelDrawer's row when that mod added one (it is in place by the first Show:
+// the drawer adds it from the MoreView constructor), else Nickel's Beta Features row. Only the
+// object name is known here; the drawer is not needed.
+static const char *const DRAWER_ROW_NAME = "nickelDrawerButton";
+static const char *const BETA_FEATURES_ROW_NAME = "betaFeaturesButton";
 static const int RUN_FROM_EVENT_LOOP = 0;
+
+static const char *anchorName(QWidget *moreView)
+{
+    bool hasDrawerRow = moreView->findChild<QWidget *>(QString::fromLatin1(DRAWER_ROW_NAME)) != NULL;
+    return hasDrawerRow ? DRAWER_ROW_NAME : BETA_FEATURES_ROW_NAME;
+}
 
 void TweaksRow::addTo(QWidget *moreView)
 {
     HelperStrings::reloadLocale();
-    MoreRow::Spec spec = {ROW_OBJECT_NAME, NICKEL_ROW_ICON, OWN_ROW_ICON, ANCHOR_NAME};
+    MoreRow::Spec spec = {ROW_OBJECT_NAME, NICKEL_ROW_ICON, OWN_ROW_ICON, anchorName(moreView)};
     QWidget *row = MoreRow::insert(moreView, NickelBridge::moreRowApi(), spec,
                                    HelperStrings::text(HelperStrings::TWEAKS_TITLE));
     if (!row) {
