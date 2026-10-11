@@ -273,18 +273,18 @@
       ],
       "footer": [
         {
-          "button": "$apps_update_all_label",
-          "action": "apps-update-all",
-          "style": "primary",
-          "enabled": "$can_apps_update",
-          "show": "$has_app_updates",
-          "async": true
-        },
-        {
           "button": "@ui.check",
           "action": "apps-check",
           "style": "secondary",
           "enabled": "$can_apps_check",
+          "show": "$has_app_updates",
+          "async": true
+        },
+        {
+          "button": "$apps_update_all_label",
+          "action": "apps-update-all",
+          "style": "primary",
+          "enabled": "$can_apps_update",
           "show": "$has_app_updates",
           "async": true
         },

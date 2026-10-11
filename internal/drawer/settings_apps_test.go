@@ -169,7 +169,8 @@ func TestAppsScreenFooterPrimaryFollowsWhetherUpdatesExist(t *testing.T) {
 		t.Errorf("without updates: %v", without)
 	}
 	reply := appsScreen(t, appsFixture(t, "en"))
-	if len(reply.Footer) != 2 || reply.Footer[1].Text != "Check" || reply.Footer[1].Style != "secondary" {
+	// CopperUI: a secondary button sits above the primary.
+	if len(reply.Footer) != 2 || reply.Footer[0].Text != "Check" || reply.Footer[0].Style != "secondary" || reply.Footer[1].Style != "primary" {
 		t.Errorf("footer = %+v", reply.Footer)
 	}
 }
