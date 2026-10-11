@@ -24,6 +24,7 @@ const screenUI = `{"kit":1,"start":"main",
     {"field":"PIN","bind":"pin","secret":true},
     {"field":"Name","bind":"name","placeholder":"type"},
     {"list":"$items","max":2,"title":"Items","empty_text":"None"},
+    {"list":"$items","style":"checklist"},
     {"button":"Go","action":"go","enabled":"!$auto","confirm":{"text":"Sure?","ok":"Yes"}}],
    "toasts":{"saved":"Saved $name"},
    "dialogs":{"ask":{"title":"Ask","text":"Really?","ok":"Do it","action":"go"}}},
@@ -101,6 +102,12 @@ func TestScreenResolvesStateBindings(t *testing.T) {
 	list := findComponent(t, reply.Body, "list", 0)
 	if list.Items == nil || len(*list.Items) != 2 || (*list.Items)[0] != [2]string{"y", "2"} || (*list.Items)[1][0] != "z" {
 		t.Errorf("list keeps the last max items: %+v", list.Items)
+	}
+	if list.Style != "" {
+		t.Errorf("a list without a style sends none: %q", list.Style)
+	}
+	if checklist := findComponent(t, reply.Body, "list", 1); checklist.Style != "checklist" {
+		t.Errorf("the checklist style must reach the mod: %+v", checklist)
 	}
 	button := findComponent(t, reply.Body, "button", 0)
 	if *button.Enabled || button.Style != "secondary" || button.Confirm == nil || button.Confirm.OK != "Yes" {

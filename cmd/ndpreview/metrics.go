@@ -48,6 +48,7 @@ const (
 	pagerLabelWidth  = copperui.PagerLabelWidth
 	pagerArrowGap    = copperui.PagerArrowGap
 	chevronIconSize  = copperui.IconChevron
+	checkboxIconSize = copperui.IconCheckbox
 	listSecondaryMax = copperui.ListRowSecondaryMax
 	gridIconBox      = copperui.IconGrid
 	rowIconSize      = copperui.IconDrawerRow

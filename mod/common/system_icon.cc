@@ -41,6 +41,9 @@ const Spec SPECS[ID_COUNT] = {
     {"app", NULL, NULL, "apps", 96},
     {"app row", NULL, NULL, "apps", 64},
     {"check", NULL, NULL, "check", 64},
+    // Nickel's own checkbox images (menu_checkbox_*) belong to its menus and are 34 px: too small for a row.
+    {"checkbox off", NULL, NULL, "square", 64},
+    {"checkbox on", NULL, NULL, "square-check", 64},
     {"chevron left", NULL, NULL, "chevron-left", 64},
     {"chevron right", NULL, NULL, "chevron-right", 64},
     // No "_hit" image: Nickel's ToggleSwitch turns its hit state off; the row shows the press.

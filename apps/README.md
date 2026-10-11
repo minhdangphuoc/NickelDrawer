@@ -11,8 +11,8 @@ Tiếng Việt: [README.vi.md](README.vi.md).
 | [GitHub](ghsync/README.md) | `apps/ghsync/` | Sync books from a private GitHub repo (add-only, never deletes) | 0.3.0 | no |
 | [Library](library/README.md) | `apps/library/` | Fix the language of Vietnamese books and find duplicate books | 0.2.0 | no |
 | [LocalSend](localsend/README.md) | `apps/localsend/` | Receive books and files from your phone with LocalSend | 1.2.0 | no |
-| [To-do](todo/README.md) | `apps/todo/` | A small to-do list that stays on your Kobo | 1.0.3 | no |
-| [UI Kit](uikit/README.md) | `apps/uikit/` | Every NickelDrawer component with sample content, for developers and testers | 2.1.0 | yes (developers only) |
+| [To-do](todo/README.md) | `apps/todo/` | A small to-do list that stays on your Kobo | 1.0.4 | no |
+| [UI Kit](uikit/README.md) | `apps/uikit/` | Every NickelDrawer component with sample content, for developers and testers | 2.2.0 | yes (developers only) |
 | [Wallpaper](wallpaper/README.md) | `apps/wallpaper/` | Use your own pictures as the sleep screen | 0.3.0 | no |
 
 A hidden app does not show in the drawer until you switch it on in the drawer's settings (the gear in its header). UI Kit is a demo of every component for developers and testers.

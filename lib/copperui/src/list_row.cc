@@ -18,18 +18,35 @@ bool isCheckMarkText(const char *utf8)
     return false;
 }
 
+ListRowMarks listRowMarks(bool isChecklist, const char *secondaryUtf8)
+{
+    bool isCheckMark = isCheckMarkText(secondaryUtf8);
+    ListRowMarks marks;
+    marks.hasCheckbox = isChecklist;
+    marks.isChecked = isChecklist && isCheckMark;
+    marks.hasCheckMark = !isChecklist && isCheckMark;
+    marks.showsSecondary = !isCheckMark && secondaryUtf8[0] != '\0';
+    return marks;
+}
+
 static Rect rectAt(int x, int y, int width, int height)
 {
     Rect rect = {x, y, width, height};
     return rect;
 }
 
-ListRowGeometry listRowGeometry(int rowTop, int secondaryWidth, bool hasCheckMark)
+ListRowGeometry listRowGeometry(int rowTop, int secondaryWidth, bool hasCheckMark, bool hasCheckbox)
 {
     int right = GUTTER + CONTENT_WIDTH;
     ListRowGeometry geometry;
     geometry.secondary = rectAt(right, rowTop + (ROW_COMPACT - TYPE_CAPTION_LINE) / 2, 0, TYPE_CAPTION_LINE);
     geometry.checkIcon = rectAt(right, rowTop + (ROW_COMPACT - ICON_CHEVRON) / 2, 0, ICON_CHEVRON);
+    geometry.checkbox = rectAt(GUTTER, rowTop + (ROW_COMPACT - ICON_CHECKBOX) / 2, 0, ICON_CHECKBOX);
+    int left = GUTTER;
+    if (hasCheckbox) {
+        geometry.checkbox.width = ICON_CHECKBOX;
+        left += ICON_CHECKBOX + RHYTHM;
+    }
     int reserved = 0;
     if (hasCheckMark) {
         geometry.checkIcon.x = right - ICON_CHEVRON;
@@ -41,7 +58,7 @@ ListRowGeometry listRowGeometry(int rowTop, int secondaryWidth, bool hasCheckMar
         geometry.secondary.width = width;
         reserved = width + RHYTHM;
     }
-    geometry.primary = rectAt(GUTTER, rowTop + SPACE_ROW_TEXT, CONTENT_WIDTH - reserved, ROW_LABEL_HEIGHT);
+    geometry.primary = rectAt(left, rowTop + SPACE_ROW_TEXT, GUTTER + CONTENT_WIDTH - left - reserved, ROW_LABEL_HEIGHT);
     return geometry;
 }
 

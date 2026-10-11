@@ -152,6 +152,7 @@ Generated from `lib/copperui/tokens/copperui.tokens.json`; the rules behind them
 | `icon.grid` | 96 | px | `ICON_GRID` | `IconGrid` | Grid cell icon and empty-state icon (Tabler picture / apps). |
 | `icon.badge` | 56 | px | `ICON_BADGE` | `IconBadge` | Gallery current badge. |
 | `icon.chevron` | 64 | px | `ICON_CHEVRON` | `IconChevron` | Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1. |
+| `icon.checkbox` | 64 | px | `ICON_CHECKBOX` | `IconCheckbox` | Tabler square / square-check: the box at the left of a checklist row, drawn 1:1. |
 | `icon.moreRow` | 50 | px | `ICON_MORE_ROW` | `IconMoreRow` | Nickel's More-tab row icon on the Libra 2 class. |
 | `underline.height` | 4 | px | `UNDERLINE_HEIGHT` | `UnderlineHeight` | Underline of the active list / grid toggle. |
 | `underline.gap` | 6 | px | `UNDERLINE_GAP` | `UnderlineGap` | Gap between that icon and its underline. |

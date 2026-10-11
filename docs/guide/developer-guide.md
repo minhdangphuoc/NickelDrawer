@@ -595,7 +595,7 @@ To propose an app for the main repository, follow [CONTRIBUTING.md](../../CONTRI
 
 - **PATCH** for fixes, **MINOR** for new actions, screens or messages, **MAJOR** when the `data/` format changes incompatibly. On a MAJOR change, migrate old data or refuse with a clear message.
 - Bump `version` on every release; **Info** shows it.
-- If your app needs a newer NickelDrawer feature, set `"min_host": "1.2.0"`. On an older host the drawer row reads "Needs a newer version" instead of the app's status. The app still runs, so fail gracefully.
+- If your app needs a newer NickelDrawer feature, set `"min_host": "1.2.0"` (a pre-release such as `"1.0.0-beta.8"` is allowed; `beta.10` is newer than `beta.9`). The app catalog then lists `requires.drawer` as `>=` that version, so an older drawer is not offered the update. On an older host the drawer row reads "Needs a newer version" instead of the app's status. The app still runs, so fail gracefully.
 - The protocol is versioned (`"v": 1`). New fields are additive within v1.
 
 ## Common mistakes

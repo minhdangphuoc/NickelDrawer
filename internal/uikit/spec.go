@@ -283,6 +283,7 @@ var Components = []ComponentSpec{
 	{Key: "list", Main: varRef, Props: []Prop{
 		optionalKey("title", text(40)),
 		optionalKey("empty_text", captionText(60)),
+		optionalKey("style", enum("plain", "checklist")), // checklist: a box at the left of every row, ticked for a "✓" item
 		optionalKey("max", Shape{Kind: KindInt, Min: 1, Max: 200}),
 		optionalKey("tap", actionID),
 		optionalKey("menu", Shape{Kind: KindArray, Item: &menuItemShape, Min: 1, Max: 6}),

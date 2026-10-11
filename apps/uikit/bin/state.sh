@@ -62,6 +62,11 @@ sample_books() {
     printf '[["Truyện Kiều","Nguyễn Du"],["Số đỏ","Vũ Trọng Phụng"],["Dế Mèn phiêu lưu ký","Tô Hoài"],["Pride and Prejudice","Jane Austen"]]'
 }
 
+# The sample checklist of the List page: an item [title, "✓"] is done, a plain title is open.
+sample_reading() {
+    printf '[["Truyện Kiều","✓"],"Số đỏ",["Dế Mèn phiêu lưu ký","✓"],"Pride and Prejudice"]'
+}
+
 # The readout rows exist once an event was recorded: their labels are empty until then, and a kv
 # row whose key and value are both empty is hidden.
 readout_fields() {
@@ -101,6 +106,6 @@ printf '{"firmware":"%s","locale":"%s","sampleenabled":%s,"autorescan":%s,"shown
     "$(json_escape "$(firmware_version)")" "$(json_escape "$(device_locale)")" \
     "$(stored_flag sampleenabled true)" "$(stored_flag autorescan false)" "$(stored_flag shownote false)" \
     "$(json_escape "$(note_text)")"
-printf '"refreshmode":"%s","searchtext":"%s","pagenumber":"%s","books":%s,"pictures":%s,%s,%s}\n' \
+printf '"refreshmode":"%s","searchtext":"%s","pagenumber":"%s","books":%s,"reading":%s,"pictures":%s,%s,%s}\n' \
     "$(json_escape "$(stored_value refreshmode balanced)")" "$(json_escape "$(stored_value searchtext '')")" \
-    "$(json_escape "$(stored_value pagenumber 1)")" "$(sample_books)" "$(gallery_tiles)" "$(readout_fields)" "$(job_fields)"
+    "$(json_escape "$(stored_value pagenumber 1)")" "$(sample_books)" "$(sample_reading)" "$(gallery_tiles)" "$(readout_fields)" "$(job_fields)"

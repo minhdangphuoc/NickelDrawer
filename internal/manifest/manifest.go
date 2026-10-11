@@ -58,7 +58,7 @@ type App struct {
 	Storage     *StorageAccess `json:"storage"`
 	Network     bool           `json:"network"`
 	Requests    []string       `json:"requests"` // host services scripts may ask for: rescan, wifi
-	MinHost     string         `json:"min_host"` // oldest NickelDrawer the app works with, MAJOR.MINOR.PATCH
+	MinHost     string         `json:"min_host"` // oldest NickelDrawer the app works with, MAJOR.MINOR.PATCH[-prerelease]
 	Actions     []Action       `json:"actions"`
 	Dir         string         `json:"-"` // absolute folder the manifest was loaded from
 }
@@ -175,7 +175,7 @@ func validateApp(app App, dir string) []string {
 	}
 	problems = append(problems, validateText("name", app.Name, 1, maxNameLen)...)
 	if !semverPattern.MatchString(app.Version) {
-		add("version %q must look like MAJOR.MINOR.PATCH, e.g. 1.0.0", app.Version)
+		add("version %q must look like MAJOR.MINOR.PATCH or MAJOR.MINOR.PATCH-prerelease, e.g. 1.0.0 or 1.0.0-beta.8", app.Version)
 	}
 	if utf8.RuneCountInString(app.Description) > maxDescriptionN {
 		add("description is longer than %d characters; shorten it", maxDescriptionN)

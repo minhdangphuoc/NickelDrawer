@@ -139,6 +139,36 @@ func TestDrawerRequirementAndDisplayName(t *testing.T) {
 	}
 }
 
+func TestPrereleaseDrawerRequirementComparesNumerically(t *testing.T) {
+	app := sampleCatalogApp()
+	app.Requires = &CatalogRequires{Drawer: ">=1.0.0-beta.8"}
+	for version, want := range map[string]bool{"1.0.0-beta.7": false, "1.0.0-beta.8": true, "1.0.0-beta.9": true,
+		"1.0.0-beta.10": true, "1.0.0": true, "0.9.9": false} {
+		if got, err := app.MeetsDrawerRequirement(version); err != nil || got != want {
+			t.Errorf("drawer %s: got %v, %v; want %v", version, got, err, want)
+		}
+	}
+}
+
+func TestBuildCatalogCarriesAPrereleaseMinHost(t *testing.T) {
+	tree := t.TempDir()
+	writeTree(t, tree, map[string]string{
+		".adds/apps/demo/app.json":   `{"id":"demo","name":"Demo","version":"1.2.3","min_host":"1.0.0-beta.8"}`,
+		".adds/apps/demo/bin/run.sh": "run",
+	})
+	appsDir := t.TempDir()
+	if _, err := PackApp(tree, "demo", appsDir); err != nil {
+		t.Fatal(err)
+	}
+	catalog, err := BuildCatalog(appsDir, 1, time.Unix(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if app, _ := catalog.Find("demo"); app.Requires == nil || app.Requires.Drawer != ">=1.0.0-beta.8" {
+		t.Fatalf("requires = %+v, want >=1.0.0-beta.8", app.Requires)
+	}
+}
+
 func TestBuildCatalogDescribesZipsWithNamesTagsAndRequirements(t *testing.T) {
 	tree := t.TempDir()
 	writeTree(t, tree, map[string]string{

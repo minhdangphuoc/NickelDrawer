@@ -22,6 +22,7 @@
           "list": "$open_items",
           "title": "@ui.sec_open",
           "empty_text": "@ui.empty",
+          "style": "checklist",
           "max": 200,
           "tap": "toggle",
           "menu": [
@@ -36,6 +37,7 @@
           "list": "$done_items",
           "title": "@ui.sec_done",
           "empty_text": "@ui.empty_done",
+          "style": "checklist",
           "max": 200,
           "tap": "toggle",
           "menu": [

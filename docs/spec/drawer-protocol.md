@@ -124,7 +124,7 @@ Every script `appsctl` runs for the drawer (`drawer run`, `drawer event` and the
 | `steps` | `label`, `done`, `total`, `detail` |
 | `notice` | `text`, `title` |
 | `button` | `text`, `action` or `push` (a screen id: the mod pushes it like a row, no confirm), `style` (`primary`/`secondary`), `enabled`, `confirm` `{title, text, ok, cancel}`, `async` |
-| `list` | `bind`, `title`, `empty_text`, `tap`, `items` `[[primary, secondary], …]` (already cut to the last `max`) |
+| `list` | `bind`, `title`, `empty_text`, `style` (`checklist`, absent for a plain list), `tap`, `items` `[[primary, secondary], …]` (already cut to the last `max`) |
 | `empty` | `text` (heading), `caption`, `button`, `action` |
 | `gallery` | `bind`, `columns`, `rows` (ints), `tiles` `[{id, thumb, label, info, current}]`, `tap` `{push \| action}`, `menu` `[{label, action \| push \| info: true, confirm {title, text, ok, cancel}}]`, `pending` (int), `empty` `{icon, title, text, button, action}` |
 | `samples` | `columns` (1 to 3), `cells`: resolved components of their own `type` (`button`, `toggle`, `radio`, `row`, `field`, `kv`, `notice`, `steps`, `text`), each with `look` (`normal`/`pressed`/`selected`/`disabled`) and `caption`. A cell is a picture: no target, no event. The reply already carries what a look implies (a `selected` toggle has `value: true`, a `disabled` control `enabled: false`); the mod adds the pressed inversion and, for components without a disabled look, the `ink.dim` recolour. Cell geometry: [ui-json.md](ui-json.md) section 6 and `docs/uikit-plan.md` 5.1 |

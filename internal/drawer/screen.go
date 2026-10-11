@@ -573,7 +573,7 @@ func (s screenContext) listComponent(c uikit.Component) ScreenComponent {
 		items = append(items, listItemTexts(item))
 	}
 	return ScreenComponent{Bind: bind, Title: s.text(c.Prop("title")), EmptyText: s.text(c.Prop("empty_text")),
-		Tap: stringOrNil(stringProp(c.Props, "tap")), Items: &items, Menu: menuOrNil(s.listMenu(c.Prop("menu")))}
+		Style: stringProp(c.Props, "style"), Tap: stringOrNil(stringProp(c.Props, "tap")), Items: &items, Menu: menuOrNil(s.listMenu(c.Prop("menu")))}
 }
 
 // ListMenuItem is one entry of a list row's long-press menu. The mod runs the app action

@@ -150,6 +150,7 @@
         {"id": "icon.grid", "value": 96, "unit": "px", "doc": "Grid cell icon and empty-state icon (Tabler picture / apps)."},
         {"id": "icon.badge", "value": 56, "unit": "px", "doc": "Gallery current badge."},
         {"id": "icon.chevron", "value": 64, "unit": "px", "doc": "Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1."},
+        {"id": "icon.checkbox", "value": 64, "unit": "px", "doc": "Tabler square / square-check: the box at the left of a checklist row, drawn 1:1."},
         {"id": "icon.moreRow", "value": 50, "unit": "px", "doc": "Nickel's More-tab row icon on the Libra 2 class."},
         {"id": "underline.height", "value": 4, "unit": "px", "doc": "Underline of the active list / grid toggle."},
         {"id": "underline.gap", "value": 6, "unit": "px", "doc": "Gap between that icon and its underline."},

@@ -17,6 +17,9 @@ using namespace ScreenLogic;
 // Shown only when the Tabler chevron PNGs are not installed (the control keeps working).
 static const char *const CHEVRON_NEXT_FALLBACK = "\xE2\x80\xBA"; // ›
 static const char *const CHEVRON_PREVIOUS_FALLBACK = "\xE2\x80\xB9"; // ‹
+// Shown only when the Tabler box PNGs are not installed, so a checklist still tells done from open.
+static const char *const CHECKBOX_OPEN_FALLBACK = "[ ]";
+static const char *const CHECKBOX_DONE_FALLBACK = "[x]";
 static const int FIELD_CAPTION_GAP = tokens::SPACE_FIELD_CAPTION;
 static const int RADIO_RING_BORDER = tokens::STROKE_SELECT;
 static const int RADIO_DOT = tokens::RADIO_DOT;
@@ -438,13 +441,18 @@ static void addListBlocks(int component, const ScreenComponent &c, QList<LayoutB
         return;
     }
     int first = blocks->size();
+    bool isChecklist = c.style == QLatin1String("checklist");
     for (int i = 0; i < c.items.size(); i++) {
         const QString &primary = c.items[i].first;
         const QString &secondary = c.items[i].second;
         LayoutBlock row = block(LayoutBlock::KIND_LIST_ROW, component, ROW_HEIGHT, 0);
         row.primary = primary;
         row.secondary = secondary;
-        row.hasCheckMark = copperui::v1::isCheckMarkText(secondary.toUtf8().constData());
+        copperui::v1::ListRowMarks marks = copperui::v1::listRowMarks(isChecklist, secondary.toUtf8().constData());
+        row.hasCheckbox = marks.hasCheckbox;
+        row.isChecked = marks.isChecked;
+        row.hasCheckMark = marks.hasCheckMark;
+        row.hasSecondary = marks.showsSecondary;
         row.isMiddleElided = isFileName(primary);
         row.isTappable = RowMenuLogic::isRowTarget(!c.tap.isEmpty(), c.menu.size());
         row.tapValue = primary;
@@ -879,11 +887,17 @@ static void drawValueRow(const LayoutBlock &b, int y, ScreenPage *page)
 }
 
 // A list row (copperui/list_row.h): the primary text takes the row less the muted secondary
-// caption; a file name is elided in the middle; "✓" is the check icon.
+// caption; a file name is elided in the middle; "✓" is the check icon, or in a checklist the
+// ticked box at the left.
 static void drawListRow(const LayoutBlock &b, int y, ScreenPage *page)
 {
-    int secondaryWidth = b.hasCheckMark || b.secondary.isEmpty() ? 0 : widthOf(b.secondary, CAPTION_SIZE, FAMILY_SANS);
-    copperui::v1::ListRowGeometry row = copperui::v1::listRowGeometry(y, secondaryWidth, b.hasCheckMark);
+    int secondaryWidth = b.hasSecondary ? widthOf(b.secondary, CAPTION_SIZE, FAMILY_SANS) : 0;
+    copperui::v1::ListRowGeometry row = copperui::v1::listRowGeometry(y, secondaryWidth, b.hasCheckMark, b.hasCheckbox);
+    if (row.checkbox.width > 0) {
+        SystemIcon::Id box = b.isChecked ? SystemIcon::CHECKBOX_ON : SystemIcon::CHECKBOX_OFF;
+        page->items.append(iconItem(toQRect(row.checkbox), box, INK_BLACK,
+                                    b.isChecked ? CHECKBOX_DONE_FALLBACK : CHECKBOX_OPEN_FALLBACK));
+    }
     page->items.append(textItem(row.primary.x, row.primary.y, row.primary.width, row.primary.height,
                                 elided(b.primary, row.primary.width, ROW_TEXT_SIZE, FAMILY_SANS, b.isMiddleElided),
                                 ROW_TEXT_SIZE, FAMILY_SANS, PaintItem::ALIGN_START));

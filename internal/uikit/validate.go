@@ -25,6 +25,7 @@ const (
 	CodeBadBinding       = "ui.bad_binding"
 	CodeUnknownVar       = "ui.unknown_var"
 	CodeListNotArray     = "ui.list_not_array"
+	CodeChecklistItems   = "ui.checklist_items"
 	CodeUnknownAction    = "ui.unknown_action"
 	CodeUnknownScreen    = "ui.unknown_screen"
 	CodeBadID            = "ui.bad_id"
@@ -681,6 +682,7 @@ func (v *validator) checkComponentRules(path string, component Component) {
 		v.checkSampleColumns(path, component)
 	case "list":
 		v.checkListVar(path, component)
+		v.checkChecklistItems(path, component)
 	case "gallery":
 		v.checkGallery(path, component)
 	case "viewer":
@@ -734,6 +736,34 @@ func (v *validator) checkListVar(path string, component Component) {
 			v.fail(CodeListNotArray, path+"."+component.Kind, "variable %q must default to an array (for example []) because a %s shows its items", reference, component.Kind)
 		}
 	}
+}
+
+// checkChecklistItems: a checklist row is done when its item is [primary, "✓"], so a default
+// item that is not a string or a [primary, secondary] array could never be shown ticked or open.
+func (v *validator) checkChecklistItems(path string, component Component) {
+	if component.Props["style"] != "checklist" {
+		return
+	}
+	text, _ := component.Main().(string)
+	reference, isPure := pureReference(text)
+	if !isPure {
+		return
+	}
+	defaults, _ := Lookup(v.vars, reference)
+	items, _ := defaults.([]any)
+	for i, item := range items {
+		if !canCarryDoneMark(item) {
+			v.fail(CodeChecklistItems, fmt.Sprintf("%s.list.items[%d]", path, i), "a checklist item is a text or [text, \"✓\"]; %v cannot say whether it is done", item)
+		}
+	}
+}
+
+func canCarryDoneMark(item any) bool {
+	if _, isText := item.(string); isText {
+		return true
+	}
+	pair, isPair := item.([]any)
+	return isPair && len(pair) >= 1 && len(pair) <= 2
 }
 
 // checkRowTarget: a row runs an action or pushes a screen, never both (it may also be plain).

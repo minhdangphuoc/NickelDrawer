@@ -137,6 +137,9 @@ struct LayoutBlock {
     bool isOn = false; // toggle on, radio option selected, button primary
     bool isDimmed = false; // disabled: label, outline and control at ink.dim
     bool hasCheckMark = false; // list row: the secondary text is the check mark, drawn as an icon
+    bool hasSecondary = false; // list row: the secondary text is a caption at the right
+    bool hasCheckbox = false; // checklist row: a box at the left of the primary text
+    bool isChecked = false; // checklist row: the box is ticked (the item is done)
     bool isTappable = false;
     QList<int> cellInnerHeights; // samples: the height of each cell's inner component
     int listRow = -1; // list rows: index in the list's items, for the row menu

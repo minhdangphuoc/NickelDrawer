@@ -236,7 +236,7 @@ Two lines: headline 40 ("Downloading 2 / 3"), detail 32 muted elided in the midd
 Don't: percentages; two steps blocks on one screen; updating the detail every file when files arrive faster than 5 s.
 
 ### 4.16 List
-Title 40 (optional), 104 px rows: primary 36 left, secondary 36 muted right; empty text centred in one 104 row. Tap runs `tap` with the row text; long press opens Nickel's popup menu (`menu`, 1–6 items, "Remove…" last, no Cancel row). Keeps the last `max` items; pages with the screen.
+Title 40 (optional), 104 px rows: primary 36 left, secondary 36 muted right; empty text centred in one 104 row. Tap runs `tap` with the row text; `style: "checklist"` adds a 64 px Tabler box (`square`, `square-check` when the item is `[text, "✓"]`) at the left of the text, which stays on the same baseline; long press opens Nickel's popup menu (`menu`, 1–6 items, "Remove…" last, no Cancel row). Keeps the last `max` items; pages with the screen.
 Don't: rows with more than two texts; a list as navigation (use `row`).
 
 ### 4.17 Gallery and viewer

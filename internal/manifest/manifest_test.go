@@ -124,6 +124,15 @@ func TestRequestsAndMinHostAreParsed(t *testing.T) {
 	}
 }
 
+func TestNeedsNewerHostComparesPrereleasesNumerically(t *testing.T) {
+	app := App{MinHost: "1.0.0-beta.8"}
+	for hostVersion, want := range map[string]bool{"1.0.0-beta.7": true, "1.0.0-beta.8": false, "1.0.0-beta.10": false, "1.0.0": false, "0.9.0": true} {
+		if got := app.NeedsNewerHost(hostVersion); got != want {
+			t.Errorf("NeedsNewerHost(%q) = %v, want %v", hostVersion, got, want)
+		}
+	}
+}
+
 func TestLoadAppliesDefaults(t *testing.T) {
 	app, _, err := Load(stageApp(t, "valid-defaults"))
 	if err != nil {

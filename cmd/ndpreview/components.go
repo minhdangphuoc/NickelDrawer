@@ -603,13 +603,14 @@ func (rc renderContext) listBlocks(c uikit.Component) []block {
 		return append(blocks, singleLineCentered(rc.text(c.Prop("empty_text")), rowHeight))
 	}
 	tap, _ := c.Prop("tap").(string)
+	isChecklist := c.Prop("style") == "checklist"
 	for index, item := range items {
 		primary, secondary := listTexts(item)
 		event := ""
 		if tap != "" {
 			event = eventLine(map[string]any{"event": "tap", "list": varName, "index": index, "item": item})
 		}
-		blocks = append(blocks, listRowBlock(primary, secondary, event, tap))
+		blocks = append(blocks, listRowBlock(primary, secondary, event, tap, isChecklist))
 	}
 	return withTrailingGap(blocks)
 }
@@ -619,25 +620,32 @@ const checkMark = "✓" // U+2713: a list row's secondary text that is drawn as 
 // listRowBlock is a row of a list (lib/copperui/src/list_row.cc): the primary text on the left
 // takes the whole row less the secondary caption (a file name needs the room and is elided in the
 // middle); the secondary text is a muted caption at the right edge, or the check icon.
-func listRowBlock(primary, secondary, event, action string) block {
+func listRowBlock(primary, secondary, event, action string, isChecklist bool) block {
 	return block{height: rowHeight, gap: 0, draw: func(y int) []Item {
-		hasCheck := secondary == checkMark
+		marks := listRowMarksOf(isChecklist, secondary)
 		secondaryWidth := 0
-		if secondary != "" && !hasCheck {
+		if marks.showsSecondary {
 			secondaryWidth = min(textMeter.width(secondary, regular(captionSize, familySans)), listSecondaryMax)
 		}
-		reserved := 0
+		left, reserved := gutter, 0
+		if marks.hasCheckbox {
+			left += checkboxIconSize + rhythm
+		}
 		switch {
-		case hasCheck:
+		case marks.hasCheckMark:
 			reserved = chevronIconSize + rhythm
 		case secondaryWidth > 0:
 			reserved = secondaryWidth + rhythm
 		}
-		primaryWidth := contentWidth - reserved
-		items := []Item{textItem(gutter, y+rowTextInset, primaryWidth, rowLabelHeight,
-			elide(primary, primaryWidth, regular(rowTextSize, familySans), looksLikeFileName(primary)), rowTextSize, familySans, "start")}
+		primaryWidth := gutter + contentWidth - left - reserved
+		var items []Item
+		if marks.hasCheckbox {
+			items = iconAt(marks.checkboxName(), checkboxIconSize, gutter, y+(rowHeight-checkboxIconSize)/2, inkBlack)
+		}
+		items = append(items, textItem(left, y+rowTextInset, primaryWidth, rowLabelHeight,
+			elide(primary, primaryWidth, regular(rowTextSize, familySans), looksLikeFileName(primary)), rowTextSize, familySans, "start"))
 		switch {
-		case hasCheck:
+		case marks.hasCheckMark:
 			items = append(items, iconAt("check", chevronIconSize, gutter+contentWidth-chevronIconSize, y+(rowHeight-chevronIconSize)/2, inkBlack)...)
 		case secondaryWidth > 0:
 			caption := textItem(gutter+contentWidth-secondaryWidth, y+(rowHeight-captionLineH)/2, secondaryWidth, captionLineH,
@@ -651,6 +659,25 @@ func listRowBlock(primary, secondary, event, action string) block {
 		}
 		return items
 	}}
+}
+
+// listRowMarks mirrors copperui::v1::ListRowMarks (lib/copperui/src/list_row.cc): what a row
+// draws besides its primary text. In a checklist the secondary "✓" is a ticked box at the left.
+type listRowMarks struct {
+	hasCheckbox, isChecked, hasCheckMark, showsSecondary bool
+}
+
+func listRowMarksOf(isChecklist bool, secondary string) listRowMarks {
+	isCheckMark := secondary == checkMark
+	return listRowMarks{hasCheckbox: isChecklist, isChecked: isChecklist && isCheckMark,
+		hasCheckMark: !isChecklist && isCheckMark, showsSecondary: !isCheckMark && secondary != ""}
+}
+
+func (marks listRowMarks) checkboxName() string {
+	if marks.isChecked {
+		return "square-check"
+	}
+	return "square"
 }
 
 func listTexts(item any) (primary, secondary string) {

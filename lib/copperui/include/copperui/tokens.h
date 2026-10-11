@@ -138,6 +138,7 @@ static const int ICON_DRAWER_ROW = 64; // px: Drawer row icon, drawn 1:1 (an app
 static const int ICON_GRID = 96; // px: Grid cell icon and empty-state icon (Tabler picture / apps).
 static const int ICON_BADGE = 56; // px: Gallery current badge.
 static const int ICON_CHEVRON = 64; // px: Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1.
+static const int ICON_CHECKBOX = 64; // px: Tabler square / square-check: the box at the left of a checklist row, drawn 1:1.
 static const int ICON_MORE_ROW = 50; // px: Nickel's More-tab row icon on the Libra 2 class.
 static const int UNDERLINE_HEIGHT = 4; // px: Underline of the active list / grid toggle.
 static const int UNDERLINE_GAP = 6; // px: Gap between that icon and its underline.
@@ -297,6 +298,7 @@ static const int TWEAKS_ROWS_PER_PAGE = 7; // count: Rows per page; the modal is
 #define COPPERUI_PX_ICON_GRID "96px"
 #define COPPERUI_PX_ICON_BADGE "56px"
 #define COPPERUI_PX_ICON_CHEVRON "64px"
+#define COPPERUI_PX_ICON_CHECKBOX "64px"
 #define COPPERUI_PX_ICON_MORE_ROW "50px"
 #define COPPERUI_PX_UNDERLINE_HEIGHT "4px"
 #define COPPERUI_PX_UNDERLINE_GAP "6px"

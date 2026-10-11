@@ -78,6 +78,9 @@ var uiIcons = []uiIcon{
 	{"picture", "photo"},
 	{"picture-off", "photo-off"},
 	{"apps", "apps"},
+	// The box of a checklist row (list style "checklist"): empty, and ticked for a done item.
+	{"square", "square"},
+	{"square-check", "square-check"},
 	// Fallback of the app screens' toggle when Nickel's switch_on/off images are missing.
 	{"toggle-on", "toggle-right"},
 	{"toggle-off", "toggle-left"},

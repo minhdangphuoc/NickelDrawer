@@ -4,6 +4,10 @@ All notable changes to CopperUI are listed here. The format follows [Keep a Chan
 
 ## [Unreleased]
 
+### Added
+
+- `list_row.h`: `listRowMarks` (what a plain list or a checklist row draws) and a checkbox rect in `ListRowGeometry`; `listRowGeometry` takes `hasCheckbox`. Token `icon.checkbox` (64).
+
 ## [0.3.0]
 
 ### Added

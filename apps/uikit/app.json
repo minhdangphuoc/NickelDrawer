@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "uikit",
   "name": "UI Kit",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Every NickelDrawer component with sample content, for developers and testers",
   "hidden": true,
   "storage": {

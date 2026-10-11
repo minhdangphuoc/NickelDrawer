@@ -96,7 +96,7 @@ static void testCheckMarkText()
 
 static void testListRowPrimaryTakesTheWholeRowWithoutSecondary()
 {
-    ListRowGeometry row = listRowGeometry(200, 0, false);
+    ListRowGeometry row = listRowGeometry(200, 0, false, false);
     EXPECT_EQ(CONTENT_WIDTH, row.primary.width);
     EXPECT_EQ(0, row.secondary.width);
     EXPECT_EQ(0, row.checkIcon.width);
@@ -105,7 +105,7 @@ static void testListRowPrimaryTakesTheWholeRowWithoutSecondary()
 
 static void testListRowPrimaryYieldsToTheSecondaryCaption()
 {
-    ListRowGeometry row = listRowGeometry(200, 150, false);
+    ListRowGeometry row = listRowGeometry(200, 150, false, false);
     EXPECT_EQ(150, row.secondary.width);
     EXPECT_EQ(GUTTER + CONTENT_WIDTH, row.secondary.x + row.secondary.width);
     EXPECT_EQ(CONTENT_WIDTH - 150 - RHYTHM, row.primary.width);
@@ -116,19 +116,69 @@ static void testListRowPrimaryYieldsToTheSecondaryCaption()
 
 static void testListRowSecondaryIsCappedSoFileNamesKeepRoom()
 {
-    ListRowGeometry row = listRowGeometry(0, 900, false);
+    ListRowGeometry row = listRowGeometry(0, 900, false, false);
     EXPECT_EQ(LIST_ROW_SECONDARY_MAX, row.secondary.width);
     EXPECT_EQ(CONTENT_WIDTH - LIST_ROW_SECONDARY_MAX - RHYTHM, row.primary.width);
 }
 
 static void testListRowCheckMarkIsAnIconAtTheEdge()
 {
-    ListRowGeometry row = listRowGeometry(0, 40, true);
+    ListRowGeometry row = listRowGeometry(0, 40, true, false);
     EXPECT_EQ(ICON_CHEVRON, row.checkIcon.width);
     EXPECT_EQ(GUTTER + CONTENT_WIDTH, row.checkIcon.x + row.checkIcon.width);
     EXPECT_EQ(0, row.secondary.width);
     EXPECT_EQ(CONTENT_WIDTH - ICON_CHEVRON - RHYTHM, row.primary.width);
     EXPECT_EQ(ROW_COMPACT / 2, row.checkIcon.y + ICON_CHEVRON / 2);
+}
+
+static void testChecklistRowMarks()
+{
+    ListRowMarks open = listRowMarks(true, "");
+    EXPECT_EQ(1, open.hasCheckbox);
+    EXPECT_EQ(0, open.isChecked);
+    EXPECT_EQ(0, open.hasCheckMark);
+    EXPECT_EQ(0, open.showsSecondary);
+    ListRowMarks done = listRowMarks(true, "\xE2\x9C\x93");
+    EXPECT_EQ(1, done.isChecked);
+    EXPECT_EQ(0, done.hasCheckMark); // the done mark is the ticked box, not a second icon
+    EXPECT_EQ(0, done.showsSecondary);
+    ListRowMarks caption = listRowMarks(true, "5 min");
+    EXPECT_EQ(0, caption.isChecked);
+    EXPECT_EQ(1, caption.showsSecondary);
+}
+
+static void testPlainListRowMarksKeepTheCheckIconAtTheRight()
+{
+    ListRowMarks done = listRowMarks(false, "\xE2\x9C\x93");
+    EXPECT_EQ(0, done.hasCheckbox);
+    EXPECT_EQ(0, done.isChecked);
+    EXPECT_EQ(1, done.hasCheckMark);
+    EXPECT_EQ(0, done.showsSecondary);
+    ListRowMarks caption = listRowMarks(false, "1.2 MB");
+    EXPECT_EQ(0, caption.hasCheckMark);
+    EXPECT_EQ(1, caption.showsSecondary);
+}
+
+static void testChecklistRowBoxSitsLeftOfTheTextOnTheSameBaseline()
+{
+    ListRowGeometry plain = listRowGeometry(200, 0, false, false);
+    ListRowGeometry row = listRowGeometry(200, 0, false, true);
+    EXPECT_EQ(ICON_CHECKBOX, row.checkbox.width);
+    EXPECT_EQ(GUTTER, row.checkbox.x);
+    EXPECT_EQ(ROW_COMPACT / 2, row.checkbox.y - 200 + ICON_CHECKBOX / 2);
+    EXPECT_EQ(GUTTER + ICON_CHECKBOX + RHYTHM, row.primary.x);
+    EXPECT_EQ(GUTTER + CONTENT_WIDTH, row.primary.x + row.primary.width);
+    // Adding the box never moves the text vertically.
+    EXPECT_EQ(plain.primary.y, row.primary.y);
+    EXPECT_EQ(plain.primary.height, row.primary.height);
+    EXPECT_EQ(0, plain.checkbox.width);
+}
+
+static void testChecklistRowPrimaryYieldsToBoxAndCaption()
+{
+    ListRowGeometry row = listRowGeometry(0, 150, false, true);
+    EXPECT_EQ(CONTENT_WIDTH - ICON_CHECKBOX - RHYTHM - 150 - RHYTHM, row.primary.width);
+    EXPECT_EQ(GUTTER + CONTENT_WIDTH, row.secondary.x + row.secondary.width);
 }
 
 static void testRowDividerIsGreyAndTheSectionRuleIsBlack()
@@ -203,5 +253,9 @@ int main()
     testListRowPrimaryYieldsToTheSecondaryCaption();
     testListRowSecondaryIsCappedSoFileNamesKeepRoom();
     testListRowCheckMarkIsAnIconAtTheEdge();
+    testChecklistRowMarks();
+    testPlainListRowMarksKeepTheCheckIconAtTheRight();
+    testChecklistRowBoxSitsLeftOfTheTextOnTheSameBaseline();
+    testChecklistRowPrimaryYieldsToBoxAndCaption();
     return finishTests("copperui components");
 }

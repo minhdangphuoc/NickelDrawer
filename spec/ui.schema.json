@@ -1190,6 +1190,12 @@
               "minItems": 1,
               "type": "array"
             },
+            "style": {
+              "enum": [
+                "plain",
+                "checklist"
+              ]
+            },
             "tap": {
               "pattern": "^[a-z0-9][a-z0-9-]{0,30}$",
               "type": "string"

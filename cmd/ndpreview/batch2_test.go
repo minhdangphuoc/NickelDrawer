@@ -268,7 +268,7 @@ func TestEnabledControlsStayBlackAndFieldEnabledFollowsItsFlag(t *testing.T) {
 
 func rowItems(t *testing.T, primary, secondary string) []Item {
 	t.Helper()
-	return listRowBlock(primary, secondary, "e", "tap").draw(0)
+	return listRowBlock(primary, secondary, "e", "tap", false).draw(0)
 }
 
 func TestListRowPrimaryYieldsToTheSecondaryCaption(t *testing.T) {

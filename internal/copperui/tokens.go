@@ -147,6 +147,7 @@ const (
 	IconGrid            = 96 // px: Grid cell icon and empty-state icon (Tabler picture / apps).
 	IconBadge           = 56 // px: Gallery current badge.
 	IconChevron         = 64 // px: Tabler chevron-left / chevron-right: pager arrows and the drawer row chevron, drawn 1:1.
+	IconCheckbox        = 64 // px: Tabler square / square-check: the box at the left of a checklist row, drawn 1:1.
 	IconMoreRow         = 50 // px: Nickel's More-tab row icon on the Libra 2 class.
 	UnderlineHeight     = 4  // px: Underline of the active list / grid toggle.
 	UnderlineGap        = 6  // px: Gap between that icon and its underline.

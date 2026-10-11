@@ -16,6 +16,7 @@
     "searchtext": "",
     "pagenumber": "1",
     "books": [],
+    "reading": [],
     "pictures": [],
     "selectedPicture": "",
     "jobRunning": false,

@@ -84,6 +84,7 @@ func TestRulesRejectWithCode(t *testing.T) {
 		{"list needs pure binding", screenJSON(`[{"list":"items"}]`, ""), CodeBadBinding},
 		{"undeclared var", screenJSON(`[{"text":"$ghost"}]`, ""), CodeUnknownVar},
 		{"undeclared bind", screenJSON(`[{"toggle":"x","bind":"ghost"}]`, ""), CodeUnknownVar},
+		{"bad list style", screenJSON(`[{"list":"$items","style":"grid"}]`, ""), CodeBadEnum},
 		{"list var not array", screenJSON(`[{"list":"$pin"}]`, ""), CodeListNotArray},
 		{"unknown action", screenJSON(`[]`, `[{"button":"Go","action":"fly"}]`), CodeUnknownAction},
 		{"unknown tap action", screenJSON(`[{"list":"$items","tap":"fly"}]`, ""), CodeUnknownAction},

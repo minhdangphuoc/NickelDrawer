@@ -4,6 +4,16 @@ All notable changes are listed here. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### Added
+
+- **Checklist lists.** A `list` with `"style": "checklist"` shows a box at the left of every row: empty for an open item, ticked for a done one (`[text, "✓"]`; the mark is no longer drawn at the right). Tapping still runs the list's `tap`. The boxes are Tabler `square` and `square-check` at 64 px (new `icon.checkbox` token, `host/icons/ui/square-*.png`). The validator checks the style value and that default items can carry a done mark (`ui.checklist_items`). `ndpreview` mirrors it.
+- UI Kit 2.2.0: a checklist sample on the List page.
+
+### Changed
+
+- To-do 1.0.4: both sections use the checklist style, so a task shows a real tick box. The app declares `"min_host": "1.0.0-beta.8"` (the catalog entry carries `requires.drawer` `>=1.0.0-beta.8`, so an older drawer is not offered this version).
+- `min_host` accepts a pre-release version such as `1.0.0-beta.8`, compared by Semantic Versioning precedence (`beta.8` is newer than `beta.7` and `beta.10` newer than `beta.9`).
+
 ## [1.0.0-beta.7] - 2026-10-11
 
 ### Changed
