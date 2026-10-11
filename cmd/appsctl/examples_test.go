@@ -89,13 +89,19 @@ func (d *todoDrawer) rows() [][2]string {
 	if err != nil {
 		d.t.Fatal(err)
 	}
+	// The open list first, then the done list (rows with the check mark).
+	var rows [][2]string
+	lists := 0
 	for _, component := range reply.Body {
 		if component.Type == "list" {
-			return *component.Items
+			rows = append(rows, *component.Items...)
+			lists++
 		}
 	}
-	d.t.Fatal("no list on the screen")
-	return nil
+	if lists == 0 {
+		d.t.Fatal("no list on the screen")
+	}
+	return rows
 }
 
 func TestTodoWorksThroughTheDrawerProtocol(t *testing.T) {
@@ -118,7 +124,7 @@ func TestTodoWorksThroughTheDrawerProtocol(t *testing.T) {
 	if result := d.event("toggle", "buy milk"); result.Toast != "" {
 		t.Fatalf("a tap on a row shows no toast: %+v", result)
 	}
-	if rows := d.rows(); rows[0][1] != "✓" || rows[1][1] != "" {
+	if rows := d.rows(); rows[0][0] != `say "hi" \ there` || rows[0][1] != "" || rows[1][0] != "buy milk" || rows[1][1] != "✓" {
 		t.Fatalf("after toggling: %v", rows)
 	}
 
@@ -178,7 +184,7 @@ func TestTodoRowMenuDeletesTheLongPressedRow(t *testing.T) {
 	d.event("newitem", "one")
 	d.event("newitem", "two")
 	value := "two"
-	result, err := d.config.RunEvent(drawer.Event{AppID: "todo", ActionID: "remove", ScreenID: "main", Value: &value, List: "items", Index: 1})
+	result, err := d.config.RunEvent(drawer.Event{AppID: "todo", ActionID: "remove", ScreenID: "main", Value: &value, List: "open_items", Index: 1})
 	if err != nil || result.Toast != "Task deleted" {
 		t.Fatalf("remove: %+v %v", result, err)
 	}
